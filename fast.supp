@@ -1,0 +1,31 @@
+{
+   GotoBLAS2.supp
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.2.5
+   fun:blas_thread_init
+   fun:gotoblas_init
+   obj:/project/csvis/mvalle/GotoBLAS2/libgoto2_barcelonap-r1.13.so
+   obj:/project/csvis/mvalle/GotoBLAS2/libgoto2_barcelonap-r1.13.so
+   obj:*
+   obj:/lib64/ld-2.9.so
+   obj:/lib64/ld-2.9.so
+   obj:/lib64/ld-2.9.so
+}
+{
+   Libgfortran.supp
+   Memcheck:Leak
+   fun:malloc
+   obj:/usr/lib64/libgfortran.so.3.0.0
+   obj:/usr/lib64/libgfortran.so.3.0.0
+   obj:/usr/lib64/libgfortran.so.3.0.0
+   obj:/usr/lib64/libgfortran.so.3.0.0
+   obj:/usr/lib64/libgfortran.so.3.0.0
+   obj:*
+   obj:/lib64/ld-2.9.so
+   obj:/lib64/ld-2.9.so
+   obj:/lib64/ld-2.9.so
+   obj:*
+   obj:*
+}

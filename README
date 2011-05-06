@@ -1,0 +1,3 @@
+How to compile without CMake:
+g++ *.cpp ./libblas.a ./liblapack.a ./libblas.a ./liblapack.a ./libnlopt.a -DUSE_LAPACK -D_USE_OPTIMIZER -lgfortran -lm -o codeml
+Notice this does NOT optimize the code!!!
