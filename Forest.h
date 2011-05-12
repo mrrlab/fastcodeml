@@ -24,8 +24,6 @@ const double GOOD_CODON_THRESHOLD = 1e-100;
 ///     @date 2011-02-23 (initial version)
 ///     @version 1.0
 ///
-/// @todo Add the aggressive strategy
-///
 class Forest
 {
 public:
@@ -179,14 +177,14 @@ private:
 
 	/// Add aggresssive reduction to common subtree between two trees already identified
 	///
-	/// @param[in] aRoot The tree
+	/// @param[in] aNode The tree node from which the walker should start
 	///
 	void addAggressiveReductionWalker(ForestNode* aNode);
 
 	/// Check dependencies of a tree with other trees
 	///
-	/// @param[in] aRoot The tree
-	/// @param[out] aDependencies The id of the trees on which this tree depends
+	/// @param[in] aNode The tree node from which the walker should start
+	/// @param[out] aDependency The id of the trees on which this tree depends
 	///
 	void groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& aDependency);
 

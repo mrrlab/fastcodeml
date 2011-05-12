@@ -1,4 +1,4 @@
-/// @mainpage FastCodeML (serial version)
+/// @mainpage FastCodeML
 ///
 /// @section intro_sect Introduction
 /// 
@@ -55,22 +55,22 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel > 0)
 	{
 		std::cerr << std::endl;
-		std::cerr << "Tree file:     " << cmd.mTreeFile << std::endl;
-		std::cerr << "Gene file:     " << cmd.mGeneFile << std::endl;
-		std::cerr << "Verbose level: " << cmd.mVerboseLevel << std::endl;
-		if(cmd.mSeed)				std::cerr << "Seed:          " << cmd.mSeed << std::endl;
-		if(cmd.mBranch != UINT_MAX)	std::cerr << "Branch:        " << cmd.mBranch << std::endl;
-		if(cmd.mIgnoreFreq)			std::cerr << "Ignore codon freq." << std::endl;
-		if(cmd.mDoNotReduceForest)	std::cerr << "Do not reduce forest" << std::endl;
-		else if(cmd.mNoAggressiveStep)	std::cerr << "Reduce forest (normal)" << std::endl;
-		else                    	std::cerr << "Reduce forest (aggressive)" << std::endl;
-		if(cmd.mTimesFromFile)		std::cerr << "Times from tree file" << std::endl;
-		if(cmd.mNoMaximization)		std::cerr << "No maximization" << std::endl;
-		if(cmd.mExportComputedTimes != UINT_MAX) std::cerr << "Graph with times from H" << cmd.mExportComputedTimes << std::endl;
-		if(cmd.mTrace)				std::cerr << "Trace maximization" << std::endl;
-		if(cmd.mGraphFile)			std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
+													std::cerr << "Tree file:     " << cmd.mTreeFile << std::endl;
+													std::cerr << "Gene file:     " << cmd.mGeneFile << std::endl;
+													std::cerr << "Verbose level: " << cmd.mVerboseLevel << std::endl;
+		if(cmd.mSeed)								std::cerr << "Seed:          " << cmd.mSeed << std::endl;
+		if(cmd.mBranch != UINT_MAX)					std::cerr << "Branch:        " << cmd.mBranch << std::endl;
+		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
+		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
+		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
+		else                    					std::cerr << "Reduce forest: Aggressive" << std::endl;
+		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
+		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
+		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
+		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
+		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
 #ifdef _OPENMP
-		if(!cmd.mForceSerial)       std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl;
+		if(!cmd.mForceSerial)						std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl;
 #endif
 		std::cerr << std::endl;
 	}
@@ -238,6 +238,7 @@ int main(int ac, char **av)
 /// @page cmd_page Command Line switches
 ///
 /// @verbatim
+///
 /// Usage:
 ///     FastCodeML [options] tree_file gene_file
 /// 

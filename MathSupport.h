@@ -42,7 +42,7 @@ inline double dot(const double* aV1, const double* aV2)
 	return ddot_(&N, aV1, &I1, aV2, &I1);
 #else
 	double tot = 0.;
-	for(unsigned int i=0; i < N; ++i) tot += aV1[i]*aV2[i];
+	for(int i=0; i < N; ++i) tot += aV1[i]*aV2[i];
 	return tot;
 #endif
 }

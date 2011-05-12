@@ -48,7 +48,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 			int codon = aGenes.getCodonIdx((*il)->mNodeName, j);
 			(*il)->mCodons.push_back(codon);
 
-			// Set leaves probability vector
+			// Set leaves probability vector (Nt copies)
 			memset((*il)->mProb, 0, N*Nt*sizeof(double));
 			for(int k=0; k < Nt; ++k) (*il)->mProb[codon+k*N] = 1.0;
 
@@ -518,9 +518,9 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 		int len = ivs->size()*num_sets;
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
+		#pragma omp parallel for if(len > 3) default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
 #else
-		#pragma omp parallel for default(none) shared(len, ivs, num_sets, num_sites)
+		#pragma omp parallel for if(len > 3) default(none) shared(len, ivs, num_sets, num_sites)
 #endif
 		for(int i=0; i < len; ++i)
 		{

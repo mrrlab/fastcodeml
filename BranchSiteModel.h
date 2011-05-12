@@ -9,6 +9,9 @@
 #include "TransitionMatrixSet.h"
 #include "Forest.h"
 
+/// Uncomment to use the original CodeML proportion definition
+//#define USE_ORIGINAL_PROPORTIONS
+
 
 /// Common routines for the Hypothesis test.
 ///
@@ -52,14 +55,6 @@ public:
 		aForest.setLengthsFromTimes(mVar);
 	}
 
-	/// Compute the four site proportions from the two values in the optimization variables
-	///
-	/// @param[in] aV0 The first optimization variables
-	/// @param[in] aV1 The second optimization variables
-	/// @param[out] aProportions The four proportions output (size: 4)
-	///
-	void getProportions(double aV0, double aV1, double* aProportions) const;
-
 	/// Formatted print of the maximizer variables array
 	///
 	/// @param[in] aVars The variables array to be printed
@@ -87,6 +82,33 @@ public:
 	/// @return The maximum Likelihood value
 	///
 	virtual double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+
+protected:
+	/// Compute the four site proportions from the two values in the optimization variables
+	///
+	/// @param[in] aV0 The first optimization variables
+	/// @param[in] aV1 The second optimization variables
+	/// @param[out] aProportions The four proportions output
+	///
+	inline void getProportions(double aV0, double aV1, double* aProportions) const
+	{
+#ifdef USE_ORIGINAL_PROPORTIONS
+		aProportions[0] = exp(aV0);
+		aProportions[1] = exp(aV1);
+		double tot = aProportions[0] + aProportions[1] + 1;
+		aProportions[0] /= tot;
+		aProportions[1] /= tot;
+		tot = aProportions[0] + aProportions[1];
+
+		aProportions[2] = (1. - tot)*aProportions[0]/tot;
+		aProportions[3] = (1. - tot)*aProportions[1]/tot;
+#else
+		aProportions[0] = aV0*aV1;
+		aProportions[1] = aV0*(1-aV1);
+		aProportions[2] = (1-aV0)*aV1;
+		aProportions[3] = (1-aV0)*(1-aV1);
+#endif
+	}
 
 protected:
 	unsigned int		mNumTimes;			///< Number of branch lengths

@@ -7,9 +7,6 @@
 #include "nlopt.hpp"
 #endif
 
-/// Uncomment to use the original CodeML proportion definition
-//#define USE_ORIGINAL_PROPORTIONS
-
 /// Uncomment if you want to use the old likelihood method
 //#define OLD_LIKELIHOOD
 
@@ -20,25 +17,6 @@
 /// How much a variable should be changed to compute gradient
 static const double SMALL_DIFFERENCE = 1e-6;
 
-void BranchSiteModel::getProportions(double aV0, double aV1, double* aProportions) const
-{
-#ifdef USE_ORIGINAL_PROPORTIONS
-	aProportions[0] = exp(aV0);
-	aProportions[1] = exp(aV1);
-	double tot = aProportions[0] + aProportions[1] + 1;
-	aProportions[0] /= tot;
-	aProportions[1] /= tot;
-	tot = aProportions[0] + aProportions[1];
-
-	aProportions[2] = (1. - tot)*aProportions[0]/tot;
-	aProportions[3] = (1. - tot)*aProportions[1]/tot;
-#else
-	aProportions[0] = aV0*aV1;
-	aProportions[1] = aV0*(1-aV1);
-	aProportions[2] = (1-aV0)*aV1;
-	aProportions[3] = (1-aV0)*(1-aV1);
-#endif
-}
 
 void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 {
@@ -240,9 +218,30 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
-	// Compute the matrices
-	double scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], aForest.getCodonFrequencies());
-	double scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], aForest.getCodonFrequencies());
+	// Fill the matrices and compute their eigen decomposition
+	double scale_qw0, scale_q1;
+	const double* codon_freq = aForest.getCodonFrequencies();
+	const double* sqrt_codon_freq = aForest.getSqrtCodonFrequencies();
+	const bool*   good_codon_freq = aForest.getGoodCodonFrequencies();
+	unsigned int  num_good_codon_freq = aForest.numGoodCodonFrequencies();
+
+#ifdef _MSC_VER
+	#pragma omp parallel sections default(none) shared(scale_qw0, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
+#else
+	#pragma omp parallel sections default(none) shared(scale_qw0, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq)
+#endif
+	{
+		#pragma omp section
+		{
+			scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], codon_freq);
+			mQw0.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+		}
+		#pragma omp section
+		{
+			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
+			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+		}
+	}
 
 	// Compute the scale values
 	double fg_scale = mProportions[0]*scale_qw0 +
@@ -255,10 +254,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	//				  mProportions[2]*scale_qw0 +
 	//				  mProportions[3]*scale_q1;
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*scale_qw0+mProportions[1]*scale_q1);
-
-	// Compute eigen decomposition of the matrices
-	mQw0.eigenQREV(aForest.numGoodCodonFrequencies(), aForest.getSqrtCodonFrequencies(), aForest.getGoodCodonFrequencies());
-	mQ1.eigenQREV(aForest.numGoodCodonFrequencies(), aForest.getSqrtCodonFrequencies(), aForest.getGoodCodonFrequencies());
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
@@ -328,10 +323,35 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
-	// Compute the matrices
-	double scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], aForest.getCodonFrequencies());
-	double scale_qw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1], aForest.getCodonFrequencies());
-	double scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], aForest.getCodonFrequencies());
+	// Fill the matrices and compute their eigen decomposition
+	double scale_qw0, scale_qw2, scale_q1;
+	const double* codon_freq = aForest.getCodonFrequencies();
+	const double *sqrt_codon_freq = aForest.getSqrtCodonFrequencies();
+	const bool* good_codon_freq = aForest.getGoodCodonFrequencies();
+	unsigned int num_good_codon_freq = aForest.numGoodCodonFrequencies();
+
+#ifdef _MSC_VER
+	#pragma omp parallel sections default(none) shared(scale_qw0, scale_qw2, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
+#else
+	#pragma omp parallel sections default(none) shared(scale_qw0, scale_qw2, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq)
+#endif
+	{
+		#pragma omp section
+		{
+			scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], codon_freq);
+			mQw0.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+		}
+		#pragma omp section
+		{
+			scale_qw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1], codon_freq);
+			mQw2.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+		}
+		#pragma omp section
+		{
+			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
+			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+		}
+	}
 
 	// Compute the scale values
 	double fg_scale = mProportions[0]*scale_qw0 +
@@ -344,11 +364,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	//				  mProportions[2]*scale_qw0 +
 	//				  mProportions[3]*scale_q1;
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*scale_qw0+mProportions[1]*scale_q1);
-
-	// Compute eigen decomposition of the matrices
-	mQw0.eigenQREV(aForest.numGoodCodonFrequencies(), aForest.getSqrtCodonFrequencies(), aForest.getGoodCodonFrequencies());
-	mQw2.eigenQREV(aForest.numGoodCodonFrequencies(), aForest.getSqrtCodonFrequencies(), aForest.getGoodCodonFrequencies());
-	mQ1.eigenQREV(aForest.numGoodCodonFrequencies(),  aForest.getSqrtCodonFrequencies(), aForest.getGoodCodonFrequencies());
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);

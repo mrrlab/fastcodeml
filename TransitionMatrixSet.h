@@ -97,10 +97,10 @@ public:
 #ifdef USE_LAPACK
 		dgemv_("T", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 #else
-		for(unsigned int r=0; r < N; ++r)
+		for(int r=0; r < N; ++r)
 		{
 			double x = 0;
-			for(unsigned int c=0; c < N; ++c) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+c]*aGin[c];
+			for(int c=0; c < N; ++c) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+c]*aGin[c];
 			aGout[r] = x;
 		}
 #endif

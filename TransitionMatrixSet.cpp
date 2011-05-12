@@ -9,9 +9,14 @@ void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 unsigned int aFgBranch,
 											 const std::vector<double>& aParams)
 {
-	for(unsigned int branch=0; branch < mNumMatrices; ++branch)
+#ifdef _MSC_VER
+	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams)
+#else
+	#pragma omp parallel for default(none) shared(aFgBranch, aSbg, aSfg)
+#endif
+	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{
-		if(branch == aFgBranch)
+		if(branch == (int)aFgBranch)
 		{
 			aQw0.computeFullTransitionMatrix(mMatrixSpace+0*mNumMatrices*N*N+branch*N*N, aParams[branch]/aSfg);
 			aQ1.computeFullTransitionMatrix(mMatrixSpace+1*mNumMatrices*N*N+branch*N*N, aParams[branch]/aSfg);
@@ -38,9 +43,14 @@ void TransitionMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 											 unsigned int aFgBranch,
 											 const std::vector<double>& aParams)
 {
-	for(unsigned int branch=0; branch < mNumMatrices; ++branch)
+#ifdef _MSC_VER
+	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aQw2, aSbg, aSfg, aParams)
+#else
+	#pragma omp parallel for default(none) shared(aFgBranch, aSbg, aSfg)
+#endif
+	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{
-		if(branch == aFgBranch)
+		if(branch == (int)aFgBranch)
 		{
 			aQw0.computeFullTransitionMatrix(mMatrixSpace+0*mNumMatrices*N*N+branch*N*N, aParams[branch]/aSfg);
 			aQ1.computeFullTransitionMatrix(mMatrixSpace+1*mNumMatrices*N*N+branch*N*N,  aParams[branch]/aSfg);
