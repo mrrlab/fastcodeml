@@ -20,9 +20,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	mNumBranches = aTree.getNumBranches();
 
 	// Count the number of unique sites
-	unsigned int nsites = aGenes.getNumSites();
+	size_t nsites = aGenes.getNumSites();
 	const unsigned int* mult = aGenes.getSiteMultiplicity();
-	unsigned int num_leaves = 0;
+	size_t num_leaves = 0;
 
 	// Initialize the count of codon types
 	memset(mCodonCount, 0, N*sizeof(unsigned int));
@@ -85,7 +85,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 void Forest::reduceSubtrees(void)
 {
 	unsigned int i, j;
-	unsigned int nsites = mRoots.size();
+	size_t nsites = mRoots.size();
 
 	// Try to merge equal subtrees
 	for(i=0; i < nsites-1; ++i)
@@ -100,8 +100,8 @@ void Forest::reduceSubtrees(void)
 
 void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 {
-	unsigned int i;
-	unsigned nc = aRoot1->mChildrenList.size();
+	size_t i;
+	size_t nc = aRoot1->mChildrenList.size();
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
@@ -143,13 +143,13 @@ void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 
 void Forest::groupByDependency(bool aForceSerial)
 {
-	unsigned int i, j;
-	unsigned int nsites = mRoots.size();
+	size_t i, j;
+	size_t nsites = mRoots.size();
 	if(aForceSerial)
 	{
 		std::vector<unsigned int> v;
 
-		for(i=0; i < nsites; ++i) v.push_back(i);
+		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v.push_back(k);
 		mDependenciesClasses.push_back(v);
 
 		return;
@@ -171,15 +171,16 @@ void Forest::groupByDependency(bool aForceSerial)
 	}
 
 	// Trees without dependencies
+	unsigned int k;
 	std::vector<unsigned int> v;
 	std::vector< std::set<unsigned int> >::iterator is;
-	for(is=dependencies.begin(),i=0; is != dependencies.end(); ++is,++i)
+	for(is=dependencies.begin(),k=0; is != dependencies.end(); ++is,++k)
 	{
 		if(is->empty())
 		{
-			v.push_back(i);
-			done[i] = true;
-			prev[i] = true;
+			v.push_back(k);
+			done[k] = true;
+			prev[k] = true;
 		}
 	}
 	mDependenciesClasses.push_back(v);
@@ -189,9 +190,9 @@ void Forest::groupByDependency(bool aForceSerial)
 	{
 		v.clear();
 		bool all_done = true;
-		for(is=dependencies.begin(),i=0; is != dependencies.end(); ++is,++i)
+		for(is=dependencies.begin(),k=0; is != dependencies.end(); ++is,++k)
 		{
-			if(done[i]) continue;
+			if(done[k]) continue;
 
 			all_done = false;
 			bool all = true;
@@ -206,8 +207,8 @@ void Forest::groupByDependency(bool aForceSerial)
 			}
 			if(all)
 			{
-				v.push_back(i);
-				done[i] = true;
+				v.push_back(k);
+				done[k] = true;
 			}
 		}
 		if(all_done) break;
@@ -220,8 +221,8 @@ void Forest::groupByDependency(bool aForceSerial)
 
 void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& aDependency)
 {
-	unsigned int i;
-	unsigned nc = aNode->mChildrenList.size();
+	size_t i;
+	size_t nc = aNode->mChildrenList.size();
 	for(i=0; i < nc; ++i)
 	{
 		if(aNode->mChildSameTree[i])
@@ -239,7 +240,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 
  std::ostream& operator<< (std::ostream& aOut, const Forest& aObj)
 {
-	unsigned int i;
+	size_t i;
 
 	aOut << std::endl;
 	aOut << "Num branches:       " << std::setw(7) << aObj.mNumBranches << std::endl;
@@ -305,7 +306,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 	// Map values to branches (identified by the end node)
 	std::map<std::pair<int, int>, double> map_value;
 	std::map<std::pair<int, int>, bool> map_same;
-	for(unsigned int i=0; i < node_to.size(); ++i)
+	for(size_t i=0; i < node_to.size(); ++i)
 	{
 		map_value[node_to[i]] = branch_length[i];
 	}
@@ -357,7 +358,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 			net << "]\n";
 		}
 
-		for(unsigned int i=0; i < node_from.size(); ++i)
+		for(size_t i=0; i < node_from.size(); ++i)
 		{
 			std::pair<int, int> pf(node_from[i].first, node_from[i].second);
 			std::pair<int, int> pt(node_to[i].first,   node_to[i].second);
@@ -469,7 +470,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSetIdx, std::vector<double>& aLikelihood)
 {
 #if 0
-	unsigned int num_sites = mRoots.size();
+	size_t num_sites = mRoots.size();
 	aLikelihood.reserve(num_sites);
 	//aLikelihood.resize(num_sites, 1.0);
 	for(unsigned int site=0; site < num_sites; ++site)
@@ -480,7 +481,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSe
 		aLikelihood.push_back(dot(mCodonFrequencies, g));
 	}
 #else
-	unsigned int num_sites = mRoots.size();
+	size_t num_sites = mRoots.size();
 	aLikelihood.resize(num_sites, 1.0);
 
 	std::vector< std::vector<unsigned int> >::iterator ivs;
@@ -507,7 +508,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSe
 void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods)
 {
 	unsigned int num_sets = aSet.size();
-	unsigned int num_sites = mRoots.size();
+	size_t num_sites = mRoots.size();
 	aLikelihoods.resize(num_sets*num_sites, 1.0);
 
 	std::vector< std::vector<unsigned int> >::iterator ivs;
@@ -708,9 +709,9 @@ void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode)
 
 void Forest::addAggressiveReduction(void)
 {
-	unsigned int nsites = mRoots.size();
+	size_t nsites = mRoots.size();
 
-	for(unsigned int i=0; i < nsites; ++i)
+	for(size_t i=0; i < nsites; ++i)
 	{
 		addAggressiveReductionWalker(&mRoots[i]);
 	}

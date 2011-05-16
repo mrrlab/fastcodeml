@@ -115,7 +115,7 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= 2) timer.start();
 
 	// For all internal branches (only if a single branch has not been requested i.e. mBranch == UINT_MAX)
-	unsigned int num_branches = forest.getNumInternalBranches();
+	size_t num_branches = forest.getNumInternalBranches();
 	unsigned int branch_start = (cmd.mBranch < num_branches) ? cmd.mBranch   : 0;
 	unsigned int branch_end   = (cmd.mBranch < num_branches) ? cmd.mBranch+1 : num_branches;
 	for(unsigned int fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)

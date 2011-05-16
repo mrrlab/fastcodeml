@@ -106,13 +106,13 @@ public:
 	///
 	/// @return The number of internal branches
 	///
-	unsigned int getNumInternalBranches(void) const {return mNumInternalBranches;}
+	size_t getNumInternalBranches(void) const {return mNumInternalBranches;}
 
 	/// Get the number of sites
 	///
 	/// @return The number of sites
 	///
-	unsigned int getNumSites(void) const {return mRoots.size();}
+	size_t getNumSites(void) const {return mRoots.size();}
 
 	/// Get site multeplicity values
 	///
@@ -245,8 +245,8 @@ private:
 	std::vector<ForestNode>	mRoots;					///< The roots of the forest's trees. Its length is the number of valid sites
 	std::vector<double>		mSiteMultiplicity;		///< Multiplicity of the valid sites
 	unsigned int			mVerbose;				///< If greather than zero prints more info
-	unsigned int			mNumBranches;			///< Total number of branches of the original tree
-	unsigned int			mNumInternalBranches;	///< Total number of branches of the original tree
+	size_t					mNumBranches;			///< Total number of branches of the original tree
+	size_t					mNumInternalBranches;	///< Total number of branches of the original tree
 	double					mCodonFrequencies[N];	///< Experimental codon frequencies
 	double					mCodonFreqSqrt[N];		///< Square Root of experimental codon frequencies
 	bool					mGoodCodon[N];			///< True if the corresponding codon frequency is not small
