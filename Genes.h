@@ -38,7 +38,7 @@ public:
 	///
 	/// @return The number of sites
 	///
-	unsigned int getNumSites(void) const {return mSiteMultiplicity.size();}
+	size_t getNumSites(void) const {return mSiteMultiplicity.size();}
 
 	/// Return the site multiplicity
 	///

@@ -73,7 +73,7 @@ public:
 	///
 	/// @return The number of tree branches
 	///
-	unsigned int getNumBranches(void) const {return mInternalNodes.size()+mLeavesSpecies.size();}
+	size_t getNumBranches(void) const {return mInternalNodes.size()+mLeavesSpecies.size();}
 
 	/// Get the marker in the Newick file (the one starting with '#') for the given internal branch.
 	///
