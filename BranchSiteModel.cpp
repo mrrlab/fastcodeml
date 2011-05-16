@@ -566,7 +566,7 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
     	opt->set_ftol_abs(1e-4);
-		nlopt::srand(mSeed);
+		nlopt::srand((unsigned long)mSeed);
 
 		// If the algorithm requires a local optimizer, then add it
 		if(opt->get_algorithm() == nlopt::G_MLSL_LDS)
