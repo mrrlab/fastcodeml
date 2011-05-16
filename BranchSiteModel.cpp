@@ -288,7 +288,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	aForest.computeLikelihood(mSet, likelihoods);
 
 	// For all (valid) sites
-	unsigned int num_sites = aForest.getNumSites();
+	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
@@ -302,7 +302,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 		//double x = log(p);
 
 		double x = (p > 0) ? log(p) : mMaxLnL-100000;
-		//mLnLsite[site] = x;
+
 		lnl += x*mult[site];
 	}
 #endif
@@ -383,7 +383,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	aForest.computeLikelihood(mSet, 3, like3);
 
 	// For all sites
-	unsigned int num_sites = aForest.getNumSites();
+	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(unsigned int site=0; site < num_sites; ++site)
@@ -404,7 +404,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	aForest.computeLikelihood(mSet, likelihoods);
 
 	// For all sites
-	unsigned int num_sites = aForest.getNumSites();
+	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
@@ -419,7 +419,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 		//double x = log(p);
 
 		double x = (p > 0) ? log(p) : mMaxLnL-100000;
-		//mLnLsite[site] = x;
+
 		lnl += x*mult[site];
 	}
 #endif

@@ -17,18 +17,18 @@
 ///
 struct ForestNode
 {
-	std::vector<ForestNode *>	mChildrenList;		///< List of the node children
-	std::string					mNodeName;			///< Node label
-	//std::string				mNodeMark;			///< Node type or empty if the '#' part is not present
-	double						mBranchLength;		///< Length of the branch leading to this node as read from the file (not valid for the root)
-	ForestNode*					mParent;			///< Pointer to the node parent (null for the root)
-	std::vector<int>			mCodons;			///< List of codon idx for the subtree rooted at this node
-	std::vector<bool>			mChildSameTree;		///< True if the corresponding child in mChildrenList is in the same tree
-	double						mProb[N*Nt];		///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 	unsigned int				mInternalNodeId;	///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
 	unsigned int				mNodeId;			///< An unique index to access the branch length array
 	unsigned int				mOwnTree;			///< A per tree identifier used to print the resulting forest
+	ForestNode*					mParent;			///< Pointer to the node parent (null for the root)
+	double						mBranchLength;		///< Length of the branch leading to this node as read from the file (not valid for the root)
+	double						mProb[N*Nt];		///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
+	std::vector<ForestNode *>	mChildrenList;		///< List of the node children
+	std::string					mNodeName;			///< Node label
+	std::vector<int>			mCodons;			///< List of codon idx for the subtree rooted at this node
+	std::vector<bool>			mChildSameTree;		///< True if the corresponding child in mChildrenList is in the same tree
 	std::vector<double *>		mOtherTreeProb;		///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
+	//std::string				mNodeMark;			///< Node type or empty if the '#' part is not present
 
 	/// Constructor
 	///

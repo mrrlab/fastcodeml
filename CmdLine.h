@@ -27,17 +27,17 @@ public:
 
 
 public:
-	int				mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
-	const char*		mTreeFile;				///< Newick tree file name
-	const char*		mGeneFile;				///< %Genes file name
+	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)
-	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
+	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
+	const char*		mTreeFile;				///< Newick tree file name
+	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
+	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
 	bool			mTimesFromFile;			///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
-	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
 	bool			mTrace;					///< Trace the optimization steps
 	bool			mNoAggressiveStep;		///< Do not apply aggressive common subtree reduction
 	bool			mForceSerial;			///< Disable all parallelism

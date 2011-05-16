@@ -17,7 +17,7 @@ class TreeNode
 public:
 	/// Constructor.
 	///
-	TreeNode() : mBranchLength(0.), mParent(0) {}
+	TreeNode() : mParent(0), mBranchLength(0.)  {}
 
 	/// Destructor.
 	///
@@ -104,11 +104,11 @@ public:
 
 
 private:
+	TreeNode*				mParent;		///< Pointer to the node parent (null for the root)
+	double					mBranchLength;	///< Length of the branch leading to this node as read from the file (not valid for the root)
 	std::vector<TreeNode *>	mChildrenList;	///< List of the node children
 	std::string				mNodeName;		///< Node label
 	std::string				mNodeMark;		///< Node type or empty if the '#' part is not present
-	double					mBranchLength;	///< Length of the branch leading to this node as read from the file (not valid for the root)
-	TreeNode*				mParent;		///< Pointer to the node parent (null for the root)
 };
 
 #endif

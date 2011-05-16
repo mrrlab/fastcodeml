@@ -326,10 +326,10 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	aForestNode->mOwnTree = aTreeId;
 
 	// Set the internal branch identifier
-	unsigned int int_id;
-	unsigned int nn = mInternalNodes.size();
+	size_t int_id;
+	size_t nn = mInternalNodes.size();
 	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
-	aForestNode->mInternalNodeId = (int_id < nn) ? int_id : UINT_MAX;
+	aForestNode->mInternalNodeId = (int_id < nn) ? (unsigned int)int_id : UINT_MAX;
 
 	// Recurse
 	TreeNode *m;
