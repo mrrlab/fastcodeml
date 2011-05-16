@@ -86,7 +86,7 @@ else()
 
 		#slow, but suitable for debugging
 		if(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-			set(CMAKE_CXX_FLAGS_DEBUG "error -g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -pedantic -Wshadow" CACHE "Debug mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -pedantic -Wshadow" CACHE "Debug mode options" STRING FORCE)
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wno-unused-result -Wno-write-strings -g -pg -fcheck-data-deps")
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -pg -fcheck-data-deps" CACHE STRING "Debug mode options")
 		endif(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
@@ -96,7 +96,7 @@ else()
 		# -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -Wno-unused-result -funroll-loops -funsafe-loop-optimizations -Wunsafe-loop-optimizations"
 
 		if(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-			set(CMAKE_CXX_FLAGS_RELEASE "error -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -funroll-loops" CACHE "Release mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -funroll-loops" CACHE "Release mode options" STRING FORCE)
 		endif(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
 
 		#if(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
@@ -113,8 +113,8 @@ else()
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
 
-	set(BLAS_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "BLAS lib dir")
-	set(LAPACK_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "LAPACK lib dir")
+	set(BLAS_LINK_DIR "/home/mac/SVN/hp2c/trunk/Fastcodeml" CACHE PATH "BLAS lib dir")
+	set(LAPACK_LINK_DIR "/home/mac/SVN/hp2c/trunk/Fastcodeml" CACHE PATH "LAPACK lib dir")
 	set(MATH_LIB_NAMES blas lapack gfortranbegin gfortran CACHE STRING "Math libraries" )
 
 	if(USE_LAPACK)
@@ -125,8 +125,8 @@ else()
 
 	#add_definitions(-DFORCE_ARGUMENTS)
 
-	set(NLOPT_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "NLopt lib dir")
-	set(NLOPT_INCLUDE_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "NLopt include dir")
+	set(NLOPT_LINK_DIR "/home/mac/SVN/hp2c/trunk/Fastcodeml" CACHE PATH "NLopt lib dir")
+	set(NLOPT_INCLUDE_DIR "/home/mac/SVN/hp2c/trunk/Fastcodeml" CACHE PATH "NLopt include dir")
 	if(USE_OPTIMIZER)
 		link_directories( ${NLOPT_LINK_DIR} )
 		include_directories(${NLOPT_INCLUDE_DIR})
