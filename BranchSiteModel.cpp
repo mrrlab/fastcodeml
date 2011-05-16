@@ -225,7 +225,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 #ifdef _MSC_VER
 	#pragma omp parallel sections default(none) shared(scale_qw0, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
 #else
-	#pragma omp parallel sections default(none) shared(scale_qw0, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq)
+	#pragma omp parallel sections default(shared)
 #endif
 	{
 		#pragma omp section
@@ -334,7 +334,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 #ifdef _MSC_VER
 	#pragma omp parallel sections default(none) shared(scale_qw0, scale_qw2, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
 #else
-	#pragma omp parallel sections default(none) shared(scale_qw0, scale_qw2, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq)
+	#pragma omp parallel sections default(shared)
 #endif
 	{
 		#pragma omp section

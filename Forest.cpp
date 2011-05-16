@@ -100,8 +100,6 @@ void Forest::reduceSubtrees(void)
 
 void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 {
-	std::vector<ForestNode*>::iterator irn1;
-	std::vector<ForestNode*>::iterator irn2;
 	unsigned int i;
 	unsigned nc = aRoot1->mChildrenList.size();
 	for(i=0; i < nc; ++i)
