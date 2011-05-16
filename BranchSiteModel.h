@@ -118,7 +118,6 @@ protected:
 	std::vector<double>	mUpperBound;		///< Upper limits for the variables to be optimized
 	double				mProportions[4];	///< The four proportions
 	double				mCodonFreq[N];		///< %Codon frequencies
-	std::vector<double>	mLnLsite;			///< Loglik values for each site
 	double				mMaxLnL;			///< Maximum value of LnL found during optimization
 	unsigned int		mNumEvaluations;	///< Counter of the likelihood function evaluations
 

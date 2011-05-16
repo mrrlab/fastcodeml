@@ -123,8 +123,8 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 #endif
 
 	// Allocate the site likelihood array
-	mLnLsite.reserve(aForest.getNumSites());
-	mLnLsite.resize(aForest.getNumSites());
+	//mLnLsite.reserve(aForest.getNumSites());
+	//mLnLsite.resize(aForest.getNumSites());
 
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
@@ -202,8 +202,8 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 	mUpperBound[mNumTimes+4] = 999.0;						// w2 (in the old code is 999)
 
 	// Allocate the site likelihood array
-	mLnLsite.reserve(aForest.getNumSites());
-	mLnLsite.resize(aForest.getNumSites());
+	//mLnLsite.reserve(aForest.getNumSites());
+	//mLnLsite.resize(aForest.getNumSites());
 
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
@@ -214,9 +214,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 {
 	// One more function invocation
 	++mNumEvaluations;
-
-	// Compute all proportions
-	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Fill the matrices and compute their eigen decomposition
 	double scale_qw0, scale_q1;
@@ -240,6 +237,11 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 		{
 			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
 			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+		}
+		#pragma omp section
+		{
+			// Compute all proportions
+			getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 		}
 	}
 
@@ -278,7 +280,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
 		double x = log(p);
 
-		mLnLsite[site] = x;
+		//mLnLsite[site] = x;
 		lnl += x*mult[site];
 	}
 #else
@@ -289,16 +291,18 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	unsigned int num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
+	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
+	for(int site=0; site < (int)num_sites; ++site)
 	{
 		double p = mProportions[0]*likelihoods[0*num_sites+site] +
 				   (mProportions[1]+mProportions[3])*likelihoods[1*num_sites+site] +
 				   mProportions[2]*likelihoods[2*num_sites+site];
 
-		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		double x = log(p);
+		//if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
+		//double x = log(p);
 
-		mLnLsite[site] = x;
+		double x = (p > 0) ? log(p) : mMaxLnL-100000;
+		//mLnLsite[site] = x;
 		lnl += x*mult[site];
 	}
 #endif
@@ -319,9 +323,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 {
 	// One more function invocation
 	++mNumEvaluations;
-
-	// Compute all proportions
-	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Fill the matrices and compute their eigen decomposition
 	double scale_qw0, scale_qw2, scale_q1;
@@ -350,6 +351,11 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 		{
 			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
 			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+		}
+		#pragma omp section
+		{
+			// Compute all proportions
+			getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 		}
 	}
 
@@ -390,7 +396,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
 		double x = log(p);
 
-		mLnLsite[site] = x;
+		//mLnLsite[site] = x;
 		lnl += x*mult[site];
 	}
 #else
@@ -401,17 +407,19 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	unsigned int num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
+	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
+	for(int site=0; site < (int)num_sites; ++site)
 	{
 		double p = mProportions[0]*likelihoods[0*num_sites+site] +
 				   mProportions[1]*likelihoods[1*num_sites+site] +
 				   mProportions[2]*likelihoods[2*num_sites+site] +
 				   mProportions[3]*likelihoods[3*num_sites+site];
 
-		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		double x = log(p);
+		//if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
+		//double x = log(p);
 
-		mLnLsite[site] = x;
+		double x = (p > 0) ? log(p) : mMaxLnL-100000;
+		//mLnLsite[site] = x;
 		lnl += x*mult[site];
 	}
 #endif
@@ -547,26 +555,27 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 //	nlopt::opt opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
 
-	nlopt::opt opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
+	//nlopt::opt opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
 
+	nlopt::opt *opt = new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
 	// Initialize bounds and termination criteria
 	try
 	{
-		opt.set_lower_bounds(mLowerBound);
-		opt.set_upper_bounds(mUpperBound);
-    	opt.set_ftol_abs(1e-4);
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+    	opt->set_ftol_abs(1e-4);
 		nlopt::srand(mSeed);
 
 		// If the algorithm requires a local optimizer, then add it
-		if(opt.get_algorithm() == nlopt::G_MLSL_LDS)
+		if(opt->get_algorithm() == nlopt::G_MLSL_LDS)
 		{
 			// For global optimization put a timeout of one hour
-			opt.set_maxtime(60*60);
+			opt->set_maxtime(60*60);
 
 			nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
-			opt.set_local_optimizer(local_opt);
+			opt->set_local_optimizer(local_opt);
 		}
 	}
 	catch(std::exception& e)
@@ -580,9 +589,9 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 	{
 		MaximizerFunction compute(this, &aForest, aFgBranch, aTrace, mUpperBound);
 
-		opt.set_max_objective(MaximizerFunction::wrap, &compute);
+		opt->set_max_objective(MaximizerFunction::wrap, &compute);
 
-		nlopt::result result = opt.optimize(mVar, maxl);
+		nlopt::result result = opt->optimize(mVar, maxl);
 
 		// Print the final optimum value
 		if(aTrace)
