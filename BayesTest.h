@@ -16,7 +16,7 @@ public:
 	///
 	/// @param[in] aNumSites Number of sites
 	///
-	BayesTest(unsigned int aNumSites);
+	BayesTest(size_t aNumSites);
 
 	/// Destructor.
 	///

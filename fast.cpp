@@ -70,7 +70,8 @@ int main(int ac, char **av)
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
 		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
 #ifdef _OPENMP
-		if(!cmd.mForceSerial)						std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl;
+		if(!cmd.mForceSerial)						std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl
+		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 #endif
 		std::cerr << std::endl;
 	}

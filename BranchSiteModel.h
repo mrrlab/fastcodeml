@@ -29,7 +29,7 @@ public:
 	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
 	/// @param[in] aSeed Random number generator seed
 	///
-	BranchSiteModel(unsigned int aNumBranches, unsigned int aNumVariables, unsigned int aSeed)
+	BranchSiteModel(size_t aNumBranches, unsigned int aNumVariables, unsigned int aSeed)
 	{
 		mNumTimes     = aNumBranches;
 		mNumVariables = aNumVariables;
@@ -111,7 +111,7 @@ protected:
 	}
 
 protected:
-	unsigned int		mNumTimes;			///< Number of branch lengths
+	size_t				mNumTimes;			///< Number of branch lengths
 	unsigned int		mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>	mVar;				///< Variable to optimize (first the times then the remaining variables)
 	std::vector<double>	mLowerBound;		///< Lower limits for the variables to be optimized
@@ -140,7 +140,7 @@ public:
 	/// @param[in] aNumBranches Number of tree branches
 	/// @param[in] aSeed Random number generator seed
 	///
-	BranchSiteModelNullHyp(unsigned int aNumBranches, unsigned int aSeed)
+	BranchSiteModelNullHyp(size_t aNumBranches, unsigned int aSeed)
 		: BranchSiteModel(aNumBranches, 4, aSeed), mSet(aNumBranches, 3) {}
 
 	/// Compute the null hypothesis log likelihood.
@@ -182,7 +182,7 @@ public:
 	/// @param[in] aNumBranches Number of tree branches
 	/// @param[in] aSeed Random number generator seed
 	///
-	BranchSiteModelAltHyp(unsigned int aNumBranches, unsigned int aSeed)
+	BranchSiteModelAltHyp(size_t aNumBranches, unsigned int aSeed)
 		: BranchSiteModel(aNumBranches, 5, aSeed), mSet(aNumBranches, 4) {}
 
 	/// Compute the alternative hypothesis log likelihood.

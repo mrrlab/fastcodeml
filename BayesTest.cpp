@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include "BayesTest.h"
 
-BayesTest::BayesTest(unsigned int aNumSites)
+BayesTest::BayesTest(size_t aNumSites)
 {
 	mNumSites = aNumSites;
 	mSiteClassProb = new double[4*mNumSites];

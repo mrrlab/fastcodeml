@@ -31,8 +31,10 @@ if(NOT WIN32)
 	SET(USE_LAPACK YES CACHE BOOL "Use BLAS/LAPACK")
 endif(NOT WIN32)
 
-#INCLUDE(FindOpenMP)
-find_package(OpenMP)
+SET(USE_OPENMP YES CACHE BOOL "Compile with OpenMP")
+if(USE_OPENMP)
+	find_package(OpenMP)
+endif(USE_OPENMP)
 
 # Set BLAS/LAPACK directories and libraries
 if($ENV{HOST} MATCHES "rosa")
@@ -103,11 +105,8 @@ else()
 			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O1" CACHE "Release mode linker options" STRING FORCE)
 		#endif(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
 
-		#add_definitions(-fopenmp)
-
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
