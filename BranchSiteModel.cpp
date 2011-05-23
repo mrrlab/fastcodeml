@@ -15,7 +15,9 @@
 #include "Exceptions.h"
 
 /// How much a variable should be changed to compute gradient
+#ifdef USE_OPTIMIZER
 static const double SMALL_DIFFERENCE = 1e-6;
+#endif
 
 
 void BranchSiteModel::printVar(const std::vector<double>& aVars) const
@@ -291,7 +293,11 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
+#ifdef _MSC_VER
 	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
+#else
+	#pragma omp parallel for reduction(+:lnl) default(shared)
+#endif
 	for(int site=0; site < (int)num_sites; ++site)
 	{
 		double p = mProportions[0]*likelihoods[0*num_sites+site] +
@@ -407,7 +413,11 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
+#ifdef _MSC_VER
 	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
+#else
+	#pragma omp parallel for reduction(+:lnl) default(shared)
+#endif
 	for(int site=0; site < (int)num_sites; ++site)
 	{
 		double p = mProportions[0]*likelihoods[0*num_sites+site] +

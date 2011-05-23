@@ -519,7 +519,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 #ifdef _MSC_VER
 		#pragma omp parallel for if(len > 3) default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
 #else
-		#pragma omp parallel for if(len > 3) default(shared)
+		#pragma omp parallel for default(shared)
 #endif
 		for(int i=0; i < len; ++i)
 		{
