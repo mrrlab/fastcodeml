@@ -37,7 +37,7 @@ if(USE_OPENMP)
 endif(USE_OPENMP)
 
 # Set BLAS/LAPACK directories and libraries
-if($ENV{HOST} MATCHES "rosa" OR $ENV{HOST} MATCHES "palu")
+if($ENV{HOST} MATCHES "rosa")
 
 	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
 	SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
@@ -60,6 +60,38 @@ if($ENV{HOST} MATCHES "rosa" OR $ENV{HOST} MATCHES "palu")
 		include_directories(${NLOPT_INCLUDE_DIR})
 		add_definitions(-DUSE_OPTIMIZER)
 	endif(USE_OPTIMIZER)
+
+	if(OPENMP_FOUND)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	endif (OPENMP_FOUND)
+
+elseif($ENV{HOST} MATCHES "palu")
+
+	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
+	SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+	set(BLAS_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "BLAS lib dir")
+	set(LAPACK_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "LAPACK lib dir")
+	set(MATH_LIB_NAMES acml gfortranbegin gfortran CACHE STRING "Math libraries" )
+
+	#add_definitions(-DFORCE_ARGUMENTS)
+
+	if(USE_LAPACK)
+		add_definitions(-DUSE_LAPACK)
+		link_directories( ${BLAS_LINK_DIR} )
+		link_directories( ${LAPACK_LINK_DIR} )
+	endif(USE_LAPACK)
+
+	set(NLOPT_LINK_DIR "/users/mvalle/apps/lib" CACHE PATH "NLopt lib dir")
+	set(NLOPT_INCLUDE_DIR "/users/mvalle/apps/include" CACHE PATH "NLopt include dir")
+	if(USE_OPTIMIZER)
+		link_directories( ${NLOPT_LINK_DIR} )
+		include_directories(${NLOPT_INCLUDE_DIR})
+		add_definitions(-DUSE_OPTIMIZER)
+	endif(USE_OPTIMIZER)
+
+	if(OPENMP_FOUND)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	endif (OPENMP_FOUND)
 
 elseif(WIN32)
 
