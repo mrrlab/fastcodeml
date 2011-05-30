@@ -41,6 +41,9 @@ public:
 	bool			mTrace;					///< Trace the optimization steps
 	bool			mNoAggressiveStep;		///< Do not apply aggressive common subtree reduction
 	bool			mForceSerial;			///< Disable all parallelism
+	bool			mBranchFromFile;		///< Read the foreground branch to use from the Phylo Tree file (it is marked as #1)
+	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
+	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 result
 
 
 private:

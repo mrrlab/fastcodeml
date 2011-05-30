@@ -5,14 +5,15 @@
 #ifdef __cplusplus
 extern "C" { 
 #endif
-///  DGEMV  performs one of the matrix-vector operations
+
+///  DGEMV performs one of the matrix-vector operations
 ///
 ///     y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y,
 ///
 ///  where alpha and beta are scalars, x and y are vectors and A is an
 ///  m by n matrix.
 ///
-///  @param[in] trans On entry should be "T" to transpose the "C" input A matrix
+///  @param[in] trans On entry should be "T" to transpose the input A matrix
 ///
 ///  @param[in] m On entry, m specifies the number of rows of the matrix a. m must be at least zero.
 ///
@@ -50,19 +51,66 @@ void dgemv_(const char *trans,
 				double *y,
 				const int *incy);
 
-//void dgemm_(const char *transa,
-//				const char *transb,
-//				const int *m,
-//				const int *n,
-//				const int *k,
-//				const double *alpha,
-//				double *a,
-//				const int *lda,
-//				double *b,
-//				const int *ldb,
-//				const double *beta,
-//				double *c,
-//				const int *ldc);
+///  DGEMM performs one of the matrix-matrix operations  
+///
+///		C  := alpha*op( A )*op( B ) + beta*C
+///
+///		where  op( X ) is one of:
+///
+///        op( X ) = X   or   op( X ) = X',
+///
+///     alpha and beta are scalars, and A, B and C are matrices,
+///     with  op(  A  ) an m by k matrix,  op( B )  a  k by n matrix
+///     and  C an m by n matrix.
+///
+///  @param[in] transa On entry should be "T" to transpose the input A matrix
+///  @param[in] transb On entry should be "T" to transpose the input B matrix
+///
+///  @param[in] m On entry, m specifies the number of rows of the matrix a and of the  matrix c. m must be at least zero.
+///
+///  @param[in] n On entry, n specifies the number of columns of the matrix b and of the  matrix c. n must be at least zero.
+///
+/// @param[in]  k On entry, specifies the number of columns of the  matrix op( A ) and the number of rows of the matrix op( B ). 
+///             k  must be at least zero.
+///
+///  @param[in] alpha On entry, ALPHA specifies the scalar alpha.
+///
+///  @param[in] a Before entry, the leading m by n part of the array a must contain the matrix of coefficients.
+///
+///  @param[in] lda  On entry, lda specifies the first dimension of a as declared
+///           in the calling (sub) program. lda must be at least max( 1, m ).
+///
+///  @param[in] b Before entry, the leading m by n part of the array a must contain the matrix of coefficients.
+///
+///  @param[in] ldb  On entry, lda specifies the first dimension of a as declared
+///           in the calling (sub) program. lda must be at least max( 1, m ).
+///
+///  @param[in] beta On entry, beta specifies the scalar beta. When beta is
+///           supplied as zero then Y need not be set on input.
+///
+///  @param[in,out] y Before entry with beta non-zero, the incremented array y
+///           must contain the vector y. On exit, y is overwritten by the
+///           updated vector y.
+///
+///  @param[out] c Before entry, the leading m by n part of the array a must contain the matrix of coefficients.
+///
+///  @param[in] ldc  On entry, lda specifies the first dimension of a as declared
+///           in the calling (sub) program. lda must be at least max( 1, m ).
+///
+///
+void dgemm_(const char *transa,
+				const char *transb,
+				const int *m,
+				const int *n,
+				const int *k,
+				const double *alpha,
+				const double *a,
+				const int *lda,
+				const double *b,
+				const int *ldb,
+				const double *beta,
+				double *c,
+				const int *ldc);
 
 /// Forms the dot product of two vectors.
 ///

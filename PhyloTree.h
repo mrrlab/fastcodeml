@@ -53,6 +53,10 @@ public:
 	///
 	std::string loadTreeParseError(void) const {return mParsedPortion;}
 
+	/// Clean the object content that afterwards become invalid
+	///
+	void clear(void);
+
 	/// Print the phylogenetic tree completed with all the info loaded.
 	///
 	void printFormattedTree(void) const;
@@ -83,6 +87,12 @@ public:
 	///
 	const std::string getMarkerOnNode(unsigned int aInternalBranchIdx) const {return mInternalNodes[aInternalBranchIdx]->getType();}
 
+	/// Return the index of the first marked branch
+	///
+	/// @return The index of the marked internal branch or UINT_MAX if none marked
+	///
+	size_t getMarkedInternalBranch(void) const;
+
 	/// Clone the tree using ForestNode. Called without aTreeNode starts from the tree root.
 	///
 	/// @param[out] aForestNode The ForestNode that becomes the root of the cloned tree
@@ -93,6 +103,18 @@ public:
 	/// @return The node id to the next node
 	///
 	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+
+	/// Extract global data (e.g. data that do not depend on the site) from the phylo tree
+	///
+	/// @param[out] aNodeNames Ordered list of the node labels
+	/// @param[out] aBranchLengths Ordered list of branch lists as read from the file
+	/// @param[out] aMarkedIntBranch Pointer to location where the marked internal branch number is stored
+	/// @param[in] aTreeNode The node from which to start the cloning in the tree. If not present starts from the root
+	/// @param[in] aNodeId The node running id. For the root it is UINT_MAX.
+	///
+	/// @return The node id to the next node
+	///
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
 private:
 	/// Parse the parse tree and build the phylo tree structure.

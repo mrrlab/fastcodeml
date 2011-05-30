@@ -77,7 +77,7 @@ public:
 	///
 	/// @return The node marker
 	///
-	const std::string getType(void) const {return mNodeMark;}
+	const std::string& getType(void) const {return mNodeMark;}
 
 	/// Check if the node is a leaf.
 	///

@@ -28,6 +28,10 @@ public:
 	///
 	~Genes();
 	
+	/// Clean the object content that afterwards become invalid
+	///
+	void clear(void);
+
 	/// Load the gene file. On error throw exceptions.
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis

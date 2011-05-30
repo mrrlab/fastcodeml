@@ -21,6 +21,15 @@ Genes::~Genes()
 {
 }
 
+void Genes::clear(void)
+{
+	mDnaSpecies.clear();		
+	mDnaGene.clear();			
+	mCodonMultiplicity.clear();	
+	mSiteMultiplicity.clear();	
+	mMapSiteToDnaGene.clear();	
+	mMapSpecieToDnaGene.clear();
+}
 
 void Genes::loadGenesFile(const char* aFilename)
 {
@@ -187,7 +196,6 @@ void Genes::loadGenesFile(const char* aFilename)
 		mMapSpecieToDnaGene[*is] = idx;
 	}
 }
-
 
 
 int Genes::idxCodon(const char* aCodon) const

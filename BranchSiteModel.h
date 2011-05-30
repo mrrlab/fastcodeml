@@ -83,6 +83,8 @@ public:
 	///
 	virtual double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
+	const double* getStartingValues(void) const {return &mVar[0];}
+
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
 	///
@@ -192,10 +194,11 @@ public:
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTimesFromTree Initial times are from the file plus fixed values for the other variables
 	/// @param[in] aTrace If set the maximization is traced
+	/// @param[in] aInitFromH0 If not null uses these results from H0 to initalize H1 values
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
-	double computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace);
+	double computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///

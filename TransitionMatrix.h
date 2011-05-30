@@ -77,30 +77,20 @@ public:
 
 	/// Store in an external matrix the result of exp(Q*t)
 	///
-	/// @param[out] aOut The matrix where the result should be stored (size: N*N)
+	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
 	/// @param[in] aT The time to use in the computation (it is always > 0)
+	/// @param[in,out] aWorkarea Temporary array N*N that should be zeroed before first usage
 	///
-	inline void computeFullTransitionMatrix(double* aOut, double aT) const
+#if defined(USE_LAPACK) && defined(USE_DGEMM)
+	inline void computeFullTransitionMatrix(double* aOut, double aT, double* aWorkarea) const
 	{
-#if 0
-		memset(aOut, 0, N*N*sizeof(double));
-
-		for(int k = 0; k < N; ++k)
-		{
-			double *p = aOut;
-			double expt = exp(aT * mD[k]);
-
-			for(int i=0; i < N; ++i)
-			{
-				double uexpt = mU[i*N + k] * expt;
-
-				for(int j=0; j < N; ++j)
-				{
-					*p++ += uexpt * mV[k*N + j];
-				}
-			}
-		}
+		for(int i=0; i < N; ++i) aWorkarea[i*(N+1)] = exp(aT * mD[i]);
+		double tmp[N*N];
+		dgemm_("N", "T", &N, &N, &N, &D1, aWorkarea, &N,  mV, &N, &D0,  tmp, &N);
+		dgemm_("T", "N", &N, &N, &N, &D1, mU,        &N, tmp, &N, &D0, aOut, &N);
 #else
+	inline void computeFullTransitionMatrix(double* aOut, double aT, double* /*aWorkarea*/) const
+	{
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
 		double expt = exp(aT * mD[0]);
@@ -134,77 +124,6 @@ public:
 #endif
 	}
 
-#if 0
-	/// Compute matrix exponential from the decomposed matrix and the given time.
-	///
-	/// @param[in] aT The time value
-	/// @param[in] aGin The input vector to be multiplied by the matrix exponential
-	/// @param[out] aGout The resulting vector
-	///
-	inline void expMat(double aT, const double* aGin, double* aGout) const
-	{
-		if(aT > NEAR_ZERO_TIME || aT < -NEAR_ZERO_TIME)
-		{
-			// M = U * diag(exp(t*D)) * V
-			// gout = M * gin
-			// gout = U * diag(exp(t*D)) * (V * gin)
-#ifdef USE_LAPACK
-			double tmp[N];
-			dgemv_("T", &N, &N, &D1, mV, &N, aGin, &I1, &D0, tmp, &I1);
-			for(int k = 0; k < N; ++k) tmp[k] *= exp(aT * mD[k]);
-			dgemv_("T", &N, &N, &D1, mU, &N, tmp, &I1, &D0, aGout, &I1);
-#else
-#ifdef OLD_METHOD
-			double P[N*N];
-			memset(P, 0, N*N*sizeof(double));
-
-			unsigned int k, i, j;
-			double expt, uexpt, *pP;
-
-			for(k = 0; k < N; ++k)
-			{
-				for(i=0, pP=P, expt=exp(aT * mD[k]); i < N; ++i)
-				{
-					for(j=0, uexpt=mU[i*N + k] * expt; j < N; ++j)
-					{
-						*pP++ += uexpt * mV[k*N + j];
-					}
-				}
-			}
-
-			for(i=0; i < N; ++i)
-			{
-				double x = 0;
-				for(j=0; j < N; ++j) x += P[i*N+j]*aGin[j];
-				aGout[i] = x;
-			}
-#else
-			double tmp[N];
-			unsigned int i, j;
-
-			for(i=0; i < N; ++i)
-			{
-				double x = 0;
-				for(j=0; j < N; ++j) x += mV[i*N+j]*aGin[j];
-				tmp[i] = x * exp(aT * mD[i]);
-			}
-			for(i=0; i < N; ++i)
-			{
-				double x = 0;
-				for(j=0; j < N; ++j) x += mU[i*N+j]*tmp[j];
-				aGout[i] = x;
-			}
-#endif
-#endif
-		}
-		else
-		{
-			// Time near zero, no transform of the vector
-			memcpy(aGout, aGin, N*sizeof(double));
-		}
-	}
-#endif
-
 private:
 	/// Compute the eigendecomposition
 	///
@@ -221,7 +140,7 @@ private:
 	double mQ[N*N];		///< The Q matrix
 	double mU[N*N];		///< The left adjusted eigenvectors matrix
 	double mV[N*N];		///< The right adjusted eigenvectors matrix
-	double mD[N];		///< The diagonalized matrix
+	double mD[N];		///< The matrix eigenvalues
 };
 
 #endif

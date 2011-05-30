@@ -4,7 +4,7 @@
 /// 
 /// FastCodeML is a rewrite of CodeML based directly on the pseudocode document and will be the base
 /// on which the parallel (HPC) version will be created.
-/// Still missing computeBEB and computeNEB routines, but the rest should be functional.
+/// Still missing computeBEB and computeNEB routines, but the rest works.
 ///
 /// @section contacts_sect Contacts
 ///
@@ -59,7 +59,8 @@ int main(int ac, char **av)
 													std::cerr << "Gene file:     " << cmd.mGeneFile << std::endl;
 													std::cerr << "Verbose level: " << cmd.mVerboseLevel << std::endl;
 		if(cmd.mSeed)								std::cerr << "Seed:          " << cmd.mSeed << std::endl;
-		if(cmd.mBranch != UINT_MAX)					std::cerr << "Branch:        " << cmd.mBranch << std::endl;
+		if(cmd.mBranchFromFile)						std::cerr << "Branch:        From tree file" << std::endl;
+		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
 		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
@@ -96,18 +97,46 @@ int main(int ac, char **av)
 	Forest forest(cmd.mVerboseLevel);
 	forest.loadTreeAndGenes(t, g, cmd.mIgnoreFreq);
 
-	// Reduce the forest merging common subtrees. Add also more reduction
+	// Remove the genes and the phylotree objects not used anymore
+	t.clear();
+	g.clear();
+
+	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
 		forest.reduceSubtrees();
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
+		forest.cleanReductionWorkingData();
 	}
 
 	// Subdivide the trees in groups based on dependencies
 	forest.groupByDependency(cmd.mForceSerial);
 
+	// Compute the range of branches to compute
+	size_t branch_start, branch_end;
+	size_t num_branches  = forest.getNumInternalBranches();
+	size_t marked_branch = forest.getMarkedInternalBranch();
+	if(cmd.mBranchFromFile && marked_branch < num_branches)
+	{
+		// Branch from file and valid
+		branch_start = marked_branch;
+		branch_end   = marked_branch+1;
+	}
+	else if(cmd.mBranch < num_branches)
+	{
+		// Branch explicitely requested on the command line and valid
+		branch_start = cmd.mBranch;
+		branch_end   = cmd.mBranch+1;
+	}
+	else
+	{
+		// Do all internal branches
+		branch_start = 0;
+		branch_end   = num_branches;
+	}
+
 	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << "TIMER: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << "TIMER (preprocessing): " << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 2) std::cerr << forest;
@@ -115,29 +144,40 @@ int main(int ac, char **av)
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= 2) timer.start();
 
-	// For all internal branches (only if a single branch has not been requested i.e. mBranch == UINT_MAX)
-	size_t num_branches = forest.getNumInternalBranches();
-	unsigned int branch_start = (cmd.mBranch < num_branches) ? cmd.mBranch   : 0;
-	unsigned int branch_end   = (cmd.mBranch < num_branches) ? cmd.mBranch+1 : num_branches;
-	for(unsigned int fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
+	// For all requested internal branches
+	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
 	{
 		if(cmd.mVerboseLevel >= 1) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the null model maximum loglikelihood
-		BranchSiteModelNullHyp h0(t.getNumBranches(), cmd.mSeed);
-		double lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace);
+		BranchSiteModelNullHyp h0(forest.getNumBranches(), cmd.mSeed);
+		double lnl0 = 0;
+		if(cmd.mComputeHypothesis != 1)	lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace);
 
 		// Compute the alternate model maximum loglikelihood
-		BranchSiteModelAltHyp  h1(t.getNumBranches(), cmd.mSeed);
-		double lnl1 = h1.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace);
+		BranchSiteModelAltHyp h1(forest.getNumBranches(), cmd.mSeed);
+		double lnl1 = 0;
+		if(cmd.mComputeHypothesis != 0)
+		{
+			const double* starting_values = 0;
+			if(cmd.mInitH1fromH0) starting_values = h0.getStartingValues();
+			lnl1 = h1.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, starting_values);
+		}
 
 		if(cmd.mVerboseLevel >= 1)
 		{
 			std::cerr << std::endl;
-			std::cerr << "LnL0: ";
-			std::cerr << lnl0;
-			std::cerr << " LnL1: ";
-			std::cerr << lnl1;
+			if(cmd.mComputeHypothesis != 1)
+			{
+				std::cerr << "LnL0: ";
+				std::cerr << lnl0;
+				std::cerr << " ";
+			}
+			if(cmd.mComputeHypothesis != 0)
+			{
+				std::cerr << "LnL1: ";
+				std::cerr << lnl1;
+			}
 			std::cerr << std::endl;
 		}
 
@@ -159,9 +199,9 @@ int main(int ac, char **av)
 
 		// If the run passes the LRT, then compute the BEB
 		// LRT test: -2*(lnl0-lnl1) > 3.84
-		if(lnl1 - lnl0 > 1.920729)
+		if(cmd.mComputeHypothesis > 1 && lnl1 - lnl0 > 1.920729)
 		{
-			BayesTest bt(g.getNumSites());
+			BayesTest bt(forest.getNumSites());
 			bt.computeBEB();
 			bt.printPositiveSelSites(fg_branch);
 		}
@@ -284,5 +324,14 @@ int main(int ac, char **av)
 /// 
 /// -np  --no-parallel (no argument)
 ///         Don't use parallel execution
-/// 
+///
+/// -bf  --branch-from-file (no argument)
+///        Do only the branch marked in the file as foreground branch
+///
+/// -hy  --only-hyp (required argument)
+///       Compute only H0 if 0, H1 if 1
+///
+/// -i0  --init-from-h0 (no argument)
+///        Start H1 optimization from H0 results
+///
 /// @endverbatim

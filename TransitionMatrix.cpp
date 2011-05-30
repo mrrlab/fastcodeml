@@ -7,6 +7,11 @@
 #include "MatrixSize.h"
 #include "TransitionMatrix.h"
 
+// Now the size of the workareas for DSYEVR are hardcoded.
+// If you want to reintroduce the optimal size computation, then uncomment the following line.
+//#define OPTIMAL_WORKAREAS
+
+
 #ifndef USE_LAPACK
 
 #ifdef _MSC_VER
@@ -323,6 +328,13 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
     int isuppz[2*N];
     double tmp_u[N*N];
 
+#ifndef OPTIMAL_WORKAREAS
+	// Allocate fixed workareas
+    const int lwork = 33*N;
+    double work[lwork];
+    const int liwork = 10*N;
+    int iwork[liwork];
+#else
 	// Allocate fixed workareas
     const int lfwork = 33*N;
     double fwork[lfwork];
@@ -355,17 +367,20 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
 		iwork = new int[liwork];
 		std::cerr << "Optimal iwork: " << liwork << " (" << lfiwork << ")" << std::endl;
 	}
+#endif
 
     // Compute eigenvalues and eigenvectors for the full symmetric matrix
     dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, work, &lwork, iwork, &liwork, &info);
 
+#ifdef OPTIMAL_WORKAREAS
 	// Release workareas, if allocated
 	if(lwork > lfwork)   delete [] work;
 	if(liwork > lfiwork) delete [] iwork;
+#endif
 
 	// Check convergence
-	if(info > 0) throw std::range_error("No convergence in dsyevr");
-	if(info < 0) throw std::invalid_argument("Invalid parameter to dsyevr");
+	//if(info > 0) throw std::range_error("No convergence in dsyevr");
+	//if(info < 0) throw std::invalid_argument("Invalid parameter to dsyevr");
 
     // Reorder eigenvalues
     int i;

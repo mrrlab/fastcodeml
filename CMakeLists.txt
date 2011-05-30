@@ -16,7 +16,7 @@ set(SRCS
 	TransitionMatrixSet.cpp
 )
 
-# Search for Boost version 1.43
+# Search for Boost version 1.42 minimum
 set(Boost_ADDITIONAL_VERSIONS "1.42" "1.42.0")
 find_package(Boost 1.42)
 if(Boost_FOUND)
@@ -31,8 +31,9 @@ if(NOT WIN32)
 	SET(USE_LAPACK YES CACHE BOOL "Use BLAS/LAPACK")
 endif(NOT WIN32)
 
-#INCLUDE(FindOpenMP)
 find_package(OpenMP)
+
+SET(USE_DGEMM NO CACHE BOOL "Use DGEMM for UDV computation")
 
 # Set BLAS/LAPACK directories and libraries
 if($ENV{HOST} MATCHES "rosa")
@@ -43,12 +44,13 @@ if($ENV{HOST} MATCHES "rosa")
 	set(LAPACK_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "LAPACK lib dir")
 	set(MATH_LIB_NAMES acml gfortranbegin gfortran CACHE STRING "Math libraries" )
 
-	#add_definitions(-DFORCE_ARGUMENTS)
-
 	if(USE_LAPACK)
 		add_definitions(-DUSE_LAPACK)
 		link_directories( ${BLAS_LINK_DIR} )
 		link_directories( ${LAPACK_LINK_DIR} )
+		if(USE_DGEMM)
+			add_definitions(-DUSE_DGEMM)
+		endif(USE_DGEMM)
 	endif(USE_LAPACK)
 
 	set(NLOPT_LINK_DIR "/users/mvalle/apps/lib" CACHE PATH "NLopt lib dir")
@@ -59,6 +61,43 @@ if($ENV{HOST} MATCHES "rosa")
 		add_definitions(-DUSE_OPTIMIZER)
 	endif(USE_OPTIMIZER)
 
+	if(OPENMP_FOUND)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	endif (OPENMP_FOUND)
+
+elseif($ENV{HOST} MATCHES "palu")
+
+	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
+	SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+	set(BLAS_LINK_DIR "" CACHE PATH "BLAS lib dir")
+	set(LAPACK_LINK_DIR "" CACHE PATH "LAPACK lib dir")
+	set(MATH_LIB_NAMES "" CACHE STRING "Math libraries" )
+
+	if(USE_LAPACK)
+		add_definitions(-DUSE_LAPACK)
+		if(BLAS_LINK_DIR)
+			link_directories( ${BLAS_LINK_DIR} )
+		endif(BLAS_LINK_DIR)
+		if(LAPACK_LINK_DIR)
+			link_directories( ${LAPACK_LINK_DIR} )
+		endif(LAPACK_LINK_DIR)
+		if(USE_DGEMM)
+			add_definitions(-DUSE_DGEMM)
+		endif(USE_DGEMM)
+	endif(USE_LAPACK)
+
+	set(NLOPT_LINK_DIR "/users/mvalle/apps/lib" CACHE PATH "NLopt lib dir")
+	set(NLOPT_INCLUDE_DIR "/users/mvalle/apps/include" CACHE PATH "NLopt include dir")
+	if(USE_OPTIMIZER)
+		link_directories( ${NLOPT_LINK_DIR} )
+		include_directories(${NLOPT_INCLUDE_DIR})
+		add_definitions(-DUSE_OPTIMIZER)
+	endif(USE_OPTIMIZER)
+
+	if(OPENMP_FOUND)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	endif(OPENMP_FOUND)
+
 elseif(WIN32)
 
 	set(NLOPT_LINK_DIR "C:/mv/Projects/Selectome/codeml/fast/nlopt/Release" CACHE PATH "NLopt lib dir")
@@ -67,11 +106,10 @@ elseif(WIN32)
 	add_definitions(/D_CRT_SECURE_NO_WARNINGS)
 	add_definitions(/D_SECURE_SCL=0)
 	add_definitions(/Oi)
-	#add_definitions(/DFORCE_ARGUMENTS)
-	#add_definitions(/openmp)
+
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-	endif (OPENMP_FOUND)
+	endif(OPENMP_FOUND)
 
 	if(USE_OPTIMIZER)
 		link_directories( ${NLOPT_LINK_DIR} )
@@ -103,11 +141,8 @@ else()
 			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O1" CACHE "Release mode linker options" STRING FORCE)
 		#endif(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
 
-		#add_definitions(-fopenmp)
-
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
-	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -121,9 +156,10 @@ else()
 		add_definitions(-DUSE_LAPACK)
 		link_directories( ${BLAS_LINK_DIR} )
 		link_directories( ${LAPACK_LINK_DIR} )
+		if(USE_DGEMM)
+			add_definitions(-DUSE_DGEMM)
+		endif(USE_DGEMM)
 	endif(USE_LAPACK)
-
-	#add_definitions(-DFORCE_ARGUMENTS)
 
 	set(NLOPT_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "NLopt lib dir")
 	set(NLOPT_INCLUDE_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "NLopt include dir")

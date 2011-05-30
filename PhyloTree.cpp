@@ -136,8 +136,15 @@ PhyloTree::PhyloTree(int aVerboseLevel) : mVerboseLevel(aVerboseLevel)
 
 PhyloTree::~PhyloTree()
 {
-	// Remove the tree
+	clear();
+}
+
+
+void PhyloTree::clear(void)
+{
 	mTreeRoot.clearNode();
+	mLeavesSpecies.clear();
+	mInternalNodes.clear();
 }
 
 
@@ -303,6 +310,21 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode)
 }
 
 
+size_t PhyloTree::getMarkedInternalBranch(void) const
+{
+	size_t nin = mInternalNodes.size();
+	size_t marked_branch = 0;
+	for(; marked_branch < nin; ++marked_branch)
+	{
+		if(!mInternalNodes[marked_branch]->getType().empty()) break;
+	}
+
+	if(marked_branch >= nin) return UINT_MAX;
+	return marked_branch;
+}
+
+
+
 unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId, const TreeNode* aTreeNode, unsigned int aNodeId) const
 {
 	unsigned int id;
@@ -320,8 +342,6 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	}
 
 	// Set the root values
-	aForestNode->mNodeName = aTreeNode->getLabel();
-	aForestNode->mBranchLength = aTreeNode->getLen();
 	aForestNode->mNodeId = aNodeId;
 	aForestNode->mOwnTree = aTreeId;
 
@@ -337,7 +357,6 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	{
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
-		aForestNode->mChildSameTree.push_back(true);
 		aForestNode->mOtherTreeProb.push_back(0);
 		rn->mParent = aForestNode;
 		id = cloneTree(rn, aTreeId, m, id);
@@ -345,4 +364,36 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 
 	return id;
 }
+
+unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode, unsigned int aNodeId) const
+{
+	unsigned int id;
+
+	// Start with the tree root
+	if(aTreeNode == 0)
+	{
+		aTreeNode = &mTreeRoot;
+		aNodeId   = UINT_MAX;
+		id = 0;
+		*aMarkedIntBranch = getMarkedInternalBranch();
+	}
+	else
+	{
+		id = aNodeId+1;
+	}
+
+	// Save the node values
+	aNodeNames.push_back(aTreeNode->getLabel());
+	aBranchLengths.push_back(aTreeNode->getLen());
+
+	// Recurse
+	TreeNode *m;
+	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
+	{
+		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, m, id);
+	}
+
+	return id;
+}
+
 

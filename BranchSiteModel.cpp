@@ -2,13 +2,11 @@
 #include <iostream>
 #include <iomanip>
 #include <cfloat>
+#include <cstdlib>
 
 #ifdef USE_OPTIMIZER
 #include "nlopt.hpp"
 #endif
-
-/// Uncomment if you want to use the old likelihood method
-//#define OLD_LIKELIHOOD
 
 #include "BranchSiteModel.h"
 #include "MathSupport.h"
@@ -67,16 +65,12 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 	// Initialize the variables to be optimized
 	if(aTimesFromTree)
 	{
+		// Initialize branch lengths from the phylo tree
 		aForest.setTimesFromLengths(mVar);
-#if 0
-		// Initialization as in Octave
-		mVar[mNumTimes+0] = 0.062748;											// w0
-		mVar[mNumTimes+1] = 2.0;												// k
-#else
+
 		// Initialization as in CodeML (seems)
 		mVar[mNumTimes+0] = 0.235087;											// w0
 		mVar[mNumTimes+1] = 0.4;												// k
-#endif
 
 #ifdef USE_ORIGINAL_PROPORTIONS
 		mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
@@ -124,57 +118,57 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
 #endif
 
-	// Allocate the site likelihood array
-	//mLnLsite.reserve(aForest.getNumSites());
-	//mLnLsite.resize(aForest.getNumSites());
-
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
 }
 
 
-double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace)
+double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0)
 {
 	unsigned int i;
 
-	// Initialize the variables to be optimized
-	if(aTimesFromTree)
+	// Initialize the variables to be optimized from the H0 values
+	if(aInitFromH0)
 	{
-		aForest.setTimesFromLengths(mVar);
-#if 0
-		// Initialization as in Octave
-		mVar[mNumTimes+0] = 0.062748;											// w0
-		mVar[mNumTimes+1] = 2.0;												// k
-		mVar[mNumTimes+4] = 2.5;												// w2
-#else
-		// Initialization as in CodeML (seems)
-		mVar[mNumTimes+0] = 0.235087;											// w0
-		mVar[mNumTimes+1] = 0.4;												// k
-		mVar[mNumTimes+4] = 1.14833;											// w2
-#endif
+		mVar.assign(aInitFromH0, aInitFromH0+mNumTimes+4);
+		mVar.push_back(1.001);
+	}
+	else 
+	{
+		// Initialize from the tree (plus fixed values guessed from CodeML code)
+		if(aTimesFromTree)
+		{
+			// Initialize branch lengths from the phylo tree
+			aForest.setTimesFromLengths(mVar);
+
+			// Initialization as in CodeML (seems)
+			mVar[mNumTimes+0] = 0.235087;											// w0
+			mVar[mNumTimes+1] = 0.4;												// k
+			mVar[mNumTimes+4] = 1.14833;											// w2
 
 #ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
-		mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
+			mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
+			mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
 #else
-		mVar[mNumTimes+2] = 0.813836;											// p0+p1
-		mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
+			mVar[mNumTimes+2] = 0.813836;											// p0+p1
+			mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
 #endif
-	}
-	else
-	{
-		// Initialize the variables to be optimized
-		for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;		// T
-		mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;						// w0
-		mVar[mNumTimes+1] = 2.0;													// k
+		}
+		else
+		{
+			// Initialize the variables to be optimized from random values
+			for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;		// T
+			mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;						// w0
+			mVar[mNumTimes+1] = 2.0;													// k
 #ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;					// x0 -> p0
-		mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;							// x1 -> p1
+			mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;					// x0 -> p0
+			mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;							// x1 -> p1
 #else
-		mVar[mNumTimes+2] = rand()/(double)RAND_MAX;								// p0+p1
-		mVar[mNumTimes+3] = rand()/(double)RAND_MAX;								// p0/(p0+p1)
+			mVar[mNumTimes+2] = rand()/(double)RAND_MAX;								// p0+p1
+			mVar[mNumTimes+3] = rand()/(double)RAND_MAX;								// p0/(p0+p1)
 #endif
-		mVar[mNumTimes+4] = 1.001;													// w2
+			mVar[mNumTimes+4] = 1.001;													// w2
+		}
 	}
 
 	// Set lower constrains
@@ -202,10 +196,6 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
 #endif
 	mUpperBound[mNumTimes+4] = 999.0;						// w2 (in the old code is 999)
-
-	// Allocate the site likelihood array
-	//mLnLsite.reserve(aForest.getNumSites());
-	//mLnLsite.resize(aForest.getNumSites());
 
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
@@ -262,30 +252,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
-#ifdef OLD_LIKELIHOOD
-	// Compute the likelihood values on the forest
-	std::vector<double> like0, like1, like2;
-	aForest.computeLikelihood(mSet, 0, like0);
-	aForest.computeLikelihood(mSet, 1, like1);
-	aForest.computeLikelihood(mSet, 2, like2);
-
-	// For all (valid) sites
-	unsigned int num_sites = aForest.getNumSites();
-	const double* mult = aForest.getSiteMultiplicity();
-	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
-	{
-		double p = mProportions[0]*like0[site] +
-                  (mProportions[1]+mProportions[3])*like1[site] +
-				   mProportions[2]*like2[site];
-
-		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		double x = log(p);
-
-		//mLnLsite[site] = x;
-		lnl += x*mult[site];
-	}
-#else
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
 
@@ -311,7 +277,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 
 		lnl += x*mult[site];
 	}
-#endif
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)
@@ -380,32 +345,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
-#ifdef OLD_LIKELIHOOD
-	// Compute the likelihood values on the forest
-	std::vector<double> like0, like1, like2, like3;
-	aForest.computeLikelihood(mSet, 0, like0);
-	aForest.computeLikelihood(mSet, 1, like1);
-	aForest.computeLikelihood(mSet, 2, like2);
-	aForest.computeLikelihood(mSet, 3, like3);
-
-	// For all sites
-	size_t num_sites = aForest.getNumSites();
-	const double* mult = aForest.getSiteMultiplicity();
-	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
-	{
-		double p = mProportions[0]*like0[site] +
-				   mProportions[1]*like1[site] +
-				   mProportions[2]*like2[site] +
-				   mProportions[3]*like3[site];
-
-		if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		double x = log(p);
-
-		//mLnLsite[site] = x;
-		lnl += x*mult[site];
-	}
-#else
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
 
@@ -432,7 +371,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 
 		lnl += x*mult[site];
 	}
-#endif
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)
@@ -564,12 +502,11 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 //	nlopt::opt opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
-
-	//nlopt::opt opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
 //	nlopt::opt opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
 
 	nlopt::opt *opt = new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
+
 	// Initialize bounds and termination criteria
 	try
 	{
@@ -591,6 +528,8 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception during inizialization: " << e.what() << std::endl;
+		delete opt;
+		throw FastCodeMLFatalNoMsg();
 	}
 
 	// Optimize the function
@@ -644,9 +583,11 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBran
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception in computation: " << e.what() << std::endl;
+		delete opt;
 		throw FastCodeMLFatalNoMsg();
 	}
 
+	delete opt;
 	return maxl;
 #else
 	// If no maximizer available return only the first step result

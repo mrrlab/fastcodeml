@@ -16,6 +16,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	// Check coherence between tree and genes
 	checkCoherence(aTree, aGenes);
 
+	// Collect global data that refers to the tree and that should not be duplicated on each tree of the forest
+	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, &mMarkedInternalBranch);
+
 	// Number of branches of one tree
 	mNumBranches = aTree.getNumBranches();
 
@@ -45,8 +48,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 		std::vector<ForestNode*>::const_iterator il;
 		for(il=leaves.begin(); il != leaves.end(); ++il)
 		{
-			int codon = aGenes.getCodonIdx((*il)->mNodeName, j);
-			(*il)->mCodons.push_back(codon);
+			//int codon = aGenes.getCodonIdx((*il)->mNodeName, j);
+			int codon = aGenes.getCodonIdx(mNodeNames[(*il)->mNodeId+1], j);
+			(*il)->mSubtreeCodonsSignature.push_back(codon);
 
 			// Set leaves probability vector (Nt copies)
 			memset((*il)->mProb, 0, N*Nt*sizeof(double));
@@ -97,6 +101,30 @@ void Forest::reduceSubtrees(void)
 	}
 }
 
+void Forest::cleanReductionWorkingData(ForestNode* aNode)
+{
+	if(!aNode)
+	{
+		// Invoke on all the trees in the forest
+		size_t nsites = mRoots.size();
+		for(size_t i=0; i < nsites; ++i) cleanReductionWorkingData(&mRoots[i]);
+	}
+	else
+	{
+		// Clean myself
+		aNode->mSubtreeCodonsSignature.clear();
+
+		// Clean the children
+		std::vector<ForestNode *>::iterator icl;
+		unsigned int i = 0;
+		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl,++i)
+		{
+			if((*icl)->mOwnTree == aNode->mOwnTree) cleanReductionWorkingData(*icl);
+		}
+	}
+}
+
+
 
 void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 {
@@ -105,14 +133,15 @@ void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(!aRoot1->mChildSameTree[i] || !aRoot2->mChildSameTree[i]) continue;
+		if(aRoot1->mChildrenList[i]->mOwnTree != aRoot1->mOwnTree) continue;
+		if(aRoot2->mChildrenList[i]->mOwnTree != aRoot2->mOwnTree) continue;
 
 		// Check if same subtree
 		std::vector<int>::const_iterator ig1;
 		std::vector<int>::const_iterator ig2;
 		bool are_equal = true;
-		for(ig1=aRoot1->mChildrenList[i]->mCodons.begin(), ig2=aRoot2->mChildrenList[i]->mCodons.begin();
-			ig1 != aRoot1->mChildrenList[i]->mCodons.end();
+		for(ig1=aRoot1->mChildrenList[i]->mSubtreeCodonsSignature.begin(), ig2=aRoot2->mChildrenList[i]->mSubtreeCodonsSignature.begin();
+			ig1 != aRoot1->mChildrenList[i]->mSubtreeCodonsSignature.end();
 			++ig1, ++ig2)
 		{
 			if(*ig1 != *ig2)
@@ -124,7 +153,6 @@ void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 
 		if(are_equal)
 		{
-			aRoot2->mChildSameTree[i] = false;
 			delete aRoot2->mChildrenList[i];
 			aRoot2->mChildrenList[i] = aRoot1->mChildrenList[i];
 		}
@@ -134,7 +162,8 @@ void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(!aRoot1->mChildSameTree[i] || !aRoot2->mChildSameTree[i]) continue;
+		if(aRoot1->mChildrenList[i]->mOwnTree != aRoot1->mOwnTree) continue;
+		if(aRoot2->mChildrenList[i]->mOwnTree != aRoot2->mOwnTree) continue;
 
 		reduceSubtreesWalker(aRoot1->mChildrenList[i], aRoot2->mChildrenList[i]);
 	}
@@ -151,6 +180,7 @@ void Forest::groupByDependency(bool aForceSerial)
 
 		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v.push_back(k);
 		mDependenciesClasses.push_back(v);
+		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
 
 		return;
 	}
@@ -184,7 +214,7 @@ void Forest::groupByDependency(bool aForceSerial)
 		}
 	}
 	mDependenciesClasses.push_back(v);
-	if(mVerbose >= 1) std::cerr << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
+	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
 
 	for(j=1;; ++j)
 	{
@@ -225,7 +255,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 	size_t nc = aNode->mChildrenList.size();
 	for(i=0; i < nc; ++i)
 	{
-		if(aNode->mChildSameTree[i])
+		if(aNode->mChildrenList[i]->mOwnTree == aNode->mOwnTree)
 		{
 			groupByDependencyWalker(aNode->mChildrenList[i], aDependency);
 		}
@@ -265,7 +295,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 		for(i=0; i < aObj.mRoots.size(); ++i)
 		{
 			aOut << "=== Site " << i << " ===" << std::endl;
-			aObj.mRoots[i].print(aOut);
+			aObj.mRoots[i].print(aObj.getNodeNames(), aOut);
 			aOut << std::endl;
 		}
 	}
@@ -284,7 +314,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 	 std::vector<ForestNode>::const_iterator ifn;
 	 for(ifn=mRoots.begin(); ifn != mRoots.end(); ++ifn)
 	 {
-		 exportForestWalker(&(*ifn), node_from, node_to, branch_length);
+		 exportForestWalker(&(*ifn), mBranchLengths, node_from, node_to, branch_length);
 	 }
 
 	// Remove duplicated nodes
@@ -377,6 +407,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 
 
 void Forest::exportForestWalker(const ForestNode* aNode,
+								const std::vector<double>& aBranchLengths,
 								std::vector< std::pair<int, int> >& aNodeFrom,
 								std::vector< std::pair<int, int> >& aNodeTo,
 								std::vector< double >& aLength) const
@@ -395,9 +426,9 @@ void Forest::exportForestWalker(const ForestNode* aNode,
 
 		aNodeFrom.push_back(p_from);
 		aNodeTo.push_back(p_to);
-		aLength.push_back((*ifn)->mBranchLength);
+		aLength.push_back(mBranchLengths[your_node_id]);
 
-		if(your_tree_id == my_tree_id) exportForestWalker(*ifn, aNodeFrom, aNodeTo, aLength);
+		if(your_tree_id == my_tree_id) exportForestWalker(*ifn, aBranchLengths, aNodeFrom, aNodeTo, aLength);
 	}
 }
 
@@ -430,7 +461,11 @@ void Forest::checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const
 void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode) const
 {
 	if(!aNode) aNode = &mRoots[0];
-	else       aTimes[aNode->mNodeId] = aNode->mBranchLength;
+	else
+	{
+		unsigned int idx = (aNode->mNodeId == UINT_MAX) ? 0 : aNode->mNodeId+1;
+		aTimes[aNode->mNodeId] = mBranchLengths[idx];
+	}
 
 	std::vector<ForestNode *>::const_iterator ifn;
 	for(ifn=aNode->mChildrenList.begin(); ifn != aNode->mChildrenList.end(); ++ifn)
@@ -458,7 +493,8 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 	}
 	else
 	{
-		aNode->mBranchLength = aTimes[aNode->mNodeId];
+		unsigned int idx = (aNode->mNodeId == UINT_MAX) ? 0 : aNode->mNodeId+1;
+		mBranchLengths[idx] = aTimes[aNode->mNodeId];
 
 		for(ifnp=aNode->mChildrenList.begin(); ifnp != aNode->mChildrenList.end(); ++ifnp)
 		{
@@ -469,18 +505,6 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 
 void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSetIdx, std::vector<double>& aLikelihood)
 {
-#if 0
-	size_t num_sites = mRoots.size();
-	aLikelihood.reserve(num_sites);
-	//aLikelihood.resize(num_sites, 1.0);
-	for(unsigned int site=0; site < num_sites; ++site)
-	{
-		// Compute likelihood array at the root of one tree
-		double* g = computeLikelihoodWalker(&mRoots[site], aSet, aSetIdx);
-		//aLikelihood[site] = dot(mCodonFrequencies, g);
-		aLikelihood.push_back(dot(mCodonFrequencies, g));
-	}
-#else
 	size_t num_sites = mRoots.size();
 	aLikelihood.resize(num_sites, 1.0);
 
@@ -501,7 +525,6 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSe
 			aLikelihood[idx] = dot(mCodonFrequencies, g);
 		}
 	}
-#endif
 }
 
 
@@ -543,7 +566,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 		ForestNode *m = *in;
 
 		// If the node is in the same tree recurse, else use the value
-		if(aNode->mChildSameTree[idx])
+		if((*in)->mOwnTree == aNode->mOwnTree)
 		{
 			if(first)
 			{
@@ -726,7 +749,7 @@ void Forest::addAggressiveReductionWalker(ForestNode* aNode)
 	{
 		ForestNode *m = *in;
 
-		if(aNode->mChildSameTree[i])
+		if(aNode->isSameTree(i))
 		{
 			addAggressiveReductionWalker(m);
 		}

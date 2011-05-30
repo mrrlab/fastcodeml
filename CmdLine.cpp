@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <climits>
+#include <vector>
 #include "CmdLine.h"
 #include "simpleopt/SimpleOpt.h"
 #include "Exceptions.h"
@@ -30,8 +31,8 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 
 	// Count entries and create an indicator array
 	for(cnt=0; aParserOptions[cnt].pszArg != NULL; ++cnt) {}
-	bool *done = new bool[cnt];
-	for(i=0; i < cnt; ++i) done[i] = false;
+	std::vector<bool> done;
+	done.resize(cnt, false);
 
 	// For each different option
 	for(i=0; i < cnt; ++i)
@@ -72,8 +73,6 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		std::cerr << " " << type << std::endl;
 		std::cerr << "        " << aParserOptions[i].pszHelp << std::endl << std::endl;
 	}
-
-	delete [] done;
 }
 
 
@@ -94,6 +93,9 @@ CmdLine::CmdLine()
 	mTrace					= false;
 	mNoAggressiveStep		= false;
 	mForceSerial			= false;
+	mBranchFromFile			= false;
+	mComputeHypothesis		= UINT_MAX;
+	mInitH1fromH0			= false;
 }
 
 
@@ -114,7 +116,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_COMP_TIMES,
 		OPT_TRACE,
 		OPT_NO_AGGRESSIVE,
-		OPT_FORCE_SERIAL
+		OPT_FORCE_SERIAL,
+		OPT_BRANCH_FROM_FILE,
+		OPT_ONE_HYP_ONLY,
+		OPT_INIT_H1_FROM_H0
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -149,6 +154,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NO_AGGRESSIVE,	"--no-aggressive",		SO_NONE,	"" },
 		{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
 		{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
+		{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
+		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
+		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
+		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
+		{ OPT_INIT_H1_FROM_H0,	"-i0",					SO_NONE,	"Start H1 optimization from H0 results" },
+		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -231,6 +242,18 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_FORCE_SERIAL:
 			mForceSerial = true;
 			break;
+
+		case OPT_BRANCH_FROM_FILE:
+			mBranchFromFile = true;
+			break;
+
+		case OPT_ONE_HYP_ONLY:
+			mComputeHypothesis = atoi(args.OptionArg());
+			break;
+
+		case OPT_INIT_H1_FROM_H0:
+			mInitH1fromH0 = true;
+			break;
 		}
 	}
 	
@@ -257,6 +280,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	// Some final checks and sets
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
 	if(mDoNotReduceForest) mNoAggressiveStep = true;
+	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
+	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
+	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
 #ifdef _OPENMP
 	if(omp_get_max_threads() < 2) mForceSerial = true;
 	if(mForceSerial) omp_set_num_threads(1);

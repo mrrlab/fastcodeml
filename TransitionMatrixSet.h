@@ -31,6 +31,10 @@ public:
 		mNumMatrices = aNumMatrices;
 		mNumSets = aNumSets;
 		mMatrices = new double*[aNumSets*aNumMatrices];
+#if defined(USE_LAPACK) && defined(USE_DGEMM)
+		mWorkarea = new double[aNumMatrices*N*N];
+		memset(mWorkarea, 0, aNumMatrices*N*N*sizeof(double));
+#endif
 	}
 
 	/// Destructor.
@@ -39,6 +43,9 @@ public:
 	{
 		delete [] mMatrixSpace;
 		delete [] mMatrices;
+#if defined(USE_LAPACK) && defined(USE_DGEMM)
+		delete [] mWorkarea;
+#endif
 	}
 
 	/// Compute the three sets of matrices for the H0 hypothesis
@@ -84,7 +91,6 @@ public:
 						    unsigned int aFgBranch,
 						    const std::vector<double>& aParams);
 
-
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
 	/// @param[in] aSetIdx Which set to use (starts from zero)
@@ -95,7 +101,11 @@ public:
 	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
+#ifdef USE_DGEMM
+		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
+#else
 		dgemv_("T", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
+#endif
 #else
 		for(int r=0; r < N; ++r)
 		{
@@ -117,6 +127,7 @@ private:
 	unsigned int	mNumSets;		///< Number of sets
 	double*			mMatrixSpace;	///< Starts of the matrix storage area
 	double**		mMatrices;		///< Access to the matrix set
+	double*			mWorkarea;		///< Temporary area for matrix exponential
 };
 
 

@@ -37,6 +37,7 @@ public:
 		mNumBranches = 0;
 		mNumInternalBranches = 0;
 		memset(mCodonCount, 0, N*sizeof(unsigned int));
+		mMarkedInternalBranch = UINT_MAX;
 	}
 
 	/// Destructor
@@ -44,6 +45,8 @@ public:
 	~Forest()
 	{
 		mRoots.clear();
+		mNodeNames.clear();
+		mBranchLengths.clear();
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -70,6 +73,12 @@ public:
 	/// Add more aggressive subtree reduction
 	///
 	void addAggressiveReduction(void);
+
+	/// Remove all work data used for reduction
+	///
+	/// @param[in] aNode The node from which to start. Pass zero to start with all the trees in the forest.
+	///
+	void cleanReductionWorkingData(ForestNode* aNode=0);
 
 	/// Group trees by dependencies.
 	/// First group contains trees with no dependencies.
@@ -102,6 +111,12 @@ public:
 	///
 	void exportForest(const char* aFilename, unsigned int aCounter=0) const;
 
+	/// Return the total number of branches
+	///
+	/// @return The totaal number of branches
+	///
+	size_t getNumBranches(void) const {return mNumBranches;}
+
 	/// Return the number of internal branches (i.e. the ones that do not connect to leaves)
 	///
 	/// @return The number of internal branches
@@ -113,6 +128,12 @@ public:
 	/// @return The number of sites
 	///
 	size_t getNumSites(void) const {return mRoots.size();}
+
+	/// Get the marked internal branch
+	///
+	/// @return The internal branch index of the branch marked in the tree file. UINT_MAX otherwise.
+	///
+	size_t getMarkedInternalBranch(void) const {return mMarkedInternalBranch;}
 
 	/// Get site multeplicity values
 	///
@@ -166,6 +187,11 @@ public:
 	///
 	unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mMapInternalToBranchID.find(aFgBranch)->second;}
 
+	/// Access the global list of node names.
+	///
+	/// @return A reference to the list of node names.
+	///
+	const std::vector<std::string>& getNodeNames(void) const {return mNodeNames;}
 
 private:
 	/// Reduce the common subtree between two trees
@@ -204,6 +230,7 @@ private:
 	/// @param[out] aLength Resulting branch lengths to label branches in exported tree
 	///
 	void exportForestWalker(const ForestNode* aNode,
+							const std::vector<double>& aBranchLengths,
 							std::vector< std::pair<int, int> >& aNodeFrom,
 							std::vector< std::pair<int, int> >& aNodeTo,
 							std::vector<double>& aLength) const;
@@ -242,22 +269,25 @@ private:
 
 
 private:
-	std::vector<ForestNode>	mRoots;					///< The roots of the forest's trees. Its length is the number of valid sites
-	std::vector<double>		mSiteMultiplicity;		///< Multiplicity of the valid sites
-	unsigned int			mVerbose;				///< If greather than zero prints more info
-	size_t					mNumBranches;			///< Total number of branches of the original tree
-	size_t					mNumInternalBranches;	///< Total number of branches of the original tree
-	double					mCodonFrequencies[N];	///< Experimental codon frequencies
-	double					mCodonFreqSqrt[N];		///< Square Root of experimental codon frequencies
-	bool					mGoodCodon[N];			///< True if the corresponding codon frequency is not small
-	unsigned int			mNumGoodCodons;			///< Number of codons whose frequency is not zero
-	unsigned int			mCodonCount[N];			///< Count of codon of each type
+	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
+	std::vector<double>		mSiteMultiplicity;			///< Multiplicity of the valid sites
+	unsigned int			mVerbose;					///< If greather than zero prints more info
+	size_t					mNumBranches;				///< Total number of branches of the original tree
+	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
+	double					mCodonFrequencies[N];		///< Experimental codon frequencies
+	double					mCodonFreqSqrt[N];			///< Square Root of experimental codon frequencies
+	bool					mGoodCodon[N];				///< True if the corresponding codon frequency is not small
+	unsigned int			mNumGoodCodons;				///< Number of codons whose frequency is not zero
+	unsigned int			mCodonCount[N];				///< Count of codon of each type
 	std::map<unsigned int, unsigned int>
-							mMapInternalToBranchID;	///< Map from internal branch number to branch number
+							mMapInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
-							mDependenciesClasses;	///< The groups of dependencies between trees
+							mDependenciesClasses;		///< The groups of dependencies between trees
 
-
+	// Here are global data that will be removed from the various (site) trees
+	std::vector<std::string>	mNodeNames;				///< List of node names. Zero is the root, then its first child and so on
+	std::vector<double>			mBranchLengths;			///< List of branch lengths (read from file or stored here to be exported in the tree file)
+	size_t						mMarkedInternalBranch;	///< Number of the internal branch as marked in the tree file
 };
 
 #endif
