@@ -14,6 +14,13 @@ static const double NEAR_ZERO_TIME = 1e-100;
 #include "blas.h"
 #endif
 
+
+/// The transition matrix plus its eigen decomposition.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-02-23 (initial version)
+///     @version 1.0
+///
 class TransitionMatrix
 {
 public:
@@ -79,9 +86,9 @@ public:
 	///
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
 	/// @param[in] aT The time to use in the computation (it is always > 0)
+#if defined(USE_LAPACK) && defined(USE_DGEMM)
 	/// @param[in,out] aWorkarea Temporary array N*N that should be zeroed before first usage
 	///
-#if defined(USE_LAPACK) && defined(USE_DGEMM)
 	inline void computeFullTransitionMatrix(double* aOut, double aT, double* aWorkarea) const
 	{
 		for(int i=0; i < N; ++i) aWorkarea[i*(N+1)] = exp(aT * mD[i]);
@@ -89,6 +96,7 @@ public:
 		dgemm_("N", "T", &N, &N, &N, &D1, aWorkarea, &N,  mV, &N, &D0,  tmp, &N);
 		dgemm_("T", "N", &N, &N, &N, &D1, mU,        &N, tmp, &N, &D0, aOut, &N);
 #else
+	///
 	inline void computeFullTransitionMatrix(double* aOut, double aT, double* /*aWorkarea*/) const
 	{
 		// The first iteration of the loop (k == 0) is split out to initialize aOut

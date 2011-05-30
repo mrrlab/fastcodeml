@@ -273,9 +273,9 @@ int main(int ac, char **av)
 /// @section misc_sect Miscellaneous rules
 /// In case of error main should return 1.
 ///
-/// Counters should be unsigned int.
+/// But array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int. 
 ///
-
+///
 /// @page cmd_page Command Line switches
 ///
 /// @verbatim

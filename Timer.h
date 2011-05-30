@@ -6,7 +6,7 @@
 
 #ifdef WIN32
 
-/// Simple timer
+/// Simple timer.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-08-31 (initial version)
@@ -17,13 +17,13 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : delta(0.) {}
+	Timer() : mDelta(0.) {}
 
 	/// Start the timer
 	///
 	void start(void)
 	{
-		time(&start_time);
+		time(&mStartTime);
 	}
 
 	/// Stop the timer
@@ -34,8 +34,8 @@ public:
 		time_t end_time;
 		time(&end_time);
 
-		delta = difftime(end_time, start_time)*1000;
-		return delta;
+		mDelta = difftime(end_time, mStartTime)*1000;
+		return mDelta;
 	}
 
 	/// Return the elapsed time (after a start/stop cycle)
@@ -43,12 +43,12 @@ public:
 	///
 	double get(void) const
 	{
-		return delta;
+		return mDelta;
 	}
 
 private:
-	time_t start_time;			///< The start time
-	double delta;				///< The elapsed time in milliseconds
+	time_t mStartTime;			///< The start time
+	double mDelta;				///< The elapsed time in milliseconds
 };
 
 #else
@@ -65,13 +65,13 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : delta(0.) {}
+	Timer() : mDelta(0.) {}
 
 	/// Start the timer
 	///
 	void start(void)
 	{
-		gettimeofday(&start_time, NULL);
+		gettimeofday(&mStartTime, NULL);
 	}
 
 	/// Stop the timer
@@ -82,14 +82,14 @@ public:
 		struct timeval end_time;
 		gettimeofday(&end_time, NULL);
 
-		//delta = (double) end_time.tv_sec - start_time.tv_sec;
-		//delta += (end_time.tv_usec - start_time.tv_usec) * 1e-6;
+		//mDelta = (double) end_time.tv_sec - mStartTime.tv_sec;
+		//mDelta += (end_time.tv_usec - mStartTime.tv_usec) * 1e-6;
 
-		delta = (double)end_time.tv_sec*1e6+end_time.tv_usec;
-		delta -= (double)start_time.tv_sec*1e6+start_time.tv_usec;
-		delta /= 1000;
+		mDelta = (double)end_time.tv_sec*1e6+end_time.tv_usec;
+		mDelta -= (double)mStartTime.tv_sec*1e6+mStartTime.tv_usec;
+		mDelta /= 1000;
 
-		return delta;
+		return mDelta;
 	}
 
 	/// Return the elapsed time (after a start/stop cycle)
@@ -97,12 +97,12 @@ public:
 	///
 	double get(void) const
 	{
-		return delta;
+		return mDelta;
 	}
 
 private:
-	struct timeval start_time;	///< The start time
-	double delta;				///< The elapsed time in milliseconds
+	struct timeval mStartTime;	///< The start time
+	double mDelta;				///< The elapsed time in milliseconds
 };
 
 #endif

@@ -88,10 +88,6 @@ void dgemv_(const char *trans,
 ///  @param[in] beta On entry, beta specifies the scalar beta. When beta is
 ///           supplied as zero then Y need not be set on input.
 ///
-///  @param[in,out] y Before entry with beta non-zero, the incremented array y
-///           must contain the vector y. On exit, y is overwritten by the
-///           updated vector y.
-///
 ///  @param[out] c Before entry, the leading m by n part of the array a must contain the matrix of coefficients.
 ///
 ///  @param[in] ldc  On entry, lda specifies the first dimension of a as declared

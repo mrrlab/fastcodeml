@@ -14,11 +14,12 @@
 #include "TransitionMatrixSet.h"
 #include "MatrixSize.h"
 
-/// If codon probability over this value, the codon is marked as "good codon".
+/// If codon probability is greater than this value, the codon is marked as "good codon".
 ///
 const double GOOD_CODON_THRESHOLD = 1e-100;
 
 /// The phylogenetic tree's forest.
+/// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-02-23 (initial version)
@@ -225,6 +226,7 @@ private:
 	/// Walker for the exporter
 	///
 	///	@param[in] aNode The node from which to start
+	///	@param[in] aBranchLengths List of all branch lengths
 	/// @param[out] aNodeFrom List of starting nodes
 	/// @param[out] aNodeTo List of ending nodes
 	/// @param[out] aLength Resulting branch lengths to label branches in exported tree

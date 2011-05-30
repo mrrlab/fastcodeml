@@ -9,7 +9,7 @@
 #include "TransitionMatrixSet.h"
 #include "Forest.h"
 
-/// Uncomment to use the original CodeML proportion definition
+// Uncomment to use the original CodeML proportion definition
 //#define USE_ORIGINAL_PROPORTIONS
 
 
@@ -176,6 +176,14 @@ private:
 };
 
 
+
+/// Alternate Hypothesis test.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-23 (initial version)
+///     @version 1.0
+///
+///
 class BranchSiteModelAltHyp : public BranchSiteModel
 {
 public:
