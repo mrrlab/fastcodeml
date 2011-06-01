@@ -128,10 +128,32 @@ double ddot_(const int *n,
 //				const double *dx,
 //				const int *incx);
 //
-//void dscal_(const int *n,
-//				const double *alpha,
-//				double *dx,
-//				const int *incx);
+
+/// Scales a double precision vector.
+///
+///       DSCAL scales a double precision vector with a double precision scalar.
+///       DSCAL scales the vector x of length n and increment incx  by  the  constant alpha.
+///
+///       This routine performs the following vector operation:
+///
+///                 x <-- alpha x
+///
+///       where alpha is a double precision scalar, and x is a double precision vector.
+///
+/// @param[in] n  Number of elements in the vector.
+///         If n <= 0, this routine returns without computation.
+///
+/// @param[in]  alpha   The scaling value.
+///
+/// @param[in,out]  x Array of dimension (n-1) * |incx| + 1. Vector to be scaled.
+///
+/// @param[in]  incx Increment between elements of x.
+///         If incx = 0, the results will be unpredictable.
+///
+void dscal_(const int *n,
+			const double *alpha,
+			double *x,
+			const int *incx);
 
 #ifdef __cplusplus
 }

@@ -100,8 +100,8 @@ elseif($ENV{HOST} MATCHES "palu")
 
 elseif(WIN32)
 
-	set(NLOPT_LINK_DIR "C:/mv/Projects/Selectome/codeml/fast/nlopt/Release" CACHE PATH "NLopt lib dir")
-	set(NLOPT_INCLUDE_DIR "C:/mv/Projects/Selectome/codeml/fast/nlopt/nlopt-2.2.1-pc/api" CACHE PATH "NLopt include dir")
+	set(NLOPT_LINK_DIR "C:/mv/Projects/Selectome/codeml/fast/nlopt/win-build/Debug" CACHE PATH "NLopt lib dir")
+	set(NLOPT_INCLUDE_DIR "C:/mv/Projects/Selectome/codeml/fast/nlopt/nlopt-2.2.2/api" CACHE PATH "NLopt include dir")
 
 	add_definitions(/D_CRT_SECURE_NO_WARNINGS)
 	add_definitions(/D_SECURE_SCL=0)

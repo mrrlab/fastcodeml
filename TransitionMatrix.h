@@ -86,19 +86,25 @@ public:
 	///
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
 	/// @param[in] aT The time to use in the computation (it is always > 0)
+	///
+	inline void computeFullTransitionMatrix(double* aOut, double aT) const
+	{
 #if defined(USE_LAPACK) && defined(USE_DGEMM)
-	/// @param[in,out] aWorkarea Temporary array N*N that should be zeroed before first usage
-	///
-	inline void computeFullTransitionMatrix(double* aOut, double aT, double* aWorkarea) const
-	{
-		for(int i=0; i < N; ++i) aWorkarea[i*(N+1)] = exp(aT * mD[i]);
+
 		double tmp[N*N];
-		dgemm_("N", "T", &N, &N, &N, &D1, aWorkarea, &N,  mV, &N, &D0,  tmp, &N);
-		dgemm_("T", "N", &N, &N, &N, &D1, mU,        &N, tmp, &N, &D0, aOut, &N);
+		memcpy(tmp, mV, sizeof(double)*N*N);
+		//CHHS Compute D*V by multiplying row 1 by e^(first root), row 2 by e^(second root) etc.
+		int i, j;
+		for(i=j=0; i < N; ++i, j+=N)
+		{
+			//CHHS DSCAL(N,DA,DX,INCX); y = alpha * y
+			double expt = exp(aT*mD[i]);
+			dscal_(&N, &expt, tmp+j, &I1); //CHHS Scale single row    
+		}
+		dgemm_("T", "T", &N, &N, &N, &D1, mU, &N, tmp, &N, &D0, aOut, &N);
+
 #else
-	///
-	inline void computeFullTransitionMatrix(double* aOut, double aT, double* /*aWorkarea*/) const
-	{
+
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
 		double expt = exp(aT * mD[0]);

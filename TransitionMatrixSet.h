@@ -31,10 +31,6 @@ public:
 		mNumMatrices = aNumMatrices;
 		mNumSets = aNumSets;
 		mMatrices = new double*[aNumSets*aNumMatrices];
-#if defined(USE_LAPACK) && defined(USE_DGEMM)
-		mWorkarea = new double[aNumMatrices*N*N];
-		memset(mWorkarea, 0, aNumMatrices*N*N*sizeof(double));
-#endif
 	}
 
 	/// Destructor.
@@ -43,9 +39,6 @@ public:
 	{
 		delete [] mMatrixSpace;
 		delete [] mMatrices;
-#if defined(USE_LAPACK) && defined(USE_DGEMM)
-		delete [] mWorkarea;
-#endif
 	}
 
 	/// Compute the three sets of matrices for the H0 hypothesis
@@ -116,7 +109,7 @@ public:
 #endif
 	}
 
-	/// Return the number of sets contained
+	/// Return the number of sets contained.
 	///
 	/// @return The number of sets contained
 	///
@@ -127,7 +120,6 @@ private:
 	unsigned int	mNumSets;		///< Number of sets
 	double*			mMatrixSpace;	///< Starts of the matrix storage area
 	double**		mMatrices;		///< Access to the matrix set
-	double*			mWorkarea;		///< Temporary area for matrix exponential
 };
 
 
