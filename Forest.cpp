@@ -382,7 +382,9 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 			}
 			else
 			{
-				net << "   label \"" << iv->second << "\"\n";
+				std::string s = mNodeNames[iv->second];
+				if(s.empty()) net << "   label \"" << iv->second << "\"\n";
+				else          net << "   label \"" << s << "\"\n";
 				net << "   type 1\n";
 			}
 			net << "]\n";
