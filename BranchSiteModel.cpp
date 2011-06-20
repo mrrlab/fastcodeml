@@ -173,6 +173,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 
 	// Set lower constrains
 	for(i=0; i < mNumTimes; ++i) mLowerBound[i] = 4e-6;		// T
+
 	mLowerBound[mNumTimes+0] = 1e-6;						// w0
 	mLowerBound[mNumTimes+1] = 0.0001;						// k
 #ifdef USE_ORIGINAL_PROPORTIONS

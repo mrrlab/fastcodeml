@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
+#include <algorithm>
+#include <functional>
 #include "Genes.h"
 #include "MatrixSize.h"
 #include "Exceptions.h"
@@ -116,7 +118,7 @@ void Genes::loadGenesFile(const char* aFilename)
 	}
 
 	// Inizialize codons multiplicity
-	for(i=0; i < (int)nbasis/3; ++i) mCodonMultiplicity.assign(nbasis/3, 1);
+	mCodonMultiplicity.assign(nbasis/3, 1);
 
 	// Remove invalid codons
 	for(i=0; i < (int)nspecies; ++i)
@@ -130,12 +132,11 @@ void Genes::loadGenesFile(const char* aFilename)
 	
 	if(mVerboseLevel >= 1)
 	{
-		int valid_codons = 0;
-		for(j=0; j < nbasis/3; ++j) valid_codons += mCodonMultiplicity[j];
+		int valid_codons = std::count(mCodonMultiplicity.begin(), mCodonMultiplicity.end(), 1);
 		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << nbasis/3 << std::endl;
 	}
 
-	// Remove duplicated codons
+	// Remove duplicated sites
 	for(i=0; i < (int)nbasis/3-1; ++i)
 	{
 		if(mCodonMultiplicity[i] == 0) continue;
@@ -172,8 +173,9 @@ void Genes::loadGenesFile(const char* aFilename)
 	if(mVerboseLevel >= 1)
 	{
 		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << nbasis/3 << std::endl;
-		int multi_codons = 0;
-		for(j=0; j < nbasis/3; ++j) if(mCodonMultiplicity[j] > 1) ++multi_codons;
+		//int multi_codons = 0;
+		//for(j=0; j < nbasis/3; ++j) if(mCodonMultiplicity[j] > 1) ++multi_codons;
+		int multi_codons = std::count_if(mCodonMultiplicity.begin(), mCodonMultiplicity.end(), std::bind2nd(std::greater<int>(), 1));
 		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << nbasis/3 << std::endl;
 	}
 	if(mVerboseLevel >= 3)
