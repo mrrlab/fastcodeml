@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <iterator>
 #include "Genes.h"
 #include "MatrixSize.h"
 #include "Exceptions.h"
