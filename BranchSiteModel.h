@@ -36,9 +36,9 @@ public:
 		mVar.reserve(mNumTimes+mNumVariables);
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
-		mLowerBound.resize(mNumTimes+mNumVariables);
+		//mLowerBound.resize(mNumTimes+mNumVariables);
 		mUpperBound.reserve(mNumTimes+mNumVariables);
-		mUpperBound.resize(mNumTimes+mNumVariables);
+		//mUpperBound.resize(mNumTimes+mNumVariables);
 		mSeed = aSeed;
 	}
 

@@ -95,6 +95,18 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 	}
 
 	// Set lower constrains
+	mLowerBound.assign(mNumTimes, 4e-6);	// T
+	mLowerBound.push_back(1e-6);			// w0
+	mLowerBound.push_back(0.0001);			// k
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mLowerBound.push_back(-99.0);			// x0 -> p0
+	mLowerBound.push_back(-99.0);			// x1 -> p1
+#else
+	mLowerBound.push_back(0.0);				// p0+p1
+	mLowerBound.push_back(0.0);				// p0/(p0+p1)
+#endif
+
+#if 0
 	for(i=0; i < mNumTimes; ++i) mLowerBound[i] = 4e-6;		// T
 	mLowerBound[mNumTimes+0] = 1e-6;						// w0
 	mLowerBound[mNumTimes+1] = 0.0001;						// k
@@ -105,8 +117,21 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 	mLowerBound[mNumTimes+2] = 0.0;							// p0+p1
 	mLowerBound[mNumTimes+3] = 0.0;							// p0/(p0+p1)
 #endif
+#endif
 
 	// Set upper constrains
+	mUpperBound.assign(mNumTimes, 50.0);	// T
+	mUpperBound.push_back(1.0);				// w0
+	mUpperBound.push_back(20.0);			// k
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mUpperBound.push_back(99.0);			// x0 -> p0
+	mUpperBound.push_back(99.0);			// x1 -> p1
+#else
+	mUpperBound.push_back(1.0);				// p0+p1
+	mUpperBound.push_back(1.0);				// p0/(p0+p1)
+#endif
+
+#if 0
 	for(i=0; i < mNumTimes; ++i) mUpperBound[i] = 50.0;		// T
 	mUpperBound[mNumTimes+0] = 1.0;							// w0
 	mUpperBound[mNumTimes+1] = 20.0;						// k (in the old code is 999)
@@ -116,6 +141,7 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 #else
 	mUpperBound[mNumTimes+2] = 1.0;							// p0+p1
 	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
+#endif
 #endif
 
 	// Run the optimizer
@@ -172,6 +198,20 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 	}
 
 	// Set lower constrains
+	mLowerBound.assign(mNumTimes, 4e-6);	// T
+	mLowerBound.push_back(1e-6);			// w0
+	mLowerBound.push_back(0.0001);			// k
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mLowerBound.push_back(-99.0);			// x0 -> p0
+	mLowerBound.push_back(-99.0);			// x1 -> p1
+#else
+	mLowerBound.push_back(0.0);				// p0+p1
+	mLowerBound.push_back(0.0);				// p0/(p0+p1)
+#endif
+	mLowerBound.push_back(1.0);				// w2
+
+#if 0
+	// Set lower constrains
 	for(i=0; i < mNumTimes; ++i) mLowerBound[i] = 4e-6;		// T
 
 	mLowerBound[mNumTimes+0] = 1e-6;						// w0
@@ -184,7 +224,22 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 	mLowerBound[mNumTimes+3] = 0.0;							// p0/(p0+p1)
 #endif
 	mLowerBound[mNumTimes+4] = 1.0;							// w2
+#endif
 
+	// Set upper constrains
+	mUpperBound.assign(mNumTimes, 50.0);	// T
+	mUpperBound.push_back(1.0);				// w0
+	mUpperBound.push_back(20.0);			// k
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mUpperBound.push_back(99.0);			// x0 -> p0
+	mUpperBound.push_back(99.0);			// x1 -> p1
+#else
+	mUpperBound.push_back(1.0);				// p0+p1
+	mUpperBound.push_back(1.0);				// p0/(p0+p1)
+#endif
+	mUpperBound.push_back(999.0);			// w2 (in the old code is 999)
+
+#if 0
 	// Set upper constrains
 	for(i=0; i < mNumTimes; ++i) mUpperBound[i] = 50.0;		// T
 	mUpperBound[mNumTimes+0] = 1.0;							// w0
@@ -197,6 +252,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
 #endif
 	mUpperBound[mNumTimes+4] = 999.0;						// w2 (in the old code is 999)
+#endif
 
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);

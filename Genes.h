@@ -85,8 +85,7 @@ private:
 	int							mVerboseLevel;		///< The verbosity level as set in the constructor
 	std::vector<std::string>	mDnaSpecies;		///< The list of species labels
 	std::vector<std::string>	mDnaGene;			///< The gene DNA basis strings
-	std::vector<int>			mCodonMultiplicity;	///< %Codon multiplicity or zero if codon should be ignored
-	std::vector<unsigned int>	mSiteMultiplicity;	///< Site multiplicity
+	std::vector<unsigned int>	mSiteMultiplicity;	///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
 	std::vector<unsigned int>	mMapSiteToDnaGene;	///< Map the site number to the position in mDnaGene
 	std::map<std::string, unsigned int>
 								mMapSpecieToDnaGene;///< Map specie name to position in the gene list mDnaGene
