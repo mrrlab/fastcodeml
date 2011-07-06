@@ -31,7 +31,10 @@ if(NOT WIN32)
 	SET(USE_LAPACK YES CACHE BOOL "Use BLAS/LAPACK")
 endif(NOT WIN32)
 
-find_package(OpenMP)
+SET(USE_OPENMP YES CACHE BOOL "Compile with OpenMP support")
+if(USE_OPENMP)
+	find_package(OpenMP)
+endif(USE_OPENMP)
 
 SET(USE_DGEMM NO CACHE BOOL "Use DGEMM for UDV computation")
 
