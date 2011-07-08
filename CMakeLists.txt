@@ -43,6 +43,7 @@ if($ENV{HOST} MATCHES "matterhorn")
 
 	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
 	SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+	SET(CMAKE_SKIP_RPATH)
 
 	add_definitions(-DBOOST_NO_CWCTYPE)
 	add_definitions(-exceptions)
