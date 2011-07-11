@@ -88,13 +88,18 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 void Forest::reduceSubtrees(void)
 {
-	unsigned int i, j;
-	size_t nsites = mRoots.size();
+	// Trees at the beginning of the forest point to trees ahead
+	// (this way a delete does not choke with pointers pointing to freed memory) 
+	int i, j;
+	//size_t nsites = mRoots.size();
+	int nsites = (int)mRoots.size();
 
 	// Try to merge equal subtrees
-	for(i=0; i < nsites-1; ++i)
+	//for(i=0; i < nsites-1; ++i)
+	for(i=nsites-1; i > 0; --i)
 	{
-		for(j=i+1; j < nsites; ++j)
+		//for(j=i+1; j < nsites; ++j)
+		for(j=i-1; j >= 0; --j)
 		{
 			reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
 		}
