@@ -1,7 +1,7 @@
 
 #ifndef MATRIXSIZE_H
 #define MATRIXSIZE_H
-/// The matrix side (64 codons less 3 STOP codons)
+/// The matrix side (64 possible three-letters codons less 3 STOP codons)
 ///
 const int N = 61;
 

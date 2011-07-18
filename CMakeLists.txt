@@ -46,6 +46,7 @@ if($ENV{HOST} MATCHES "matterhorn")
 	SET(CMAKE_SKIP_RPATH)
 
 	add_definitions(-DBOOST_NO_CWCTYPE)
+	add_definitions(-xmt2)
 	add_definitions(-exceptions)
 	add_definitions(-pl ${CMAKE_CURRENT_BINARY_DIR}/fast.pl)
 	set(NLOPT_LINK_DIR "${CMAKE_CURRENT_BINARY_DIR}/nlopt-2.2.1" CACHE PATH "NLopt lib dir")

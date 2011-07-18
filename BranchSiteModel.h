@@ -70,7 +70,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double maximizeLikelihood(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTrace);
+	double maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
@@ -81,7 +81,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
 	const double* getStartingValues(void) const {return &mVar[0];}
 
@@ -155,7 +155,7 @@ public:
 	///
 	/// @return The log likelihood for the null hypothesis
 	///
-	double computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace);
+	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
@@ -166,7 +166,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -206,7 +206,7 @@ public:
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
-	double computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0);
+	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
@@ -217,7 +217,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:

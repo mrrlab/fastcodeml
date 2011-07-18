@@ -1,3 +1,4 @@
+//#define NEW_LIKELIHOOD
 
 #include <iostream>
 #include <iomanip>
@@ -58,7 +59,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 }
 
 
-double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace)
+double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace)
 {
 	unsigned int i;
 
@@ -149,7 +150,7 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, unsigned int aFgBra
 }
 
 
-double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0)
+double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0)
 {
 	unsigned int i;
 
@@ -259,7 +260,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, unsigned int aFgBran
 }
 
 	
-double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -310,10 +311,23 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	std::vector<double> likelihoods;
+#ifndef NEW_LIKELIHOOD
 	aForest.computeLikelihood(mSet, likelihoods);
+#else
+	aForest.computeLikelihood2(mSet, likelihoods);
+#endif
+	size_t num_sites = aForest.getNumSites();
+#if 0
+    for(int site=0; site < (int)num_sites; ++site)
+    {
+        std::cerr << likelihoods[0*num_sites+site] << ' ';
+        std::cerr << likelihoods[1*num_sites+site] << ' ';
+        std::cerr << likelihoods[2*num_sites+site] << ' ';
+        std::cerr << likelihoods[3*num_sites+site] << std::endl;
+	}
+#endif
 
 	// For all (valid) sites
-	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 #ifdef _MSC_VER
@@ -342,12 +356,13 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 		std::cerr << std::endl << lnl << std::endl;
 		printVar(aVar);
 	}
+//std::cerr << lnl << std::endl;
 
 	return lnl;
 }
 
 	
-double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -403,7 +418,11 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	std::vector<double> likelihoods;
+#ifndef NEW_LIKELIHOOD
 	aForest.computeLikelihood(mSet, likelihoods);
+#else
+	aForest.computeLikelihood2(mSet, likelihoods);
+#endif
 
 	// For all sites
 	size_t num_sites = aForest.getNumSites();
@@ -436,6 +455,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 		std::cerr << std::endl << lnl << std::endl;
 		printVar(aVar);
 	}
+//std::cerr << lnl << std::endl;
 
 	return lnl;
 }
@@ -528,7 +548,7 @@ private:
 };
 #endif
 
-double BranchSiteModel::maximizeLikelihood(Forest& aForest, unsigned int aFgBranch, bool aOnlyInitialStep, bool aTrace)
+double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace)
 {
 	// Print starting values
 	if(aTrace)

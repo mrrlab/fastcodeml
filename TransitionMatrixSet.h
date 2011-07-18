@@ -109,6 +109,52 @@ public:
 #endif
 	}
 
+	inline void doTransition2(unsigned int aSetIdx, unsigned int aBranch, unsigned int aNumSites, const double* aMin, double* aMout) const
+	{
+#ifdef USE_LAPACK
+		int ns = aNumSites;
+#ifdef USE_DGEMM
+		dgemm_( "N",
+				"N",
+				&N,
+				&ns,
+				&N,
+				&D1,
+				mMatrices[aSetIdx*mNumMatrices+aBranch],
+				&N,
+				aMin,
+				&N,
+				&D0,
+				aMout,
+				&N);
+#else
+		dgemm_( "T",
+				"N",
+				&N,
+				&ns,
+				&N,
+				&D1,
+				mMatrices[aSetIdx*mNumMatrices+aBranch],
+				&N,
+				aMin,
+				&N,
+				&D0,
+				aMout,
+				&N);
+#endif
+#else
+		for(int r=0; r < N; ++r)
+		{
+			for(unsigned int c=0; c < aNumSites; ++c)
+			{
+				double x = 0;
+				for(int k=0; k < N; ++k) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+k]*aMin[c*N+k]; // aMin is transposed
+				aMout[c*N+r] = x; // also aMout is transposed
+			}
+		}
+#endif
+	}
+
 	/// Return the number of sets contained.
 	///
 	/// @return The number of sets contained
