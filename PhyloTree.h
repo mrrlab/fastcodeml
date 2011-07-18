@@ -97,12 +97,14 @@ public:
 	///
 	/// @param[out] aForestNode The ForestNode that becomes the root of the cloned tree
 	/// @param[in] aTreeId The tree running id.
+	/// @param[in] aNumSites Total number of sites. Needed to assign pointers to aProbVectors.
+	/// @param[in] aProbVectors Contiguos storage for the probability vectors for each branch.
 	/// @param[in] aTreeNode The node from which to start the cloning in the tree. If not present starts from the root
 	/// @param[in] aNodeId The node running id. For the root it is UINT_MAX.
 	///
 	/// @return The node id to the next node
 	///
-	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, std::vector<double>& aProbVectors, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
 	/// Extract global data (e.g. data that do not depend on the site) from the phylo tree
 	///

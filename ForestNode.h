@@ -23,7 +23,8 @@ struct ForestNode
 	unsigned int				mNodeId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
-	double						mProb[N*Nt];				///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
+	//double						mProb[N*Nt];				///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
+	double*						mProb2[Nt];
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
@@ -33,6 +34,7 @@ struct ForestNode
 	ForestNode()
 	{
 		mParent = 0;
+		memset(mProb2, 0, Nt*sizeof(double*));
 	}
 
 	/// Destructor
@@ -67,7 +69,8 @@ struct ForestNode
 		mChildrenList  = aNode.mChildrenList;
 		mParent        = aNode.mParent;
 		mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
-		memcpy(mProb, aNode.mProb, N*Nt*sizeof(double));
+		//memcpy(mProb, aNode.mProb, N*Nt*sizeof(double));
+		memcpy(mProb2, aNode.mProb2, Nt*sizeof(double*));
 		mInternalNodeId = aNode.mInternalNodeId;
 		mNodeId         = aNode.mNodeId;
 		mOwnTree        = aNode.mOwnTree;
@@ -88,7 +91,8 @@ struct ForestNode
 			mChildrenList  = aNode.mChildrenList;
 			mParent        = aNode.mParent;
 			mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
-			memcpy(mProb, aNode.mProb, N*Nt*sizeof(double));
+			//memcpy(mProb, aNode.mProb, N*Nt*sizeof(double));
+			memcpy(mProb2, aNode.mProb2, Nt*sizeof(double*));
 			mInternalNodeId = aNode.mInternalNodeId;
 			mNodeId         = aNode.mNodeId;
 			mOwnTree        = aNode.mOwnTree;
@@ -148,7 +152,7 @@ struct ForestNode
 	///
 	/// @param[out] aLeafsList Pointers to leaves are pushed to this vector
 	///
-	void pushLeaf(std::vector<ForestNode*>& aLeafsList) 
+	void pushLeaf(std::vector<ForestNode*>& aLeafsList)
 	{
 		if(mChildrenList.empty()) aLeafsList.push_back(this);
 		std::vector<ForestNode*>::const_iterator irn;

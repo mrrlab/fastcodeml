@@ -48,6 +48,8 @@ public:
 		mRoots.clear();
 		mNodeNames.clear();
 		mBranchLengths.clear();
+		mProbs.clear();
+		mProbsOut.clear();
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -90,20 +92,20 @@ public:
 	///
 	void groupByDependency(bool aForceSerial);
 
-	/// Compute the log likelihood of the tree given the set of precomputed matrices.
-	///
-	/// @param[in] aSet Set of exp(Q*t) matrices
-	/// @param[in] aSetIdx Identifier of the set of matrices to be used
-	/// @param[out] aLikelihood Values of the codon probabilities at the tree root
-	///
-	void computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSetIdx, std::vector<double>& aLikelihood);
-
-	/// Compute the log likelihood of the tree given the set of precomputed matrices.
+	/// Compute the log likelihood of the forest given the set of precomputed matrices.
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
 	void computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods);
+
+	/// Compute the log likelihood of the forest given the set of precomputed matrices.
+	/// This adopts the experimental "Long Vector" approach.
+	///
+	/// @param[in] aSet Set of exp(Q*t) matrices
+	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
+	///
+	void computeLikelihood2(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods);
 
 	/// Export the forest in GML format
 	///
@@ -287,9 +289,16 @@ private:
 							mDependenciesClasses;		///< The groups of dependencies between trees
 
 	// Here are global data that will be removed from the various (site) trees
-	std::vector<std::string>	mNodeNames;				///< List of node names. Zero is the root, then its first child and so on
-	std::vector<double>			mBranchLengths;			///< List of branch lengths (read from file or stored here to be exported in the tree file)
-	size_t						mMarkedInternalBranch;	///< Number of the internal branch as marked in the tree file
+	std::vector<std::string>
+							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
+	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
+	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
+
+	// New loglikelihood computation support
+	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
+	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
+	std::vector< std::vector<ForestNode*> >
+							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
 };
 
 #endif

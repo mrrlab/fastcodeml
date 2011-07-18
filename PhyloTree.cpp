@@ -325,7 +325,7 @@ size_t PhyloTree::getMarkedInternalBranch(void) const
 
 
 
-unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId, const TreeNode* aTreeNode, unsigned int aNodeId) const
+unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, std::vector<double>& aProbVectors, const TreeNode* aTreeNode, unsigned int aNodeId) const
 {
 	unsigned int id;
 
@@ -334,6 +334,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	{
 		aTreeNode = &mTreeRoot;
 		aNodeId   = UINT_MAX;
+		aForestNode->mParent = 0;
 		id = 0;
 	}
 	else
@@ -351,6 +352,12 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
 	aForestNode->mInternalNodeId = (int_id < nn) ? (unsigned int)int_id : UINT_MAX;
 
+	// Set the pointers. The sequence is: Branch -> Set -> Site -> 1:N
+	for(int i=0; i < Nt; ++i)
+	{
+		aForestNode->mProb2[i] = &aProbVectors[N*aNumSites*Nt*id+N*aNumSites*i+N*aTreeId];
+	}
+
 	// Recurse
 	TreeNode *m;
 	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
@@ -359,7 +366,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 		aForestNode->mChildrenList.push_back(rn);
 		aForestNode->mOtherTreeProb.push_back(0);
 		rn->mParent = aForestNode;
-		id = cloneTree(rn, aTreeId, m, id);
+		id = cloneTree(rn, aTreeId, aNumSites, aProbVectors, m, id);
 	}
 
 	return id;

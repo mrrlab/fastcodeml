@@ -6,10 +6,12 @@
 #include <iomanip>
 #include <fstream>
 #include <cstring>
+#include <algorithm>
 #include "Forest.h"
 #include "ForestNode.h"
 #include "Exceptions.h"
 #include "MathSupport.h"
+#include "MatrixSize.h"
 
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq)
 {
@@ -25,18 +27,25 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	// Count the number of unique sites
 	size_t nsites = aGenes.getNumSites();
 	const unsigned int* mult = aGenes.getSiteMultiplicity();
-	size_t num_leaves = 0;
 
 	// Initialize the count of codon types
 	memset(mCodonCount, 0, N*sizeof(unsigned int));
 
+	// Initialize the array of all probability vectors
+	mProbs.clear();
+	mProbs.resize(nsites*(mNumBranches+1)*Nt*N, 0.0);
+	mProbsOut.clear();
+	mProbsOut.resize(nsites*(mNumBranches+1)*Nt*N, 0.0);
+
+	// Count of tree's leaves
+	size_t num_leaves = 0;
+
 	// Clone tree inside the forest
-	mRoots.reserve(nsites);
 	mRoots.resize(nsites);
 	for(unsigned int j=0; j < nsites; ++j)
 	{
 		// Create a copy of the tree
-		aTree.cloneTree(&mRoots[j], j);
+		aTree.cloneTree(&mRoots[j], j, nsites, mProbs);
 
 		// Create a list of pointers to leaves
 		std::vector<ForestNode*> leaves;
@@ -53,8 +62,10 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 			(*il)->mSubtreeCodonsSignature.push_back(codon);
 
 			// Set leaves probability vector (Nt copies)
-			memset((*il)->mProb, 0, N*Nt*sizeof(double));
-			for(int k=0; k < Nt; ++k) (*il)->mProb[codon+k*N] = 1.0;
+			//memset((*il)->mProb, 0, N*Nt*sizeof(double));
+			//for(int k=0; k < Nt; ++k) (*il)->mProb[codon+k*N] = 1.0;
+
+			for(int k=0; k < Nt; ++k) (*il)->mProb2[k][codon] = 1.0; // The rest already zeroed by resize()
 
 			// Count codons
 			mCodonCount[codon] += mult[j];
@@ -83,6 +94,42 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 	// Set the mapping from internal branch number to branch number
 	mapInternalToBranchIdWalker(&mRoots[0]);
+
+    // Prepare the list of node id's by level
+    std::vector<ForestNode*> next_level;
+    std::vector<ForestNode*> curr_level;
+    std::vector<ForestNode*> level_nodes;
+
+    // First level is the root
+    level_nodes.push_back(&mRoots[0]);
+    mNodesByLevel.clear();
+    mNodesByLevel.push_back(level_nodes);
+    curr_level.push_back(&mRoots[0]);
+
+    // Continue with all levels till reaching the leaves
+    for(;; curr_level = next_level)
+    {
+        // Empty temporary arrays
+        next_level.clear();
+        level_nodes.clear();
+
+        // Put in a list all the children of the current level nodes
+        std::vector<ForestNode*>::const_iterator il;
+        for(il=curr_level.begin(); il != curr_level.end(); ++il)
+        {
+            if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
+        }
+
+        // No children, the last level was the leaves level
+        if(next_level.empty()) break;
+
+        // Add the list of node pointers of this level
+        for(il=next_level.begin(); il != next_level.end(); ++il)
+        {
+            level_nodes.push_back(*il);
+        }
+        mNodesByLevel.push_back(level_nodes);
+    }
 }
 
 
@@ -183,7 +230,10 @@ void Forest::groupByDependency(bool aForceSerial)
 	{
 		std::vector<unsigned int> v;
 
-		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v.push_back(k);
+		//for(unsigned int k=0; k < (unsigned int)nsites; ++k) v.push_back(k);
+		v.resize(nsites);
+		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v[k] = (unsigned int)nsites-k-1; // Remember erlier (could) point to later
+
 		mDependenciesClasses.push_back(v);
 		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
 
@@ -191,6 +241,7 @@ void Forest::groupByDependency(bool aForceSerial)
 	}
 
 	std::vector< std::set<unsigned int> > dependencies;
+	dependencies.resize(nsites);
 	std::vector<bool> done;
 	done.resize(nsites, false);
 	std::vector<bool> prev;
@@ -200,9 +251,10 @@ void Forest::groupByDependency(bool aForceSerial)
 	for(i=0; i < nsites; ++i)
 	{
 		std::set<unsigned int> dep;
-		dep.clear();
+		//dep.clear();
 		groupByDependencyWalker(&mRoots[i], dep);
-		dependencies.push_back(dep);
+		//dependencies.push_back(dep);
+		dependencies[i] = dep;
 	}
 
 	// Trees without dependencies
@@ -510,30 +562,6 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 	}
 }
 
-void Forest::computeLikelihood(const TransitionMatrixSet& aSet, unsigned int aSetIdx, std::vector<double>& aLikelihood)
-{
-	size_t num_sites = mRoots.size();
-	aLikelihood.resize(num_sites, 1.0);
-
-	std::vector< std::vector<unsigned int> >::iterator ivs;
-	for(ivs=mDependenciesClasses.begin(); ivs != mDependenciesClasses.end(); ++ivs)
-	{
-		int len = ivs->size();
-#ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(len, ivs, aLikelihood, aSet, aSetIdx)
-#else
-		#pragma omp parallel for default(shared)
-#endif
-		for(int i=0; i < len; ++i)
-		{
-			// Compute likelihood array at the root of one tree
-			unsigned int idx = ivs->at(i);
-			double* g = computeLikelihoodWalker(&mRoots[idx], aSet, aSetIdx);
-			aLikelihood[idx] = dot(mCodonFrequencies, g);
-		}
-	}
-}
-
 
 void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods)
 {
@@ -562,6 +590,81 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 	}
 }
 
+void Forest::computeLikelihood2(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods)
+{
+    unsigned int num_sets = aSet.size();
+    size_t num_sites = mRoots.size();
+    aLikelihoods.resize(num_sets*num_sites, 1.0);
+
+    std::vector< std::vector<ForestNode*> >::reverse_iterator inbl;
+    for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl)
+    {
+        int len = inbl->size()*num_sets;
+
+#ifdef _MSC_VER
+        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, aLikelihoods, num_sites, std::cerr)
+#else
+        #pragma omp parallel for default(shared)
+#endif
+        for(int i=0; i < len; ++i)
+        {
+            // Compute likelihood array at the root of one tree
+            unsigned int set_idx = i % num_sets;
+            unsigned int branch  = (inbl->at(i / num_sets))->mNodeId+1;
+
+            //std::cerr << "Set: " << set_idx << " Branch: " << branch << std::endl;
+            //double* g = computeLikelihoodWalker(&mRoots[site], aSet, set_idx);
+            //aLikelihoods[set_idx*num_sites+site] = dot(mCodonFrequencies, g);
+
+            // For each branch, except the root, compute the transition
+            if(branch) aSet.doTransition2(set_idx,
+                                           branch-1,
+                                           num_sites,
+                                           &mProbs[N*num_sites*Nt*branch+N*num_sites*set_idx],
+                                           &mProbsOut[N*num_sites*Nt*branch+N*num_sites*set_idx]);
+        }
+
+        // Compose with the other results for the branches starting from this node
+        ForestNode* curr_node = 0;
+        std::vector<ForestNode*>::iterator ifn;
+        for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+        {
+            unsigned int branch = (*ifn)->mNodeId+1;
+            if(*ifn != curr_node)
+            {
+                curr_node = *ifn;
+                std::copy(mProbsOut.begin()+N*num_sites*Nt*branch, mProbsOut.begin()+N*num_sites*Nt*(branch+1), mProbs.begin()+N*num_sites*Nt*branch);
+            }
+            else
+            {
+#ifdef _MSC_VER
+        #pragma omp parallel for default(none) shared(branch, num_sites)
+#else
+        #pragma omp parallel for default(shared)
+#endif
+                for(int i=0; i < (int)(N*num_sites*Nt); ++i)
+                {
+                    mProbs[N*num_sites*Nt*branch+i] *= mProbsOut[N*num_sites*Nt*branch+i];
+                }
+            }
+        }
+    }
+
+    int len = num_sites*num_sets;
+#ifdef _MSC_VER
+    #pragma omp parallel for default(none) shared(len, num_sets, aLikelihoods, num_sites)
+#else
+    #pragma omp parallel for default(shared)
+#endif
+    for(int i=0; i < len; ++i)
+    {
+        unsigned int set_idx = i % num_sets;
+        unsigned int site    = i / num_sets;
+        aLikelihoods[set_idx*num_sites+site] = dot(mCodonFrequencies, &mProbs[site*N]);
+    }
+}
+
+
 
 double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
 {
@@ -577,8 +680,10 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 		{
 			if(first)
 			{
-				aSet.doTransition(aSetIdx, m->mNodeId, computeLikelihoodWalker(m, aSet, aSetIdx), aNode->mProb+N*aSetIdx);
-				if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mOtherTreeProb[idx]+N*aSetIdx, aNode->mProb+N*aSetIdx, N*sizeof(double));
+				//aSet.doTransition(aSetIdx, m->mNodeId, computeLikelihoodWalker(m, aSet, aSetIdx), aNode->mProb+N*aSetIdx);
+				aSet.doTransition(aSetIdx, m->mNodeId, computeLikelihoodWalker(m, aSet, aSetIdx), aNode->mProb2[aSetIdx]);
+				//if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mOtherTreeProb[idx]+N*aSetIdx, aNode->mProb+N*aSetIdx, N*sizeof(double));
+				if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mOtherTreeProb[idx]+N*aSetIdx, aNode->mProb2[aSetIdx], N*sizeof(double));
 				first = false;
 			}
 			else
@@ -586,15 +691,18 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 				double temp[N];
 				double* x = aNode->mOtherTreeProb[idx] ? aNode->mOtherTreeProb[idx]+N*aSetIdx : temp;
 				aSet.doTransition(aSetIdx, m->mNodeId, computeLikelihoodWalker(m, aSet, aSetIdx), x);
-				for(int i=0; i < N; ++i) aNode->mProb[i+N*aSetIdx] *= x[i];
+				//for(int i=0; i < N; ++i) aNode->mProb[i+N*aSetIdx] *= x[i];
+				for(int i=0; i < N; ++i) aNode->mProb2[aSetIdx][i] *= x[i];
 			}
 		}
 		else
 		{
 			if(first)
 			{
-				if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mProb+N*aSetIdx, aNode->mOtherTreeProb[idx]+N*aSetIdx, N*sizeof(double));
-				else aSet.doTransition(aSetIdx, m->mNodeId, m->mProb+N*aSetIdx, aNode->mProb+N*aSetIdx);
+				//if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mProb+N*aSetIdx, aNode->mOtherTreeProb[idx]+N*aSetIdx, N*sizeof(double));
+				if(aNode->mOtherTreeProb[idx]) memcpy(aNode->mProb2[aSetIdx], aNode->mOtherTreeProb[idx]+N*aSetIdx, N*sizeof(double));
+				//else aSet.doTransition(aSetIdx, m->mNodeId, m->mProb+N*aSetIdx, aNode->mProb+N*aSetIdx);
+				else aSet.doTransition(aSetIdx, m->mNodeId, m->mProb2[aSetIdx], aNode->mProb2[aSetIdx]);
 				first = false;
 			}
 			else
@@ -607,15 +715,18 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 				}
 				else
 				{
-					aSet.doTransition(aSetIdx, m->mNodeId, m->mProb+N*aSetIdx, temp);
+					//aSet.doTransition(aSetIdx, m->mNodeId, m->mProb+N*aSetIdx, temp);
+					aSet.doTransition(aSetIdx, m->mNodeId, m->mProb2[aSetIdx], temp);
 					x = temp;
 				}
-				for(int i=0; i < N; ++i) aNode->mProb[i+N*aSetIdx] *= x[i];
+				//for(int i=0; i < N; ++i) aNode->mProb[i+N*aSetIdx] *= x[i];
+				for(int i=0; i < N; ++i) aNode->mProb2[aSetIdx][i] *= x[i];
 			}
 		}
 	}
 
-	return aNode->mProb+N*aSetIdx;
+	//return aNode->mProb+N*aSetIdx;
+	return aNode->mProb2[aSetIdx];
 }
 
 
