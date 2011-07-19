@@ -1,4 +1,4 @@
-//#define NEW_LIKELIHOOD
+#define NEW_LIKELIHOOD
 
 #include <iostream>
 #include <iomanip>
