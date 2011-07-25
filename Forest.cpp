@@ -79,11 +79,15 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	mNumInternalBranches = mNumBranches - num_leaves;
 
 	// Set the site multeplicity
-	mSiteMultiplicity.reserve(nsites);
-	for(unsigned int i=0; i < nsites; ++i)
+	mSiteMultiplicity.resize(nsites);
+#ifdef _MSC_VER
+        #pragma omp parallel for default(none) shared(mult)
+#else
+        #pragma omp parallel for default(shared)
+#endif
+	for(int i=0; i < (int)nsites; ++i)
 	{
-		double d = (double)mult[i];
-		mSiteMultiplicity.push_back(d);
+		mSiteMultiplicity[i] = (double)mult[i];
 	}
 
 	// Set the codon frequencies and related values needed for the eigensolver
