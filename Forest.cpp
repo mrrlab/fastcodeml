@@ -81,7 +81,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	// Set the site multeplicity
 	mSiteMultiplicity.resize(nsites);
 #ifdef _MSC_VER
-        #pragma omp parallel for default(none) shared(mult)
+        #pragma omp parallel for default(none) shared(mult, nsites)
 #else
         #pragma omp parallel for default(shared)
 #endif
@@ -361,8 +361,7 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 	return aOut;
 }
 
-
- void Forest::exportForest(const char* aFilename, unsigned int aCounter) const
+void Forest::exportForest(const char* aFilename, unsigned int aCounter) const
  {
 	 std::vector< std::pair<int, int> > node_from;
 	 std::vector< std::pair<int, int> > node_to;
@@ -491,7 +490,6 @@ void Forest::exportForestWalker(const ForestNode* aNode,
 		if(your_tree_id == my_tree_id) exportForestWalker(*ifn, aBranchLengths, aNodeFrom, aNodeTo, aLength);
 	}
 }
-
 
 void Forest::checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const
 {

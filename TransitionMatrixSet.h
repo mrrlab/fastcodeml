@@ -109,15 +109,14 @@ public:
 #endif
 	}
 
-	inline void doTransition2(unsigned int aSetIdx, unsigned int aBranch, unsigned int aNumSites, const double* aMin, double* aMout) const
+	inline void doTransition2(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
-		int ns = aNumSites;
 #ifdef USE_DGEMM
 		dgemm_( "N",
 				"N",
 				&N,
-				&ns,
+				&aNumSites,
 				&N,
 				&D1,
 				mMatrices[aSetIdx*mNumMatrices+aBranch],
@@ -131,7 +130,7 @@ public:
 		dgemm_( "T",
 				"N",
 				&N,
-				&ns,
+				&aNumSites,
 				&N,
 				&D1,
 				mMatrices[aSetIdx*mNumMatrices+aBranch],
@@ -145,7 +144,7 @@ public:
 #else
 		for(int r=0; r < N; ++r)
 		{
-			for(unsigned int c=0; c < aNumSites; ++c)
+			for(int c=0; c < aNumSites; ++c)
 			{
 				double x = 0;
 				for(int k=0; k < N; ++k) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+k]*aMin[c*N+k]; // aMin is transposed
