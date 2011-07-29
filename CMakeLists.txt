@@ -27,18 +27,21 @@ endif(Boost_FOUND)
 
 # Select build options
 SET(USE_OPTIMIZER YES CACHE BOOL "Use the optimizer")
+
 if(NOT WIN32)
 	SET(USE_LAPACK YES CACHE BOOL "Use BLAS/LAPACK")
+	SET(USE_DGEMM NO CACHE BOOL "Use DGEMM for UDV computation")
 endif(NOT WIN32)
+
+SET(USE_NEW_LIKELIHOOD YES CACHE BOOL "Use the new loglikelihood computation method")
 
 SET(USE_OPENMP YES CACHE BOOL "Compile with OpenMP support")
 if(USE_OPENMP)
 	find_package(OpenMP)
 endif(USE_OPENMP)
 
-SET(USE_DGEMM NO CACHE BOOL "Use DGEMM for UDV computation")
 
-# Set BLAS/LAPACK directories and libraries
+# Set options for the various platforms
 if($ENV{HOST} MATCHES "matterhorn")
 
 	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
@@ -49,13 +52,17 @@ if($ENV{HOST} MATCHES "matterhorn")
 	add_definitions(-xmt2)
 	add_definitions(-exceptions)
 	add_definitions(-pl ${CMAKE_CURRENT_BINARY_DIR}/fast.pl)
-	set(NLOPT_LINK_DIR "${CMAKE_CURRENT_BINARY_DIR}/nlopt-2.2.1" CACHE PATH "NLopt lib dir")
-	set(NLOPT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/nlopt-2.2.1/api" CACHE PATH "NLopt include dir")
+	set(NLOPT_LINK_DIR "${CMAKE_CURRENT_BINARY_DIR}/nlopt-2.2.4" CACHE PATH "NLopt lib dir")
+	set(NLOPT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/nlopt-2.2.4/api" CACHE PATH "NLopt include dir")
 	if(USE_OPTIMIZER)
 		link_directories( ${NLOPT_LINK_DIR} )
 		include_directories(${NLOPT_INCLUDE_DIR})
 		add_definitions(-DUSE_OPTIMIZER)
 	endif(USE_OPTIMIZER)
+	
+	if(USE_NEW_LIKELIHOOD)
+		add_definitions(-DNEW_LIKELIHOOD)
+	endif(USE_NEW_LIKELIHOOD)
 
 elseif($ENV{HOST} MATCHES "rosa")
 
@@ -85,6 +92,10 @@ elseif($ENV{HOST} MATCHES "rosa")
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
+	
+	if(USE_NEW_LIKELIHOOD)
+		add_definitions(-DNEW_LIKELIHOOD)
+	endif(USE_NEW_LIKELIHOOD)
 
 elseif($ENV{HOST} MATCHES "palu")
 
@@ -118,6 +129,10 @@ elseif($ENV{HOST} MATCHES "palu")
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif(OPENMP_FOUND)
+		
+	if(USE_NEW_LIKELIHOOD)
+		add_definitions(-DNEW_LIKELIHOOD)
+	endif(USE_NEW_LIKELIHOOD)
 
 elseif(WIN32)
 
@@ -137,6 +152,10 @@ elseif(WIN32)
 		include_directories(${NLOPT_INCLUDE_DIR})
 		add_definitions(/DUSE_OPTIMIZER)
 	endif(USE_OPTIMIZER)
+	
+	if(USE_NEW_LIKELIHOOD)
+		add_definitions(/DNEW_LIKELIHOOD)
+	endif(USE_NEW_LIKELIHOOD)
 
 else()
 
@@ -175,7 +194,8 @@ else()
 
 	set(BLAS_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "BLAS lib dir")
 	set(LAPACK_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "LAPACK lib dir")
-	set(MATH_LIB_NAMES blas lapack gfortranbegin gfortran CACHE STRING "Math libraries" )
+	#set(MATH_LIB_NAMES blas lapack gfortranbegin gfortran CACHE STRING "Math libraries" )
+	set(MATH_LIB_NAMES mkl_intel_lp64 mkl_sequential mkl_lapack mkl_core m CACHE STRING "Math libraries" )
 
 	if(USE_LAPACK)
 		add_definitions(-DUSE_LAPACK)
@@ -193,13 +213,19 @@ else()
 		include_directories(${NLOPT_INCLUDE_DIR})
 		add_definitions(-DUSE_OPTIMIZER)
 	endif(USE_OPTIMIZER)
+	
+	if(USE_NEW_LIKELIHOOD)
+		add_definitions(-DNEW_LIKELIHOOD)
+	endif(USE_NEW_LIKELIHOOD)
 
 endif()
+
 
 # Executable
 add_executable(fast ${SRCS})
 
-#Link libraries
+
+# Link libraries
 if(WIN32)
 	if(USE_OPTIMIZER)
 		target_link_libraries(fast nlopt)
@@ -217,6 +243,7 @@ else(WIN32)
 		endif(USE_LAPACK)
 	endif(USE_OPTIMIZER)
 endif(WIN32)
+
 
 # Make documentation
 find_package(Doxygen)

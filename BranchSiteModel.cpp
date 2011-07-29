@@ -1,4 +1,3 @@
-#define NEW_LIKELIHOOD
 
 #include <iostream>
 #include <iomanip>
@@ -311,11 +310,8 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	std::vector<double> likelihoods;
-#ifndef NEW_LIKELIHOOD
 	aForest.computeLikelihood(mSet, likelihoods);
-#else
-	aForest.computeLikelihood2(mSet, likelihoods);
-#endif
+
 	size_t num_sites = aForest.getNumSites();
 #if 0
     for(int site=0; site < (int)num_sites; ++site)
@@ -418,11 +414,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	std::vector<double> likelihoods;
-#ifndef NEW_LIKELIHOOD
 	aForest.computeLikelihood(mSet, likelihoods);
-#else
-	aForest.computeLikelihood2(mSet, likelihoods);
-#endif
 
 	// For all sites
 	size_t num_sites = aForest.getNumSites();

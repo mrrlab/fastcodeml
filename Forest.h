@@ -93,19 +93,12 @@ public:
 	void groupByDependency(bool aForceSerial);
 
 	/// Compute the log likelihood of the forest given the set of precomputed matrices.
+	/// If NEW_LIKELIHOOD is defined, this routine adopts the experimental "Long Vector" approach.
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
 	void computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods);
-
-	/// Compute the log likelihood of the forest given the set of precomputed matrices.
-	/// This adopts the experimental "Long Vector" approach.
-	///
-	/// @param[in] aSet Set of exp(Q*t) matrices
-	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
-	///
-	void computeLikelihood2(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods);
 
 	/// Export the forest in GML format
 	///
@@ -238,7 +231,7 @@ private:
 							std::vector< std::pair<int, int> >& aNodeFrom,
 							std::vector< std::pair<int, int> >& aNodeTo,
 							std::vector<double>& aLength) const;
-
+#ifndef NEW_LIKELIHOOD
 	/// Walker for the computation of tree likelihood
 	///
 	/// @param[in] aNode
@@ -248,7 +241,7 @@ private:
 	/// @return The vector of codons probabilities at the aNode node
 	///
 	double* computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
-
+#endif
 	/// Change the index into the full list of codons (64) into the non-stop codons list used here (61)
 	///
 	/// @param[in] aId64 The index in the range 0..63 (i.e. from TTT to GGG)
@@ -288,13 +281,13 @@ private:
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
 
-	// Here are global data that will be removed from the various (site) trees
+	/// Here are global data that will be removed from the various (site) trees
 	std::vector<std::string>
 							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
 
-	// New loglikelihood computation support
+	/// New loglikelihood computation support
 	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >

@@ -23,8 +23,10 @@ struct ForestNode
 	unsigned int				mNodeId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
+#ifndef NEW_LIKELIHOOD
 	//double						mProb0[N*Nt];				///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 	double*						mProb[Nt];
+#endif
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
@@ -34,7 +36,9 @@ struct ForestNode
 	ForestNode()
 	{
 		mParent = 0;
+#ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
+#endif
 	}
 
 	/// Destructor
@@ -69,8 +73,10 @@ struct ForestNode
 		mChildrenList  = aNode.mChildrenList;
 		mParent        = aNode.mParent;
 		mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
+#ifndef NEW_LIKELIHOOD
 		//memcpy(mProb0, aNode.mProb0, N*Nt*sizeof(double));
 		memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
+#endif
 		mInternalNodeId = aNode.mInternalNodeId;
 		mNodeId         = aNode.mNodeId;
 		mOwnTree        = aNode.mOwnTree;
@@ -91,8 +97,10 @@ struct ForestNode
 			mChildrenList  = aNode.mChildrenList;
 			mParent        = aNode.mParent;
 			mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
+#ifndef NEW_LIKELIHOOD
 			//memcpy(mProb0, aNode.mProb0, N*Nt*sizeof(double));
 			memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
+#endif
 			mInternalNodeId = aNode.mInternalNodeId;
 			mNodeId         = aNode.mNodeId;
 			mOwnTree        = aNode.mOwnTree;

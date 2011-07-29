@@ -352,12 +352,14 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
 	aForestNode->mInternalNodeId = (int_id < nn) ? (unsigned int)int_id : UINT_MAX;
 
+#ifndef NEW_LIKELIHOOD
 	// Set the pointers. The sequence is: Branch -> Set -> Site -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
 		aForestNode->mProb[i] = &aProbVectors[N*aNumSites*Nt*id+N*aNumSites*i+N*aTreeId];
 		//aForestNode->mProb[i] = aForestNode->mProb0+i*N;
 	}
+#endif
 
 	// Recurse
 	TreeNode *m;
