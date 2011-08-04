@@ -192,10 +192,10 @@ else()
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
 
-	set(BLAS_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "BLAS lib dir")
-	set(LAPACK_LINK_DIR "/home/mac/SVN/hp2c/trunk/Codeml_Variants/Fastcodeml" CACHE PATH "LAPACK lib dir")
+	set(BLAS_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "BLAS lib dir")
+	set(LAPACK_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "LAPACK lib dir")
 	#set(MATH_LIB_NAMES blas lapack gfortranbegin gfortran CACHE STRING "Math libraries" )
-#	set(MATH_LIB_NAMES mkl_intel_lp64 mkl_sequential mkl_lapack mkl_core m CACHE STRING "Math libraries" )
+	set(MATH_LIB_NAMES mkl_intel_lp64 mkl_sequential mkl_lapack mkl_core m CACHE STRING "Math libraries" )
 
 	if(USE_LAPACK)
 		add_definitions(-DUSE_LAPACK)
