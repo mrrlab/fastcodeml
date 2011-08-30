@@ -897,3 +897,89 @@ void Forest::addAggressiveReductionWalker(ForestNode* aNode)
 		}
 	}
 }
+
+
+#ifdef NEW_LIKELIHOOD
+void Forest::prepareNewReduction(ForestNode* aNode)
+{
+	size_t nsites = mRoots.size();
+
+	if(aNode)
+	{
+		std::vector<ForestNode *>::iterator icl;
+		unsigned int i = 0;
+		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl,++i)
+		{
+			if((*icl)->mOwnTree == aNode->mOwnTree)
+			{
+				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = true;
+				prepareNewReduction(*icl);
+			}
+			else
+			{
+				mMapHoles[std::pair<unsigned int, unsigned int>((*icl)->mNodeId + 1, aNode->mOwnTree)] = (*icl)->mOwnTree;
+			}
+		}
+	}
+	else
+	{
+		// Initialize the output variables
+		mNodePresent.assign(mNumBranches*nsites, false);
+		mMapHoles.clear();
+
+		// Visit each site tree
+		for(size_t i=0; i < nsites; ++i)
+		{
+			//mNodePresent[i] = true;
+			prepareNewReduction(&mRoots[i]);
+		}
+
+		// TEST
+		std::cerr << "Num. Branches: " << mNumBranches << std::endl;
+		std::cerr << "Num. Sites:    " << nsites << std::endl;
+		for(size_t j=0; j < mNumBranches; ++j)
+		{
+			bool now = false;
+			int first_idx = -1;
+			std::cerr << "Branch " << j+1 << std::endl;
+#if 0
+			for(size_t k = 0; k < nsites; ++k)
+			{
+				std::cerr << (mNodePresent[j*nsites+k] ? 'x' : 'o') << ' ';
+			}
+#else
+			for(size_t k = 0; k < nsites; ++k)
+			{
+				if(now)
+				{
+					if(!mNodePresent[j*nsites+k])
+					{
+						now = false;
+						if(first_idx == (k-1)) std::cerr << ' ' << first_idx;
+						else                   std::cerr << ' ' << first_idx << " - " << k-1;
+					}
+				}
+				else
+				{
+					if(mNodePresent[j*nsites+k]) {now = true; first_idx = k;}
+				}
+			}
+			if(now)
+			{
+						if(first_idx == (nsites-1)) std::cerr << ' ' << first_idx;
+						else						std::cerr <<  ' ' << first_idx << " - " << nsites-1;
+			}
+#endif
+			std::cerr << std::endl;
+			std::cerr << std::endl;
+		}
+
+		std::cerr << std::endl;
+		std::map<std::pair<unsigned int, unsigned int>, unsigned int>::const_iterator im;
+		for(im=mMapHoles.begin(); im != mMapHoles.end(); ++im)
+		{
+			std::cerr << im->first.first << ' ' << im->first.second << " -> " << im->second << std::endl;
+		}
+	}
+}
+#endif

@@ -106,7 +106,10 @@ int main(int ac, char **av)
 	{
 		forest.reduceSubtrees();
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
-		forest.cleanReductionWorkingData();
+		forest.cleanReductionWorkingData();		
+#ifdef NEW_LIKELIHOOD
+		forest.prepareNewReduction();
+#endif
 	}
 
 	// Subdivide the trees in groups based on dependencies

@@ -189,6 +189,10 @@ public:
 	///
 	const std::vector<std::string>& getNodeNames(void) const {return mNodeNames;}
 
+#ifdef NEW_LIKELIHOOD
+	void prepareNewReduction(ForestNode* aNode=0);
+#endif
+
 private:
 	/// Reduce the common subtree between two trees
 	///
@@ -292,6 +296,12 @@ private:
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
 							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
+	
+#ifdef NEW_LIKELIHOOD
+	std::vector<bool>		mNodePresent;
+	std::map<std::pair<unsigned int, unsigned int>, unsigned int>
+							mMapHoles;					///< The key is (branch, site); the value is: site from which the value should came
+#endif
 };
 
 #endif
