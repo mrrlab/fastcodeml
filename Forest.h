@@ -194,12 +194,12 @@ public:
 #endif
 
 private:
-	/// Reduce the common subtree between two trees
+	/// Reduce the common subtree between two (sub)trees
 	///
-	/// @param[in] aRoot1 The first tree
-	/// @param[in] aRoot2 The second tree
+	/// @param[in] aNode The subtree to be tested (i.e. if it exists in both trees)
+	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
 	///
-	void reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2);
+	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
 
 	/// Add aggresssive reduction to common subtree between two trees already identified
 	///

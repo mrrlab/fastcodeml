@@ -162,35 +162,21 @@ void Forest::reduceSubtrees(void)
 }
 
 
-void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
+void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 {
 	size_t i;
-	size_t nc = aRoot1->mChildrenList.size();
+	size_t nc = aNode->mChildrenList.size();
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(aRoot1->mChildrenList[i]->mOwnTree != aRoot1->mOwnTree) continue;
-		if(aRoot2->mChildrenList[i]->mOwnTree != aRoot2->mOwnTree) continue;
+		if(aNode->mChildrenList[i]->mOwnTree != aNode->mOwnTree) continue;
+		if(aNodeDependent->mChildrenList[i]->mOwnTree != aNodeDependent->mOwnTree) continue;
 
 		// Check if same subtree
-		std::vector<int>::const_iterator ig1;
-		std::vector<int>::const_iterator ig2;
-		bool are_equal = true;
-		for(ig1=aRoot1->mChildrenList[i]->mSubtreeCodonsSignature.begin(), ig2=aRoot2->mChildrenList[i]->mSubtreeCodonsSignature.begin();
-			ig1 != aRoot1->mChildrenList[i]->mSubtreeCodonsSignature.end();
-			++ig1, ++ig2)
+		if(aNode->mChildrenList[i]->mSubtreeCodonsSignature == aNodeDependent->mChildrenList[i]->mSubtreeCodonsSignature)
 		{
-			if(*ig1 != *ig2)
-			{
-				are_equal = false;
-				break;
-			}
-		}
-
-		if(are_equal)
-		{
-			delete aRoot2->mChildrenList[i];
-			aRoot2->mChildrenList[i] = aRoot1->mChildrenList[i];
+			delete aNodeDependent->mChildrenList[i];
+			aNodeDependent->mChildrenList[i] = aNode->mChildrenList[i];
 		}
 	}
 
@@ -198,10 +184,10 @@ void Forest::reduceSubtreesWalker(ForestNode* aRoot1, ForestNode* aRoot2)
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(aRoot1->mChildrenList[i]->mOwnTree != aRoot1->mOwnTree) continue;
-		if(aRoot2->mChildrenList[i]->mOwnTree != aRoot2->mOwnTree) continue;
+		if(aNode->mChildrenList[i]->mOwnTree != aNode->mOwnTree) continue;
+		if(aNodeDependent->mChildrenList[i]->mOwnTree != aNodeDependent->mOwnTree) continue;
 
-		reduceSubtreesWalker(aRoot1->mChildrenList[i], aRoot2->mChildrenList[i]);
+		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i]);
 	}
 }
 
@@ -238,9 +224,8 @@ void Forest::groupByDependency(bool aForceSerial)
 	{
 		std::vector<unsigned int> v;
 
-		//for(unsigned int k=0; k < (unsigned int)nsites; ++k) v.push_back(k);
 		v.resize(nsites);
-		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v[k] = (unsigned int)nsites-k-1; // Remember erlier (could) point to later
+		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v[k] = (unsigned int)nsites-k-1; // Remember: prior (could) point to subsequent
 
 		mDependenciesClasses.push_back(v);
 		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
@@ -259,9 +244,7 @@ void Forest::groupByDependency(bool aForceSerial)
 	for(i=0; i < nsites; ++i)
 	{
 		std::set<unsigned int> dep;
-		//dep.clear();
 		groupByDependencyWalker(&mRoots[i], dep);
-		//dependencies.push_back(dep);
 		dependencies[i] = dep;
 	}
 
@@ -935,8 +918,7 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 		}
 
 		// TEST
-		std::cerr << "Num. Branches: " << mNumBranches << std::endl;
-		std::cerr << "Num. Sites:    " << nsites << std::endl;
+		std::cerr << std::endl;
 		for(size_t j=0; j < mNumBranches; ++j)
 		{
 			bool now = false;
