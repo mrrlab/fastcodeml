@@ -190,8 +190,23 @@ public:
 	const std::vector<std::string>& getNodeNames(void) const {return mNodeNames;}
 
 #ifdef NEW_LIKELIHOOD
+	/// Analyze the forest to prepare the operation to be done to restore the contiguity to the grouped vector approach.
+	///
+	/// @param[in] aNode The node from which to start. If null then starts from all the trees' roots.
+	///
 	void prepareNewReduction(ForestNode* aNode=0);
 #endif
+
+	/// Check the forest structure for obvious mistakes (useful only during development)
+	///
+	/// @param[in] aCheckId If true checks also the node id's (cannot be done after subtree pruning)
+	/// @param[in] aNode The node from which to start. If null then start from the roots
+	/// @param[in] aSite The site number of the corresponding aNode
+	/// @param[in] aNodeId The aNode id
+	///
+	/// @return The next node ID
+	///
+	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
 
 private:
 	/// Reduce the common subtree between two (sub)trees
@@ -298,7 +313,7 @@ private:
 							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
 	
 #ifdef NEW_LIKELIHOOD
-	std::vector<bool>		mNodePresent;
+	std::vector<bool>		mNodePresent;				///< True if the correstponding: Branch -> Set -> Site exists
 	std::map<std::pair<unsigned int, unsigned int>, unsigned int>
 							mMapHoles;					///< The key is (branch, site); the value is: site from which the value should came
 #endif

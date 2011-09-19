@@ -97,6 +97,9 @@ int main(int ac, char **av)
 	Forest forest(cmd.mVerboseLevel);
 	forest.loadTreeAndGenes(t, g, cmd.mIgnoreFreq);
 
+	// Check if forest is in shape
+	forest.checkForest(true);
+
 	// Remove the genes and the phylotree objects not used anymore
 	t.clear();
 	g.clear();
@@ -110,10 +113,12 @@ int main(int ac, char **av)
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
 #endif
+		// Recheck the forest
+		forest.checkForest();
 	}
 
 	// Subdivide the trees in groups based on dependencies
-	forest.groupByDependency(cmd.mForceSerial);
+	forest.groupByDependency(cmd.mForceSerial || cmd.mDoNotReduceForest);
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;
@@ -139,7 +144,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << "TIMER (preprocessing): " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing): " << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 2) std::cerr << forest;
@@ -211,7 +216,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << "TIMER: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << std::endl << "TIMER: " << timer.get() << std::endl;}
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions

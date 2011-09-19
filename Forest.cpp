@@ -32,10 +32,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	memset(mCodonCount, 0, N*sizeof(unsigned int));
 
 	// Initialize the array of all probability vectors
-	mProbs.clear();
-	mProbs.resize(nsites*(mNumBranches+1)*Nt*N, 0.0);
-	mProbsOut.clear();
-	mProbsOut.resize(nsites*(mNumBranches+1)*Nt*N, 0.0);
+	mProbs.assign(nsites*(mNumBranches+1)*Nt*N, 0.0);
+	mProbsOut.assign(nsites*(mNumBranches+1)*Nt*N, 0.0);
 
 	// Count of tree's leaves
 	size_t num_leaves = 0;
@@ -57,28 +55,25 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 		std::vector<ForestNode*>::const_iterator il;
 		for(il=leaves.begin(); il != leaves.end(); ++il)
 		{
-			//int codon = aGenes.getCodonIdx((*il)->mNodeName, j);
-			int codon = aGenes.getCodonIdx(mNodeNames[(*il)->mNodeId+1], j);
+			// Node id (adjusted so root is 0)
+			unsigned int id = (*il)->mNodeId+1;
+
+			// Get the codon index and add it to the node signature
+			int codon = aGenes.getCodonIdx(mNodeNames[id], j);
 			(*il)->mSubtreeCodonsSignature.push_back(codon);
 
 			// Set leaves probability vector (Nt copies)
-			//memset((*il)->mProb0, 0, N*Nt*sizeof(double));
-			//for(int k=0; k < Nt; ++k) (*il)->mProb0[codon+k*N] = 1.0;
 #ifdef NEW_LIKELIHOOD
-			for(int k=0; k < Nt; ++k)
-			{
-				unsigned int id = (*il)->mNodeId+1;
-				mProbs[N*nsites*Nt*id+N*nsites*k+N*j+codon] = 1.0; // The rest already zeroed by resize()
-			}
+			for(int k=0; k < Nt; ++k) mProbs[N*nsites*Nt*id+N*nsites*k+N*j+codon] = 1.0; // The rest already zeroed by assign()
 #else
-			for(int k=0; k < Nt; ++k) (*il)->mProb[k][codon] = 1.0; // The rest already zeroed by resize()
+			for(int k=0; k < Nt; ++k) (*il)->mProb[k][codon] = 1.0; // The rest already zeroed by assign()
 #endif
 
 			// Count codons
 			mCodonCount[codon] += mult[j];
 		}
 
-		// Combine going up to the root
+		// Combine the subtrees signatures going up to the root
 		mRoots[j].gatherCodons();
 	}
 
@@ -218,14 +213,17 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 
 void Forest::groupByDependency(bool aForceSerial)
 {
-	size_t i, j;
+	size_t i, numdep;
+	unsigned int k;
 	size_t nsites = mRoots.size();
+	mDependenciesClasses.clear();
+
+	// If no dependencies
 	if(aForceSerial)
 	{
-		std::vector<unsigned int> v;
+		std::vector<unsigned int> v(nsites);
 
-		v.resize(nsites);
-		for(unsigned int k=0; k < (unsigned int)nsites; ++k) v[k] = (unsigned int)nsites-k-1; // Remember: prior (could) point to subsequent
+		for(k=0; k < (unsigned int)nsites; ++k) v[k] = (unsigned int)nsites-k-1; // Remember: prior (could) point to subsequent
 
 		mDependenciesClasses.push_back(v);
 		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
@@ -233,12 +231,11 @@ void Forest::groupByDependency(bool aForceSerial)
 		return;
 	}
 
-	std::vector< std::set<unsigned int> > dependencies;
-	dependencies.resize(nsites);
+	std::vector< std::set<unsigned int> > dependencies(nsites);
 	std::vector<bool> done;
-	done.resize(nsites, false);
+	done.assign(nsites, false);
 	std::vector<bool> prev;
-	prev.resize(nsites, false);
+	prev.assign(nsites, false);
 
 	// Collect dependencies
 	for(i=0; i < nsites; ++i)
@@ -249,7 +246,6 @@ void Forest::groupByDependency(bool aForceSerial)
 	}
 
 	// Trees without dependencies
-	unsigned int k;
 	std::vector<unsigned int> v;
 	std::vector< std::set<unsigned int> >::iterator is;
 	for(is=dependencies.begin(),k=0; is != dependencies.end(); ++is,++k)
@@ -264,18 +260,21 @@ void Forest::groupByDependency(bool aForceSerial)
 	mDependenciesClasses.push_back(v);
 	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
 
-	for(j=1;; ++j)
+	// Start to find trees with one, two, ... dependencies
+	for(numdep=1;; ++numdep)
 	{
 		v.clear();
 		bool all_done = true;
-		for(is=dependencies.begin(),k=0; is != dependencies.end(); ++is,++k)
+		std::vector< std::set<unsigned int> >::reverse_iterator ris;
+		for(ris=dependencies.rbegin(),k=nsites-1; ris != dependencies.rend(); ++ris,--k)
 		{
+			// If tree k has been already processed skip it
 			if(done[k]) continue;
 
 			all_done = false;
 			bool all = true;
 			std::set<unsigned int>::iterator iv;
-			for(iv=is->begin(); iv != is->end(); ++iv)
+			for(iv=ris->begin(); iv != ris->end(); ++iv)
 			{
 				if(!prev[*iv])
 				{
@@ -292,7 +291,7 @@ void Forest::groupByDependency(bool aForceSerial)
 		if(all_done) break;
 		mDependenciesClasses.push_back(v);
 		prev = done;
-		if(mVerbose >= 1) std::cerr << "Trees in class " << std::setw(2) << j << ": " << std::setw(3) << v.size() << std::endl;
+		if(mVerbose >= 1) std::cerr << "Trees in class " << std::setw(2) << numdep << ": " << std::setw(3) << v.size() << std::endl;
 	}
 }
 
@@ -965,3 +964,53 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 	}
 }
 #endif
+
+unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigned int aSite, unsigned int aNodeId) const
+{
+	if(!aNode)
+	{
+		std::cerr << "========== Start forest check" << std::endl;
+		size_t nsites = mRoots.size();
+
+		// Visit each site tree
+		for(size_t i=0; i < nsites; ++i)
+		{
+			checkForest(aCheckId, &mRoots[i], (unsigned int)i, UINT_MAX);
+		}
+		std::cerr << "==========   End forest check" << std::endl;
+		return UINT_MAX;
+	}
+	else
+	{
+		// Check the node
+		if(aNode->mOwnTree != aSite) std::cerr << "[site: " << std::setw(5) << aSite << "] mOwnTree mismatch " << aNode->mOwnTree << " should be: " << aSite << std::endl;
+
+		// Check node ID
+		if(aCheckId && aNode->mNodeId != aNodeId) std::cerr << "[site: " << std::setw(5) << aSite << "] aNodeId mismatch " << aNode->mNodeId << " should be: " << aNodeId << std::endl;
+
+		unsigned int id = (aNodeId == UINT_MAX) ? 0 : aNodeId+1;
+
+		std::vector<ForestNode *>::const_iterator icl;
+		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl)
+		{
+			if((*icl)->mOwnTree == aNode->mOwnTree)
+			{
+				// Check parent pointer
+				if((*icl)->mParent != aNode)
+					std::cerr << "[site: " << std::setw(5) << aSite << "] mParent mismatch " << aNode->mParent << " should be: " << aNode << std::endl;
+
+				id = checkForest(aCheckId, *icl, aSite, id);
+			}
+			else if((*icl)->mOwnTree <= aNode->mOwnTree)
+			{
+				std::cerr << "[site: " << std::setw(5) << aSite << "] Strange intersite pointer. This: " << aNode->mOwnTree << " children: " << (*icl)->mOwnTree << std::endl;
+			}
+			else
+			{
+				//id = checkForest(aCheckId, *icl, aSite, id);
+			}
+		}
+		return id;
+	}
+}
+

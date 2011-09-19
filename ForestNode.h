@@ -74,7 +74,6 @@ struct ForestNode
 		mParent        = aNode.mParent;
 		mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
 #ifndef NEW_LIKELIHOOD
-		//memcpy(mProb0, aNode.mProb0, N*Nt*sizeof(double));
 		memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
 		mInternalNodeId = aNode.mInternalNodeId;
@@ -98,7 +97,6 @@ struct ForestNode
 			mParent        = aNode.mParent;
 			mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
 #ifndef NEW_LIKELIHOOD
-			//memcpy(mProb0, aNode.mProb0, N*Nt*sizeof(double));
 			memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
 			mInternalNodeId = aNode.mInternalNodeId;
@@ -162,12 +160,18 @@ struct ForestNode
 	///
 	void pushLeaf(std::vector<ForestNode*>& aLeafsList)
 	{
-		if(mChildrenList.empty()) aLeafsList.push_back(this);
-		std::vector<ForestNode*>::const_iterator irn;
-		for(irn=mChildrenList.begin(); irn != mChildrenList.end(); ++irn) (*irn)->pushLeaf(aLeafsList);
+		if(mChildrenList.empty())
+		{
+			aLeafsList.push_back(this);
+		}
+		else
+		{
+			std::vector<ForestNode*>::const_iterator irn;
+			for(irn=mChildrenList.begin(); irn != mChildrenList.end(); ++irn) (*irn)->pushLeaf(aLeafsList);
+		}
 	}
 
-	/// Fills the mSubtreeCodonsSignature list with the union of the lists of the children
+	/// Fills the mSubtreeCodonsSignature list with the ordered union of its children's lists.
 	///
 	void gatherCodons(void)
 	{
@@ -206,6 +210,12 @@ struct ForestNode
 		return cnt;
 	}
 
+	/// Tests if the given child is in the same tree or not
+	///
+	/// @param[in] aChildIdx Index of the child in the list of children
+	///
+	/// @return True if it is in the same tree
+	///
 	inline bool isSameTree(unsigned int aChildIdx)
 	{
 		return (mChildrenList[aChildIdx]->mOwnTree == mOwnTree);
