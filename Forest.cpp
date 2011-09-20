@@ -136,6 +136,20 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
         }
         mNodesByLevel.push_back(level_nodes);
     }
+
+	// Push only the branch id's
+	mBranchByLevel.clear();
+	std::vector< std::vector<ForestNode*> >::reverse_iterator inbl;
+	for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl)
+	{
+		std::vector<unsigned int> v;
+		std::vector<ForestNode*>::iterator ifn;
+		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+		{
+			v.push_back((*ifn)->mNodeId);
+		}
+		mBranchByLevel.push_back(v);
+	}
 }
 
 
@@ -213,7 +227,7 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 
 void Forest::groupByDependency(bool aForceSerial)
 {
-	size_t i, numdep;
+	size_t i;
 	unsigned int k;
 	size_t nsites = mRoots.size();
 	mDependenciesClasses.clear();
@@ -231,19 +245,19 @@ void Forest::groupByDependency(bool aForceSerial)
 		return;
 	}
 
-	std::vector< std::set<unsigned int> > dependencies(nsites);
-	std::vector<bool> done;
-	done.assign(nsites, false);
-	std::vector<bool> prev;
-	prev.assign(nsites, false);
-
 	// Collect dependencies
+	std::vector< std::set<unsigned int> > dependencies(nsites);
 	for(i=0; i < nsites; ++i)
 	{
 		std::set<unsigned int> dep;
 		groupByDependencyWalker(&mRoots[i], dep);
 		dependencies[i] = dep;
 	}
+
+	// Prepare the search of dependencies
+	std::vector<bool> done;			// The sites that has dependencies satisfied in the previous level
+	std::vector<bool> prev;			// Dependencies till the previous level
+	done.assign(nsites, false);
 
 	// Trees without dependencies
 	std::vector<unsigned int> v;
@@ -254,14 +268,14 @@ void Forest::groupByDependency(bool aForceSerial)
 		{
 			v.push_back(k);
 			done[k] = true;
-			prev[k] = true;
 		}
 	}
+	prev = done;
 	mDependenciesClasses.push_back(v);
 	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
 
 	// Start to find trees with one, two, ... dependencies
-	for(numdep=1;; ++numdep)
+	for(size_t numdep=1;; ++numdep)
 	{
 		v.clear();
 		bool all_done = true;
@@ -740,7 +754,7 @@ void Forest::setCodonFrequenciesF3x4(void)
 {
 	int k, j;
 
-#if 0
+#ifdef CHECK_ALGO
 	// Print the table of codon counts
 	for(k=0; k < 64; ++k)
 	{
@@ -772,7 +786,7 @@ void Forest::setCodonFrequenciesF3x4(void)
 		for(k=0; k < 4; ++k) fb3x4sg[j*4+k] /= t;
     }
 
-#if 0
+#ifdef CHECK_ALGO
 	for(k=0; k < 12; ++k)
 	{
 		std::cerr << std::fixed << std::setprecision(6) << fb3x4sg[k];
@@ -808,7 +822,7 @@ void Forest::setCodonFrequenciesF3x4(void)
 		}
 	}
 
-#if 0
+#ifdef CHECK_ALGO
 	for(k=0; k < 61; ++k)
 	{
 		std::cerr << std::fixed << std::setprecision(10) << mCodonFrequencies[k] << ' ';
@@ -889,31 +903,74 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 	if(aNode)
 	{
 		std::vector<ForestNode *>::iterator icl;
-		unsigned int i = 0;
-		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl,++i)
+		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl)
 		{
 			if((*icl)->mOwnTree == aNode->mOwnTree)
 			{
-				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = true;
+				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = Forest::SITE_EXISTS;
 				prepareNewReduction(*icl);
 			}
 			else
 			{
-				mMapHoles[std::pair<unsigned int, unsigned int>((*icl)->mNodeId + 1, aNode->mOwnTree)] = (*icl)->mOwnTree;
+				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = (*icl)->mOwnTree;
 			}
 		}
 	}
 	else
 	{
-		// Initialize the output variables
-		mNodePresent.assign(mNumBranches*nsites, false);
-		mMapHoles.clear();
+		// Initialize the intermediate list
+		mNodePresent.assign(mNumBranches*nsites, Forest::SITE_NOT_EXISTS);
 
 		// Visit each site tree
-		for(size_t i=0; i < nsites; ++i)
+		for(size_t i=0; i < nsites; ++i) prepareNewReduction(&mRoots[i]);
+
+		// Print the sequence of level visits
+		std::vector< std::vector<unsigned int> >::iterator inbl;
+		for(inbl=mBranchByLevel.begin(); inbl != mBranchByLevel.end(); ++inbl)
 		{
-			//mNodePresent[i] = true;
-			prepareNewReduction(&mRoots[i]);
+			std::vector<unsigned int>::iterator ifn;
+			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+			{
+				unsigned int branch_idx = (*ifn);
+
+				size_t begin_idx = 0;
+				size_t end_idx   = nsites;
+				for(; begin_idx < nsites; ++begin_idx)
+				{
+					int x = mNodePresent[branch_idx*nsites+begin_idx];
+					if(x == Forest::SITE_EXISTS) break;
+				}
+				if(begin_idx == nsites) throw FastCodeMLFatal("No SITE_EXISTS in mNodePresent");
+				for(; end_idx > begin_idx; --end_idx)
+				{
+					int x = mNodePresent[branch_idx*nsites+end_idx-1];
+					if(x == Forest::SITE_EXISTS) break;
+				}
+
+				// Count the good elements
+				unsigned int cnt = 0;
+				for(unsigned int k=begin_idx; k < end_idx; ++k) if(mNodePresent[branch_idx*nsites+k] == Forest::SITE_EXISTS) ++cnt;
+
+				std::cerr << std::setw(2) << branch_idx+1 << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
+			}
+		}
+
+#if 0
+		// Print the sequence of level visits
+		std::cerr << std::endl;
+		unsigned int level = 1;
+		std::vector< std::vector<unsigned int> >::iterator inbl;
+		for(inbl=mBranchByLevel.begin(); inbl != mBranchByLevel.end(); ++inbl, ++level)
+		{
+			std::cerr << level << ": ";
+
+			std::vector<unsigned int>::iterator ifn;
+			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+			{
+				std::cerr << (*ifn) << ' ';
+			}
+
+			std::cerr << std::endl;
 		}
 
 		// TEST
@@ -923,48 +980,22 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 			bool now = false;
 			int first_idx = -1;
 			std::cerr << "Branch " << j+1 << std::endl;
-#if 0
 			for(size_t k = 0; k < nsites; ++k)
 			{
-				std::cerr << (mNodePresent[j*nsites+k] ? 'x' : 'o') << ' ';
+				int x = mNodePresent[j*nsites+k];
+				if(x == Forest::SITE_NOT_EXISTS)  std::cerr << '-';
+				else if(x == Forest::SITE_EXISTS) std::cerr << 'x';
+				else                              std::cerr << x;
+				std::cerr << ' ';
 			}
-#else
-			for(size_t k = 0; k < nsites; ++k)
-			{
-				if(now)
-				{
-					if(!mNodePresent[j*nsites+k])
-					{
-						now = false;
-						if(first_idx == (k-1)) std::cerr << ' ' << first_idx;
-						else                   std::cerr << ' ' << first_idx << " - " << k-1;
-					}
-				}
-				else
-				{
-					if(mNodePresent[j*nsites+k]) {now = true; first_idx = k;}
-				}
-			}
-			if(now)
-			{
-						if(first_idx == (nsites-1)) std::cerr << ' ' << first_idx;
-						else						std::cerr <<  ' ' << first_idx << " - " << nsites-1;
-			}
+			std::cerr << std::endl << std::endl;
+		}
 #endif
-			std::cerr << std::endl;
-			std::cerr << std::endl;
-		}
-
-		std::cerr << std::endl;
-		std::map<std::pair<unsigned int, unsigned int>, unsigned int>::const_iterator im;
-		for(im=mMapHoles.begin(); im != mMapHoles.end(); ++im)
-		{
-			std::cerr << im->first.first << ' ' << im->first.second << " -> " << im->second << std::endl;
-		}
 	}
 }
 #endif
 
+#ifdef CHECK_ALGO
 unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigned int aSite, unsigned int aNodeId) const
 {
 	if(!aNode)
@@ -1013,4 +1044,5 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 		return id;
 	}
 }
+#endif
 

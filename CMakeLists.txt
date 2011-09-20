@@ -14,6 +14,7 @@ set(SRCS
 	TransitionMatrix.cpp
 	BranchSiteModel.cpp
 	TransitionMatrixSet.cpp
+	Packaging.cpp
 )
 
 # Search for Boost version 1.42 minimum

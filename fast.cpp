@@ -97,8 +97,10 @@ int main(int ac, char **av)
 	Forest forest(cmd.mVerboseLevel);
 	forest.loadTreeAndGenes(t, g, cmd.mIgnoreFreq);
 
+#ifdef CHECK_ALGO
 	// Check if forest is in shape
 	forest.checkForest(true);
+#endif
 
 	// Remove the genes and the phylotree objects not used anymore
 	t.clear();
@@ -113,8 +115,10 @@ int main(int ac, char **av)
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
 #endif
+#ifdef CHECK_ALGO
 		// Recheck the forest
 		forest.checkForest();
+#endif
 	}
 
 	// Subdivide the trees in groups based on dependencies

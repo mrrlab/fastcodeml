@@ -197,6 +197,7 @@ public:
 	void prepareNewReduction(ForestNode* aNode=0);
 #endif
 
+#ifdef CHECK_ALGO
 	/// Check the forest structure for obvious mistakes (useful only during development)
 	///
 	/// @param[in] aCheckId If true checks also the node id's (cannot be done after subtree pruning)
@@ -207,6 +208,7 @@ public:
 	/// @return The next node ID
 	///
 	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
+#endif
 
 private:
 	/// Reduce the common subtree between two (sub)trees
@@ -230,10 +232,11 @@ private:
 	void groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& aDependency);
 
 	/// Check coherence between tree and genes.
-	/// If the species do not match, throw a FastCodeMLFatal exception
 	///
 	/// @param[in] aTree The phylogenetic tree
 	/// @param[in] aGenes The corresponding genes
+	///
+	/// @exception FastCodeMLFatal Throw exception if the species do not match
 	///
 	void checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const;
 
@@ -311,11 +314,17 @@ private:
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
 							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
-	
+	std::vector< std::vector<unsigned int> >
+							mBranchByLevel;
+
 #ifdef NEW_LIKELIHOOD
-	std::vector<bool>		mNodePresent;				///< True if the correstponding: Branch -> Set -> Site exists
-	std::map<std::pair<unsigned int, unsigned int>, unsigned int>
-							mMapHoles;					///< The key is (branch, site); the value is: site from which the value should came
+	std::vector<int>		mNodePresent;				///< -2 if the correstponding: Branch -> Site exists
+														///< -1 if doesn't exist
+														///< The site number from which the value is taken
+	enum {
+		SITE_EXISTS     = -2,							///< The position (Branch, Site) in mNodePresent exists
+		SITE_NOT_EXISTS = -1							///< The position (Branch, Site) in mNodePresent refers to a not existend node
+	};
 #endif
 };
 
