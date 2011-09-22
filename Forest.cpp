@@ -858,6 +858,7 @@ void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode)
 }
 
 
+#ifndef NEW_LIKELIHOOD
 void Forest::addAggressiveReduction(void)
 {
 	size_t nsites = mRoots.size();
@@ -893,13 +894,11 @@ void Forest::addAggressiveReductionWalker(ForestNode* aNode)
 		}
 	}
 }
-
+#endif
 
 #ifdef NEW_LIKELIHOOD
 void Forest::prepareNewReduction(ForestNode* aNode)
 {
-	size_t nsites = mRoots.size();
-
 	if(aNode)
 	{
 		std::vector<ForestNode *>::iterator icl;
@@ -907,91 +906,42 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 		{
 			if((*icl)->mOwnTree == aNode->mOwnTree)
 			{
-				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = Forest::SITE_EXISTS;
+				mFatVectorTransform.setNodeExists((*icl)->mNodeId, aNode->mOwnTree);
+
 				prepareNewReduction(*icl);
 			}
 			else
 			{
-				mNodePresent[(*icl)->mNodeId * nsites + aNode->mOwnTree] = (*icl)->mOwnTree;
+				mFatVectorTransform.setNodeReuses((*icl)->mNodeId, aNode->mOwnTree, (*icl)->mOwnTree);
 			}
 		}
 	}
 	else
 	{
 		// Initialize the intermediate list
-		mNodePresent.assign(mNumBranches*nsites, Forest::SITE_NOT_EXISTS);
+		size_t nsites = mRoots.size();
+		mFatVectorTransform.initNodeStatus(mNumBranches, nsites);
 
 		// Visit each site tree
 		for(size_t i=0; i < nsites; ++i) prepareNewReduction(&mRoots[i]);
 
-		// Print the sequence of level visits
-		std::vector< std::vector<unsigned int> >::iterator inbl;
-		for(inbl=mBranchByLevel.begin(); inbl != mBranchByLevel.end(); ++inbl)
-		{
-			std::vector<unsigned int>::iterator ifn;
-			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
-			{
-				unsigned int branch_idx = (*ifn);
+		// Print few statistics on the transformation
+		mFatVectorTransform.printCountGoodElements();
+		mFatVectorTransform.printBranchVisitSequence(mBranchByLevel);
+		mFatVectorTransform.printNodeStatus();
 
-				size_t begin_idx = 0;
-				size_t end_idx   = nsites;
-				for(; begin_idx < nsites; ++begin_idx)
-				{
-					int x = mNodePresent[branch_idx*nsites+begin_idx];
-					if(x == Forest::SITE_EXISTS) break;
-				}
-				if(begin_idx == nsites) throw FastCodeMLFatal("No SITE_EXISTS in mNodePresent");
-				for(; end_idx > begin_idx; --end_idx)
-				{
-					int x = mNodePresent[branch_idx*nsites+end_idx-1];
-					if(x == Forest::SITE_EXISTS) break;
-				}
+		// Compact the matrix (this creates the lists of operations needed)
+		mFatVectorTransform.compactMatrix();
 
-				// Count the good elements
-				unsigned int cnt = 0;
-				for(unsigned int k=begin_idx; k < end_idx; ++k) if(mNodePresent[branch_idx*nsites+k] == Forest::SITE_EXISTS) ++cnt;
-
-				std::cerr << std::setw(2) << branch_idx+1 << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
-			}
-		}
-
-#if 0
-		// Print the sequence of level visits
-		std::cerr << std::endl;
-		unsigned int level = 1;
-		std::vector< std::vector<unsigned int> >::iterator inbl;
-		for(inbl=mBranchByLevel.begin(); inbl != mBranchByLevel.end(); ++inbl, ++level)
-		{
-			std::cerr << level << ": ";
-
-			std::vector<unsigned int>::iterator ifn;
-			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
-			{
-				std::cerr << (*ifn) << ' ';
-			}
-
-			std::cerr << std::endl;
-		}
-
-		// TEST
-		std::cerr << std::endl;
-		for(size_t j=0; j < mNumBranches; ++j)
-		{
-			bool now = false;
-			int first_idx = -1;
-			std::cerr << "Branch " << j+1 << std::endl;
-			for(size_t k = 0; k < nsites; ++k)
-			{
-				int x = mNodePresent[j*nsites+k];
-				if(x == Forest::SITE_NOT_EXISTS)  std::cerr << '-';
-				else if(x == Forest::SITE_EXISTS) std::cerr << 'x';
-				else                              std::cerr << x;
-				std::cerr << ' ';
-			}
-			std::cerr << std::endl << std::endl;
-		}
-#endif
+		// Print the commands
+		mFatVectorTransform.printCommands();
 	}
+}
+
+
+void Forest::prepareNewReductionNoReuse(void)
+{
+	mFatVectorTransform.initNodeStatusMinimal(mNumBranches, mRoots.size());
 }
 #endif
 

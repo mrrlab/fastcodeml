@@ -367,7 +367,9 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	{
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
+#ifndef NEW_LIKELIHOOD
 		aForestNode->mOtherTreeProb.push_back(0);
+#endif
 		rn->mParent = aForestNode;
 		id = cloneTree(rn, aTreeId, aNumSites, aProbVectors, m, id);
 	}

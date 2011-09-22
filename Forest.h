@@ -13,6 +13,7 @@
 #include "TransitionMatrix.h"
 #include "TransitionMatrixSet.h"
 #include "MatrixSize.h"
+#include "FatVectorTransform.h"
 
 /// If codon probability is greater than this value, the codon is marked as "good codon".
 ///
@@ -73,9 +74,11 @@ public:
 	///
 	void reduceSubtrees(void);
 
+#ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction
 	///
 	void addAggressiveReduction(void);
+#endif
 
 	/// Remove all work data used for reduction
 	///
@@ -195,6 +198,10 @@ public:
 	/// @param[in] aNode The node from which to start. If null then starts from all the trees' roots.
 	///
 	void prepareNewReduction(ForestNode* aNode=0);
+
+	/// Prepare the data for a forest that has no reduction
+	///
+	void prepareNewReductionNoReuse(void);
 #endif
 
 #ifdef CHECK_ALGO
@@ -218,11 +225,13 @@ private:
 	///
 	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
 
+#ifndef NEW_LIKELIHOOD
 	/// Add aggresssive reduction to common subtree between two trees already identified
 	///
 	/// @param[in] aNode The tree node from which the walker should start
 	///
 	void addAggressiveReductionWalker(ForestNode* aNode);
+#endif
 
 	/// Check dependencies of a tree with other trees
 	///
@@ -309,22 +318,17 @@ private:
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
 
+#ifdef NEW_LIKELIHOOD
+
 	/// New loglikelihood computation support
 	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
 							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
 	std::vector< std::vector<unsigned int> >
-							mBranchByLevel;
+							mBranchByLevel;				///< Each level contains a list of branch numbers at this level. List start from the leaves.
+	FatVectorTransform		mFatVectorTransform;		///< Compute and manage the transformations to pack the "long vector" based on subtree pruning
 
-#ifdef NEW_LIKELIHOOD
-	std::vector<int>		mNodePresent;				///< -2 if the correstponding: Branch -> Site exists
-														///< -1 if doesn't exist
-														///< The site number from which the value is taken
-	enum {
-		SITE_EXISTS     = -2,							///< The position (Branch, Site) in mNodePresent exists
-		SITE_NOT_EXISTS = -1							///< The position (Branch, Site) in mNodePresent refers to a not existend node
-	};
 #endif
 };
 

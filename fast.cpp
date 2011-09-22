@@ -110,7 +110,9 @@ int main(int ac, char **av)
 	if(!cmd.mDoNotReduceForest)
 	{
 		forest.reduceSubtrees();
+#ifndef NEW_LIKELIHOOD
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
+#endif
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
@@ -120,6 +122,12 @@ int main(int ac, char **av)
 		forest.checkForest();
 #endif
 	}
+#ifdef NEW_LIKELIHOOD
+	else
+	{
+		forest.prepareNewReductionNoReuse();
+	}
+#endif
 
 	// Subdivide the trees in groups based on dependencies
 	forest.groupByDependency(cmd.mForceSerial || cmd.mDoNotReduceForest);

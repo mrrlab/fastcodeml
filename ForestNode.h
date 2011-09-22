@@ -29,8 +29,9 @@ struct ForestNode
 #endif
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
+#ifndef NEW_LIKELIHOOD
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
-
+#endif
 	/// Constructor
 	///
 	ForestNode()
@@ -54,14 +55,18 @@ struct ForestNode
 			{
 				delete (*irn);
 
+#ifndef NEW_LIKELIHOOD
 				delete [] mOtherTreeProb[i];
+#endif
 			}
 		}
 
 		// Clean all arrays
 		mChildrenList.clear();
 		mSubtreeCodonsSignature.clear();
+#ifndef NEW_LIKELIHOOD
 		mOtherTreeProb.clear();
+#endif
 	}
 
 	/// Copy constructor and assignment
@@ -79,7 +84,9 @@ struct ForestNode
 		mInternalNodeId = aNode.mInternalNodeId;
 		mNodeId         = aNode.mNodeId;
 		mOwnTree        = aNode.mOwnTree;
+#ifndef NEW_LIKELIHOOD
 		mOtherTreeProb  = aNode.mOtherTreeProb;
+#endif
 	}
 
 	/// Assignment operator
@@ -102,7 +109,9 @@ struct ForestNode
 			mInternalNodeId = aNode.mInternalNodeId;
 			mNodeId         = aNode.mNodeId;
 			mOwnTree        = aNode.mOwnTree;
+#ifndef NEW_LIKELIHOOD
 			mOtherTreeProb  = aNode.mOtherTreeProb;
+#endif
 		}
 
 		// Return ref for multiple assignment
