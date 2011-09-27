@@ -5,6 +5,7 @@
 #include <iostream>
 #include <climits>
 #include <cstring>
+#include <string>
 #include "MatrixSize.h"
 
 

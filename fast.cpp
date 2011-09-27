@@ -46,6 +46,8 @@ int main(int ac, char **av)
 {
 	try
 	{
+	// For reporting
+	unsigned int num_threads = 1;
 
 	// Parse the command line
 	CmdLine cmd;
@@ -73,6 +75,7 @@ int main(int ac, char **av)
 #ifdef _OPENMP
 		if(!cmd.mForceSerial)						std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
+		num_threads = cmd.mForceSerial ? 1 : omp_get_max_threads();
 #endif
 		std::cerr << std::endl;
 	}
@@ -83,7 +86,7 @@ int main(int ac, char **av)
 
 	// Start a timer (to measure serial part over parallel one)
 	Timer timer;
-	if(cmd.mVerboseLevel >= 2) timer.start();
+	if(cmd.mVerboseLevel >= 1) timer.start();
 
 	// Load the genes
 	Genes g(cmd.mVerboseLevel);
@@ -156,13 +159,13 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing): " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << num_threads << " time: " << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 2) std::cerr << forest;
 
 	// Start timing parallel part
-	if(cmd.mVerboseLevel >= 2) timer.start();
+	if(cmd.mVerboseLevel >= 1) timer.start();
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
@@ -228,7 +231,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= 2) {timer.stop(); std::cerr << std::endl << "TIMER: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << num_threads << " time: " << timer.get() << std::endl;}
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions

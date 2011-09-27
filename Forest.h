@@ -3,6 +3,7 @@
 #define FOREST_H
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <utility>
 #include <map>
@@ -50,7 +51,9 @@ public:
 		mNodeNames.clear();
 		mBranchLengths.clear();
 		mProbs.clear();
+#ifdef NEW_LIKELIHOOD
 		mProbsOut.clear();
+#endif
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -295,6 +298,12 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode);
 
+#ifdef NEW_LIKELIHOOD
+	inline unsigned int getProbVectorIdx(unsigned int aBranch, unsigned int aSet, unsigned int aSite, unsigned int aCodon) const
+	{
+		return aBranch*(Nt*mNumSites*N)+aSet*(mNumSites*N)+aSite*(N)+aCodon;
+	}
+#endif
 
 private:
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
@@ -311,6 +320,7 @@ private:
 							mMapInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
+	size_t					mNumSites;					///< Number of sites
 
 	/// Here are global data that will be removed from the various (site) trees
 	std::vector<std::string>
@@ -325,10 +335,10 @@ private:
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
 							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
-	std::vector< std::vector<unsigned int> >
-							mBranchByLevel;				///< Each level contains a list of branch numbers at this level. List start from the leaves.
 	FatVectorTransform		mFatVectorTransform;		///< Compute and manage the transformations to pack the "long vector" based on subtree pruning
-
+#else
+	/// Unified array for each branch probability vector
+	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
 };
 

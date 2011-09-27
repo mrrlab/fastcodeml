@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <utility>
+#include "ForestNode.h"
 
 /// Manipolations on the per-branch probability vector array.
 ///
@@ -16,7 +17,7 @@ class FatVectorTransform
 public:
 	/// Constructor.
 	///
-	FatVectorTransform() : mNumBranches(0), mNumSites(0) {}
+	FatVectorTransform() : mNumBranches(0), mNumSites(0), mNoTransformations(true) {}
 
 	/// Destructor.
 	///
@@ -26,7 +27,10 @@ public:
 		mLimits.clear();
 		mCopyCmds.clear();
 		mReuseCmds.clear();
+		mFirstForLevel.clear();
 	}
+
+	void setBranchDependencies(const std::vector< std::vector<ForestNode*> >& aNodesByLevel);
 
 	/// Initialize the class instance
 	///
@@ -38,9 +42,10 @@ public:
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
 		mNodeStatus.assign(aNumBranches*aNumSites, FatVectorTransform::SITE_NOT_EXISTS);
-		mLimits.assign(aNumBranches, std::make_pair(0, aNumSites-1));
+		mLimits.assign(aNumBranches, std::make_pair(0, aNumSites));
 		mCopyCmds.clear();
 		mReuseCmds.clear();
+		mNoTransformations = false;
 	}
 	
 	/// Initialize the class instance so can be used if no subtree pruning is present
@@ -52,9 +57,10 @@ public:
 	{
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
-		mLimits.assign(aNumBranches, std::make_pair(0, aNumSites-1));
+		mLimits.assign(aNumBranches, std::make_pair(0, aNumSites));
 		mCopyCmds.clear();
 		mReuseCmds.clear();
+		mNoTransformations = true;
 	}
 
 	/// Set the corresponding node as existing for the given site
@@ -84,9 +90,8 @@ public:
 
 	/// Prints (on stderr) the visit sequence of branches.
 	///
-	/// @param[in] aBranchByLevel List (one for each level starting with the one without dependencies) of lists (the parallel branches)
 	///
-	void printBranchVisitSequence(const std::vector< std::vector<unsigned int> >& aBranchByLevel) const;
+	void printBranchVisitSequence(void) const;
 
 	/// Prints (on sterr) for each branch and each site if it is valid, if it is not present and if takes the value from another site
 	///
@@ -108,15 +113,22 @@ public:
 	///
 	inline unsigned int getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
 
-	/// Get the last index to be used for computation
+	/// Get the number of items to be used for computation
 	///
 	/// @param[in] aBranch Specify the value for which branch should be returned.
 	///
-	/// @return The ending index
+	/// @return The item count
 	///
-	inline unsigned int getUpperIndex(unsigned int aBranch) const {return mLimits[aBranch].second;}
+	inline unsigned int getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
 
-	void preCompact(std::vector<double>& aProbs, unsigned int aBranch, unsigned int aSet);
+	/// Compact the fat vector at the leaves.
+	///
+	/// @param[in,out] aProbs The fat probability vector that will be changed at the leaves level
+	///
+	void preCompactLeaves(std::vector<double>& aProbs);
+
+
+	void postCompact(const std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets);
 
 
 private:
@@ -147,9 +159,14 @@ private:
 	typedef std::vector< std::vector<Range> > VectorOfVectorOfRanges;
 	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;
 
-	VectorOfPairs						mLimits;				///< Lower and upper limits for each branch
+	VectorOfPairs						mLimits;				///< Lower index and total count for each branch
 	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes
 	VectorOfVectorOfRanges				mReuseCmds;				///< Ranges to be reused copying the computed value
+	std::vector<bool>					mFirstForLevel;			///< One entry for branch set to true if it is the forst entry for its level
+	bool								mNoTransformations;		///< If set no transformation will take place (corresponds to no prune case)
+	std::vector< std::vector<unsigned int> >
+										mBranchByLevel;			///< Each level contains a list of branch numbers at this level. List start from the leaves.
+	std::vector<unsigned int>			mParentBranch;			///< Parent index (incremented by one!) 
 };
 
 #endif

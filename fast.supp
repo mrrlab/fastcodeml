@@ -570,3 +570,14 @@
    fun:start_thread
    fun:clone
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   obj:/usr/lib64/libgomp.so.1.0.0
+   obj:/usr/lib64/libgomp.so.1.0.0
+   fun:_ZN6Forest16loadTreeAndGenesERK9PhyloTreeRK5Genesb
+   fun:main
+}
+
