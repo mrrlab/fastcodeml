@@ -21,12 +21,11 @@
 struct ForestNode
 {
 	unsigned int				mInternalNodeId;			///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
-	unsigned int				mNodeId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
+	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD
-	//double						mProb0[N*Nt];				///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
-	double*						mProb[Nt];
+	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 #endif
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
@@ -76,17 +75,17 @@ struct ForestNode
 	///
 	ForestNode(const ForestNode& aNode)
 	{
-		mChildrenList  = aNode.mChildrenList;
-		mParent        = aNode.mParent;
-		mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
+		mChildrenList			= aNode.mChildrenList;
+		mParent					= aNode.mParent;
+		mSubtreeCodonsSignature	= aNode.mSubtreeCodonsSignature;
 #ifndef NEW_LIKELIHOOD
 		memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
-		mInternalNodeId = aNode.mInternalNodeId;
-		mNodeId         = aNode.mNodeId;
-		mOwnTree        = aNode.mOwnTree;
+		mInternalNodeId			= aNode.mInternalNodeId;
+		mBranchId				= aNode.mBranchId;
+		mOwnTree				= aNode.mOwnTree;
 #ifndef NEW_LIKELIHOOD
-		mOtherTreeProb  = aNode.mOtherTreeProb;
+		mOtherTreeProb			= aNode.mOtherTreeProb;
 #endif
 	}
 
@@ -101,17 +100,17 @@ struct ForestNode
 		// Make sure not same object
 		if(this != &aNode)
 		{
-			mChildrenList  = aNode.mChildrenList;
-			mParent        = aNode.mParent;
+			mChildrenList			= aNode.mChildrenList;
+			mParent					= aNode.mParent;
 			mSubtreeCodonsSignature = aNode.mSubtreeCodonsSignature;
 #ifndef NEW_LIKELIHOOD
 			memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
-			mInternalNodeId = aNode.mInternalNodeId;
-			mNodeId         = aNode.mNodeId;
-			mOwnTree        = aNode.mOwnTree;
+			mInternalNodeId			= aNode.mInternalNodeId;
+			mBranchId				= aNode.mBranchId;
+			mOwnTree				= aNode.mOwnTree;
 #ifndef NEW_LIKELIHOOD
-			mOtherTreeProb  = aNode.mOtherTreeProb;
+			mOtherTreeProb			= aNode.mOtherTreeProb;
 #endif
 		}
 
@@ -134,11 +133,11 @@ struct ForestNode
 		for(i=0; i < aIndent; ++i) aOut << ' ';
 
 		// Print the name
-		aOut << '<' << ((mNodeId  != UINT_MAX) ? aNodeNames[mNodeId+1] : aNodeNames[0]) << "> ";
+		aOut << '<' << ((mBranchId  != UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
 	
 		// Print the ID
-		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mNodeId << ") ";
-		else                            aOut << '('                    << '|' << mNodeId << ") ";
+		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << ") ";
+		else                            aOut << '('                    << '|' << mBranchId << ") ";
 
 		// Print the indexes of the codons accumulated till this node
 		std::vector<int>::const_iterator ig;
@@ -157,7 +156,7 @@ struct ForestNode
 			else
 			{
 				for(i=0; i < aIndent+aIncrement; ++i) aOut << ' ';
-				i = (*irn)->mNodeId;
+				i = (*irn)->mBranchId;
 				if(i == UINT_MAX) i = 0;
 				aOut << '[' << aNodeNames[i] << ']' << std::endl;
 			}
@@ -218,17 +217,6 @@ struct ForestNode
 		}
 	
 		return cnt;
-	}
-
-	/// Tests if the given child is in the same tree or not
-	///
-	/// @param[in] aChildIdx Index of the child in the list of children
-	///
-	/// @return True if it is in the same tree
-	///
-	inline bool isSameTree(unsigned int aChildIdx)
-	{
-		return (mChildrenList[aChildIdx]->mOwnTree == mOwnTree);
 	}
 };
 

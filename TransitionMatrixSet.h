@@ -109,7 +109,7 @@ public:
 #endif
 	}
 
-	inline void doTransition2(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
+	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
 #ifdef USE_DGEMM

@@ -32,7 +32,7 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 	// Count entries and create an indicator array
 	for(cnt=0; aParserOptions[cnt].pszArg != NULL; ++cnt) {}
 	std::vector<bool> done;
-	done.resize(cnt, false);
+	done.assign(cnt, false);
 
 	// For each different option
 	for(i=0; i < cnt; ++i)
@@ -96,6 +96,7 @@ CmdLine::CmdLine()
 	mBranchFromFile			= false;
 	mComputeHypothesis		= UINT_MAX;
 	mInitH1fromH0			= false;
+	mOptimizationAlgo		= 0;
 }
 
 
@@ -119,7 +120,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
-		OPT_INIT_H1_FROM_H0
+		OPT_INIT_H1_FROM_H0,
+		OPT_OPTIM_ALGO
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -160,6 +162,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H1_FROM_H0,	"-i0",					SO_NONE,	"Start H1 optimization from H0 results" },
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
+		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA)" },
+		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -253,6 +257,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_INIT_H1_FROM_H0:
 			mInitH1fromH0 = true;
+			break;
+
+		case OPT_OPTIM_ALGO:
+			mOptimizationAlgo = atoi(args.OptionArg());
 			break;
 		}
 	}

@@ -343,7 +343,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	}
 
 	// Set the root values
-	aForestNode->mNodeId = aNodeId;
+	aForestNode->mBranchId = aNodeId;
 	aForestNode->mOwnTree = aTreeId;
 
 	// Set the internal branch identifier

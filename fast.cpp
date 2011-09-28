@@ -175,7 +175,7 @@ int main(int ac, char **av)
 		// Compute the null model maximum loglikelihood
 		BranchSiteModelNullHyp h0(forest.getNumBranches(), cmd.mSeed);
 		double lnl0 = 0;
-		if(cmd.mComputeHypothesis != 1)	lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace);
+		if(cmd.mComputeHypothesis != 1)	lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 
 		// Compute the alternate model maximum loglikelihood
 		BranchSiteModelAltHyp h1(forest.getNumBranches(), cmd.mSeed);
@@ -184,7 +184,7 @@ int main(int ac, char **av)
 		{
 			const double* starting_values = 0;
 			if(cmd.mInitH1fromH0) starting_values = h0.getStartingValues();
-			lnl1 = h1.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, starting_values);
+			lnl1 = h1.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, starting_values, cmd.mOptimizationAlgo);
 		}
 
 		if(cmd.mVerboseLevel >= 1)
@@ -356,5 +356,8 @@ int main(int ac, char **av)
 ///
 /// -i0  --init-from-h0 (no argument)
 ///        Start H1 optimization from H0 results
+///
+/// -m --maximizer (required argument)
+///        Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA)" },
 ///
 /// @endverbatim

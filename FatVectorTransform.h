@@ -30,6 +30,10 @@ public:
 		mFirstForLevel.clear();
 	}
 
+	/// Create the dependency list between levels in the tree
+	///
+	/// @param[in] aNodesByLevel List of lists of pointers to nodes one for each level
+	///
 	void setBranchDependencies(const std::vector< std::vector<ForestNode*> >& aNodesByLevel);
 
 	/// Initialize the class instance
@@ -90,14 +94,13 @@ public:
 
 	/// Prints (on stderr) the visit sequence of branches.
 	///
-	///
 	void printBranchVisitSequence(void) const;
 
 	/// Prints (on sterr) for each branch and each site if it is valid, if it is not present and if takes the value from another site
 	///
 	void printNodeStatus(void) const;
 
-	/// Compute the commands needed to compact the various lists of commands
+	/// Compute the commands needed to compact the various fat vectors (matrices, one for each branch) of probability vectors
 	///
 	void compactMatrix(void);
 
@@ -107,17 +110,17 @@ public:
 
 	/// Get the first index to be used for computation
 	///
-	/// @param[in] aBranch Specify the value for which branch should be returned.
+	/// @param[in] aBranch Specify which branch should be returned.
 	///
-	/// @return The starting index
+	/// @return The starting index in the fat vector
 	///
 	inline unsigned int getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
 
 	/// Get the number of items to be used for computation
 	///
-	/// @param[in] aBranch Specify the value for which branch should be returned.
+	/// @param[in] aBranch Specify which branch should be returned.
 	///
-	/// @return The item count
+	/// @return The count of sites to be used
 	///
 	inline unsigned int getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
 
@@ -127,26 +130,28 @@ public:
 	///
 	void preCompactLeaves(std::vector<double>& aProbs);
 
-
+	/// Compact the fat vector at a certain level in the tree (TBD)
+	///
 	void postCompact(const std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets);
 
 
 private:
-	unsigned int			mNumBranches;			///< The number of branches
-	unsigned int			mNumSites;				///< The number of valid sites. The values are:
-	std::vector<int>		mNodeStatus;			///< - -2 if the correstponding: Branch -> Site exists
-													///< -1 if doesn't exist
-													///< The site number from which the value is taken
+	unsigned int			mNumBranches;			///< The number of branches.
+	unsigned int			mNumSites;				///< The number of valid sites.
+	std::vector<int>		mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are:
+													///< - SITE_EXISTS if the corresponding: (Branch, Site) exists
+													///< - SITE_NOT_EXISTS if doesn't exist
+													///< - The site number from which the value is taken (reused)
 	enum {
 		SITE_EXISTS     = -2,						///< The position (Branch, Site) in mNodePresent exists
 		SITE_NOT_EXISTS = -1,						///< The position (Branch, Site) in mNodePresent refers to a not existend node
-		SITE_FIRST_NUM  =  0						///< if greather or equal to this the position contains the index from which the value should be copied
+		SITE_FIRST_NUM  =  0						///< if greather or equal to this value the position contains the index from which the value should be copied
 	};
 
 	/// Representation of a range to be copied
 	struct Range
 	{
-		Range(unsigned int aFrom, unsigned int aTo, unsigned int aCnt=1) {from = aFrom; to = aTo; cnt = aCnt;}
+		Range(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo; cnt = 1;}
 
 		unsigned int from;		///< Starting index from which to copy
 		unsigned int to;		///< Starting index to which the values should be copied
@@ -160,13 +165,13 @@ private:
 	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;
 
 	VectorOfPairs						mLimits;				///< Lower index and total count for each branch
-	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes
-	VectorOfVectorOfRanges				mReuseCmds;				///< Ranges to be reused copying the computed value
-	std::vector<bool>					mFirstForLevel;			///< One entry for branch set to true if it is the forst entry for its level
-	bool								mNoTransformations;		///< If set no transformation will take place (corresponds to no prune case)
+	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes (one list for each branch)
+	VectorOfVectorOfRanges				mReuseCmds;				///< Ranges to be reused copying the computed value (one list for each branch)
+	std::vector<bool>					mFirstForLevel;			///< One entry for branch set to true if it is the first entry for its level
+	bool								mNoTransformations;		///< If set no transformation will take place (corresponds to no tree prune case)
 	std::vector< std::vector<unsigned int> >
 										mBranchByLevel;			///< Each level contains a list of branch numbers at this level. List start from the leaves.
-	std::vector<unsigned int>			mParentBranch;			///< Parent index (incremented by one!) 
+	std::vector<unsigned int>			mParentNode;			///< One entry for branch set to the parent node index
 };
 
 #endif

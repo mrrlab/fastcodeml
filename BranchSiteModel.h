@@ -67,10 +67,11 @@ public:
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aOnlyInitialStep If set do not maximize, compute only the starting point
 	/// @param[in] aTrace If set the maximization is traced
+	/// @param[in] aOptAlgo The optimization method to be used
 	///
 	/// @return The maximum Likelihood value
 	///
-	double maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace);
+	double maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
@@ -84,6 +85,11 @@ public:
 	virtual double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
 	const double* getStartingValues(void) const {return &mVar[0];}
+
+	enum {
+		OPTIM_LD_LBFGS		= 0,
+		OPTIM_LN_BOBYQA		= 1
+	};
 
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
@@ -155,7 +161,7 @@ public:
 	///
 	/// @return The log likelihood for the null hypothesis
 	///
-	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace);
+	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo=0);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
@@ -206,7 +212,8 @@ public:
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
-	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0);
+	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0, unsigned int aOptAlgo=0);
+
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///

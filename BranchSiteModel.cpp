@@ -58,7 +58,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 }
 
 
-double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace)
+double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo)
 {
 	unsigned int i;
 
@@ -145,11 +145,11 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 #endif
 
 	// Run the optimizer
-	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
+	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
 
 
-double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0)
+double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0, unsigned int aOptAlgo)
 {
 	unsigned int i;
 
@@ -255,7 +255,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 #endif
 
 	// Run the optimizer
-	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace);
+	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
 
 	
@@ -540,7 +540,7 @@ private:
 };
 #endif
 
-double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace)
+double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo)
 {
 	// Print starting values
 	if(aTrace)
@@ -564,17 +564,30 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	// If only the initial step is requested, do it and return
 	if(aOnlyInitialStep) return oneCycleMaximizer(aForest, aFgBranch, mVar, aTrace);
 
-	// Select the optimization algorithm
-//	nlopt::opt opt(nlopt::GN_DIRECT_L, mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::GN_ISRES,    mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
-//	nlopt::opt opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
+	// Select the maximizer algorithm
+	nlopt::opt *opt;
+	switch(aOptAlgo)
+	{
+	case OPTIM_LD_LBFGS:
+		opt = new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
+		break;
 
-	nlopt::opt *opt = new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
+	case OPTIM_LN_BOBYQA:
+		opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
+		break;
+
+	//	opt = new nlopt::opt(nlopt::GN_DIRECT_L, mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::GN_ISRES,    mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
+	//	opt = new nlopt::opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
+
+	default:
+		throw FastCodeMLFatal("Invalid optimization algorithm");
+	}
 
 	// Initialize bounds and termination criteria
 	try

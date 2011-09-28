@@ -9,7 +9,7 @@
 
 void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<ForestNode*> >& aNodesByLevel)
 {
-	// Push only the branch id's (and compute num branches)
+	// Push only the branch id's (and compute num branches). The root is not pushed!
 	mNumBranches = 0;
 	mBranchByLevel.clear();
 	std::vector< std::vector<ForestNode*> >::const_reverse_iterator inbl;
@@ -19,15 +19,14 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
 		{
-			v.push_back((*ifn)->mNodeId);
+			v.push_back((*ifn)->mBranchId);
 			++mNumBranches;
 		}
 		mBranchByLevel.push_back(v);
 	}
 
-	// Compose with the other results for the branches starting from this node
+	// Mark the first branch for nodes at the level below
 	mFirstForLevel.assign(mNumBranches, false);
-
     ForestNode* curr_node = 0;
 	for(inbl=aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl)
     {
@@ -40,19 +39,19 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 			if(parent_node != curr_node)
 			{
 				curr_node = parent_node;
-				mFirstForLevel[(*ifn)->mNodeId] = true;
+				mFirstForLevel[(*ifn)->mBranchId] = true;
 			}
 		}
 	}
 
 	// Discover the parent of each branch
-	mParentBranch.resize(mNumBranches);
+	mParentNode.resize(mNumBranches);
 	for(inbl=aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl)
 	{
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
 		{
-			mParentBranch[(*ifn)->mNodeId] = (*ifn)->mParent->mNodeId+1;
+			mParentNode[(*ifn)->mBranchId] = (*ifn)->mParent->mBranchId+1; // The parent node is the node from which the branch originate
 		}
 	}
 }
@@ -87,14 +86,14 @@ void FatVectorTransform::printCountGoodElements(void) const
 		unsigned int cnt = 0;
 		for(unsigned int k=begin_idx; k < end_idx; ++k) if(mNodeStatus[b*mNumSites+k] == FatVectorTransform::SITE_EXISTS) ++cnt;
 
-		std::cerr << std::setw(2) << b+1 << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
+		std::cerr << std::setw(2) << b << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
 	}
 }
 
 
 void FatVectorTransform::printBranchVisitSequence(void) const
 {
-	std::cerr << std::endl;
+	std::cerr << std::endl << "Branch at level" << std::endl;
 	unsigned int level = 1;
 	std::vector< std::vector<unsigned int> >::const_iterator inbl;
 	for(inbl=mBranchByLevel.begin(); inbl != mBranchByLevel.end(); ++inbl, ++level)
@@ -104,16 +103,16 @@ void FatVectorTransform::printBranchVisitSequence(void) const
 		std::vector<unsigned int>::const_iterator ifn;
 		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
 		{
-			std::cerr << (*ifn)+1 << ' ';
+			std::cerr << (*ifn) << ' ';
 		}
 
 		std::cerr << std::endl;
 	}
 
-	std::cerr << std::endl;
-	for(unsigned int i=0; i < mParentBranch.size(); ++i)
+	std::cerr << std::endl << "Parent node for branch" << std::endl;
+	for(unsigned int i=0; i < mNumBranches; ++i)
 	{
-		std::cerr << std::setw(2) << i << " -> " << std::setw(2) << mParentBranch[i] << std::endl;
+		std::cerr << std::setw(2) << i << " -> " << std::setw(2) << mParentNode[i] << std::endl;
 	}
 }
 
@@ -122,13 +121,13 @@ void FatVectorTransform::printBranchVisitSequence(void) const
 void FatVectorTransform::printNodeStatus(void) const
 {
 	std::cerr << std::endl;
-	for(size_t j=0; j < mNumBranches; ++j)
+	for(unsigned int b=0; b < mNumBranches; ++b)
 	{
-		std::cerr << "Branch " << j+1 << std::endl;
+		std::cerr << "Branch " << b << std::endl;
 		bool is_num = false;
-		for(size_t k = 0; k < mNumSites; ++k)
+		for(unsigned int k = 0; k < mNumSites; ++k)
 		{
-			int x = mNodeStatus[j*mNumSites+k];
+			int x = mNodeStatus[b*mNumSites+k];
 			if(x == FatVectorTransform::SITE_NOT_EXISTS)  {std::cerr << '-'; is_num = false;}
 			else if(x == FatVectorTransform::SITE_EXISTS) {std::cerr << 'x'; is_num = false;}
 			else                                          {if(is_num) std::cerr << ' '; std::cerr << x; is_num = true;}
@@ -241,24 +240,24 @@ void FatVectorTransform::printCommands(void) const
 {
 	for(unsigned int b=0; b < mNumBranches; ++b)
 	{
-		std::cerr << std::endl << "*** Branch " << b+1 << std::endl;
+		std::cerr << std::endl << "*** Branch " << b << std::endl;
 
 		VectorOfRanges::const_iterator icc;
 		for(icc=mCopyCmds[b].begin(); icc != mCopyCmds[b].end(); ++icc)
 		{
 			if(icc->cnt > 0)
-				std::cerr << "C " << std::setw(4) << icc->from << '-' << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
+				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
 		}
 
 		for(icc=mReuseCmds[b].begin(); icc != mReuseCmds[b].end(); ++icc)
 		{
 			if(icc->cnt == 1)
-				std::cerr << "R " << std::setw(4) << icc->from << '-' << std::setw(4) << icc->to << std::endl;
+				std::cerr << "R " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
 			else
-				std::cerr << "R " << std::setw(4) << icc->from << '-' << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
+				std::cerr << "R " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
 		}
 
-		std::cerr << "L " << std::setw(4) << mLimits[b].first << "- cnt: " << std::setw(4) << mLimits[b].second << std::endl;
+		std::cerr << "L   from: " << mLimits[b].first << " cnt: " << mLimits[b].second << std::endl;
 	}
 }
 
@@ -268,20 +267,19 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 	// If the forest has not been reduced do nothing (this should not happens)
 	if(mNoTransformations) return;
 
-	// Find the branches that lead to the leaves (beware, the indices are incremented by one)
+	// Find all the nodes that are parent of other nodes (ie. they are not leaves)
 	std::set<unsigned int> non_leaves;
-	std::vector<unsigned int>::const_iterator ipb;
-	for(ipb=mParentBranch.begin(); ipb != mParentBranch.end(); ++ipb) non_leaves.insert(*ipb);
+	non_leaves.insert(mParentNode.begin(), mParentNode.end());
 
 	// Make a list of leaves
 	std::vector<unsigned int> leaves;
-	for(unsigned int branch=0; branch < mNumBranches; ++branch)
+	for(unsigned int node=1; node <= mNumBranches; ++node)
 	{
 		// Check if the branch is a leaf
-		if(non_leaves.find(branch+1) != non_leaves.end()) leaves.push_back(branch);
+		if(non_leaves.find(node) != non_leaves.end()) leaves.push_back(node);
 	}
 
-	// For all the leaves and all sets
+	// For all leaves and all sets
 	int len = leaves.size()*Nt;
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(len, leaves, aProbs)
@@ -290,17 +288,17 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 #endif
 	for(int i=0; i < len; ++i)
 	{
-		unsigned int branch  = leaves[i / Nt];
+		unsigned int node    = leaves[i / Nt];
 		unsigned int set_idx = i % Nt;
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc;
-		for(icc=mCopyCmds[branch].begin(); icc != mCopyCmds[branch].end(); ++icc)
+		for(icc=mCopyCmds[node].begin(); icc != mCopyCmds[node].end(); ++icc)
 		{
 			if(icc->cnt > 0)
 			{
-				memcpy(&aProbs[N*mNumSites*Nt*branch+set_idx*(mNumSites*N)+N*icc->to],
-					   &aProbs[N*mNumSites*Nt*branch+set_idx*(mNumSites*N)+N*icc->from],
+				memcpy(&aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
+					   &aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
 					   N*icc->cnt*sizeof(double));
 			}
 		}
@@ -315,58 +313,77 @@ void FatVectorTransform::postCompact(const std::vector<double>& aStepResults, st
 		std::vector<unsigned int>::const_iterator ibl;
 		for(ibl=mBranchByLevel[aLevel].begin(); ibl != mBranchByLevel[aLevel].end(); ++ibl)
 		{
-			unsigned int parent_branch = mParentBranch[*ibl];
-			unsigned int     my_branch = *ibl + 1;
+			unsigned int parent_node = mParentNode[*ibl];
+			unsigned int     my_node = *ibl + 1;
 
 			if(mFirstForLevel[*ibl])
 			{
-				memcpy(&aProbs[N*mNumSites*Nt*parent_branch], &aStepResults[N*mNumSites*Nt*my_branch], N*mNumSites*aNumSets*sizeof(double));
+				memcpy(&aProbs[N*mNumSites*Nt*parent_node], &aStepResults[N*mNumSites*Nt*my_node], N*mNumSites*aNumSets*sizeof(double));
 			}
 			else
 			{
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_branch, my_branch, aNumSets, aProbs, aStepResults)
+				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults)
 #else
 				#pragma omp parallel for default(shared)
 #endif
                 for(int i=0; i < (int)(N*mNumSites*aNumSets); ++i)
                 {
-                    aProbs[N*mNumSites*Nt*parent_branch+i] *= aStepResults[N*mNumSites*Nt*my_branch+i];
+                    aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*my_node+i];
                 }
 			}
 		}
 	}
 	else
 	{
-		throw FastCodeMLFatal("postCompact not yet implemented");
-#if 0
+		throw FastCodeMLFatal("*** postCompact not yet implemented ***");
+
+		// For all the branches just processed
 		std::vector<unsigned int>::const_iterator ibl;
 		for(ibl=mBranchByLevel[aLevel].begin(); ibl != mBranchByLevel[aLevel].end(); ++ibl)
 		{
-			unsigned int parent_branch = mParentBranch[*ibl];
-			unsigned int     my_branch = *ibl + 1;
+			unsigned int branch      = *ibl;
+			unsigned int parent_node = mParentNode[*ibl];
+			unsigned int     my_node = *ibl + 1;
+
+			// Reverse all copies
+
+			// Reuse values 
 
 			if(mFirstForLevel[*ibl])
 			{
-				VectorOfRanges::const_iterator icc;
-				for(icc=mCopyCmds[*ibl].begin(); icc != mCopyCmds[*ibl].end(); ++icc)
-				{
-					if(icc->cnt > 0)
-					{
-						memcpy(&aProbs[N*mNumSites*Nt*parent_branch+N*mNumSites*aSet+N*icc->to],
-							   &aStepResults[N*mNumSites*Nt*aBranch+N*mNumSites*aSet+N*icc->from],
-							   N*icc->cnt*sizeof(double));
-					}
-				}
-				for(icc=mReuseCmds[*ibl].begin(); icc != mReuseCmds[*ibl].end(); ++icc)
-				{
-				}
-				//memcpy(&aProbs[N*mNumSites*Nt*parent_branch], &aStepResults[N*mNumSites*Nt*my_branch], N*mNumSites*aNumSets*sizeof(double));
+				memcpy(&aProbs[N*mNumSites*Nt*parent_node], &aStepResults[N*mNumSites*Nt*my_node], N*mNumSites*aNumSets*sizeof(double));
 			}
 			else
 			{
+#ifdef _MSC_VER
+				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults)
+#else
+				#pragma omp parallel for default(shared)
+#endif
+                for(int i=0; i < (int)(N*mNumSites*aNumSets); ++i)
+                {
+                    aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*my_node+i];
+                }
+			}
+
+			// Copy for le
+			if(parent_node)
+			{
+#if 0
+				// Do all the copies as requested
+				VectorOfRanges::const_iterator icc;
+				for(icc=mCopyCmds[node].begin(); icc != mCopyCmds[node].end(); ++icc)
+				{
+					if(icc->cnt > 0)
+					{
+						memcpy(&aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
+							   &aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
+							   N*icc->cnt*sizeof(double));
+					}
+				}
+#endif
 			}
 		}
-#endif
 	}
 }

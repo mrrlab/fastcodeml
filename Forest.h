@@ -85,7 +85,7 @@ public:
 
 	/// Remove all work data used for reduction
 	///
-	/// @param[in] aNode The node from which to start. Pass zero to start with all the trees in the forest.
+	/// @param[in] aNode The node from which to start. Pass zero to start from the root of all the trees in the forest.
 	///
 	void cleanReductionWorkingData(ForestNode* aNode=0);
 
@@ -202,7 +202,7 @@ public:
 	///
 	void prepareNewReduction(ForestNode* aNode=0);
 
-	/// Prepare the data for a forest that has no reduction
+	/// Prepare the data for a forest that has not been reduced
 	///
 	void prepareNewReductionNoReuse(void);
 #endif
@@ -219,6 +219,7 @@ public:
 	///
 	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
 #endif
+
 
 private:
 	/// Reduce the common subtree between two (sub)trees
@@ -265,6 +266,7 @@ private:
 							std::vector< std::pair<int, int> >& aNodeFrom,
 							std::vector< std::pair<int, int> >& aNodeTo,
 							std::vector<double>& aLength) const;
+
 #ifndef NEW_LIKELIHOOD
 	/// Walker for the computation of tree likelihood
 	///
@@ -276,6 +278,7 @@ private:
 	///
 	double* computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
 #endif
+
 	/// Change the index into the full list of codons (64) into the non-stop codons list used here (61)
 	///
 	/// @param[in] aId64 The index in the range 0..63 (i.e. from TTT to GGG)
@@ -288,7 +291,7 @@ private:
 	///
 	void setCodonFrequenciesF3x4(void);
 
-	/// Set the codon frequencies all to 1/61
+	/// Set all codon frequencies to 1/61
 	///
 	void setCodonFrequenciesUnif(void);
 
@@ -299,9 +302,9 @@ private:
 	void mapInternalToBranchIdWalker(const ForestNode* aNode);
 
 #ifdef NEW_LIKELIHOOD
-	inline unsigned int getProbVectorIdx(unsigned int aBranch, unsigned int aSet, unsigned int aSite, unsigned int aCodon) const
+	inline unsigned int getProbVectorIdx(unsigned int aNode, unsigned int aSet, unsigned int aSite, unsigned int aCodon) const
 	{
-		return aBranch*(Nt*mNumSites*N)+aSet*(mNumSites*N)+aSite*(N)+aCodon;
+		return aNode*(Nt*mNumSites*N)+aSet*(mNumSites*N)+aSite*(N)+aCodon;
 	}
 #endif
 
@@ -331,6 +334,15 @@ private:
 #ifdef NEW_LIKELIHOOD
 
 	/// New loglikelihood computation support
+		
+	/// The mProbs and mProbsOut layout
+	///
+	/// [site0][site1][site2]...  [site0][site1][site2]...               each is 61 bytes long
+	/// [ set 0                  ][ set 1                  ]...          there are 4 (Nt) sets
+	/// [   node 0                                             ]...
+	///
+	/// site_index = node*(Nt*NumSites*N)+set*(NumSites*N)+site*(N)
+	///
 	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
