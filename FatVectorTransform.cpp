@@ -271,12 +271,12 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 	std::set<unsigned int> non_leaves;
 	non_leaves.insert(mParentNode.begin(), mParentNode.end());
 
-	// Make a list of leaves
+	// Make a list of leaf nodes
 	std::vector<unsigned int> leaves;
 	for(unsigned int node=1; node <= mNumBranches; ++node)
 	{
-		// Check if the branch is a leaf
-		if(non_leaves.find(node) != non_leaves.end()) leaves.push_back(node);
+		// Check if the node is a leaf, if not skip it
+		if(non_leaves.find(node) == non_leaves.end()) leaves.push_back(node);
 	}
 
 	// For all leaves and all sets
@@ -293,7 +293,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc;
-		for(icc=mCopyCmds[node].begin(); icc != mCopyCmds[node].end(); ++icc)
+		for(icc=mCopyCmds[node-1].begin(); icc != mCopyCmds[node-1].end(); ++icc)
 		{
 			if(icc->cnt > 0)
 			{
@@ -306,7 +306,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 }
 
 
-void FatVectorTransform::postCompact(const std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets)
+void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets)
 {
 	if(mNoTransformations)
 	{
@@ -336,53 +336,77 @@ void FatVectorTransform::postCompact(const std::vector<double>& aStepResults, st
 	}
 	else
 	{
-		throw FastCodeMLFatal("*** postCompact not yet implemented ***");
-
 		// For all the branches just processed
 		std::vector<unsigned int>::const_iterator ibl;
 		for(ibl=mBranchByLevel[aLevel].begin(); ibl != mBranchByLevel[aLevel].end(); ++ibl)
 		{
 			unsigned int branch      = *ibl;
+			unsigned int node        = *ibl + 1;
 			unsigned int parent_node = mParentNode[*ibl];
-			unsigned int     my_node = *ibl + 1;
 
 			// Reverse all copies
+			VectorOfRanges::const_iterator icc;
+			for(icc=mCopyCmds[branch].begin(); icc != mCopyCmds[branch].end(); ++icc)
+			{
+				if(icc->cnt > 0)
+				{
+					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
+					{
+						memcpy(&aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
+							   &aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
+							   N*icc->cnt*sizeof(double));
+					}
+				}
+			}
 
 			// Reuse values 
+			for(icc=mReuseCmds[branch].begin(); icc != mReuseCmds[branch].end(); ++icc)
+			{
+				if(icc->cnt > 0)
+				{
+					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
+					{
+						memcpy(&aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
+							   &aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
+							   N*icc->cnt*sizeof(double));
+					}
+				}
+			}
 
 			if(mFirstForLevel[*ibl])
 			{
-				memcpy(&aProbs[N*mNumSites*Nt*parent_node], &aStepResults[N*mNumSites*Nt*my_node], N*mNumSites*aNumSets*sizeof(double));
+				memcpy(&aProbs[N*mNumSites*Nt*parent_node], &aStepResults[N*mNumSites*Nt*node], N*mNumSites*aNumSets*sizeof(double));
 			}
 			else
 			{
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults)
+				#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults)
 #else
 				#pragma omp parallel for default(shared)
 #endif
                 for(int i=0; i < (int)(N*mNumSites*aNumSets); ++i)
                 {
-                    aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*my_node+i];
+                    aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*node+i];
                 }
 			}
 
-			// Copy for le
+			// Copy for the next branch (if this branch does not lead to the root)
 			if(parent_node)
 			{
-#if 0
 				// Do all the copies as requested
 				VectorOfRanges::const_iterator icc;
-				for(icc=mCopyCmds[node].begin(); icc != mCopyCmds[node].end(); ++icc)
+				for(icc=mCopyCmds[parent_node-1].begin(); icc != mCopyCmds[parent_node-1].end(); ++icc)
 				{
 					if(icc->cnt > 0)
 					{
-						memcpy(&aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
-							   &aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
-							   N*icc->cnt*sizeof(double));
+						for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
+						{
+							memcpy(&aProbs[N*mNumSites*Nt*parent_node+set_idx*(mNumSites*N)+N*icc->to],
+								   &aProbs[N*mNumSites*Nt*parent_node+set_idx*(mNumSites*N)+N*icc->from],
+								   N*icc->cnt*sizeof(double));
+						}
 					}
 				}
-#endif
 			}
 		}
 	}

@@ -13,6 +13,42 @@
 #include "MathSupport.h"
 #include "MatrixSize.h"
 
+#if 0
+void crc(const std::vector<double>& v, unsigned int nsites)
+{
+	union { double value; unsigned char bytes[sizeof(double)]; } data;
+	int  c1 = 52845; 
+	int  c2 = 22719;
+	unsigned int nv = v.size();
+
+	for(unsigned int n=0; n < (nv/(N*nsites*Nt)); ++n)
+	{
+		std::cerr << std::setw(2) << n << ": ";
+		for(unsigned int s=0; s < nsites; ++s)
+		{
+			long sum = 0;
+			int r = 55665;
+			for(int j=0; j < N; ++j)
+			{
+				data.value = v[n*(Nt*nsites*N)+s*(N)+j];
+
+				for(unsigned int k = 0; k < sizeof(double); ++k)
+				{
+					unsigned char cipher = (data.bytes[k] ^ (r >> 8));
+					r = (cipher + r) * c1 + c2;
+					sum += cipher;
+				}
+			}
+			if(sum == 0xfb9d) std::cerr << "  -  ";
+			else  			  std::cerr << std::hex << sum << ' ';
+		}
+		std::cerr << std::endl;
+	}
+	std::cerr << std::endl;
+}
+#endif
+
+
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq)
 {
 	// Check coherence between tree and genes
@@ -156,7 +192,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 		std::cerr << std::endl;
 	}
 #endif
-
+//crc(mProbs, mNumSites);
 	// Record the dependencies between branches
 	mFatVectorTransform.setBranchDependencies(mNodesByLevel);
 
@@ -907,18 +943,19 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 		for(size_t i=0; i < mNumSites; ++i) prepareNewReduction(&mRoots[i]);
 
 		// Print few statistics on the transformation
-		mFatVectorTransform.printCountGoodElements();
-		mFatVectorTransform.printBranchVisitSequence();
-		mFatVectorTransform.printNodeStatus();
+		//mFatVectorTransform.printCountGoodElements();
+		//mFatVectorTransform.printBranchVisitSequence();
+		//mFatVectorTransform.printNodeStatus();
 
 		// Compact the matrix (this creates the lists of operations needed)
 		mFatVectorTransform.compactMatrix();
 
 		// Print the commands
-		mFatVectorTransform.printCommands();
-
+//		mFatVectorTransform.printCommands();
+//crc(mProbs, mNumSites);
 		// Do the initial move
 		mFatVectorTransform.preCompactLeaves(mProbs);
+//crc(mProbs, mNumSites);
 	}
 }
 

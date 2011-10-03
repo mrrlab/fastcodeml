@@ -132,7 +132,7 @@ public:
 
 	/// Compact the fat vector at a certain level in the tree (TBD)
 	///
-	void postCompact(const std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets);
+	void postCompact(std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets);
 
 
 private:
