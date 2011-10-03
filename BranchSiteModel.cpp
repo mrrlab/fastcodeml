@@ -144,6 +144,13 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 #endif
 #endif
 
+	// Check the initial values are inside the domain
+	for(i=0; i < mNumTimes+4; ++i)
+	{
+		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
+		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
+	}
+
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -254,6 +261,13 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 	mUpperBound[mNumTimes+4] = 999.0;						// w2 (in the old code is 999)
 #endif
 
+	// Check the initial values are inside the domain
+	for(i=0; i < mNumTimes+5; ++i)
+	{
+		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
+		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
+	}
+
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -352,7 +366,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 		std::cerr << std::endl << lnl << std::endl;
 		printVar(aVar);
 	}
-//std::cerr << lnl << std::endl;
 
 	return lnl;
 }
