@@ -152,7 +152,7 @@ void FatVectorTransform::compactMatrix(void)
 		if(begin_idx == mNumSites)
 		{
 			char msg[256];
-			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %d", b+1);
+			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %d", b);
 			throw FastCodeMLFatal(msg);
 		}
 
@@ -165,7 +165,7 @@ void FatVectorTransform::compactMatrix(void)
 
 		// Get the compaction moves
 		VectorOfRanges cmds;
-		for(unsigned int site_to=end_idx-1; site_to >= begin_idx; --site_to)
+		for(int site_to=end_idx-1; site_to >= (int)begin_idx; --site_to)
 		{
 			// Select the first hole (from right)
 			if(mNodeStatus[b*mNumSites+site_to] == FatVectorTransform::SITE_EXISTS) continue;
@@ -177,7 +177,7 @@ void FatVectorTransform::compactMatrix(void)
 			cmds.push_back(Range(site_from, site_to));
 
 			// Update the left limit
-			for(++begin_idx; begin_idx < site_to; ++begin_idx)
+			for(++begin_idx; begin_idx < (unsigned int)site_to; ++begin_idx)
 			{
 				// Select the first valid site (from left)
 				if(mNodeStatus[b*mNumSites+begin_idx] == FatVectorTransform::SITE_EXISTS) break;

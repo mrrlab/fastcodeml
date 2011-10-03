@@ -177,22 +177,80 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
     }
 
 #if 0
-	// Try to balance the tree TBD
+	// Show the tree before balancing
 	std::cerr << std::endl;
-	std::vector< std::vector<ForestNode*> >::const_reverse_iterator inbl;
+	std::vector< std::vector<ForestNode*> >::const_reverse_iterator rinbl;
 	unsigned int level = 0;
-	for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl,++level)
+	for(rinbl=mNodesByLevel.rbegin(); rinbl != mNodesByLevel.rend(); ++rinbl,++level)
 	{
 		std::cerr << "Level " << level << ": ";
 		std::vector<ForestNode*>::const_iterator ifn;
-		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
 			std::cerr << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
 		}
 		std::cerr << std::endl;
 	}
 #endif
-//crc(mProbs, mNumSites);
+
+	// Try to balance the tree (ie move leaves to fill underfull levels
+	for(bool found=true; found;)
+	{
+		// Find the level with the maximum number of leaves
+		unsigned int max_len   = 0;
+		unsigned int max_level = 0;
+		unsigned int max_leaf  = 0;
+		std::vector< std::vector<ForestNode*> >::iterator inbl;
+		unsigned int level = 0;
+		for(inbl=mNodesByLevel.begin(),level=0; inbl != mNodesByLevel.end(); ++inbl,++level)
+		{
+			unsigned int num_leaves = 0;
+			unsigned int leaf = 0, i=0;
+			std::vector<ForestNode*>::const_iterator ifn;
+			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn,++i)
+			{
+				if((*ifn)->mChildrenList.empty()) {++num_leaves; leaf = i;}
+			}
+			if(num_leaves == 0) continue;
+
+			unsigned int len = inbl->size();
+			if(len > max_len) {max_len = len; max_level = level; max_leaf = leaf;}
+
+		}
+
+		// Find the first level that can inglobate the leave from level 'max_level' and index 'max_leaf'
+		found = false;
+		for(inbl=mNodesByLevel.begin()+max_level+1,level=max_level+1; inbl != mNodesByLevel.end(); ++inbl,++level)
+		{
+			unsigned int len = inbl->size();
+			if(len < max_len-1)
+			{
+				mNodesByLevel[level].push_back(mNodesByLevel[max_level][max_leaf]);
+				mNodesByLevel[max_level].erase(mNodesByLevel[max_level].begin()+max_leaf);
+				found = true;
+				break;
+			}
+		}
+	}
+
+
+#if 0
+	// Show the tree after balancing
+	std::cerr << std::endl;
+	for(rinbl=mNodesByLevel.rbegin(),level=0; rinbl != mNodesByLevel.rend(); ++rinbl,++level)
+	{
+		std::cerr << "Level " << level << ": ";
+		std::vector<ForestNode*>::const_iterator ifn;
+		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
+		{
+			std::cerr << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
+		}
+		std::cerr << std::endl;
+	}
+
+	throw FastCodeMLFatal("*** STOP for now ***");
+#endif
+
 	// Record the dependencies between branches
 	mFatVectorTransform.setBranchDependencies(mNodesByLevel);
 
