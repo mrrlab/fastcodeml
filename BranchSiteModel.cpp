@@ -151,6 +151,16 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 
+	// Set codon frequencies for the transition matrix computation
+	mQw0.setCodonFrequencies(aForest.getCodonFrequencies(),
+							aForest.numGoodCodonFrequencies(),
+							aForest.getSqrtCodonFrequencies(),
+							aForest.getGoodCodonFrequencies());
+	mQ1.setCodonFrequencies(aForest.getCodonFrequencies(),
+							aForest.numGoodCodonFrequencies(),
+							aForest.getSqrtCodonFrequencies(),
+							aForest.getGoodCodonFrequencies());
+
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -268,6 +278,20 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 
+	// Set codon frequencies for the transition matrix computation
+	mQw0.setCodonFrequencies(aForest.getCodonFrequencies(),
+							aForest.numGoodCodonFrequencies(),
+							aForest.getSqrtCodonFrequencies(),
+							aForest.getGoodCodonFrequencies());
+	mQw2.setCodonFrequencies(aForest.getCodonFrequencies(),
+							aForest.numGoodCodonFrequencies(),
+							aForest.getSqrtCodonFrequencies(),
+							aForest.getGoodCodonFrequencies());
+	mQ1.setCodonFrequencies(aForest.getCodonFrequencies(),
+							aForest.numGoodCodonFrequencies(),
+							aForest.getSqrtCodonFrequencies(),
+							aForest.getGoodCodonFrequencies());
+
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -279,27 +303,37 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	++mNumEvaluations;
 
 	// Fill the matrices and compute their eigen decomposition
-	double scale_qw0, scale_q1;
-	const double* codon_freq = aForest.getCodonFrequencies();
-	const double* sqrt_codon_freq = aForest.getSqrtCodonFrequencies();
-	const bool*   good_codon_freq = aForest.getGoodCodonFrequencies();
-	unsigned int  num_good_codon_freq = aForest.numGoodCodonFrequencies();
+	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
 
 #ifdef _MSC_VER
-	#pragma omp parallel sections default(none) shared(scale_qw0, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
+	#pragma omp parallel sections default(none) shared(changed_w0, changed_k, aVar)
 #else
 	#pragma omp parallel sections default(shared)
 #endif
 	{
 		#pragma omp section
 		{
-			scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], codon_freq);
-			mQw0.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+			if(changed_w0 || changed_k)
+			{
+				// Save the previous values
+				mPrevOmega0 = aVar[mNumTimes+0];
+				mPrevK      = aVar[mNumTimes+1];
+
+				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mQw0.eigenQREV();
+			}
 		}
 		#pragma omp section
 		{
-			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
-			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+			if(changed_k)
+			{
+				// Save the previous values
+				mPrevK      = aVar[mNumTimes+1];
+
+				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+				mQ1.eigenQREV();
+			}
 		}
 		#pragma omp section
 		{
@@ -309,16 +343,16 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	}
 
 	// Compute the scale values
-	double fg_scale = mProportions[0]*scale_qw0 +
-					  mProportions[1]*scale_q1  +
-					  mProportions[2]*scale_q1  +
-					  mProportions[3]*scale_q1;
+	double fg_scale = mProportions[0]*mScaleQw0 +
+					  mProportions[1]*mScaleQ1  +
+					  mProportions[2]*mScaleQ1  +
+					  mProportions[3]*mScaleQ1;
 
 	//double bg_scale = mProportions[0]*scale_qw0 +
 	//				  mProportions[1]*scale_q1  +
 	//				  mProportions[2]*scale_qw0 +
 	//				  mProportions[3]*scale_q1;
-	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*scale_qw0+mProportions[1]*scale_q1);
+	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
@@ -377,32 +411,50 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	++mNumEvaluations;
 
 	// Fill the matrices and compute their eigen decomposition
-	double scale_qw0, scale_qw2, scale_q1;
-	const double* codon_freq = aForest.getCodonFrequencies();
-	const double *sqrt_codon_freq = aForest.getSqrtCodonFrequencies();
-	const bool* good_codon_freq = aForest.getGoodCodonFrequencies();
-	unsigned int num_good_codon_freq = aForest.numGoodCodonFrequencies();
+	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	bool changed_w2 = BranchSiteModel::isDifferent(aVar[mNumTimes+4], mPrevOmega2);
+	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
 
 #ifdef _MSC_VER
-	#pragma omp parallel sections default(none) shared(scale_qw0, scale_qw2, scale_q1, codon_freq, num_good_codon_freq, sqrt_codon_freq, good_codon_freq, aVar)
+	#pragma omp parallel sections default(none) shared(changed_w0, changed_w2, changed_k, aVar)
 #else
 	#pragma omp parallel sections default(shared)
 #endif
 	{
 		#pragma omp section
 		{
-			scale_qw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1], codon_freq);
-			mQw0.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+			if(changed_w0 || changed_k)
+			{
+				// Save the previous values
+				mPrevOmega0 = aVar[mNumTimes+0];
+				mPrevK      = aVar[mNumTimes+1];
+
+				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mQw0.eigenQREV();
+			}
 		}
 		#pragma omp section
 		{
-			scale_qw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1], codon_freq);
-			mQw2.eigenQREV(num_good_codon_freq, sqrt_codon_freq, good_codon_freq);
+			if(changed_w2 || changed_k)
+			{
+				// Save the previous values
+				mPrevOmega2 = aVar[mNumTimes+4];
+				mPrevK      = aVar[mNumTimes+1];
+
+				mScaleQw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+				mQw2.eigenQREV();
+			}
 		}
 		#pragma omp section
 		{
-			scale_q1  = mQ1.fillQ(                    aVar[mNumTimes+1], codon_freq);
-			mQ1.eigenQREV(num_good_codon_freq,  sqrt_codon_freq, good_codon_freq);
+			if(changed_k)
+			{
+				// Save the previous values
+				mPrevK      = aVar[mNumTimes+1];
+
+				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+				mQ1.eigenQREV();
+			}
 		}
 		#pragma omp section
 		{
@@ -412,16 +464,16 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	}
 
 	// Compute the scale values
-	double fg_scale = mProportions[0]*scale_qw0 +
-					  mProportions[1]*scale_q1  +
-					  mProportions[2]*scale_qw2 +
-					  mProportions[3]*scale_qw2;
+	double fg_scale = mProportions[0]*mScaleQw0 +
+					  mProportions[1]*mScaleQ1  +
+					  mProportions[2]*mScaleQw2 +
+					  mProportions[3]*mScaleQw2;
 
 	//double bg_scale = mProportions[0]*scale_qw0 +
 	//			      mProportions[1]*scale_q1  +
 	//				  mProportions[2]*scale_qw0 +
 	//				  mProportions[3]*scale_q1;
-	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*scale_qw0+mProportions[1]*scale_q1);
+	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
@@ -589,12 +641,23 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 		opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
 		break;
 
+	case OPTIM_MLSL_LDS:
+		opt = new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
+		{
+		// For global optimization put a timeout of one hour
+		opt->set_maxtime(60*60);
+
+		// This algorithm requires a local optimizer, add it
+		nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
+		opt->set_local_optimizer(local_opt);
+		}
+		break;
+
 	//	opt = new nlopt::opt(nlopt::GN_DIRECT_L, mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::GN_ISRES,    mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
 
@@ -609,16 +672,6 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 		opt->set_upper_bounds(mUpperBound);
     	opt->set_ftol_abs(1e-4);
 		nlopt::srand((unsigned long)mSeed);
-
-		// If the algorithm requires a local optimizer, then add it
-		if(opt->get_algorithm() == nlopt::G_MLSL_LDS)
-		{
-			// For global optimization put a timeout of one hour
-			opt->set_maxtime(60*60);
-
-			nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
-			opt->set_local_optimizer(local_opt);
-		}
 	}
 	catch(std::exception& e)
 	{

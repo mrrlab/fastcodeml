@@ -513,7 +513,8 @@ void Forest::exportForest(const char* aFilename, unsigned int aCounter) const
 	else if(strrchr(aFilename, '@'))
 	{
 		char z[1024];
-		strcpy(z, aFilename);
+		strncpy(z, aFilename, 1023);
+		z[1023] = '\0';
 		char *p = strrchr(z, '@');
 		*p = '%';
 		sprintf(temp_filename, z, aCounter);

@@ -56,11 +56,11 @@ public:
 	/// Clean the object content that afterwards become invalid
 	///
 	void clear(void);
-
+#ifdef CHECK_ALGO
 	/// Print the phylogenetic tree completed with all the info loaded.
 	///
 	void printFormattedTree(void) const;
-
+#endif
 	/// Print the phylogenetic tree completed with all the info loaded in Newick format.
 	///
 	/// @param[in] aNode The node from which to start. If null starts from the root.

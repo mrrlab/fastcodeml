@@ -399,7 +399,7 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
 }
 #endif
 
-void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
+void TransitionMatrix::eigenQREV(void)
 {
    /*
        This finds the eigen solution of the rate matrix Q for a time-reversible
@@ -413,10 +413,10 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
 
        Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
     */
-    int i, j, inew, jnew;
+    int i, j;
 
 	try {
-    if(aNumGoodFreq == mDim)
+    if(mNumGoodFreq == mDim)
     {
 		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
         for(i=0; i < mDim; ++i)
@@ -425,7 +425,7 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
 
             for(j=0; j < i; ++j)
 			{
-                mU[i*mDim + j] = mU[j*mDim + i] = mQ[i*mDim + j] * aSqrtCodonFreq[i] / aSqrtCodonFreq[j];
+                mU[i*mDim + j] = mU[j*mDim + i] = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
 			}
 		}
 
@@ -435,7 +435,7 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
 		{
             for(j=0; j < mDim; ++j)
             {
-                mV[i*mDim + j] = mU[j*mDim + i] * aSqrtCodonFreq[j];
+                mV[i*mDim + j] = mU[j*mDim + i] * mSqrtCodonFreq[j];
             }
 		}
 
@@ -443,48 +443,50 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
 		{
             for(j=0; j < mDim; ++j)
             {
-                mU[i*mDim + j] /= aSqrtCodonFreq[i];
+                mU[i*mDim + j] /= mSqrtCodonFreq[i];
             }
 		}
     }
     else
     {
+		int inew, jnew;
+
         for(i=0, inew=0; i < mDim; ++i)
         {
-            if(aGoodFreq[i])
+            if(mGoodFreq[i])
             {
                 for(j=0, jnew=0; j < i; ++j)
 				{
-                    if(aGoodFreq[j])
+                    if(mGoodFreq[j])
                     {
-                        mU[inew*aNumGoodFreq + jnew] = mU[jnew*aNumGoodFreq + inew]
-                                               = mQ[i*mDim + j] * aSqrtCodonFreq[i] / aSqrtCodonFreq[j];
+                        mU[inew*mNumGoodFreq + jnew] = mU[jnew*mNumGoodFreq + inew]
+                                               = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
                         ++jnew;
                     }
 				}
 
-                mU[inew*aNumGoodFreq + inew] = mQ[i*mDim + i];
+                mU[inew*mNumGoodFreq + inew] = mQ[i*mDim + i];
                 ++inew;
             }
         }
 
-		eigenRealSymm(mU, aNumGoodFreq, mD, mV);
+		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
 		// Construct D
-        for(i=mDim-1, inew=aNumGoodFreq-1; i >= 0; --i)
+        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
-            mD[i] = aGoodFreq[i] ? mD[inew--] : 0.;
+            mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
         }
 
 		// Construct V
-        for(i=mDim-1, inew=aNumGoodFreq-1; i >= 0; --i)
+        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
-            if(aGoodFreq[i])
+            if(mGoodFreq[i])
             {
-                for(j=mDim-1, jnew=aNumGoodFreq-1; j >= 0; --j)
-                    if(aGoodFreq[j])
+                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                    if(mGoodFreq[j])
                     {
-                        mV[i*mDim + j] = mU[jnew*aNumGoodFreq + inew] * aSqrtCodonFreq[j];
+                        mV[i*mDim + j] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
                         --jnew;
                     }
                     else
@@ -502,14 +504,14 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
         }
 
 		// Construct U
-        for(i=mDim-1, inew=aNumGoodFreq-1; i >= 0; --i)
+        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
-            if(aGoodFreq[i])
+            if(mGoodFreq[i])
             {
-                for(j=mDim-1, jnew=aNumGoodFreq-1; j >= 0; --j)
-                    if(aGoodFreq[j])
+                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                    if(mGoodFreq[j])
                     {
-                        mU[i*mDim + j] = mU[inew*aNumGoodFreq + jnew] / aSqrtCodonFreq[i];
+                        mU[i*mDim + j] = mU[inew*mNumGoodFreq + jnew] / mSqrtCodonFreq[i];
                         --jnew;
                     }
                     else
@@ -534,7 +536,7 @@ void TransitionMatrix::eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq,
 }
 
 
-
+#ifdef CHECK_ALGO
 void TransitionMatrix::checkEigen(bool aFull) const
 {
 	int i, j, k;
@@ -669,3 +671,4 @@ void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCo
 	std::cerr << std::fixed << std::endl;
 }
 
+#endif

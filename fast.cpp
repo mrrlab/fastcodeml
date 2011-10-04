@@ -159,7 +159,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(9) << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 2) std::cerr << forest;
@@ -231,7 +231,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(9) << timer.get() << std::endl;}
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions

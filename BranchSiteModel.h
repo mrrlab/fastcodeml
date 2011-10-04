@@ -36,10 +36,10 @@ public:
 		mVar.reserve(mNumTimes+mNumVariables);
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
-		//mLowerBound.resize(mNumTimes+mNumVariables);
 		mUpperBound.reserve(mNumTimes+mNumVariables);
-		//mUpperBound.resize(mNumTimes+mNumVariables);
 		mSeed = aSeed;
+		mNumEvaluations = 0;
+		mMaxLnL = -DBL_MAX;
 	}
 
 	/// Destructor.
@@ -88,7 +88,8 @@ public:
 
 	enum {
 		OPTIM_LD_LBFGS		= 0,
-		OPTIM_LN_BOBYQA		= 1
+		OPTIM_LN_BOBYQA		= 1,
+		OPTIM_MLSL_LDS		= 99
 	};
 
 protected:
@@ -116,6 +117,20 @@ protected:
 		aProportions[2] = (1-aV0)*aV1;
 		aProportions[3] = (1-aV0)*(1-aV1);
 #endif
+	}
+
+	/// Check if two values are sufficiently different
+	///
+	/// @param[in] aFirst First number to compare
+	/// @param[in] aSecond Second term to compare
+	///
+	/// @return True if the two parameters differs more than TOL
+	///
+	inline static bool isDifferent(double aFirst, double aSecond)
+	{
+		const double TOL = 1e-7;
+		double diff = aFirst - aSecond;
+		return (diff > TOL || diff < -TOL);
 	}
 
 protected:
@@ -149,7 +164,7 @@ public:
 	/// @param[in] aSeed Random number generator seed
 	///
 	BranchSiteModelNullHyp(size_t aNumBranches, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, 4, aSeed), mSet(aNumBranches, 3) {}
+		: BranchSiteModel(aNumBranches, 4, aSeed), mSet(aNumBranches, 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -158,6 +173,7 @@ public:
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTimesFromTree Initial times are from the file plus fixed values for the other variables
 	/// @param[in] aTrace If set the maximization is traced
+	/// @param[in] aOptAlgo The optimization algorithm to use
 	///
 	/// @return The log likelihood for the null hypothesis
 	///
@@ -176,9 +192,13 @@ public:
 
 
 private:
-	TransitionMatrix    mQw0;	///< Q matrix for the omega0 case
-	TransitionMatrix    mQ1;	///< Q matrix for the omega1 == 1 case
-	TransitionMatrixSet mSet;	///< Set of matrices used for the tree visits
+	TransitionMatrix    mQw0;			///< Q matrix for the omega0 case
+	TransitionMatrix    mQ1;			///< Q matrix for the omega1 == 1 case
+	TransitionMatrixSet mSet;			///< Set of matrices used for the tree visits
+	double				mPrevK;			///< Previous k value used to compute matrices
+	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
+	double				mScaleQw0;		///< Scale value for Qw0
+	double				mScaleQ1;		///< Scale value for Q1
 };
 
 
@@ -199,7 +219,7 @@ public:
 	/// @param[in] aSeed Random number generator seed
 	///
 	BranchSiteModelAltHyp(size_t aNumBranches, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, 5, aSeed), mSet(aNumBranches, 4) {}
+		: BranchSiteModel(aNumBranches, 5, aSeed), mSet(aNumBranches, 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///
@@ -209,6 +229,7 @@ public:
 	/// @param[in] aTimesFromTree Initial times are from the file plus fixed values for the other variables
 	/// @param[in] aTrace If set the maximization is traced
 	/// @param[in] aInitFromH0 If not null uses these results from H0 to initalize H1 values
+	/// @param[in] aOptAlgo The optimization algorithm to use
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
@@ -228,10 +249,16 @@ public:
 
 
 private:
-	TransitionMatrix    mQw0;	///< Q matrix for the omega0 case
-	TransitionMatrix    mQw2;	///< Q matrix for the omega2 case
-	TransitionMatrix    mQ1;  	///< Q matrix for the omega1 == 1 case
-	TransitionMatrixSet mSet;	///< Set of matrices used for the tree visits
+	TransitionMatrix    mQw0;			///< Q matrix for the omega0 case
+	TransitionMatrix    mQw2;			///< Q matrix for the omega2 case
+	TransitionMatrix    mQ1;  			///< Q matrix for the omega1 == 1 case
+	TransitionMatrixSet mSet;			///< Set of matrices used for the tree visits
+	double				mPrevK;			///< Previous k value used to compute matrices
+	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
+	double				mPrevOmega2;	///< Previous w2 value used to compute matrices
+	double				mScaleQw0;		///< Scale value for Qw0
+	double				mScaleQw2;		///< Scale value for Qw2
+	double				mScaleQ1;		///< Scale value for Q1
 };
 
 #endif

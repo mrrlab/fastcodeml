@@ -34,6 +34,21 @@ public:
 		memset(mQ, 0, N*N*sizeof(double));
 	}
 
+	/// Store the precomputed codon frequency array, its square root and indication of the non null values.
+	///
+	/// @param[in] aCodonFreq The codon frequency array
+	/// @param[in] aNumGoodFreq Number of not vanishing codon frequencies
+	/// @param[in] aSqrtCodonFreq Square root of the frequency of the corresponding codon
+	/// @param[in] aGoodFreq Flag to mark the corresponding frequncy "not small"
+	///
+	void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
+	{
+		mCodonFreq      = aCodonFreq;
+		mNumGoodFreq	= aNumGoodFreq;
+		mSqrtCodonFreq	= aSqrtCodonFreq;
+		mGoodFreq		= aGoodFreq;
+	}
+
 	/// Fill the Q matrix and return the matrix scale value.
 	///
 	/// @param[in] aOmega The omega value.
@@ -42,7 +57,7 @@ public:
 	///
 	/// @return The Q matrix scale value.
 	///
-	double fillQ(double aOmega, double aK, const double* aCodonFreq);
+	double fillQ(double aOmega, double aK);
 
 	/// Fill the Q matrix and return the matrix scale value. Optimized routine to be used for omega == 1
 	///
@@ -51,17 +66,15 @@ public:
 	///
 	/// @return The Q matrix scale value.
 	///
-	double fillQ(double aK, const double* aCodonFreq);
+	double fillQ(double aK);
 
 	/// Compute the eigendecomposition of the Q matrix.
+	/// The used codon frequencies should be already loaded using setCodonFrequencies()
 	/// The results are stored internally
 	///
-	/// @param[in] aNumGoodFreq Number of not vanishing codon frequencies
-	/// @param[in] aSqrtCodonFreq Square root of the frequency of the corresponding codon
-	/// @param[in] aGoodFreq Flag to mark the corresponding frequncy "not small"
-	///
-	void eigenQREV(int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq);
+	void eigenQREV(void);
 
+#ifdef CHECK_ALGO
 	/// Check the eigen decomposition.
 	///
 	/// @param[in] aFull If true also partially print the matrices
@@ -81,7 +94,7 @@ public:
 	/// @param[in] aMaxCol Max number of columns to print. If missing or equal zero, then takes the same value as aMaxRow
 	///
 	void printDecomposed(unsigned int aMaxRow=6, unsigned int aMaxCol=0) const;
-
+#endif
 	/// Store in an external matrix the result of exp(Q*t)
 	///
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
@@ -155,6 +168,11 @@ private:
 	double mU[N*N];		///< The left adjusted eigenvectors matrix
 	double mV[N*N];		///< The right adjusted eigenvectors matrix
 	double mD[N];		///< The matrix eigenvalues
+
+	const double*	mCodonFreq;		///< Experimental codon frequencies
+	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
+	const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
 };
 
 #endif

@@ -70,8 +70,8 @@ void FatVectorTransform::printCountGoodElements(void) const
 		}
 		if(begin_idx == mNumSites)
 		{
-			char msg[256];
-			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %d", b+1);
+			char msg[128];
+			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %d", b);
 			throw FastCodeMLFatal(msg);
 		}
 
@@ -151,7 +151,7 @@ void FatVectorTransform::compactMatrix(void)
 		}
 		if(begin_idx == mNumSites)
 		{
-			char msg[256];
+			char msg[128];
 			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %d", b);
 			throw FastCodeMLFatal(msg);
 		}
@@ -344,7 +344,7 @@ void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vec
 			unsigned int node        = *ibl + 1;
 			unsigned int parent_node = mParentNode[*ibl];
 
-			// Reverse all copies
+			// Reverse all copies (copy back the values copied in the previous step to fill holes)
 			VectorOfRanges::const_iterator icc;
 			for(icc=mCopyCmds[branch].begin(); icc != mCopyCmds[branch].end(); ++icc)
 			{

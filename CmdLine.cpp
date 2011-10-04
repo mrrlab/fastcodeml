@@ -213,6 +213,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_IGNORE_FREQ:
 			mIgnoreFreq = true;
+			break;
 
 		case OPT_EXPORT:
 			mGraphFile = args.OptionArg();

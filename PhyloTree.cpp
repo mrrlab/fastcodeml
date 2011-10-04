@@ -230,12 +230,12 @@ void PhyloTree::loadTreeFromSting(const std::string& aTreeAsString)
 	}
 }
 
-
+#ifdef CHECK_ALGO
 void PhyloTree::printFormattedTree(void) const
 {
 	mTreeRoot.printFormatted(0);
 }
-
+#endif
 
 void PhyloTree::printNewickTree(TreeNode *aNode) const
 {

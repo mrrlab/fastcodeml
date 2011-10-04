@@ -41,6 +41,7 @@ public:
 		mNumInternalBranches = 0;
 		memset(mCodonCount, 0, N*sizeof(unsigned int));
 		mMarkedInternalBranch = UINT_MAX;
+		mNumGoodCodons = 0;
 	}
 
 	/// Destructor
@@ -301,12 +302,6 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode);
 
-#ifdef NEW_LIKELIHOOD
-	inline unsigned int getProbVectorIdx(unsigned int aNode, unsigned int aSet, unsigned int aSite, unsigned int aCodon) const
-	{
-		return aNode*(Nt*mNumSites*N)+aSet*(mNumSites*N)+aSite*(N)+aCodon;
-	}
-#endif
 
 private:
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
