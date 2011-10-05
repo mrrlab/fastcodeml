@@ -20,15 +20,17 @@
 ///
 struct ForestNode
 {
-	// Order suggested by icc
+	// Field order suggested by icc
 	unsigned int				mOwnTree;					///< Per tree identifier
 	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
+#ifndef NEW_LIKELIHOOD
+	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
+#endif
 	unsigned int				mInternalNodeId;			///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
 #ifndef NEW_LIKELIHOOD
-	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
 #endif
 
