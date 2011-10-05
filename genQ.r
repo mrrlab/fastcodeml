@@ -196,12 +196,12 @@ WriteFillQ <- function(c.source.file, mode="w", omega.eq.1=FALSE) {
 	fd <- file(c.source.file, mode)
 
 	if(omega.eq.1) {
-	    cat("double TransitionMatrix::fillQ(double aK, const double* aCodonFreq)\n{\n", sep="", file=fd)
+	    cat("double TransitionMatrix::fillQ(double aK)\n{\n", sep="", file=fd)
 	} else {
-	    cat("double TransitionMatrix::fillQ(double aOmega, double aK, const double* aCodonFreq)\n{\n", sep="", file=fd)
+	    cat("double TransitionMatrix::fillQ(double aOmega, double aK)\n{\n", sep="", file=fd)
 	}
 
-	Q <- GenerateQMatrix(omega.eq.1, k="aK", omega="aOmega", p="aCodonFreq", idx.base=0)
+	Q <- GenerateQMatrix(omega.eq.1, k="aK", omega="aOmega", p="mCodonFreq", idx.base=0)
 
 	for(i in 1:61) {
 
@@ -226,9 +226,9 @@ WriteFillQ <- function(c.source.file, mode="w", omega.eq.1=FALSE) {
 			if(!is.first) cat("\n\t             + ", sep="", file=fd)
 			is.first <- FALSE
 			if(S[i, j] == "1") {
-				cat("  aCodonFreq[",i-1,"]*aCodonFreq[", j-1,"]", sep="", file=fd)
+				cat("  mCodonFreq[",i-1,"]*mCodonFreq[", j-1,"]", sep="", file=fd)
 			} else {
-				cat(S[i, j],"*aCodonFreq[",i-1,"]*aCodonFreq[", j-1,"]", sep="", file=fd)
+				cat(S[i, j],"*mCodonFreq[",i-1,"]*mCodonFreq[", j-1,"]", sep="", file=fd)
 			}
 		}
 	}
@@ -329,9 +329,9 @@ GenerateNumericMatrix <- function(Q, k, omega, codonFreq) {
 #
 generateCpp <- function() {
 	if(.Platform$OS.type == "windows") {
-		file.src <- "C:/mv/Projects/Selectome/codeml/slim/trunk/Fastcodeml/FillQ.cpp"
+		file.src <- "C:/mv/Projects/Selectome/codeml/slim/trunk/Codeml_Variants/Fastcodeml/FillQ.cpp"
 	} else {
-		file.src <- "/users/mvalle/codeml/slim/trunk/Fastcodeml/FillQ.cpp"
+		file.src <- "/users/mvalle/codeml/slim/trunk/Codeml_Variants/Fastcodeml/FillQ.cpp"
 	}
 	cat("// Automatically generated file using genQ.r script, don't modify!\n\n", sep="", file=file.src)
 	cat("#include \"TransitionMatrix.h\"\n\n", sep="", file=file.src, append=TRUE)

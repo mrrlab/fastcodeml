@@ -42,6 +42,13 @@ public:
 		memset(mCodonCount, 0, N*sizeof(unsigned int));
 		mMarkedInternalBranch = UINT_MAX;
 		mNumGoodCodons = 0;
+		mNumSites = 0;
+		for(int i=0; i < N; ++i)
+		{
+			mCodonFrequencies[i] = 1./N;
+			mCodonFreqSqrt[i] = 1./sqrt((double)N);
+			mGoodCodon[i] = true;
+		}
 	}
 
 	/// Destructor

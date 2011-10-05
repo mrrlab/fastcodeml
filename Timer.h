@@ -65,7 +65,7 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : mDelta(0.) {}
+	Timer() : mDelta(0.) {start();}
 
 	/// Start the timer
 	///

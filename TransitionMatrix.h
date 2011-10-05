@@ -32,6 +32,12 @@ public:
 	{
 		mDim = aDim;
 		memset(mQ, 0, N*N*sizeof(double));
+		
+		// Just to be sure
+		mCodonFreq = 0;
+		mNumGoodFreq = 0;
+		mSqrtCodonFreq = 0;
+		mGoodFreq = 0;
 	}
 
 	/// Store the precomputed codon frequency array, its square root and indication of the non null values.
