@@ -21,7 +21,61 @@ public:
 
 	/// Destructor.
 	///
-	~TreeNode() {}
+	~TreeNode()
+	{
+		mChildrenList.clear();
+		mNodeName.clear();
+		mNodeMark.clear();
+	}
+
+	/// Copy constructor
+	///
+	/// @param[in] aNode Node that has to be assigned to the current node
+	///
+	TreeNode(const TreeNode& aNode)
+	{
+		mParent = aNode.getParent();
+
+		for(unsigned int i=0; ; ++i)
+		{
+			TreeNode* n = getChild(i);
+			if(!n) break;
+			mChildrenList.push_back(n);
+		}
+
+		mNodeName = aNode.getLabel();
+		mNodeMark = aNode.getType();
+		mBranchLength = aNode.getLen();
+	}
+
+	/// Assignment operator
+	///
+	/// @param[in] aNode Node that has to be assigned to the current node
+	///
+	/// @return The node itself
+	///
+	TreeNode& operator=(const TreeNode& aNode)
+	{	
+		// Make sure not same object
+		if(this != &aNode)
+		{
+			mParent = aNode.getParent();
+
+			for(unsigned int i=0; ; ++i)
+			{
+				TreeNode* n = getChild(i);
+				if(!n) break;
+				mChildrenList.push_back(n);
+			}
+
+			mNodeName = aNode.getLabel();
+			mNodeMark = aNode.getType();
+			mBranchLength = aNode.getLen();
+		}
+
+		// Return ref for multiple assignment
+		return *this;
+	}
 
 	/// Add the node label.
 	///
@@ -101,6 +155,12 @@ public:
 	/// @return The branch length
 	///
 	double getLen(void) const { return mBranchLength; }
+
+	/// Get the pointer to the parent
+	///
+	/// @return The pointer to the parent
+	///
+	TreeNode* getParent() const { return mParent;}
 
 
 private:

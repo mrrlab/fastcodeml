@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cstdio>
 #include <set>
 #include "FatVectorTransform.h"
 #include "MatrixSize.h"

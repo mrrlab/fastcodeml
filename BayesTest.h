@@ -2,6 +2,8 @@
 #ifndef BAYESTEST_H
 #define BAYESTEST_H
 
+#include <vector>
+
 /// Tests to find the sites under positive selection.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -20,7 +22,7 @@ public:
 
 	/// Destructor.
 	///
-	~BayesTest();
+	~BayesTest() {}
 	
 	/// Bayes Empirical Bayes (BEB) test.
 	///
@@ -42,8 +44,8 @@ public:
 
 
 private:
-	double* mSiteClassProb;		///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
-	unsigned int mNumSites;		///< Number of sites.
+	std::vector<double> mSiteClassProb;		///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
+	unsigned int mNumSites;					///< Number of sites.
 };
 
 #endif

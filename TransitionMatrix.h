@@ -26,11 +26,8 @@ class TransitionMatrix
 public:
 	/// Constructor
 	///
-	/// @param[in] aDim The matrix size (should be <= N)
-	///
-	TransitionMatrix(int aDim=N)
+	TransitionMatrix() : mDim(N)
 	{
-		mDim = aDim;
 		memset(mQ, 0, N*N*sizeof(double));
 		
 		// Just to be sure
@@ -169,16 +166,16 @@ private:
 
 
 private:
-	int    mDim;		///< The matrix size (should be <= N)
-	double mQ[N*N];		///< The Q matrix
-	double mU[N*N];		///< The left adjusted eigenvectors matrix
-	double mV[N*N];		///< The right adjusted eigenvectors matrix
-	double mD[N];		///< The matrix eigenvalues
-
+	/// Order suggested by icc to improve locality
 	const double*	mCodonFreq;		///< Experimental codon frequencies
-	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+	double			mQ[N*N];		///< The Q matrix
+	int				mDim;			///< The matrix size (should be <= N)
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
+	double			mU[N*N];		///< The left adjusted eigenvectors matrix
 	const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
+	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+	double			mV[N*N];		///< The right adjusted eigenvectors matrix
+	double			mD[N];			///< The matrix eigenvalues
 };
 
 #endif

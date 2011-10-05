@@ -22,7 +22,7 @@ public:
 	///
 	/// @param[in] aVerboseLevel The verbosity level
 	///
-	Genes(int aVerboseLevel=0);
+	Genes(int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
 
 	/// Destructor
 	///

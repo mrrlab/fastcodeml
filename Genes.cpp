@@ -14,14 +14,11 @@
 #include "MatrixSize.h"
 #include "Exceptions.h"
 
-Genes::Genes(int aVerboseLevel)
-{
-	mVerboseLevel = aVerboseLevel;
-}
 
 
 Genes::~Genes()
 {
+	clear();
 }
 
 void Genes::clear(void)
