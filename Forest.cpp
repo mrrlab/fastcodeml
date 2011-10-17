@@ -65,7 +65,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	const unsigned int* mult = aGenes.getSiteMultiplicity();
 
 	// Initialize the count of codon types
-	memset(mCodonCount, 0, N*sizeof(unsigned int));
+	mCodonCount.assign(N, 0);
 
 	// Initialize the array of all probability vectors
 	mProbs.assign(mNumSites*(mNumBranches+1)*Nt*N, 0.0);
@@ -120,12 +120,13 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 	// Set the site multeplicity
 	mSiteMultiplicity.resize(mNumSites);
+	int ns = mNumSites; // To help parallelization
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(mult)
+	#pragma omp parallel for default(none) shared(mult, ns)
 #else
 	#pragma omp parallel for default(shared)
 #endif
-	for(int i=0; i < (int)mNumSites; ++i)
+	for(int i=0; i < ns; ++i)
 	{
 		mSiteMultiplicity[i] = (double)mult[i];
 	}
@@ -692,7 +693,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 			unsigned int site = ivs->at(i / num_sets);
 			unsigned int set_idx = i % num_sets;
 			double* g = computeLikelihoodWalker(&mRoots[site], aSet, set_idx);
-			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFrequencies, g);
+			aLikelihoods[set_idx*mNumSites+site] = dot(&mCodonFrequencies[0], g);
 		}
 	}
 }
@@ -813,7 +814,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 		unsigned int start   = set_idx*mNumSites*N+site*N;
 
 		// Take the result from branch 0 (the root)
-        aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFrequencies, &mProbs[start]);
+        aLikelihoods[set_idx*mNumSites+site] = dot(&mCodonFrequencies[0], &mProbs[start]);
     }
 }
 #endif
@@ -914,12 +915,9 @@ void Forest::setCodonFrequenciesF3x4(void)
 
 void Forest::setCodonFrequenciesUnif(void)
 {
-	for(int k=0; k < N; ++k)
-	{
-		mCodonFrequencies[k] = 1.0/61.0;
-		mCodonFreqSqrt[k] = sqrt(mCodonFrequencies[k]);
-		mGoodCodon[k] = true;
-	}
+	mCodonFrequencies.assign(N, 1./(double)N);
+	mCodonFreqSqrt.assign(N, sqrt(1./(double)N));
+	for(int k=0; k < N; ++k) mGoodCodon[k] = true;
 	mNumGoodCodons = N;
 }
 

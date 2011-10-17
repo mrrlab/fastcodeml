@@ -128,7 +128,7 @@ protected:
 	///
 	inline static bool isDifferent(double aFirst, double aSecond)
 	{
-		const double TOL = 1e-7;
+		static const double TOL = 1e-7;
 		double diff = aFirst - aSecond;
 		return (diff > TOL || diff < -TOL);
 	}

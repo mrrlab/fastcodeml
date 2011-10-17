@@ -44,7 +44,7 @@ public:
 	/// @param[in] aSqrtCodonFreq Square root of the frequency of the corresponding codon
 	/// @param[in] aGoodFreq Flag to mark the corresponding frequncy "not small"
 	///
-	void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
+	inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
 	{
 		mCodonFreq      = aCodonFreq;
 		mNumGoodFreq	= aNumGoodFreq;
@@ -72,6 +72,7 @@ public:
 	double fillQ(double aK);
 
 	/// Compute the eigendecomposition of the Q matrix.
+	/// Depending on the definition of USE_DSYRK use the old or the new method
 	/// The used codon frequencies should be already loaded using setCodonFrequencies()
 	/// The results are stored internally
 	///
@@ -98,6 +99,7 @@ public:
 	///
 	void printDecomposed(unsigned int aMaxRow=6, unsigned int aMaxCol=0) const;
 #endif
+
 	/// Store in an external matrix the result of exp(Q*t)
 	///
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
@@ -105,7 +107,7 @@ public:
 	///
 	inline void computeFullTransitionMatrix(double* aOut, double aT) const
 	{
-#if defined(USE_LAPACK) && defined(USE_DGEMM)
+#if defined(USE_LAPACK) && defined(USE_DGEMM) && !defined(USE_DSYRK)
 
 		double tmp[N*N];
 		memcpy(tmp, mV, sizeof(double)*N*N);
@@ -119,8 +121,22 @@ public:
 		}
 		dgemm_("T", "T", &N, &N, &N, &D1, mU, &N, tmp, &N, &D0, aOut, &N);
 
-#else
+#elif defined(USE_LAPACK) && defined(USE_DSYRK)
 
+		double tmp[N*N];
+		aT /= 2.;
+		for(int c=0; c < N; ++c)
+		{
+			double expt = exp(aT*mD[c]); // So it is exp(D*T/2)
+
+			for(int r=0; r < N; ++r)
+			{
+				tmp[r*N+c] = expt*mV[r*N+c];
+			}
+		}
+		dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
+
+#else
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
 		double expt = exp(aT * mD[0]);
@@ -154,6 +170,7 @@ public:
 #endif
 	}
 
+
 private:
 	/// Compute the eigendecomposition
 	///
@@ -167,15 +184,16 @@ private:
 
 private:
 	/// Order suggested by icc to improve locality
+	/// 'mV, mCodonFreq, mQ, mDim, mSqrtCodonFreq, mD, mGoodFreq, mNumGoodFreq, mU'. 
+	double			mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	double			mQ[N*N];		///< The Q matrix
 	int				mDim;			///< The matrix size (should be <= N)
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
-	double			mU[N*N];		///< The left adjusted eigenvectors matrix
+	double			mD[N];			///< The matrix eigenvalues
 	const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
-	double			mV[N*N];		///< The right adjusted eigenvectors matrix
-	double			mD[N];			///< The matrix eigenvalues
+	double			mU[N*N];		///< The left adjusted eigenvectors matrix
 };
 
 #endif

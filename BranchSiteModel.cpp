@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <cfloat>
 #include <cstdlib>
+#include <cmath>
+#include <memory>
 
 #ifdef USE_OPTIMIZER
 #include "nlopt.hpp"
@@ -14,9 +16,12 @@
 
 /// How much a variable should be changed to compute gradient
 #ifdef USE_OPTIMIZER
-static const double SMALL_DIFFERENCE = 1e-6;
+static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
 #endif
 
+// Starting value for the maximum likelihood
+// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
+static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 {
@@ -296,16 +301,19 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
 
-	
+
 double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
 
-	// Fill the matrices and compute their eigen decomposition
+	// Check if steps can be skipped
 	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
 	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
+	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
+	// Fill the matrices and compute their eigen decomposition
 #ifdef _MSC_VER
 	#pragma omp parallel sections default(none) shared(changed_w0, changed_k, aVar)
 #else
@@ -316,10 +324,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 		{
 			if(changed_w0 || changed_k)
 			{
-				// Save the previous values
-				mPrevOmega0 = aVar[mNumTimes+0];
-				mPrevK      = aVar[mNumTimes+1];
-
 				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
 				mQw0.eigenQREV();
 			}
@@ -328,9 +332,6 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 		{
 			if(changed_k)
 			{
-				// Save the previous values
-				mPrevK      = aVar[mNumTimes+1];
-
 				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
 				mQ1.eigenQREV();
 			}
@@ -355,7 +356,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
 
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
@@ -364,11 +365,12 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 #if 0
     for(int site=0; site < (int)num_sites; ++site)
     {
-        std::cerr << likelihoods[0*num_sites+site] << ' ';
-        std::cerr << likelihoods[1*num_sites+site] << ' ';
-        std::cerr << likelihoods[2*num_sites+site] << ' ';
-        std::cerr << likelihoods[3*num_sites+site] << std::endl;
+		std::cerr << std::setw(4) << site << ' ';
+        std::cerr << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+        std::cerr << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+        std::cerr << std::setw(14) << likelihoods[2*num_sites+site] << std::endl;
 	}
+	std::cerr << std::endl;
 #endif
 
 	// For all (valid) sites
@@ -389,6 +391,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 		//double x = log(p);
 
 		double x = (p > 0) ? log(p) : mMaxLnL-100000;
+		//std::cerr << site << ' ' << p << ' ' << x << ' ' << mMaxLnL << std::endl;
 
 		lnl += x*mult[site];
 	}
@@ -400,6 +403,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 		std::cerr << std::endl << lnl << std::endl;
 		printVar(aVar);
 	}
+	//std::cerr << lnl << std::endl;
 
 	return lnl;
 }
@@ -410,11 +414,15 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	// One more function invocation
 	++mNumEvaluations;
 
-	// Fill the matrices and compute their eigen decomposition
+	// Check if steps can be skipped
 	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
 	bool changed_w2 = BranchSiteModel::isDifferent(aVar[mNumTimes+4], mPrevOmega2);
 	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
+	if(changed_w2) mPrevOmega2 = aVar[mNumTimes+4];
+	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
+	// Fill the matrices and compute their eigen decomposition
 #ifdef _MSC_VER
 	#pragma omp parallel sections default(none) shared(changed_w0, changed_w2, changed_k, aVar)
 #else
@@ -425,10 +433,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 		{
 			if(changed_w0 || changed_k)
 			{
-				// Save the previous values
-				mPrevOmega0 = aVar[mNumTimes+0];
-				mPrevK      = aVar[mNumTimes+1];
-
 				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
 				mQw0.eigenQREV();
 			}
@@ -437,10 +441,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 		{
 			if(changed_w2 || changed_k)
 			{
-				// Save the previous values
-				mPrevOmega2 = aVar[mNumTimes+4];
-				mPrevK      = aVar[mNumTimes+1];
-
 				mScaleQw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1]);
 				mQw2.eigenQREV();
 			}
@@ -449,9 +449,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 		{
 			if(changed_k)
 			{
-				// Save the previous values
-				mPrevK      = aVar[mNumTimes+1];
-
 				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
 				mQ1.eigenQREV();
 			}
@@ -476,7 +473,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
 
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
@@ -512,7 +509,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 		std::cerr << std::endl << lnl << std::endl;
 		printVar(aVar);
 	}
-//std::cerr << lnl << std::endl;
 
 	return lnl;
 }
@@ -567,7 +563,8 @@ public:
 	void gradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		std::vector<double> x = aVars;
-		for(unsigned int i=0; i < aVars.size(); ++i)
+		unsigned int vs = aVars.size();
+		for(unsigned int i=0; i < vs; ++i)
 		{
 			double v = aVars[i];
 			double eh = SMALL_DIFFERENCE * (fabs(v)+1.);
@@ -623,26 +620,26 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 
 #ifdef USE_OPTIMIZER
 	// Initialize the maximum value found and the function evaluations counter
-	mMaxLnL = -HUGE_VAL;
+	mMaxLnL = VERY_LOW_LIKELIHOOD;
 	mNumEvaluations = 0;
 
 	// If only the initial step is requested, do it and return
 	if(aOnlyInitialStep) return oneCycleMaximizer(aForest, aFgBranch, mVar, aTrace);
 
 	// Select the maximizer algorithm
-	nlopt::opt *opt;
+	std::auto_ptr<nlopt::opt> opt;
 	switch(aOptAlgo)
 	{
 	case OPTIM_LD_LBFGS:
-		opt = new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables);
+		opt.reset(new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_LN_BOBYQA:
-		opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
+		opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:
-		opt = new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables);
+		opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables));
 		{
 		// For global optimization put a timeout of one hour
 		opt->set_maxtime(60*60);
@@ -676,7 +673,6 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception during inizialization: " << e.what() << std::endl;
-		delete opt;
 		throw FastCodeMLFatalNoMsg();
 	}
 
@@ -731,15 +727,13 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception in computation: " << e.what() << std::endl;
-		delete opt;
 		throw FastCodeMLFatalNoMsg();
 	}
 
-	delete opt;
 	return maxl;
 #else
 	// If no maximizer available return only the first step result
-	mMaxLnL = -HUGE_VAL;
+	mMaxLnL = VERY_LOW_LIKELIHOOD;
 	return oneCycleMaximizer(aForest, aFgBranch, mVar, aTrace);
 #endif
 }

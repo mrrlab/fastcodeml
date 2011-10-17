@@ -53,13 +53,15 @@ public:
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aCodonFreq The codon frequency array
 	///
 	void computeMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 							double aSbg,
 							double aSfg,
 						    unsigned int aFgBranch,
-						    const std::vector<double>& aParams);
+						    const std::vector<double>& aParams,
+							const double* aCodonFreq);
 
 	/// Compute the four sets of matrices for the H1 hypothesis
 	/// The sets are (these are the bg and fg matrices): 
@@ -75,6 +77,7 @@ public:
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aCodonFreq The codon frequency array
 	///
 	void computeMatrixSetH1(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
@@ -82,7 +85,8 @@ public:
 							double aSbg,
 							double aSfg,
 						    unsigned int aFgBranch,
-						    const std::vector<double>& aParams);
+						    const std::vector<double>& aParams,
+							const double* aCodonFreq);
 
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
@@ -94,7 +98,12 @@ public:
 	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
-#ifdef USE_DGEMM
+#ifdef USE_DSYRK
+		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
+		
+		for(int i=0; i < N; ++i) aGout[i] /= mCodonFreq[i];
+
+#elif defined(USE_DGEMM)
 		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 #else
 		dgemv_("T", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
@@ -112,7 +121,19 @@ public:
 	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
-#ifdef USE_DGEMM
+#ifdef USE_DSYRK
+	
+	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &N, &D0, aMout, &N);
+
+	for(int c=0; c < aNumSites; ++c)
+	{
+		for(int r=0; r < N; ++r)
+		{
+			aMout[c*N+r] /= mCodonFreq[r];
+		}
+	}
+
+#elif defined(USE_DGEMM)
 		dgemm_( "N",
 				"N",
 				&N,
@@ -165,6 +186,7 @@ private:
 	unsigned int	mNumSets;		///< Number of sets
 	double*			mMatrixSpace;	///< Starts of the matrix storage area
 	double**		mMatrices;		///< Access to the matrix set
+	const double*	mCodonFreq;		///< Experimental codon frequencies
 };
 
 

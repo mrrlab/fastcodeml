@@ -34,21 +34,18 @@ public:
 	///
 	/// @param[in] aVerbose The verbosity level
 	///
-	Forest(unsigned int aVerbose=0)
+	Forest(unsigned int aVerbose=0) : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mCodonCount(N, 0)
 	{
 		mVerbose = aVerbose;
 		mNumBranches = 0;
 		mNumInternalBranches = 0;
-		memset(mCodonCount, 0, N*sizeof(unsigned int));
+		//memset(mCodonCount, 0, N*sizeof(unsigned int));
 		mMarkedInternalBranch = UINT_MAX;
 		mNumGoodCodons = 0;
 		mNumSites = 0;
-		for(int i=0; i < N; ++i)
-		{
-			mCodonFrequencies[i] = 1./N;
-			mCodonFreqSqrt[i] = 1./sqrt((double)N);
-			mGoodCodon[i] = true;
-		}
+		//for(int i=0; i < N; ++i) mCodonFrequencies[i] = 1./N;
+		//for(int i=0; i < N; ++i) mCodonFreqSqrt[i] = 1./sqrt((double)N);
+		for(int i=0; i < N; ++i) mGoodCodon[i] = true;
 	}
 
 	/// Destructor
@@ -59,9 +56,16 @@ public:
 		mNodeNames.clear();
 		mBranchLengths.clear();
 		mProbs.clear();
+		mSiteMultiplicity.clear();		
+		mMapInternalToBranchID.clear();	
+		mDependenciesClasses.clear();	
 #ifdef NEW_LIKELIHOOD
 		mProbsOut.clear();
+		mNodesByLevel.clear();
 #endif
+		mCodonFrequencies.clear();
+		mCodonFreqSqrt.clear();
+		mCodonCount.clear();
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -169,13 +173,13 @@ public:
 	///
 	/// @return The pointer to the codon frequency array (length: 61)
 	///
-	const double* getCodonFrequencies(void) const {return mCodonFrequencies;}
+	const double* getCodonFrequencies(void) const {return &mCodonFrequencies[0];}
 
 	/// Return the array of square roots of codon frequencies.
 	///
 	/// @return The pointer to the sqrt codon frequency array
 	///
-	const double* getSqrtCodonFrequencies(void) const {return mCodonFreqSqrt;}
+	const double* getSqrtCodonFrequencies(void) const {return &mCodonFreqSqrt[0];}
 
 	/// Return an indicator array marking codons whose frequency is over GOOD_CODON_THRESHOLD
 	///
@@ -316,11 +320,16 @@ private:
 	unsigned int			mVerbose;					///< If greather than zero prints more info
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
-	double					mCodonFrequencies[N];		///< Experimental codon frequencies
-	double					mCodonFreqSqrt[N];			///< Square Root of experimental codon frequencies
+	//double					mCodonFrequencies[N];		///< Experimental codon frequencies
+	std::vector<double>		mCodonFrequencies;			///< Experimental codon frequencies
+	//double					mCodonFreqSqrt[N];			///< Square Root of experimental codon frequencies
+	std::vector<double>		mCodonFreqSqrt;				///< Square Root of experimental codon frequencies
 	bool					mGoodCodon[N];				///< True if the corresponding codon frequency is not small
+	//std::vector<bool>		mGoodCodon;					///< True if the corresponding codon frequency is not small
 	unsigned int			mNumGoodCodons;				///< Number of codons whose frequency is not zero
-	unsigned int			mCodonCount[N];				///< Count of codon of each type
+	//unsigned int			mCodonCount[N];				///< Count of codon of each type
+	std::vector<unsigned int>
+							mCodonCount;				///< Count of codon of each type
 	std::map<unsigned int, unsigned int>
 							mMapInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >

@@ -28,6 +28,7 @@ public:
 		mCopyCmds.clear();
 		mReuseCmds.clear();
 		mFirstForLevel.clear();
+		mBranchByLevel.clear();
 	}
 
 	/// Create the dependency list between levels in the tree

@@ -7,8 +7,10 @@ void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 double aSbg,
 											 double aSfg,
 											 unsigned int aFgBranch,
-											 const std::vector<double>& aParams)
+											 const std::vector<double>& aParams,
+											 const double* aCodonFreq)
 {
+	mCodonFreq = aCodonFreq;
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams)
 #else
@@ -41,8 +43,10 @@ void TransitionMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 											 double aSbg,
 											 double aSfg,
 											 unsigned int aFgBranch,
-											 const std::vector<double>& aParams)
+											 const std::vector<double>& aParams,
+											 const double* aCodonFreq)
 {
+	mCodonFreq = aCodonFreq;
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aQw2, aSbg, aSfg, aParams)
 #else

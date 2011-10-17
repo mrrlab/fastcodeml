@@ -330,15 +330,15 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
 
 #ifndef OPTIMAL_WORKAREAS
 	// Allocate fixed workareas
-    const int lwork = 33*N;
+    static const int lwork = 33*N;
     double work[lwork];
-    const int liwork = 10*N;
+    static const int liwork = 10*N;
     int iwork[liwork];
 #else
 	// Allocate fixed workareas
-    const int lfwork = 33*N;
+    static const int lfwork = 33*N;
     double fwork[lfwork];
-    const int lfiwork = 10*N;
+    static const int lfiwork = 10*N;
     int fiwork[lfiwork];
 
 	// Prepare for getting the optimal sizes
@@ -398,6 +398,115 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
     }
 }
 #endif
+
+#if defined(USE_LAPACK) && defined(USE_DSYRK)
+
+void TransitionMatrix::eigenQREV(void)
+{
+	  /*
+       This finds the eigen solution of the rate matrix Q for a time-reversible
+       Markov process, using the algorithm for a real symmetric matrix.
+       Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
+       where S is symmetrical, all elements of pi are positive, and U*V = I.
+       space[n] is for storing sqrt(pi).
+
+       [U 0] [Q_0 0] [U^-1 0]    [Root  0]
+       [0 I] [0   0] [0    I]  = [0     0]
+
+       Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
+    */
+    int i, j;
+
+	try {
+    if(mNumGoodFreq == mDim)
+    {
+		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
+        for(i=0; i < mDim; ++i)
+		{
+			mU[i*mDim + i] = mQ[i*mDim + i];
+
+            for(j=0; j < i; ++j)
+			{
+                mU[i*mDim + j] = mU[j*mDim + i] = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+			}
+		}
+
+		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mDim and mV is used as workarea
+        eigenRealSymm(mU, mDim, mD, mV);
+
+		// Construct mV = pi^1/2*mU
+		for(j=0; j < mDim; ++j)
+		{
+			for(i=0; i < mDim; ++i)
+			{
+               mV[j*mDim + i] = mU[j*mDim + i] * mSqrtCodonFreq[j];
+            }
+		}
+    }
+    else
+    {
+		int inew, jnew;
+
+        for(i=0, inew=0; i < mDim; ++i)
+        {
+            if(mGoodFreq[i])
+            {
+                for(j=0, jnew=0; j < i; ++j)
+				{
+                    if(mGoodFreq[j])
+                    {
+                        mU[inew*mNumGoodFreq + jnew] = mU[jnew*mNumGoodFreq + inew]
+                                               = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+                        ++jnew;
+                    }
+				}
+
+                mU[inew*mNumGoodFreq + inew] = mQ[i*mDim + i];
+                ++inew;
+            }
+        }
+
+		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mNumGoodFreq and mV is used as workarea
+		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
+
+		// Construct D
+        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        {
+            mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
+        }
+
+		// Construct R
+        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        {
+            if(mGoodFreq[i])
+            {
+                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                    if(mGoodFreq[j])
+                    {
+                        mV[j*mDim + i] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
+                        --jnew;
+                    }
+                    else
+                    {
+                        mV[j*mDim + i] = (i == j) ? 1. : 0.;
+                    }
+
+                --inew;
+            }
+            else
+                for(j=0; j < mDim; ++j)
+                {
+                    mV[i*mDim + j] = (i == j) ? 1. : 0.;
+                }
+        }
+	}
+	}
+	catch(std::exception& e)
+	{
+		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
+	}
+}
+#else
 
 void TransitionMatrix::eigenQREV(void)
 {
@@ -534,14 +643,14 @@ void TransitionMatrix::eigenQREV(void)
 		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
 	}
 }
-
+#endif
 
 #ifdef CHECK_ALGO
 void TransitionMatrix::checkEigen(bool aFull) const
 {
 	int i, j, k;
 	int m = (mDim < 7) ? mDim : 7; // How many elements to print
-	const double EPS = 1e-14;
+	static const double EPS = 1e-14;
 
 	double tmp[N*N];
 	double x;

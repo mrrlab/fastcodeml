@@ -291,6 +291,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 	{
 		unsigned int node    = leaves[i / Nt];
 		unsigned int set_idx = i % Nt;
+		unsigned int start   = N*mNumSites*Nt*node+set_idx*(mNumSites*N);
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc;
@@ -298,9 +299,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 		{
 			if(icc->cnt > 0)
 			{
-				memcpy(&aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
-					   &aProbs[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
-					   N*icc->cnt*sizeof(double));
+				memcpy(&aProbs[start+N*icc->to], &aProbs[start+N*icc->from], N*icc->cnt*sizeof(double));
 			}
 		}
 	}
@@ -309,6 +308,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 
 void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets)
 {
+	int nsns = N*mNumSites*aNumSets;
 	if(mNoTransformations)
 	{
 		std::vector<unsigned int>::const_iterator ibl;
@@ -324,11 +324,11 @@ void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vec
 			else
 			{
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults)
+				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults, nsns)
 #else
 				#pragma omp parallel for default(shared)
 #endif
-                for(int i=0; i < (int)(N*mNumSites*aNumSets); ++i)
+                for(int i=0; i < nsns; ++i)
                 {
                     aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*my_node+i];
                 }
@@ -381,11 +381,11 @@ void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vec
 			else
 			{
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults)
+				#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults, nsns)
 #else
 				#pragma omp parallel for default(shared)
 #endif
-                for(int i=0; i < (int)(N*mNumSites*aNumSets); ++i)
+                for(int i=0; i < nsns; ++i)
                 {
                     aProbs[N*mNumSites*Nt*parent_node+i] *= aStepResults[N*mNumSites*Nt*node+i];
                 }
