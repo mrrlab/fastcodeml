@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <vector>
 #include "MatrixSize.h"
 
 /// If the time is in absolute value less than this, consider it zero
@@ -26,7 +27,7 @@ class TransitionMatrix
 public:
 	/// Constructor
 	///
-	TransitionMatrix() : mDim(N)
+	TransitionMatrix() : mDim(N), mGoodFreq(N, true)
 	{
 		memset(mQ, 0, N*N*sizeof(double));
 		
@@ -34,7 +35,7 @@ public:
 		mCodonFreq = 0;
 		mNumGoodFreq = 0;
 		mSqrtCodonFreq = 0;
-		mGoodFreq = 0;
+		//mGoodFreq = 0;
 	}
 
 	/// Store the precomputed codon frequency array, its square root and indication of the non null values.
@@ -44,7 +45,9 @@ public:
 	/// @param[in] aSqrtCodonFreq Square root of the frequency of the corresponding codon
 	/// @param[in] aGoodFreq Flag to mark the corresponding frequncy "not small"
 	///
-	inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
+	//inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
+	inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const std::vector<bool>& aGoodFreq)
+
 	{
 		mCodonFreq      = aCodonFreq;
 		mNumGoodFreq	= aNumGoodFreq;
@@ -191,7 +194,8 @@ private:
 	int				mDim;			///< The matrix size (should be <= N)
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
 	double			mD[N];			///< The matrix eigenvalues
-	const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
+	//const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
+	std::vector<bool>		mGoodFreq;		///< True if the corresponding codon frequency is not small
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double			mU[N*N];		///< The left adjusted eigenvectors matrix
 };

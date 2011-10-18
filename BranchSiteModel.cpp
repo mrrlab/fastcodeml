@@ -383,17 +383,29 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 #endif
 	for(int site=0; site < (int)num_sites; ++site)
 	{
-		double p = mProportions[0]*likelihoods[0*num_sites+site] +
-				   (mProportions[1]+mProportions[3])*likelihoods[1*num_sites+site] +
-				   mProportions[2]*likelihoods[2*num_sites+site];
+		// The following computation is split to avoid negative values
+		//double p = mProportions[0]*likelihoods[0*num_sites+site] +
+		//		   (mProportions[1]+mProportions[3])*likelihoods[1*num_sites+site] +
+		//		   mProportions[2]*likelihoods[2*num_sites+site];
+		double p = likelihoods[0*num_sites+site];
+		if(p < 0) p = 0;
+		else      p *= mProportions[0];
+		double x = likelihoods[1*num_sites+site];
+		if(x > 0) p += (mProportions[1]+mProportions[3])*x;
+		x = likelihoods[2*num_sites+site];
+		if(x > 0) p += mProportions[2]*x;
 
-		//if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		//double x = log(p);
-
-		double x = (p > 0) ? log(p) : mMaxLnL-100000;
-		//std::cerr << site << ' ' << p << ' ' << x << ' ' << mMaxLnL << std::endl;
-
+		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
+
+		//if(p <= 0) std::cerr << std::setw(4) << site << ' ' << std::setw(10) << p << ' ' << std::setw(10) << x << ' ' << mMaxLnL << std::endl;
+		//if(p <= 0)
+		//{
+		//	std::cerr << std::setw(4) << site << ' ';
+		//	std::cerr << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+		//	std::cerr << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+		//	std::cerr << std::setw(14) << likelihoods[2*num_sites+site] << std::endl;
+		//}
 	}
 
 	// Output the trace message and update maxima found
@@ -489,16 +501,23 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 #endif
 	for(int site=0; site < (int)num_sites; ++site)
 	{
-		double p = mProportions[0]*likelihoods[0*num_sites+site] +
-				   mProportions[1]*likelihoods[1*num_sites+site] +
-				   mProportions[2]*likelihoods[2*num_sites+site] +
-				   mProportions[3]*likelihoods[3*num_sites+site];
+		// The following computation is split to avoid negative values
+		//double p = mProportions[0]*likelihoods[0*num_sites+site] +
+		//		     mProportions[1]*likelihoods[1*num_sites+site] +
+		//		     mProportions[2]*likelihoods[2*num_sites+site] +
+		//		     mProportions[3]*likelihoods[3*num_sites+site];
 
-		//if(p <= 0) return mMaxLnL-100000; // To avoid invalid maxima
-		//double x = log(p);
+		double p = likelihoods[0*num_sites+site];
+		if(p < 0) p = 0;
+		else      p *= mProportions[0];
+		double x = likelihoods[1*num_sites+site];
+		if(x > 0) p += mProportions[1]*x;
+		x = likelihoods[2*num_sites+site];
+		if(x > 0) p += mProportions[2]*x;
+		x = likelihoods[3*num_sites+site];
+		if(x > 0) p += mProportions[3]*x;
 
-		double x = (p > 0) ? log(p) : mMaxLnL-100000;
-
+		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
 	}
 
@@ -636,6 +655,10 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 
 	case OPTIM_LN_BOBYQA:
 		opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables));
+		break;
+
+	case OPTIM_LN_COBYLA:
+		opt.reset(new nlopt::opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:

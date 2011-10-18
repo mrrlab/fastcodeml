@@ -34,7 +34,7 @@ public:
 	///
 	/// @param[in] aVerbose The verbosity level
 	///
-	Forest(unsigned int aVerbose=0) : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mCodonCount(N, 0)
+	Forest(unsigned int aVerbose=0) : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mGoodCodon(N, true), mCodonCount(N, 0)
 	{
 		mVerbose = aVerbose;
 		mNumBranches = 0;
@@ -45,7 +45,7 @@ public:
 		mNumSites = 0;
 		//for(int i=0; i < N; ++i) mCodonFrequencies[i] = 1./N;
 		//for(int i=0; i < N; ++i) mCodonFreqSqrt[i] = 1./sqrt((double)N);
-		for(int i=0; i < N; ++i) mGoodCodon[i] = true;
+		//for(int i=0; i < N; ++i) mGoodCodon[i] = true;
 	}
 
 	/// Destructor
@@ -66,6 +66,8 @@ public:
 		mCodonFrequencies.clear();
 		mCodonFreqSqrt.clear();
 		mCodonCount.clear();
+		mGoodCodon.clear();
+		mTableInternalToBranchID.clear();
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -185,7 +187,8 @@ public:
 	///
 	/// @return The indicator array (true if the corresponding codon frequency is above GOOD_CODON_THRESHOLD)
 	///
-	const bool* getGoodCodonFrequencies(void) const {return mGoodCodon;}
+	//const bool* getGoodCodonFrequencies(void) const {return mGoodCodon;}
+	const std::vector<bool>& getGoodCodonFrequencies(void) const {return mGoodCodon;}
 
 	/// Return the count of codons whose frequency is over the threshold.
 	///
@@ -199,7 +202,8 @@ public:
 	///
 	/// @return The node index corresponding to the foreground branch
 	///
-	unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mMapInternalToBranchID.find(aFgBranch)->second;}
+	//unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mMapInternalToBranchID.find(aFgBranch)->second;}
+	unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mTableInternalToBranchID[aFgBranch];}
 
 	/// Access the global list of node names.
 	///
@@ -324,14 +328,16 @@ private:
 	std::vector<double>		mCodonFrequencies;			///< Experimental codon frequencies
 	//double					mCodonFreqSqrt[N];			///< Square Root of experimental codon frequencies
 	std::vector<double>		mCodonFreqSqrt;				///< Square Root of experimental codon frequencies
-	bool					mGoodCodon[N];				///< True if the corresponding codon frequency is not small
-	//std::vector<bool>		mGoodCodon;					///< True if the corresponding codon frequency is not small
+	//bool					mGoodCodon[N];				///< True if the corresponding codon frequency is not small
+	std::vector<bool>		mGoodCodon;					///< True if the corresponding codon frequency is not small
 	unsigned int			mNumGoodCodons;				///< Number of codons whose frequency is not zero
 	//unsigned int			mCodonCount[N];				///< Count of codon of each type
 	std::vector<unsigned int>
 							mCodonCount;				///< Count of codon of each type
 	std::map<unsigned int, unsigned int>
 							mMapInternalToBranchID;		///< Map from internal branch number to branch number
+	std::vector<unsigned int>
+							mTableInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
 	size_t					mNumSites;					///< Number of sites

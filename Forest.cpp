@@ -140,6 +140,14 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
 	mapInternalToBranchIdWalker(&mRoots[mNumSites-1]);
 
+	// Transform the map into a table (better for performance)
+	mTableInternalToBranchID.resize(mMapInternalToBranchID.size());
+	std::map<unsigned int, unsigned int>::const_iterator im;
+	for(im=mMapInternalToBranchID.begin(); im != mMapInternalToBranchID.end(); ++im)
+	{
+		mTableInternalToBranchID[im->first] = im->second;
+	}
+	
 #ifdef NEW_LIKELIHOOD
     // Prepare the list of node id's by level
     std::vector<ForestNode*> next_level;
@@ -917,7 +925,8 @@ void Forest::setCodonFrequenciesUnif(void)
 {
 	mCodonFrequencies.assign(N, 1./(double)N);
 	mCodonFreqSqrt.assign(N, sqrt(1./(double)N));
-	for(int k=0; k < N; ++k) mGoodCodon[k] = true;
+	//for(int k=0; k < N; ++k) mGoodCodon[k] = true;
+	mGoodCodon.assign(N, true);
 	mNumGoodCodons = N;
 }
 
@@ -1008,9 +1017,10 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 		mFatVectorTransform.compactMatrix();
 
 		// Print the commands
-//		mFatVectorTransform.printCommands();
-//crc(mProbs, mNumSites);
+		//mFatVectorTransform.printCommands();
+
 		// Do the initial move
+//crc(mProbs, mNumSites);
 		mFatVectorTransform.preCompactLeaves(mProbs);
 //crc(mProbs, mNumSites);
 	}

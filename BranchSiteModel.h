@@ -89,6 +89,7 @@ public:
 	enum {
 		OPTIM_LD_LBFGS		= 0,
 		OPTIM_LN_BOBYQA		= 1,
+		OPTIM_LN_COBYLA		= 2,
 		OPTIM_MLSL_LDS		= 99
 	};
 

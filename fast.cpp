@@ -72,10 +72,19 @@ int main(int ac, char **av)
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
 		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
+													std::cerr << "Optimizer:     " << cmd.mOptimizationAlgo << std::endl;
 #ifdef _OPENMP
-		if(!cmd.mForceSerial)						std::cerr << "Num. threads:  " << omp_get_max_threads() << std::endl
+		if(cmd.mForceSerial)
+		{
+			num_threads = 1;
+			omp_set_num_threads(1);
+		}
+		else
+		{
+			num_threads = omp_get_max_threads();
+													std::cerr << "Num. threads:  " << num_threads << std::endl
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
-		num_threads = cmd.mForceSerial ? 1 : omp_get_max_threads();
+		}
 #endif
 		std::cerr << std::endl;
 	}
