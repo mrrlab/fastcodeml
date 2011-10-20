@@ -8,6 +8,9 @@
 #ifdef USE_LAPACK
 #include "blas.h"
 #endif
+#ifdef USE_MKL_VML
+#include <mkl_vml_functions.h>
+#endif
 
 /// Routines that manage the set of transition matrices for all branches of a tree.
 ///
@@ -125,13 +128,27 @@ public:
 	
 	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &N, &D0, aMout, &N);
 
+#if 0
 	for(int c=0; c < aNumSites; ++c)
 	{
+//#ifdef USE_MKL_VML
+//		//y[i]=(scalea·a[i]+shifta)/(scaleb·b[i]+shiftb)
+//		vdLinearFrac(N, &aMout[c*N], mCodonFreq, 1.0, 0.0, 1.0, 0.0, aMout);
+//#else
 		for(int r=0; r < N; ++r)
 		{
 			aMout[c*N+r] /= mCodonFreq[r];
 		}
+//#endif
 	}
+#else
+	for(int r=0; r < N; ++r)
+	{
+		double alpha = 1./mCodonFreq[r];
+		dscal_(&aNumSites, &alpha, aMout+r, &N);
+	}
+#endif
+
 
 #elif defined(USE_DGEMM)
 		dgemm_( "N",

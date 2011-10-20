@@ -6,6 +6,9 @@
 #include <cmath>
 #include <vector>
 #include "MatrixSize.h"
+#ifdef USE_MKL_VML
+#include <mkl_vml_functions.h>
+#endif
 
 /// If the time is in absolute value less than this, consider it zero
 ///
@@ -130,10 +133,15 @@ public:
 		double expt[N];
 
 		aT /= 2.;
+#ifndef USE_MKL_VML
 		for(int c=0; c < N; ++c)
 		{
 			expt[c] = exp(aT*mD[c]); // So it is exp(D*T/2)
 		}
+#else
+		vdLinearFrac(N, mD, mD, aT, 0.0, 0.0, 1.0, tmp);
+		vdExp(N, tmp, expt);
+#endif
 
 		for(int c=0; c < N; ++c)
 		{
@@ -199,8 +207,9 @@ private:
 	int				mDim;			///< The matrix size (should be <= N)
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
 	double			mD[N];			///< The matrix eigenvalues
-	//const bool*		mGoodFreq;		///< True if the corresponding codon frequency is not small
-	std::vector<bool>		mGoodFreq;		///< True if the corresponding codon frequency is not small
+	//const bool*		mGoodFreq;	///< True if the corresponding codon frequency is not small
+	std::vector<bool>
+					mGoodFreq;		///< True if the corresponding codon frequency is not small
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double			mU[N*N];		///< The left adjusted eigenvectors matrix
 };
