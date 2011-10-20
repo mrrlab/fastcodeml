@@ -698,7 +698,8 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree
-			unsigned int site = ivs->at(i / num_sets);
+			//unsigned int site = ivs->at(i / num_sets);
+			unsigned int site = (*ivs)[i / num_sets];
 			unsigned int set_idx = i % num_sets;
 			double* g = computeLikelihoodWalker(&mRoots[site], aSet, set_idx);
 			aLikelihoods[set_idx*mNumSites+site] = dot(&mCodonFrequencies[0], g);
@@ -793,10 +794,11 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
         {
             // Compute probability vector along this branch (for the given set)
             unsigned int set_idx = i % num_sets;
-            unsigned int branch  = (inbl->at(i / num_sets))->mBranchId;
+            //unsigned int branch  = (inbl->at(i / num_sets))->mBranchId;
+            unsigned int branch  = ((*inbl)[i / num_sets])->mBranchId;
 			unsigned int start   = N*mNumSites*Nt*(branch+1)+N*mNumSites*set_idx+N*mFatVectorTransform.getLowerIndex(branch);
 
-            // For each branch, except the root, compute the transition
+			// For each branch, except the root, compute the transition
             aSet.doTransition(set_idx,
 							  branch,
 							  mFatVectorTransform.getCount(branch),

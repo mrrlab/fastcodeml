@@ -127,14 +127,19 @@ public:
 #elif defined(USE_LAPACK) && defined(USE_DSYRK)
 
 		double tmp[N*N];
+		double expt[N];
+
 		aT /= 2.;
 		for(int c=0; c < N; ++c)
 		{
-			double expt = exp(aT*mD[c]); // So it is exp(D*T/2)
+			expt[c] = exp(aT*mD[c]); // So it is exp(D*T/2)
+		}
 
+		for(int c=0; c < N; ++c)
+		{
 			for(int r=0; r < N; ++r)
 			{
-				tmp[r*N+c] = expt*mV[r*N+c];
+				tmp[r*N+c] = expt[c]*mV[r*N+c];
 			}
 		}
 		dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);

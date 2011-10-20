@@ -217,6 +217,7 @@ void FatVectorTransform::compactMatrix(void)
 		{
 			if(mCopyCmds[b][i].from+1 == mCopyCmds[b][i+1].from && mCopyCmds[b][i].to == mCopyCmds[b][i+1].to+1)
 			{
+				// Try to extend the range to other with the same ordering
 				unsigned int j=i+1;
 				for(; j < nc-1; ++j)
 				{
@@ -224,7 +225,9 @@ void FatVectorTransform::compactMatrix(void)
 				}
 
 				// Update the command list
+				// Example: (100, 10, 1) (101, 9, 1) --> (100, 9, 2) (101, 9, 0)
 				mCopyCmds[b][i].cnt = j-i+1;
+				mCopyCmds[b][i].to  = mCopyCmds[b][j].to;
 				for(unsigned int k=i+1; k <= j; ++k) mCopyCmds[b][k].cnt = 0;
 
 				i = j+1;
