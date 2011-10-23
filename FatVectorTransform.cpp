@@ -190,17 +190,17 @@ void FatVectorTransform::compactMatrix(void)
 		mLimits[b] = std::make_pair(begin_idx, end_idx-begin_idx);
 
 		// Compute the reuse of another value moves
-		cmds.clear();
+		VectorOfRangesNoCnt reuse;
 		for(unsigned int k=0; k < mNumSites; ++k)
 		{
 			// Select a reuse pointer
 			int x = mNodeStatus[b*mNumSites+k];
 			if(x >= FatVectorTransform::SITE_FIRST_NUM)
 			{
-				cmds.push_back(Range(x, k));
+				reuse.push_back(RangeNoCnt(x, k));
 			}
 		}
-		mReuseCmds.push_back(cmds);
+		mReuseCmds.push_back(reuse);
 	}
 
 	// Remove the node status array no more needed
@@ -249,16 +249,16 @@ void FatVectorTransform::printCommands(void) const
 		VectorOfRanges::const_iterator icc;
 		for(icc=mCopyCmds[b].begin(); icc != mCopyCmds[b].end(); ++icc)
 		{
-			if(icc->cnt > 0)
+			if(icc->cnt == 1)
+				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
+			else if(icc->cnt > 1)
 				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
 		}
 
-		for(icc=mReuseCmds[b].begin(); icc != mReuseCmds[b].end(); ++icc)
+		VectorOfRangesNoCnt::const_iterator icr;
+		for(icr=mReuseCmds[b].begin(); icr != mReuseCmds[b].end(); ++icr)
 		{
-			if(icc->cnt == 1)
-				std::cerr << "R " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
-			else
-				std::cerr << "R " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
+			std::cerr << "R " << std::setw(4) << icr->from << " - " << std::setw(4) << icr->to << std::endl;
 		}
 
 		std::cerr << "L   from: " << mLimits[b].first << " cnt: " << mLimits[b].second << std::endl;
@@ -364,16 +364,14 @@ void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vec
 			}
 
 			// Reuse values 
-			for(icc=mReuseCmds[branch].begin(); icc != mReuseCmds[branch].end(); ++icc)
+			VectorOfRangesNoCnt::const_iterator icr;
+			for(icr=mReuseCmds[branch].begin(); icr != mReuseCmds[branch].end(); ++icr)
 			{
-				if(icc->cnt > 0)
+				for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 				{
-					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
-					{
-						memcpy(&aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->to],
-							   &aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icc->from],
-							   N*icc->cnt*sizeof(double));
-					}
+					memcpy(&aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icr->to],
+						   &aStepResults[N*mNumSites*Nt*node+set_idx*(mNumSites*N)+N*icr->from],
+						   N*sizeof(double));
 				}
 			}
 

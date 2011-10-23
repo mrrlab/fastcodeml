@@ -22,7 +22,7 @@ public:
 	///
 	/// @param[in] aVerboseLevel The verbosity level
 	///
-	Genes(int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
+	Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
 
 	/// Destructor
 	///
@@ -82,7 +82,7 @@ private:
 	int idxCodon(const char* aCodon) const;
 
 private:
-	int							mVerboseLevel;		///< The verbosity level as set in the constructor
+	unsigned int				mVerboseLevel;		///< The verbosity level as set in the constructor
 	std::vector<std::string>	mDnaSpecies;		///< The list of species labels
 	std::vector<std::string>	mDnaGene;			///< The gene DNA basis strings
 	std::vector<unsigned int>	mSiteMultiplicity;	///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)

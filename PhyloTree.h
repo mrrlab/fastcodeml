@@ -29,7 +29,7 @@ public:
 	/// - 0: No messages
 	/// - 3: Print the tree structure
 	///
-	PhyloTree(int aVerboseLevel=0);
+	PhyloTree(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
 
 	/// Destructor.
 	///
@@ -148,7 +148,7 @@ private:
 private:
 	std::string				mParsedPortion;		///< In case of error part of the string successfully parsed else it is empty.
 	TreeNode				mTreeRoot;			///< The root of the phylogenetic tree in memory
-	int						mVerboseLevel;		///< The verbosity level
+	unsigned int			mVerboseLevel;		///< The verbosity level
 	std::vector<TreeNode *>	mLeavesSpecies;		///< The list of the tree leaves
 	std::vector<TreeNode *> mInternalNodes;		///< The list of the tree internal nodes
 };

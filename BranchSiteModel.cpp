@@ -358,30 +358,15 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
 
+	// Compute likelihoods
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
 
+	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	size_t num_sites = aForest.getNumSites();
-#if 0
-    for(int site=0; site < (int)num_sites; ++site)
-    {
-		std::cerr << std::setw(4) << site << ' ';
-        std::cerr << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
-        std::cerr << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
-        std::cerr << std::setw(14) << likelihoods[2*num_sites+site] << std::endl;
-	}
-	std::cerr << std::endl;
-#endif
-
-	// For all (valid) sites
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
-#ifdef _MSC_VER
-	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
-#else
-	#pragma omp parallel for reduction(+:lnl) default(shared)
-#endif
-	for(int site=0; site < (int)num_sites; ++site)
+	for(unsigned int site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
 		//double p = mProportions[0]*likelihoods[0*num_sites+site] +
@@ -487,26 +472,22 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
 
+	// Compute likelihoods
 	std::vector<double> likelihoods;
 	aForest.computeLikelihood(mSet, likelihoods);
 
-	// For all sites
+	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
-#ifdef _MSC_VER
-	#pragma omp parallel for reduction(+:lnl) default(none) shared(num_sites, likelihoods, mult)
-#else
-	#pragma omp parallel for reduction(+:lnl) default(shared)
-#endif
-	for(int site=0; site < (int)num_sites; ++site)
+	for(unsigned int site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
 		//double p = mProportions[0]*likelihoods[0*num_sites+site] +
 		//		     mProportions[1]*likelihoods[1*num_sites+site] +
 		//		     mProportions[2]*likelihoods[2*num_sites+site] +
 		//		     mProportions[3]*likelihoods[3*num_sites+site];
-
+		//
 		double p = likelihoods[0*num_sites+site];
 		if(p < 0) p = 0;
 		else      p *= mProportions[0];

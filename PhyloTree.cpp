@@ -130,9 +130,6 @@ void PhyloTree::evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, Tre
     }
 }
 
-PhyloTree::PhyloTree(int aVerboseLevel) : mVerboseLevel(aVerboseLevel)
-{
-}
 
 PhyloTree::~PhyloTree()
 {

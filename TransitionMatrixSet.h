@@ -30,7 +30,7 @@ public:
 	///
 	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets)
 	{
-		mMatrixSpace = new double[aNumSets*aNumMatrices*N*N];
+		mMatrixSpace = new double[aNumSets*aNumMatrices*MATRIX_SLOT];
 		mNumMatrices = aNumMatrices;
 		mNumSets = aNumSets;
 		mMatrices = new double*[aNumSets*aNumMatrices];

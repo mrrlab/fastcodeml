@@ -160,14 +160,22 @@ private:
 
 		//bool operator<(Range& rhs) { return from < rhs.from; } ///< This is needed for sorting
 	};
+	struct RangeNoCnt
+	{
+		RangeNoCnt(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo;}
 
+		unsigned int from;		///< Starting index from which to copy
+		unsigned int to;		///< Starting index to which the values should be copied
+	};
 	typedef std::vector<Range> VectorOfRanges;
-	typedef std::vector< std::vector<Range> > VectorOfVectorOfRanges;
+	typedef std::vector<VectorOfRanges> VectorOfVectorOfRanges;
+	typedef std::vector<RangeNoCnt> VectorOfRangesNoCnt;
+	typedef std::vector<VectorOfRangesNoCnt> VectorOfVectorOfRangesNoCnt;
 	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;
 
 	VectorOfPairs						mLimits;				///< Lower index and total count for each branch
 	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes (one list for each branch)
-	VectorOfVectorOfRanges				mReuseCmds;				///< Ranges to be reused copying the computed value (one list for each branch)
+	VectorOfVectorOfRangesNoCnt			mReuseCmds;				///< Ranges to be reused copying the computed value (one list for each branch)
 	std::vector<bool>					mFirstForLevel;			///< One entry for branch set to true if it is the first entry for its level
 	bool								mNoTransformations;		///< If set no transformation will take place (corresponds to no tree prune case)
 	std::vector< std::vector<unsigned int> >

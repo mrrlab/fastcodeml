@@ -143,12 +143,19 @@ public:
 		vdExp(N, tmp, expt);
 #endif
 
+#if 0
+		memcpy(tmp, mV, N*N*sizeof(double));
+#endif
 		for(int c=0; c < N; ++c)
 		{
+#if 1
 			for(int r=0; r < N; ++r)
 			{
 				tmp[r*N+c] = expt[c]*mV[r*N+c];
 			}
+#else
+			dscal_(&N, &expt[c], tmp+c, &N);
+#endif
 		}
 		dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
 
@@ -200,7 +207,7 @@ private:
 
 private:
 	/// Order suggested by icc to improve locality
-	/// 'mV, mCodonFreq, mQ, mDim, mSqrtCodonFreq, mD, mGoodFreq, mNumGoodFreq, mU'. 
+	/// 'mV, mCodonFreq, mQ, mDim, mSqrtCodonFreq, mD, mNumGoodFreq, mU, mGoodFreq'
 	double			mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	double			mQ[N*N];		///< The Q matrix
@@ -208,10 +215,10 @@ private:
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
 	double			mD[N];			///< The matrix eigenvalues
 	//const bool*		mGoodFreq;	///< True if the corresponding codon frequency is not small
-	std::vector<bool>
-					mGoodFreq;		///< True if the corresponding codon frequency is not small
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double			mU[N*N];		///< The left adjusted eigenvectors matrix
+	std::vector<bool>
+					mGoodFreq;		///< True if the corresponding codon frequency is not small
 };
 
 #endif
