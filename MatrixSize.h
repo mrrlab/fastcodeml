@@ -17,10 +17,10 @@ static const int Nf = 64;
 ///
 static const int Nt = 4;
 
-/// Slot size for a matrix. It should be equal or larger than N*N
-static const int MATRIX_SLOT = 64*64;
+/// Slot size for a matrix. It should be equal or larger than N*N. Align on a cache line 64 byte boundary
+static const int MATRIX_SLOT = 59*64;
 
-/// Slot size for a vector. It should be equal or larger than N
+/// Slot size for a vector. It should be equal or larger than N. Align on a cache line 64 byte boundary
 static const int VECTOR_SLOT = 64;
 
 #endif

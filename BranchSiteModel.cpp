@@ -313,35 +313,20 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
-	// Fill the matrices and compute their eigen decomposition
-#ifdef _MSC_VER
-	#pragma omp parallel sections default(none) shared(changed_w0, changed_k, aVar)
-#else
-	#pragma omp parallel sections default(shared)
-#endif
+	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
+	if(changed_w0 || changed_k)
 	{
-		#pragma omp section
-		{
-			if(changed_w0 || changed_k)
-			{
-				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
-				mQw0.eigenQREV();
-			}
-		}
-		#pragma omp section
-		{
-			if(changed_k)
-			{
-				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
-				mQ1.eigenQREV();
-			}
-		}
-		#pragma omp section
-		{
-			// Compute all proportions
-			getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
-		}
+		mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mQw0.eigenQREV();
 	}
+	if(changed_k)
+	{
+		mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+		mQ1.eigenQREV();
+	}
+
+	// Compute all proportions
+	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
 	double fg_scale = mProportions[0]*mScaleQw0 +
@@ -419,54 +404,31 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	if(changed_w2) mPrevOmega2 = aVar[mNumTimes+4];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
-	// Fill the matrices and compute their eigen decomposition
-#ifdef _MSC_VER
-	#pragma omp parallel sections default(none) shared(changed_w0, changed_w2, changed_k, aVar)
-#else
-	#pragma omp parallel sections default(shared)
-#endif
+	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
+	if(changed_w0 || changed_k)
 	{
-		#pragma omp section
-		{
-			if(changed_w0 || changed_k)
-			{
-				mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
-				mQw0.eigenQREV();
-			}
-		}
-		#pragma omp section
-		{
-			if(changed_w2 || changed_k)
-			{
-				mScaleQw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1]);
-				mQw2.eigenQREV();
-			}
-		}
-		#pragma omp section
-		{
-			if(changed_k)
-			{
-				mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
-				mQ1.eigenQREV();
-			}
-		}
-		#pragma omp section
-		{
-			// Compute all proportions
-			getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
-		}
+		mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mQw0.eigenQREV();
 	}
+	if(changed_w2 || changed_k)
+	{
+		mScaleQw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+		mQw2.eigenQREV();
+	}
+	if(changed_k)
+	{
+		mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+		mQ1.eigenQREV();
+	}
+
+	// Compute all proportions
+	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
 	double fg_scale = mProportions[0]*mScaleQw0 +
 					  mProportions[1]*mScaleQ1  +
 					  mProportions[2]*mScaleQw2 +
 					  mProportions[3]*mScaleQw2;
-
-	//double bg_scale = mProportions[0]*scale_qw0 +
-	//			      mProportions[1]*scale_q1  +
-	//				  mProportions[2]*scale_qw0 +
-	//				  mProportions[3]*scale_q1;
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
