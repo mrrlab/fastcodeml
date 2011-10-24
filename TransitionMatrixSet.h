@@ -5,6 +5,9 @@
 #include <vector>
 #include "MatrixSize.h"
 #include "TransitionMatrix.h"
+#include "AlignedAllocator.h"
+#include "CodonFrequencies.h"
+
 #ifdef USE_LAPACK
 #include "blas.h"
 #endif
@@ -30,18 +33,21 @@ public:
 	///
 	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets)
 	{
-		mMatrixSpace = new double[aNumSets*aNumMatrices*MATRIX_SLOT];
-		mNumMatrices = aNumMatrices;
-		mNumSets = aNumSets;
-		mMatrices = new double*[aNumSets*aNumMatrices];
+		mMatrixSpace  = (double *)aligned_malloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
+		mNumMatrices  = aNumMatrices;
+		mNumSets      = aNumSets;
+		mMatrices     = (double**)aligned_malloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
+		CodonFrequencies* cf = CodonFrequencies::getInstance();
+		//mCodonFreq    = cf->getCodonFrequencies();
+		mInvCodonFreq = cf->getInvCodonFrequencies();
 	}
 
 	/// Destructor.
 	///
 	~TransitionMatrixSet()
 	{
-		delete [] mMatrixSpace;
-		delete [] mMatrices;
+		aligned_free(mMatrixSpace);
+		aligned_free(mMatrices);
 	}
 
 	/// Compute the three sets of matrices for the H0 hypothesis
@@ -63,8 +69,7 @@ public:
 							double aSbg,
 							double aSfg,
 						    unsigned int aFgBranch,
-						    const std::vector<double>& aParams,
-							const double* aCodonFreq);
+						    const std::vector<double>& aParams);
 
 	/// Compute the four sets of matrices for the H1 hypothesis
 	/// The sets are (these are the bg and fg matrices): 
@@ -88,8 +93,7 @@ public:
 							double aSbg,
 							double aSfg,
 						    unsigned int aFgBranch,
-						    const std::vector<double>& aParams,
-							const double* aCodonFreq);
+						    const std::vector<double>& aParams);
 
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
@@ -104,7 +108,7 @@ public:
 #ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		
-		for(int i=0; i < N; ++i) aGout[i] /= mCodonFreq[i];
+		for(int i=0; i < N; ++i) aGout[i] *= mInvCodonFreq[i];
 
 #elif defined(USE_DGEMM)
 		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
@@ -137,15 +141,14 @@ public:
 //#else
 		for(int r=0; r < N; ++r)
 		{
-			aMout[c*N+r] /= mCodonFreq[r];
+			aMout[c*N+r] *= mInvCodonFreq[r];
 		}
 //#endif
 	}
 #else
 	for(int r=0; r < N; ++r)
 	{
-		double alpha = 1./mCodonFreq[r];
-		dscal_(&aNumSites, &alpha, aMout+r, &N);
+		dscal_(&aNumSites, &mInvCodonFreq[r], aMout+r, &N);
 	}
 #endif
 
@@ -199,11 +202,12 @@ public:
 	unsigned int size(void) const {return mNumSets;}
 
 private:
-	unsigned int	mNumMatrices;	///< Number of matrices in each set
-	unsigned int	mNumSets;		///< Number of sets
-	double*			mMatrixSpace;	///< Starts of the matrix storage area
-	double**		mMatrices;		///< Access to the matrix set
-	const double*	mCodonFreq;		///< Experimental codon frequencies
+	unsigned int	mNumMatrices;		///< Number of matrices in each set
+	unsigned int	mNumSets;			///< Number of sets
+	double*			mMatrixSpace;		///< Starts of the matrix storage area
+	double**		mMatrices;			///< Access to the matrix set
+	//const double*	mCodonFreq;			///< Experimental codon frequencies
+	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
 };
 
 

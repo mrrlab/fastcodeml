@@ -266,7 +266,7 @@ void FatVectorTransform::printCommands(void) const
 }
 
 
-void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
+void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 {
 	// If the forest has not been reduced do nothing (this should not happens)
 	if(mNoTransformations) return;
@@ -309,7 +309,7 @@ void FatVectorTransform::preCompactLeaves(std::vector<double>& aProbs)
 }
 
 
-void FatVectorTransform::postCompact(std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets)
+void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, CacheAlignedDoubleVector& aProbs, unsigned int aLevel, unsigned int aNumSets)
 {
 	int nsns = N*mNumSites*aNumSets;
 	if(mNoTransformations)

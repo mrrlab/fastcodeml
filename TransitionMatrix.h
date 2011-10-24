@@ -5,10 +5,12 @@
 #include <cstring>
 #include <cmath>
 #include <vector>
+#include <bitset>
 #include "MatrixSize.h"
 #ifdef USE_MKL_VML
 #include <mkl_vml_functions.h>
 #endif
+#include "CodonFrequencies.h"
 
 /// If the time is in absolute value less than this, consider it zero
 ///
@@ -17,7 +19,6 @@ static const double NEAR_ZERO_TIME = 1e-100;
 #ifdef USE_LAPACK
 #include "blas.h"
 #endif
-
 
 /// The transition matrix plus its eigen decomposition.
 ///
@@ -30,32 +31,16 @@ class TransitionMatrix
 public:
 	/// Constructor
 	///
-	TransitionMatrix() : mDim(N), mGoodFreq(N, true)
+	TransitionMatrix()
 	{
 		memset(mQ, 0, N*N*sizeof(double));
 		
-		// Just to be sure
-		mCodonFreq = 0;
-		mNumGoodFreq = 0;
-		mSqrtCodonFreq = 0;
-		//mGoodFreq = 0;
-	}
-
-	/// Store the precomputed codon frequency array, its square root and indication of the non null values.
-	///
-	/// @param[in] aCodonFreq The codon frequency array
-	/// @param[in] aNumGoodFreq Number of not vanishing codon frequencies
-	/// @param[in] aSqrtCodonFreq Square root of the frequency of the corresponding codon
-	/// @param[in] aGoodFreq Flag to mark the corresponding frequncy "not small"
-	///
-	//inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const bool* aGoodFreq)
-	inline void setCodonFrequencies(const double* aCodonFreq, unsigned int aNumGoodFreq, const double* aSqrtCodonFreq, const std::vector<bool>& aGoodFreq)
-
-	{
-		mCodonFreq      = aCodonFreq;
-		mNumGoodFreq	= aNumGoodFreq;
-		mSqrtCodonFreq	= aSqrtCodonFreq;
-		mGoodFreq		= aGoodFreq;
+		// Initialize the codons' frequencies
+		CodonFrequencies* cf = CodonFrequencies::getInstance();
+		mCodonFreq = cf->getCodonFrequencies();
+		mNumGoodFreq = cf->getNumGoodCodons();
+		mSqrtCodonFreq = cf->getSqrtCodonFrequencies();
+		cf->cloneGoodCodonIndicators(mGoodFreq);
 	}
 
 	/// Fill the Q matrix and return the matrix scale value.
@@ -138,25 +123,22 @@ public:
 		{
 			expt[c] = exp(aT*mD[c]); // So it is exp(D*T/2)
 		}
-#else
-		vdLinearFrac(N, mD, mD, aT, 0.0, 0.0, 1.0, tmp);
-		vdExp(N, tmp, expt);
-#endif
-
-#if 0
-		memcpy(tmp, mV, N*N*sizeof(double));
-#endif
-		for(int c=0; c < N; ++c)
+		for(int r=0; r < N; ++r)
 		{
-#if 1
-			for(int r=0; r < N; ++r)
+			for(int c=0; c < N; ++c)
 			{
 				tmp[r*N+c] = expt[c]*mV[r*N+c];
 			}
-#else
-			dscal_(&N, &expt[c], tmp+c, &N);
-#endif
 		}
+#else
+		for(int c=0; c < N; ++c) tmp[c] = aT*mD[c];
+		vdExp(N, tmp, expt);
+		for(int r=0; r < N; ++r)
+		{
+			vdMul(N, expt, &mV[r*N], &tmp[r*N]);
+		}
+#endif
+
 		dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
 
 #else
@@ -211,14 +193,11 @@ private:
 	double			mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	double			mQ[N*N];		///< The Q matrix
-	int				mDim;			///< The matrix size (should be <= N)
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
 	double			mD[N];			///< The matrix eigenvalues
-	//const bool*		mGoodFreq;	///< True if the corresponding codon frequency is not small
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double			mU[N*N];		///< The left adjusted eigenvectors matrix
-	std::vector<bool>
-					mGoodFreq;		///< True if the corresponding codon frequency is not small
+	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
 };
 
 #endif

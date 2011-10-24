@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include "ForestNode.h"
+#include "Types.h"
 
 /// Manipolations on the per-branch probability vector array.
 ///
@@ -129,11 +130,11 @@ public:
 	///
 	/// @param[in,out] aProbs The fat probability vector that will be changed at the leaves level
 	///
-	void preCompactLeaves(std::vector<double>& aProbs);
+	void preCompactLeaves(CacheAlignedDoubleVector& aProbs);
 
 	/// Compact the fat vector at a certain level in the tree (TBD)
 	///
-	void postCompact(std::vector<double>& aStepResults, std::vector<double>& aProbs, unsigned int aLevel, unsigned int aNumSets);
+	void postCompact(CacheAlignedDoubleVector& aStepResults, CacheAlignedDoubleVector& aProbs, unsigned int aLevel, unsigned int aNumSets);
 
 
 private:

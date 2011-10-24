@@ -15,10 +15,8 @@
 #include "TransitionMatrixSet.h"
 #include "MatrixSize.h"
 #include "FatVectorTransform.h"
-
-/// If codon probability is greater than this value, the codon is marked as "good codon".
-///
-const double GOOD_CODON_THRESHOLD = 1e-100;
+#include "AlignedAllocator.h"
+#include "CodonFrequencies.h"
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
@@ -34,18 +32,13 @@ public:
 	///
 	/// @param[in] aVerbose The verbosity level
 	///
-	Forest(unsigned int aVerbose=0) : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mGoodCodon(N, true), mCodonCount(N, 0)
+	Forest(unsigned int aVerbose=0)
 	{
 		mVerbose = aVerbose;
 		mNumBranches = 0;
 		mNumInternalBranches = 0;
-		//memset(mCodonCount, 0, N*sizeof(unsigned int));
 		mMarkedInternalBranch = UINT_MAX;
-		mNumGoodCodons = 0;
 		mNumSites = 0;
-		//for(int i=0; i < N; ++i) mCodonFrequencies[i] = 1./N;
-		//for(int i=0; i < N; ++i) mCodonFreqSqrt[i] = 1./sqrt((double)N);
-		//for(int i=0; i < N; ++i) mGoodCodon[i] = true;
 	}
 
 	/// Destructor
@@ -57,17 +50,12 @@ public:
 		mBranchLengths.clear();
 		mProbs.clear();
 		mSiteMultiplicity.clear();		
-		mMapInternalToBranchID.clear();	
+		mTableInternalToBranchID.clear();
 		mDependenciesClasses.clear();	
 #ifdef NEW_LIKELIHOOD
 		mProbsOut.clear();
 		mNodesByLevel.clear();
 #endif
-		mCodonFrequencies.clear();
-		mCodonFreqSqrt.clear();
-		mCodonCount.clear();
-		mGoodCodon.clear();
-		mTableInternalToBranchID.clear();
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -143,7 +131,7 @@ public:
 	///
 	/// @return The number of sites
 	///
-	size_t getNumSites(void) const {return mRoots.size();}
+	size_t getNumSites(void) const {return mNumSites;}
 
 	/// Get the marked internal branch
 	///
@@ -171,38 +159,12 @@ public:
 	///
 	void setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode=0);
 
-	/// Return codon frequencies
-	///
-	/// @return The pointer to the codon frequency array (length: 61)
-	///
-	const double* getCodonFrequencies(void) const {return &mCodonFrequencies[0];}
-
-	/// Return the array of square roots of codon frequencies.
-	///
-	/// @return The pointer to the sqrt codon frequency array
-	///
-	const double* getSqrtCodonFrequencies(void) const {return &mCodonFreqSqrt[0];}
-
-	/// Return an indicator array marking codons whose frequency is over GOOD_CODON_THRESHOLD
-	///
-	/// @return The indicator array (true if the corresponding codon frequency is above GOOD_CODON_THRESHOLD)
-	///
-	//const bool* getGoodCodonFrequencies(void) const {return mGoodCodon;}
-	const std::vector<bool>& getGoodCodonFrequencies(void) const {return mGoodCodon;}
-
-	/// Return the count of codons whose frequency is over the threshold.
-	///
-	/// @return The cound of good codons.
-	///
-	unsigned int numGoodCodonFrequencies(void) const {return mNumGoodCodons;}
-
 	/// Change the internal branch identifier for the foreground branch into the corresponding internal branch index.
 	///
 	/// @param[in] aFgBranch Number of the foreground branch
 	///
 	/// @return The node index corresponding to the foreground branch
 	///
-	//unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mMapInternalToBranchID.find(aFgBranch)->second;}
 	unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mTableInternalToBranchID[aFgBranch];}
 
 	/// Access the global list of node names.
@@ -295,22 +257,6 @@ private:
 	double* computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
 #endif
 
-	/// Change the index into the full list of codons (64) into the non-stop codons list used here (61)
-	///
-	/// @param[in] aId64 The index in the range 0..63 (i.e. from TTT to GGG)
-	///
-	/// @return The reduced index (range 0..60) or -1 if aId64 is out of range or represents a stop codon.
-	///
-	int codon64to61(unsigned int aId64) const;
-
-	/// Compute the codon frequency using the F3x4 model
-	///
-	void setCodonFrequenciesF3x4(void);
-
-	/// Set all codon frequencies to 1/61
-	///
-	void setCodonFrequenciesUnif(void);
-
 	/// Walk the tree to fill the mMapInternalToBranchID map.
 	///
 	///	@param[in] aNode The node from which to start
@@ -324,20 +270,10 @@ private:
 	unsigned int			mVerbose;					///< If greather than zero prints more info
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
-	//double					mCodonFrequencies[N];		///< Experimental codon frequencies
-	std::vector<double>		mCodonFrequencies;			///< Experimental codon frequencies
-	//double					mCodonFreqSqrt[N];			///< Square Root of experimental codon frequencies
-	std::vector<double>		mCodonFreqSqrt;				///< Square Root of experimental codon frequencies
-	//bool					mGoodCodon[N];				///< True if the corresponding codon frequency is not small
-	std::vector<bool>		mGoodCodon;					///< True if the corresponding codon frequency is not small
-	unsigned int			mNumGoodCodons;				///< Number of codons whose frequency is not zero
-	//unsigned int			mCodonCount[N];				///< Count of codon of each type
-	std::vector<unsigned int>
-							mCodonCount;				///< Count of codon of each type
 	std::map<unsigned int, unsigned int>
 							mMapInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector<unsigned int>
-							mTableInternalToBranchID;		///< Map from internal branch number to branch number
+							mTableInternalToBranchID;	///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
 	size_t					mNumSites;					///< Number of sites
@@ -347,6 +283,7 @@ private:
 							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
+	const double*			mCodonFreq;					///< Experimental codon frequencies
 
 #ifdef NEW_LIKELIHOOD
 
@@ -360,14 +297,14 @@ private:
 	///
 	/// site_index = node*(Nt*NumSites*N)+set*(NumSites*N)+site*(N)
 	///
-	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
-	std::vector<double>		mProbsOut;					///< mProbs after multiplication by exp(Qt)
+	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
+	CacheAlignedDoubleVector	mProbsOut;					///< mProbs after multiplication by exp(Qt)
 	std::vector< std::vector<ForestNode*> >
-							mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
-	FatVectorTransform		mFatVectorTransform;		///< Compute and manage the transformations to pack the "long vector" based on subtree pruning
+								mNodesByLevel;				///< Each level contains a list of pointers to nodes at this level. List start from the root.
+	FatVectorTransform			mFatVectorTransform;		///< Compute and manage the transformations to pack the "long vector" based on subtree pruning
 #else
 	/// Unified array for each branch probability vector
-	std::vector<double>		mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
+	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
 };
 

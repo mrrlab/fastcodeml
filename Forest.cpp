@@ -65,7 +65,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	const unsigned int* mult = aGenes.getSiteMultiplicity();
 
 	// Initialize the count of codon types
-	mCodonCount.assign(N, 0);
+	std::vector<unsigned int> codon_count(N, 0);
 
 	// Initialize the array of all probability vectors
 	mProbs.assign(mNumSites*(mNumBranches+1)*Nt*N, 0.0);
@@ -108,7 +108,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 #endif
 
 			// Count codons
-			mCodonCount[codon] += mult[site];
+			codon_count[codon] += mult[site];
 		}
 
 		// Combine the subtrees signatures going up to the root
@@ -123,10 +123,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	for(int i=mNumSites-1; i >=0; --i) mSiteMultiplicity[i] = (double)mult[i];
 
 	// Set the codon frequencies and related values needed for the eigensolver
-	if(aIgnoreFreq)
-		setCodonFrequenciesUnif();
-	else
-		setCodonFrequenciesF3x4();
+	CodonFrequencies* cf = CodonFrequencies::getInstance();
+	cf->setCodonFrequencies(codon_count, (aIgnoreFreq) ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+	mCodonFreq = cf->getCodonFrequencies();
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
 	mapInternalToBranchIdWalker(&mRoots[mNumSites-1]);
@@ -138,7 +137,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	{
 		mTableInternalToBranchID[im->first] = im->second;
 	}
-	
+	mMapInternalToBranchID.clear();
+
 #ifdef NEW_LIKELIHOOD
     // Prepare the list of node id's by level
     std::vector<ForestNode*> next_level;
@@ -247,8 +247,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 		}
 		std::cerr << std::endl;
 	}
-
-	throw FastCodeMLFatal("*** STOP for now ***");
 #endif
 
 	// Record the dependencies between branches
@@ -693,7 +691,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 			unsigned int site = (*ivs)[i / num_sets];
 			unsigned int set_idx = i % num_sets;
 			double* g = computeLikelihoodWalker(&mRoots[site], aSet, set_idx);
-			aLikelihoods[set_idx*mNumSites+site] = dot(&mCodonFrequencies[0], g);
+			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
 		}
 	}
 }
@@ -815,113 +813,10 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 		unsigned int start   = set_idx*mNumSites*N+site*N;
 
 		// Take the result from branch 0 (the root)
-        aLikelihoods[set_idx*mNumSites+site] = dot(&mCodonFrequencies[0], &mProbs[start]);
+        aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, &mProbs[start]);
     }
 }
 #endif
-
-
-int Forest::codon64to61(unsigned int aId64) const
-{
-	if(aId64 > 63 || aId64 == 10 || aId64 == 11 || aId64 == 14) return -1;
-
-	if(aId64 > 14) return aId64-3;
-	if(aId64 > 11) return aId64-2;
-	return aId64;
-}
-
-
-void Forest::setCodonFrequenciesF3x4(void)
-{
-	int k, j;
-
-#ifdef CHECK_ALGO
-	// Print the table of codon counts
-	for(k=0; k < 64; ++k)
-	{
-		int id = codon64to61(k);
-		if(id < 0) std::cerr << std::setw(5) << 0;
-		else       std::cerr << std::setw(5) << mCodonCount[id];
-		if(k % 4 == 3) std::cerr << std::endl;
-	}
-#endif
-	// Compute the 3x4 table
-	double fb3x4sg[12];
-
-	memset(fb3x4sg, 0, 12*sizeof(double));
-
-    for(k = 0; k < 64; k++)
-    {
-		int kk = codon64to61(k);
-		if(kk < 0) continue;
-
-        fb3x4sg[0 * 4 + k / 16]      += mCodonCount[kk];
-        fb3x4sg[1 * 4 + (k / 4) % 4] += mCodonCount[kk];
-        fb3x4sg[2 * 4 + k % 4]       += mCodonCount[kk];
-    }
-
-    for(j = 0; j < 3; j++)
-    {
-        double t = 0;
-		for(k=0; k < 4; ++k) t += fb3x4sg[j*4+k];
-		for(k=0; k < 4; ++k) fb3x4sg[j*4+k] /= t;
-    }
-
-#ifdef CHECK_ALGO
-	for(k=0; k < 12; ++k)
-	{
-		std::cerr << std::fixed << std::setprecision(6) << fb3x4sg[k];
-		if(k % 4 == 3) std::cerr << std::endl;
-	}
-	std::cerr << std::endl;
-#endif
-
-	// Compute codon frequency from the 3x4 table
-	for(k=0; k < 64; ++k)
-	{
-		int kk = codon64to61(k);
-		if(kk < 0) continue;
-
-		mCodonFrequencies[kk] = fb3x4sg[k / 16] * fb3x4sg[4 + (k / 4) % 4] * fb3x4sg[8 + k % 4];
-	}
-	double t = 0;
-	for(k=0; k < N; ++k) t += mCodonFrequencies[k];
-	for(k=0; k < N; ++k) mCodonFrequencies[k] /= t;
-
-	// Support values needed for the eigensolver
-	for(k=mNumGoodCodons=0; k < N; ++k)
-	{
-		mCodonFreqSqrt[k] = sqrt(mCodonFrequencies[k]);
-		if(mCodonFrequencies[k] > GOOD_CODON_THRESHOLD)
-		{
-			mGoodCodon[k] = true;
-			++mNumGoodCodons;
-		}
-		else
-		{
-			mGoodCodon[k] = false;
-		}
-	}
-
-#ifdef CHECK_ALGO
-	for(k=0; k < 61; ++k)
-	{
-		std::cerr << std::fixed << std::setprecision(10) << mCodonFrequencies[k] << ' ';
-		if(k % 4 == 3) std::cerr << std::endl;
-	}
-	std::cerr << std::endl;
-#endif
-}
-
-
-void Forest::setCodonFrequenciesUnif(void)
-{
-	mCodonFrequencies.assign(N, 1./(double)N);
-	mCodonFreqSqrt.assign(N, sqrt(1./(double)N));
-	//for(int k=0; k < N; ++k) mGoodCodon[k] = true;
-	mGoodCodon.assign(N, true);
-	mNumGoodCodons = N;
-}
 
 void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode)
 {
@@ -995,7 +890,7 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 	}
 	else
 	{
-		// Initialize the intermediate list
+		// Initialize the intermediate list used to compute the list of commands
 		mFatVectorTransform.initNodeStatus(mNumBranches, mNumSites);
 
 		// Visit each site tree

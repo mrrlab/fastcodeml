@@ -6,18 +6,14 @@
 #include <cmath>
 #include <memory>
 
-#ifdef USE_OPTIMIZER
 #include "nlopt.hpp"
-#endif
 
 #include "BranchSiteModel.h"
 #include "MathSupport.h"
 #include "Exceptions.h"
 
 /// How much a variable should be changed to compute gradient
-#ifdef USE_OPTIMIZER
 static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
-#endif
 
 // Starting value for the maximum likelihood
 // Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -156,16 +152,6 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 
-	// Set codon frequencies for the transition matrix computation
-	mQw0.setCodonFrequencies(aForest.getCodonFrequencies(),
-							aForest.numGoodCodonFrequencies(),
-							aForest.getSqrtCodonFrequencies(),
-							aForest.getGoodCodonFrequencies());
-	mQ1.setCodonFrequencies(aForest.getCodonFrequencies(),
-							aForest.numGoodCodonFrequencies(),
-							aForest.getSqrtCodonFrequencies(),
-							aForest.getGoodCodonFrequencies());
-
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -283,20 +269,6 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 
-	// Set codon frequencies for the transition matrix computation
-	mQw0.setCodonFrequencies(aForest.getCodonFrequencies(),
-							aForest.numGoodCodonFrequencies(),
-							aForest.getSqrtCodonFrequencies(),
-							aForest.getGoodCodonFrequencies());
-	mQw2.setCodonFrequencies(aForest.getCodonFrequencies(),
-							aForest.numGoodCodonFrequencies(),
-							aForest.getSqrtCodonFrequencies(),
-							aForest.getGoodCodonFrequencies());
-	mQ1.setCodonFrequencies(aForest.getCodonFrequencies(),
-							aForest.numGoodCodonFrequencies(),
-							aForest.getSqrtCodonFrequencies(),
-							aForest.getGoodCodonFrequencies());
-
 	// Run the optimizer
 	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
 }
@@ -341,7 +313,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
+	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
 	std::vector<double> likelihoods;
@@ -432,7 +404,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar, aForest.getCodonFrequencies());
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
 	std::vector<double> likelihoods;
@@ -475,7 +447,6 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	return lnl;
 }
 
-#ifdef USE_OPTIMIZER
 /// Adapter class to pass the routine to the optimizer.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -562,7 +533,7 @@ private:
 	bool				mTrace;		///< If set traces the optimization progresses
 	std::vector<double>	mUpper;		///< Upper limit of the variables to constrain the interval on which the gradient should be computed
 };
-#endif
+
 
 double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo)
 {
@@ -580,7 +551,6 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 		std::cerr << std::endl;
 	}
 
-#ifdef USE_OPTIMIZER
 	// Initialize the maximum value found and the function evaluations counter
 	mMaxLnL = VERY_LOW_LIKELIHOOD;
 	mNumEvaluations = 0;
@@ -688,7 +658,6 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 			std::cerr << "Final log-likelihood value: " << maxl << std::endl;
 			printVar(mVar);
 		}
-
 	}
 	catch(std::exception& e)
 	{
@@ -697,10 +666,5 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	}
 
 	return maxl;
-#else
-	// If no maximizer available return only the first step result
-	mMaxLnL = VERY_LOW_LIKELIHOOD;
-	return oneCycleMaximizer(aForest, aFgBranch, mVar, aTrace);
-#endif
 }
 

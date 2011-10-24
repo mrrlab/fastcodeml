@@ -7,6 +7,8 @@
 #include "TreeNode.h"
 #include "ForestNode.h"
 #include "TransitionMatrix.h"
+#include "AlignedAllocator.h"
+#include "Types.h"
 
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>
@@ -104,7 +106,7 @@ public:
 	///
 	/// @return The node id to the next node
 	///
-	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, std::vector<double>& aProbVectors, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
 	/// Extract global data (e.g. data that do not depend on the site) from the phylo tree
 	///

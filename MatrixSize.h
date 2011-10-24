@@ -23,5 +23,8 @@ static const int MATRIX_SLOT = 59*64;
 /// Slot size for a vector. It should be equal or larger than N. Align on a cache line 64 byte boundary
 static const int VECTOR_SLOT = 64;
 
+/// Alignment to avoid cache line false sharing
+static const int CACHE_LINE_ALIGN = 64;
+
 #endif
 

@@ -418,28 +418,28 @@ void TransitionMatrix::eigenQREV(void)
     int i, j;
 
 	try {
-    if(mNumGoodFreq == mDim)
+    if(mNumGoodFreq == N)
     {
 		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
-        for(i=0; i < mDim; ++i)
+        for(i=0; i < N; ++i)
 		{
-			mU[i*mDim + i] = mQ[i*mDim + i];
+			mU[i*N + i] = mQ[i*N + i];
 
             for(j=0; j < i; ++j)
 			{
-                mU[i*mDim + j] = mU[j*mDim + i] = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+                mU[i*N + j] = mU[j*N + i] = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
 			}
 		}
 
-		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mDim and mV is used as workarea
-        eigenRealSymm(mU, mDim, mD, mV);
+		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is N and mV is used as workarea
+        eigenRealSymm(mU, N, mD, mV);
 
 		// Construct mV = pi^1/2*mU
-		for(j=0; j < mDim; ++j)
+		for(j=0; j < N; ++j)
 		{
-			for(i=0; i < mDim; ++i)
+			for(i=0; i < N; ++i)
 			{
-               mV[j*mDim + i] = mU[j*mDim + i] * mSqrtCodonFreq[j];
+               mV[j*N + i] = mU[j*N + i] * mSqrtCodonFreq[j];
             }
 		}
     }
@@ -447,7 +447,7 @@ void TransitionMatrix::eigenQREV(void)
     {
 		int inew, jnew;
 
-        for(i=0, inew=0; i < mDim; ++i)
+        for(i=0, inew=0; i < N; ++i)
         {
             if(mGoodFreq[i])
             {
@@ -456,12 +456,12 @@ void TransitionMatrix::eigenQREV(void)
                     if(mGoodFreq[j])
                     {
                         mU[inew*mNumGoodFreq + jnew] = mU[jnew*mNumGoodFreq + inew]
-                                               = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+                                               = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
                         ++jnew;
                     }
 				}
 
-                mU[inew*mNumGoodFreq + inew] = mQ[i*mDim + i];
+                mU[inew*mNumGoodFreq + inew] = mQ[i*N + i];
                 ++inew;
             }
         }
@@ -470,33 +470,33 @@ void TransitionMatrix::eigenQREV(void)
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
 		// Construct D
-        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
             mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
         }
 
 		// Construct R
-        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
             if(mGoodFreq[i])
             {
-                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
                     if(mGoodFreq[j])
                     {
-                        mV[j*mDim + i] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
+                        mV[j*N + i] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
                         --jnew;
                     }
                     else
                     {
-                        mV[j*mDim + i] = (i == j) ? 1. : 0.;
+                        mV[j*N + i] = (i == j) ? 1. : 0.;
                     }
 
                 --inew;
             }
             else
-                for(j=0; j < mDim; ++j)
+                for(j=0; j < N; ++j)
                 {
-                    mV[i*mDim + j] = (i == j) ? 1. : 0.;
+                    mV[i*N + j] = (i == j) ? 1. : 0.;
                 }
         }
 	}
@@ -525,34 +525,34 @@ void TransitionMatrix::eigenQREV(void)
     int i, j;
 
 	try {
-    if(mNumGoodFreq == mDim)
+    if(mNumGoodFreq == N)
     {
 		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
-        for(i=0; i < mDim; ++i)
+        for(i=0; i < N; ++i)
 		{
-			mU[i*mDim + i] = mQ[i*mDim + i];
+			mU[i*N + i] = mQ[i*N + i];
 
             for(j=0; j < i; ++j)
 			{
-                mU[i*mDim + j] = mU[j*mDim + i] = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+                mU[i*N + j] = mU[j*N + i] = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
 			}
 		}
 
-        eigenRealSymm(mU, mDim, mD, mV);
+        eigenRealSymm(mU, N, mD, mV);
 
-        for(i=0; i < mDim; ++i)
+        for(i=0; i < N; ++i)
 		{
-            for(j=0; j < mDim; ++j)
+            for(j=0; j < N; ++j)
             {
-                mV[i*mDim + j] = mU[j*mDim + i] * mSqrtCodonFreq[j];
+                mV[i*N + j] = mU[j*N + i] * mSqrtCodonFreq[j];
             }
 		}
 
-        for(i=0; i < mDim; ++i)
+        for(i=0; i < N; ++i)
 		{
-            for(j=0; j < mDim; ++j)
+            for(j=0; j < N; ++j)
             {
-                mU[i*mDim + j] /= mSqrtCodonFreq[i];
+                mU[i*N + j] /= mSqrtCodonFreq[i];
             }
 		}
     }
@@ -560,7 +560,7 @@ void TransitionMatrix::eigenQREV(void)
     {
 		int inew, jnew;
 
-        for(i=0, inew=0; i < mDim; ++i)
+        for(i=0, inew=0; i < N; ++i)
         {
             if(mGoodFreq[i])
             {
@@ -569,12 +569,12 @@ void TransitionMatrix::eigenQREV(void)
                     if(mGoodFreq[j])
                     {
                         mU[inew*mNumGoodFreq + jnew] = mU[jnew*mNumGoodFreq + inew]
-                                               = mQ[i*mDim + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
+                                               = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
                         ++jnew;
                     }
 				}
 
-                mU[inew*mNumGoodFreq + inew] = mQ[i*mDim + i];
+                mU[inew*mNumGoodFreq + inew] = mQ[i*N + i];
                 ++inew;
             }
         }
@@ -582,58 +582,58 @@ void TransitionMatrix::eigenQREV(void)
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
 		// Construct D
-        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
             mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
         }
 
 		// Construct V
-        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
             if(mGoodFreq[i])
             {
-                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
                     if(mGoodFreq[j])
                     {
-                        mV[i*mDim + j] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
+                        mV[i*N + j] = mU[jnew*mNumGoodFreq + inew] * mSqrtCodonFreq[j];
                         --jnew;
                     }
                     else
                     {
-                        mV[i*mDim + j] = (i == j) ? 1. : 0.;
+                        mV[i*N + j] = (i == j) ? 1. : 0.;
                     }
 
                 --inew;
             }
             else
-                for(j=0; j < mDim; ++j)
+                for(j=0; j < N; ++j)
                 {
-                    mV[i*mDim + j] = (i == j) ? 1. : 0.;
+                    mV[i*N + j] = (i == j) ? 1. : 0.;
                 }
         }
 
 		// Construct U
-        for(i=mDim-1, inew=mNumGoodFreq-1; i >= 0; --i)
+        for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
             if(mGoodFreq[i])
             {
-                for(j=mDim-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
                     if(mGoodFreq[j])
                     {
-                        mU[i*mDim + j] = mU[inew*mNumGoodFreq + jnew] / mSqrtCodonFreq[i];
+                        mU[i*N + j] = mU[inew*mNumGoodFreq + jnew] / mSqrtCodonFreq[i];
                         --jnew;
                     }
                     else
                     {
-                        mU[i*mDim + j] = (i == j) ? 1. : 0.;
+                        mU[i*N + j] = (i == j) ? 1. : 0.;
                     }
 
                 --inew;
             }
             else
-                for(j=0; j < mDim; ++j)
+                for(j=0; j < N; ++j)
                 {
-                    mU[i*mDim + j] = (i == j) ? 1. : 0.;
+                    mU[i*N + j] = (i == j) ? 1. : 0.;
                 }
         }
 	}
@@ -649,26 +649,26 @@ void TransitionMatrix::eigenQREV(void)
 void TransitionMatrix::checkEigen(bool aFull) const
 {
 	int i, j, k;
-	int m = (mDim < 7) ? mDim : 7; // How many elements to print
+	int m = (N < 7) ? N : 7; // How many elements to print
 	static const double EPS = 1e-14;
 
 	double tmp[N*N];
 	double x;
 	double rms = 0;
-	for(i=0; i < mDim; ++i)
+	for(i=0; i < N; ++i)
 	{
-		for(j=0; j < mDim; ++j)
+		for(j=0; j < N; ++j)
 		{
 			x = 0.;
-			for(k=0; k < mDim; ++k) x += mU[i*mDim+k]*mV[k*mDim+j];
-			tmp[i*mDim+j] = (i == j) ? x-1 : x;
+			for(k=0; k < N; ++k) x += mU[i*N+k]*mV[k*N+j];
+			tmp[i*N+j] = (i == j) ? x-1 : x;
 
 			if(i == j) rms += (x-1.)*(x-1.);
 			else       rms += x*x;
 		}
 	}
 
-	std::cerr << "RMS UV:  " << sqrt(rms/(mDim*mDim)) << std::endl;
+	std::cerr << "RMS UV:  " << sqrt(rms/(N*N)) << std::endl;
 
 	if(aFull)
 	{
@@ -677,10 +677,10 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		{
 			for(j=0; j < m; ++j)
 			{
-				if(fabs(tmp[i*mDim+j]) < EPS)
+				if(fabs(tmp[i*N+j]) < EPS)
 					std::cerr << std::setw(12) << 0 << ' ';
 				else
-					std::cerr << std::setw(12) << tmp[i*mDim+j] << ' ';
+					std::cerr << std::setw(12) << tmp[i*N+j] << ' ';
 			}
 			std::cerr << std::endl;
 		}
@@ -688,18 +688,18 @@ void TransitionMatrix::checkEigen(bool aFull) const
 	}
 
 	rms = 0;
-	for(i=0; i < mDim; ++i)
+	for(i=0; i < N; ++i)
 	{
-		for(j=0; j < mDim; ++j)
+		for(j=0; j < N; ++j)
 		{
 			x = 0.;
-			for(k=0; k < mDim; ++k) x += mU[i*mDim+k]*mV[k*mDim+j]*mD[k];
-			tmp[i*mDim+j] = x-mQ[i*mDim+j];
+			for(k=0; k < N; ++k) x += mU[i*N+k]*mV[k*N+j]*mD[k];
+			tmp[i*N+j] = x-mQ[i*N+j];
 
-			rms += (x-mQ[i*mDim+j])*(x-mQ[i*mDim+j]);
+			rms += (x-mQ[i*N+j])*(x-mQ[i*N+j]);
 		}
 	}
-	std::cerr << "RMS UDV: " << sqrt(rms/(mDim*mDim)) << std::endl;
+	std::cerr << "RMS UDV: " << sqrt(rms/(N*N)) << std::endl;
 
 	if(aFull)
 	{
@@ -708,10 +708,10 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		{
 			for(j=0; j < m; ++j)
 			{
-				if(fabs(tmp[i*mDim+j]) < EPS)
+				if(fabs(tmp[i*N+j]) < EPS)
 					std::cerr << std::setw(12) << 0 << ' ';
 				else
-					std::cerr << std::setw(12) << tmp[i*mDim+j] << ' ';
+					std::cerr << std::setw(12) << tmp[i*N+j] << ' ';
 			}
 			std::cerr << std::endl;
 		}
@@ -720,7 +720,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 
 	x = 0.;
 	i = 0;
-	for(j=0; j < mDim; ++j)
+	for(j=0; j < N; ++j)
 	{
 		x += mD[j]*mD[j];
 		if(mD[j] > EPS || mD[j] < -EPS) ++i;
@@ -731,15 +731,15 @@ void TransitionMatrix::checkEigen(bool aFull) const
 void TransitionMatrix::print(unsigned int aMaxRow, unsigned int aMaxCol) const
 {
 	if(aMaxCol == 0) aMaxCol = aMaxRow;
-	if(aMaxRow > (unsigned int)mDim) aMaxRow = mDim;
-	if(aMaxCol > (unsigned int)mDim) aMaxCol = mDim;
+	if(aMaxRow > (unsigned int)N) aMaxRow = N;
+	if(aMaxCol > (unsigned int)N) aMaxCol = N;
 
 	std::cerr << "<<< Q >>>" << std::endl;
 	for(unsigned int r=0; r <aMaxRow; ++r)
 	{
 		for(unsigned int c=0; c < aMaxCol; ++c)
 		{
-			std::cerr << std::setw(11) << std::setprecision(6) << mQ[r*mDim+c] << ' ';
+			std::cerr << std::setw(11) << std::setprecision(6) << mQ[r*N+c] << ' ';
 		}
 		std::cerr << std::endl;
 	}
@@ -748,8 +748,8 @@ void TransitionMatrix::print(unsigned int aMaxRow, unsigned int aMaxCol) const
 void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCol) const
 {
 	if(aMaxCol == 0) aMaxCol = aMaxRow;
-	if(aMaxRow > (unsigned int)mDim) aMaxRow = mDim;
-	if(aMaxCol > (unsigned int)mDim) aMaxCol = mDim;
+	if(aMaxRow > (unsigned int)N) aMaxRow = N;
+	if(aMaxCol > (unsigned int)N) aMaxCol = N;
 	unsigned int r, c;
 
 	std::cerr << "<<< U >>>" << std::endl;
@@ -757,7 +757,7 @@ void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCo
 	{
 		for(c=0; c < aMaxCol; ++c)
 		{
-			std::cerr << std::setw(11) << std::setprecision(6) << mU[r*mDim+c] << ' ';
+			std::cerr << std::setw(11) << std::setprecision(6) << mU[r*N+c] << ' ';
 		}
 		std::cerr << std::endl;
 	}
@@ -767,7 +767,7 @@ void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCo
 	{
 		for(c=0; c < aMaxCol; ++c)
 		{
-			std::cerr << std::setw(11) << std::setprecision(6) << mV[r*mDim+c] << ' ';
+			std::cerr << std::setw(11) << std::setprecision(6) << mV[r*N+c] << ' ';
 		}
 		std::cerr << std::endl;
 	}
