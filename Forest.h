@@ -17,6 +17,7 @@
 #include "FatVectorTransform.h"
 #include "AlignedAllocator.h"
 #include "CodonFrequencies.h"
+#include "Types.h"
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
@@ -39,6 +40,7 @@ public:
 		mNumInternalBranches = 0;
 		mMarkedInternalBranch = UINT_MAX;
 		mNumSites = 0;
+		mCodonFreq = 0;
 	}
 
 	/// Destructor
@@ -106,7 +108,7 @@ public:
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
-	void computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods);
+	void computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
 
 	/// Export the forest in GML format
 	///

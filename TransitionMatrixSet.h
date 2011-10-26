@@ -5,7 +5,7 @@
 #include <vector>
 #include "MatrixSize.h"
 #include "TransitionMatrix.h"
-#include "AlignedAllocator.h"
+#include "AlignedMalloc.h"
 #include "CodonFrequencies.h"
 
 #ifdef USE_LAPACK
@@ -33,12 +33,11 @@ public:
 	///
 	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets)
 	{
-		mMatrixSpace  = (double *)aligned_malloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
+		mMatrixSpace  = (double *)alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
 		mNumMatrices  = aNumMatrices;
 		mNumSets      = aNumSets;
-		mMatrices     = (double**)aligned_malloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
+		mMatrices     = (double**)alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
-		//mCodonFreq    = cf->getCodonFrequencies();
 		mInvCodonFreq = cf->getInvCodonFrequencies();
 	}
 
@@ -46,8 +45,8 @@ public:
 	///
 	~TransitionMatrixSet()
 	{
-		aligned_free(mMatrixSpace);
-		aligned_free(mMatrices);
+		alignedFree(mMatrixSpace);
+		alignedFree(mMatrices);
 	}
 
 	/// Compute the three sets of matrices for the H0 hypothesis
@@ -108,7 +107,11 @@ public:
 #ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		
+#ifdef USE_MKL_VML
+		vdMul(N, aGout, mInvCodonFreq, aGout);
+#else
 		for(int i=0; i < N; ++i) aGout[i] *= mInvCodonFreq[i];
+#endif
 
 #elif defined(USE_DGEMM)
 		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
@@ -135,15 +138,17 @@ public:
 #if 0
 	for(int c=0; c < aNumSites; ++c)
 	{
-//#ifdef USE_MKL_VML
-//		//y[i]=(scalea·a[i]+shifta)/(scaleb·b[i]+shiftb)
-//		vdLinearFrac(N, &aMout[c*N], mCodonFreq, 1.0, 0.0, 1.0, 0.0, aMout);
-//#else
 		for(int r=0; r < N; ++r)
 		{
 			aMout[c*N+r] *= mInvCodonFreq[r];
 		}
-//#endif
+	}
+#endif
+
+#ifdef USE_MKL_VML
+	for(int c=0; c < aNumSites; ++c)
+	{
+		vdMul(N, &aMout[c*N], mInvCodonFreq, &aMout[c*N]);
 	}
 #else
 	for(int r=0; r < N; ++r)
@@ -206,7 +211,6 @@ private:
 	unsigned int	mNumSets;			///< Number of sets
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
-	//const double*	mCodonFreq;			///< Experimental codon frequencies
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
 };
 

@@ -8,6 +8,8 @@
 #include "TransitionMatrix.h"
 #include "TransitionMatrixSet.h"
 #include "Forest.h"
+#include "AlignedAllocator.h"
+#include "Types.h"
 
 // Uncomment to use the original CodeML proportion definition
 //#define USE_ORIGINAL_PROPORTIONS
@@ -26,10 +28,10 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aNumBranches Number of tree branches
-	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
 	/// @param[in] aSeed Random number generator seed
+	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
 	///
-	BranchSiteModel(size_t aNumBranches, unsigned int aNumVariables, unsigned int aSeed)
+	BranchSiteModel(size_t aNumBranches, size_t aNumSites, unsigned int aSeed, unsigned int aNumVariables)
 	{
 		mNumTimes     = aNumBranches;
 		mNumVariables = aNumVariables;
@@ -40,6 +42,7 @@ public:
 		mSeed = aSeed;
 		mNumEvaluations = 0;
 		mMaxLnL = -DBL_MAX;
+		mLikelihoods.reserve(Nt*aNumSites);
 	}
 
 	/// Destructor.
@@ -135,18 +138,18 @@ protected:
 	}
 
 protected:
-	size_t				mNumTimes;			///< Number of branch lengths
-	unsigned int		mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
-	std::vector<double>	mVar;				///< Variable to optimize (first the times then the remaining variables)
-	std::vector<double>	mLowerBound;		///< Lower limits for the variables to be optimized
-	std::vector<double>	mUpperBound;		///< Upper limits for the variables to be optimized
-	double				mProportions[4];	///< The four proportions
-	double				mCodonFreq[N];		///< %Codon frequencies
-	double				mMaxLnL;			///< Maximum value of LnL found during optimization
-	unsigned int		mNumEvaluations;	///< Counter of the likelihood function evaluations
+	size_t						mNumTimes;			///< Number of branch lengths
+	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
+	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
+	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
+	std::vector<double>			mUpperBound;		///< Upper limits for the variables to be optimized
+	double						mProportions[4];	///< The four proportions
+	double						mMaxLnL;			///< Maximum value of LnL found during optimization
+	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
+	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
 
 private:
-	unsigned int		mSeed;				///< Random number generator seed to be passed to the optimizer
+	unsigned int				mSeed;				///< Random number generator seed to be passed to the optimizer
 };
 
 /// Null Hypothesis test.
@@ -164,8 +167,8 @@ public:
 	/// @param[in] aNumBranches Number of tree branches
 	/// @param[in] aSeed Random number generator seed
 	///
-	BranchSiteModelNullHyp(size_t aNumBranches, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, 4, aSeed), mSet(aNumBranches, 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+	BranchSiteModelNullHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
+		: BranchSiteModel(aNumBranches, aNumSites, aSeed, 4), mSet(aNumBranches, 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -219,8 +222,8 @@ public:
 	/// @param[in] aNumBranches Number of tree branches
 	/// @param[in] aSeed Random number generator seed
 	///
-	BranchSiteModelAltHyp(size_t aNumBranches, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, 5, aSeed), mSet(aNumBranches, 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+	BranchSiteModelAltHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
+		: BranchSiteModel(aNumBranches, aNumSites, aSeed, 5), mSet(aNumBranches, 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///

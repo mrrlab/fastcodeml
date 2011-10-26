@@ -182,12 +182,12 @@ int main(int ac, char **av)
 		if(cmd.mVerboseLevel >= 1) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the null model maximum loglikelihood
-		BranchSiteModelNullHyp h0(forest.getNumBranches(), cmd.mSeed);
+		BranchSiteModelNullHyp h0(forest.getNumBranches(), forest.getNumSites(), cmd.mSeed);
 		double lnl0 = 0;
 		if(cmd.mComputeHypothesis != 1)	lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 
 		// Compute the alternate model maximum loglikelihood
-		BranchSiteModelAltHyp h1(forest.getNumBranches(), cmd.mSeed);
+		BranchSiteModelAltHyp h1(forest.getNumBranches(), forest.getNumSites(), cmd.mSeed);
 		double lnl1 = 0;
 		if(cmd.mComputeHypothesis != 0)
 		{

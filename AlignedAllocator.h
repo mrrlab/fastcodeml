@@ -7,11 +7,6 @@
 #include <new>       // Required for placement new and std::bad_alloc
 #include <stdexcept> // Required for std::length_error
 
-// Alignment must be power of 2 (1,2,4,8,16...)
-extern void* aligned_malloc(size_t size, size_t alignment);
-extern void aligned_free(void* p);
-
-
 template <typename T, size_t A> class AlignedAllocator
 {
 public:
@@ -104,7 +99,7 @@ public:
         }
 
         // AlignedAllocator wraps malloc().
-        void * const pv = aligned_malloc(n * sizeof(T), A);
+        void * const pv = alignedMalloc(n * sizeof(T), A);
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
         if (pv == NULL) {
@@ -122,7 +117,7 @@ public:
         //    << " of size " << sizeof(T) << "." << std::endl;
 
         // AlignedAllocator wraps free().
-        aligned_free(p);
+        alignedFree(p);
     }
 
     // The following will be the same for all allocators that ignore hints.

@@ -13,6 +13,8 @@
 #include "MathSupport.h"
 #include "MatrixSize.h"
 
+const unsigned char ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+
 #if 0
 void crc(const std::vector<double>& v, unsigned int nsites)
 {
@@ -119,8 +121,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	mNumInternalBranches = mNumBranches - num_leaves;
 
 	// Set the site multeplicity (reversed loop for performance)
-	mSiteMultiplicity.resize(mNumSites);
-	for(int i=mNumSites-1; i >=0; --i) mSiteMultiplicity[i] = (double)mult[i];
+	//mSiteMultiplicity.resize(mNumSites);
+	//for(int i=mNumSites-1; i >=0; --i) mSiteMultiplicity[i] = (double)mult[i];
+	mSiteMultiplicity.assign(mult, mult+mNumSites);
 
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
@@ -193,7 +196,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	}
 #endif
 
-	// Try to balance the tree (ie move leaves to fill underfull levels
+	// Try to balance the tree (ie move leaves to fill underfull levels)
 	for(bool found=true; found;)
 	{
 		// Find the level with the maximum number of leaves
@@ -280,14 +283,14 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(aNode->mChildrenList[i]->mOwnTree != aNode->mOwnTree) continue;
-		if(aNodeDependent->mChildrenList[i]->mOwnTree != aNodeDependent->mOwnTree) continue;
+		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
 
 		// Check if same subtree
 		if(aNode->mChildrenList[i]->mSubtreeCodonsSignature == aNodeDependent->mChildrenList[i]->mSubtreeCodonsSignature)
 		{
 			delete aNodeDependent->mChildrenList[i];
 			aNodeDependent->mChildrenList[i] = aNode->mChildrenList[i];
+			aNodeDependent->resetSameTreeFlag(i);
 		}
 	}
 
@@ -295,8 +298,7 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 	for(i=0; i < nc; ++i)
 	{
 		// If one of the two has been already reduced, do nothing
-		if(aNode->mChildrenList[i]->mOwnTree != aNode->mOwnTree) continue;
-		if(aNodeDependent->mChildrenList[i]->mOwnTree != aNodeDependent->mOwnTree) continue;
+		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
 
 		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i]);
 	}
@@ -320,7 +322,8 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 		unsigned int i = 0;
 		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl,++i)
 		{
-			if((*icl)->mOwnTree == aNode->mOwnTree) cleanReductionWorkingData(*icl);
+			//if((*icl)->mOwnTree == aNode->mOwnTree) cleanReductionWorkingData(*icl); //RM
+			if(aNode->isSameTree(i)) cleanReductionWorkingData(*icl);
 		}
 	}
 }
@@ -416,7 +419,8 @@ void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& 
 	size_t nc = aNode->mChildrenList.size();
 	for(i=0; i < nc; ++i)
 	{
-		if(aNode->mChildrenList[i]->mOwnTree == aNode->mOwnTree)
+		//if(aNode->mChildrenList[i]->mOwnTree == aNode->mOwnTree) //RM
+		if(aNode->isSameTree(i))
 		{
 			groupByDependencyWalker(aNode->mChildrenList[i], aDependency);
 		}
@@ -575,13 +579,13 @@ void Forest::exportForestWalker(const ForestNode* aNode,
 								std::vector< std::pair<int, int> >& aNodeTo,
 								std::vector< double >& aLength) const
 {
-	int my_node_id = (aNode->mBranchId == UINT_MAX) ? 0 : aNode->mBranchId+1;
+	int my_node_id = aNode->mBranchId+1;
 	int my_tree_id = aNode->mOwnTree;
 
 	std::vector<ForestNode *>::const_iterator ifn;
 	for(ifn=aNode->mChildrenList.begin(); ifn != aNode->mChildrenList.end(); ++ifn)
 	{
-		int your_node_id = ((*ifn)->mBranchId == UINT_MAX) ? 0 : (*ifn)->mBranchId+1;
+		int your_node_id = (*ifn)->mBranchId+1;
 		int your_tree_id = (*ifn)->mOwnTree;
 
 		std::pair<int, int> p_from(my_tree_id, my_node_id);
@@ -625,7 +629,7 @@ void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* 
 	if(!aNode) aNode = &mRoots[mNumSites-1];
 	else
 	{
-		unsigned int idx = (aNode->mBranchId == UINT_MAX) ? 0 : aNode->mBranchId+1;
+		unsigned int idx = aNode->mBranchId+1;
 		aTimes[aNode->mBranchId] = mBranchLengths[idx];
 	}
 
@@ -655,7 +659,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 	}
 	else
 	{
-		unsigned int idx = (aNode->mBranchId == UINT_MAX) ? 0 : aNode->mBranchId+1;
+		unsigned int idx = aNode->mBranchId+1;
 		mBranchLengths[idx] = aTimes[aNode->mBranchId];
 
 		for(ifnp=aNode->mChildrenList.begin(); ifnp != aNode->mChildrenList.end(); ++ifnp)
@@ -669,7 +673,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 #ifndef NEW_LIKELIHOOD
 // Compute likelihood with the original approach
 //
-void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods)
+void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	unsigned int num_sets = aSet.size();
 	aLikelihoods.assign(num_sets*mNumSites, 1.0);
@@ -707,7 +711,8 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 		ForestNode *m = *in;
 
 		// If the node is in the same tree recurse, else use the value
-		if((*in)->mOwnTree == aNode->mOwnTree)
+		//if((*in)->mOwnTree == aNode->mOwnTree) //RM
+		if(aNode->isSameTree(idx))
 		{
 			if(first)
 			{
@@ -723,7 +728,11 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 				double* x = aNode->mOtherTreeProb[idx] ? aNode->mOtherTreeProb[idx]+N*aSetIdx : temp;
 				aSet.doTransition(aSetIdx, m->mBranchId, computeLikelihoodWalker(m, aSet, aSetIdx), x);
 				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
+#ifdef USE_MKL_VML
+				vdMul(N, aNode->mProb[aSetIdx], x, aNode->mProb[aSetIdx]);
+#else
 				for(int i=0; i < N; ++i) aNode->mProb[aSetIdx][i] *= x[i];
+#endif
 			}
 		}
 		else
@@ -751,7 +760,11 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 					x = temp;
 				}
 				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
+#ifdef USE_MKL_VML
+				vdMul(N, aNode->mProb[aSetIdx], x, aNode->mProb[aSetIdx]);
+#else
 				for(int i=0; i < N; ++i) aNode->mProb[aSetIdx][i] *= x[i];
+#endif
 			}
 		}
 	}
@@ -762,7 +775,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 #else
 // Compute likelihood with the new "Long Vector" approach
 //
-void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<double>& aLikelihoods)
+void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	// Initialize variables
     unsigned int num_sets = aSet.size();
@@ -808,8 +821,8 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, std::vector<doub
 #endif
     for(int i=0; i < len; ++i)
     {
-        unsigned int set_idx = i % num_sets;
         unsigned int site    = i / num_sets;
+        unsigned int set_idx = i - site * num_sets; // Was: unsigned int set_idx = i % num_sets;
 		unsigned int start   = set_idx*mNumSites*N+site*N;
 
 		// Take the result from branch 0 (the root)
@@ -850,7 +863,8 @@ void Forest::addAggressiveReductionWalker(ForestNode* aNode)
 	{
 		ForestNode *m = *in;
 
-		if(aNode->mChildrenList[i]->mOwnTree == aNode->mOwnTree)
+		//if(aNode->mChildrenList[i]->mOwnTree == aNode->mOwnTree) //rm
+		if(aNode->isSameTree(i))
 		{
 			addAggressiveReductionWalker(m);
 		}
@@ -873,10 +887,12 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 {
 	if(aNode)
 	{
+		unsigned int i;
 		std::vector<ForestNode *>::iterator icl;
-		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl)
+		for(icl=aNode->mChildrenList.begin(),i=0; icl != aNode->mChildrenList.end(); ++icl,++i)
 		{
-			if((*icl)->mOwnTree == aNode->mOwnTree)
+			//if((*icl)->mOwnTree == aNode->mOwnTree) //RM
+			if(aNode->isSameTree(i))
 			{
 				mFatVectorTransform.setNodeExists((*icl)->mBranchId, aNode->mOwnTree);
 
@@ -945,12 +961,14 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 		// Check node ID
 		if(aCheckId && aNode->mBranchId != aNodeId) std::cerr << "[site: " << std::setw(5) << aSite << "] aNodeId mismatch " << aNode->mBranchId << " should be: " << aNodeId << std::endl;
 
-		unsigned int id = (aNodeId == UINT_MAX) ? 0 : aNodeId+1;
+		unsigned int id = aNodeId+1;
 
+		unsigned int idx;
 		std::vector<ForestNode *>::const_iterator icl;
-		for(icl=aNode->mChildrenList.begin(); icl != aNode->mChildrenList.end(); ++icl)
+		for(icl=aNode->mChildrenList.begin(),idx=0; icl != aNode->mChildrenList.end(); ++icl,++idx)
 		{
-			if((*icl)->mOwnTree == aNode->mOwnTree)
+			//if((*icl)->mOwnTree == aNode->mOwnTree) //RM
+			if(aNode->isSameTree(idx))
 			{
 				// Check parent pointer
 				if((*icl)->mParent != aNode)

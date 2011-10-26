@@ -1,6 +1,6 @@
 // The following headers are required for all allocators.
 #include <stddef.h>  // Required for size_t and ptrdiff_t and NULL
-#include <new>       // Required for placement new and std::bad_alloc
+//#include <new>       // Required for placement new and std::bad_alloc
 #include <stdexcept> // Required for std::length_error
 
 // The following headers contain stuff that AlignedAllocator uses.
@@ -11,10 +11,15 @@
 // The following headers contain stuff that main() uses.
 //#include <vector>      // For std::vector
 
+#include "AlignedMalloc.h"
 #include "AlignedAllocator.h"
 
+#ifndef _MSC_VER
+#include <stdint.h>  // for uintptr_t
+#endif
+
 // Alignment must be power of 2 (1,2,4,8,16...)
-void* aligned_malloc(size_t size, size_t alignment)
+void* alignedMalloc(size_t size, size_t alignment)
 {
     uintptr_t r = (uintptr_t)malloc(size + --alignment + sizeof(uintptr_t));
     uintptr_t t = r + sizeof(uintptr_t);
@@ -24,7 +29,7 @@ void* aligned_malloc(size_t size, size_t alignment)
     return (void*)o;
 }
 
-void aligned_free(void* p)
+void alignedFree(void* p)
 {
     if (!p) return;
     free((void*)(((uintptr_t*)p)[-1]));
