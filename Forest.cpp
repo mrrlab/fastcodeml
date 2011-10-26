@@ -131,16 +131,16 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 	mCodonFreq = cf->getCodonFrequencies();
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
-	mapInternalToBranchIdWalker(&mRoots[mNumSites-1]);
+	std::map<unsigned int, unsigned int> map_internal_to_branchID;
+	mapInternalToBranchIdWalker(&mRoots[mNumSites-1], map_internal_to_branchID);
 
 	// Transform the map into a table (better for performance)
-	mTableInternalToBranchID.resize(mMapInternalToBranchID.size());
+	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
 	std::map<unsigned int, unsigned int>::const_iterator im;
-	for(im=mMapInternalToBranchID.begin(); im != mMapInternalToBranchID.end(); ++im)
+	for(im=map_internal_to_branchID.begin(); im != map_internal_to_branchID.end(); ++im)
 	{
 		mTableInternalToBranchID[im->first] = im->second;
 	}
-	mMapInternalToBranchID.clear();
 
 #ifdef NEW_LIKELIHOOD
     // Prepare the list of node id's by level
@@ -727,10 +727,10 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 				double temp[N];
 				double* x = aNode->mOtherTreeProb[idx] ? aNode->mOtherTreeProb[idx]+N*aSetIdx : temp;
 				aSet.doTransition(aSetIdx, m->mBranchId, computeLikelihoodWalker(m, aSet, aSetIdx), x);
-				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
 #ifdef USE_MKL_VML
 				vdMul(N, aNode->mProb[aSetIdx], x, aNode->mProb[aSetIdx]);
 #else
+				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
 				for(int i=0; i < N; ++i) aNode->mProb[aSetIdx][i] *= x[i];
 #endif
 			}
@@ -759,10 +759,10 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 					aSet.doTransition(aSetIdx, m->mBranchId, m->mProb[aSetIdx], temp);
 					x = temp;
 				}
-				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
 #ifdef USE_MKL_VML
 				vdMul(N, aNode->mProb[aSetIdx], x, aNode->mProb[aSetIdx]);
 #else
+				//for(int i=0; i < N; ++i) aNode->mProb0[i+N*aSetIdx] *= x[i];
 				for(int i=0; i < N; ++i) aNode->mProb[aSetIdx][i] *= x[i];
 #endif
 			}
@@ -831,16 +831,16 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 }
 #endif
 
-void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode)
+void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID)
 {
 	std::vector<ForestNode *>::const_iterator in;
 	for(in=aNode->mChildrenList.begin(); in != aNode->mChildrenList.end(); ++in)
 	{
 		ForestNode *m = *in;
 
-		if(m->mInternalNodeId != UINT_MAX) mMapInternalToBranchID[m->mInternalNodeId] = m->mBranchId;
+		if(m->mInternalNodeId != UINT_MAX) aMapInternalToBranchID[m->mInternalNodeId] = m->mBranchId;
 
-		mapInternalToBranchIdWalker(m);
+		mapInternalToBranchIdWalker(m, aMapInternalToBranchID);
 	}
 }
 

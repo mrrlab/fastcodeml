@@ -263,7 +263,7 @@ private:
 	///
 	///	@param[in] aNode The node from which to start
 	///
-	void mapInternalToBranchIdWalker(const ForestNode* aNode);
+	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
 
 private:
@@ -272,8 +272,6 @@ private:
 	unsigned int			mVerbose;					///< If greather than zero prints more info
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
-	std::map<unsigned int, unsigned int>
-							mMapInternalToBranchID;		///< Map from internal branch number to branch number
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
