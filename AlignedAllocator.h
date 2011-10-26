@@ -7,6 +7,8 @@
 #include <new>       // Required for placement new and std::bad_alloc
 #include <stdexcept> // Required for std::length_error
 
+#include "AlignedMalloc.h"
+
 template <typename T, size_t A> class AlignedAllocator
 {
 public:

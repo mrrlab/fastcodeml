@@ -84,7 +84,9 @@ public:
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction
 	///
-	void addAggressiveReduction(void);
+	/// @param[in] aNode The tree node from which the walker should start (no argument starts from the root)
+	///
+	void addAggressiveReduction(ForestNode* aNode=0);
 #endif
 
 	/// Remove all work data used for reduction
@@ -208,14 +210,6 @@ private:
 	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
 	///
 	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
-
-#ifndef NEW_LIKELIHOOD
-	/// Add aggresssive reduction to common subtree between two trees already identified
-	///
-	/// @param[in] aNode The tree node from which the walker should start
-	///
-	void addAggressiveReductionWalker(ForestNode* aNode);
-#endif
 
 	/// Check dependencies of a tree with other trees
 	///

@@ -55,14 +55,15 @@ struct ForestNode
 	~ForestNode()
 	{
 		// Delete children if in the same tree. Delete partial Prob arrays if not pointer to other tree partial Prob array
-		std::vector<ForestNode*>::iterator irn;
+		//std::vector<ForestNode*>::iterator irn;
 		unsigned int i;
-		for(irn=mChildrenList.begin(), i=0; irn != mChildrenList.end(); ++irn, ++i)
+		unsigned int nc = mChildrenList.size();
+		//for(irn=mChildrenList.begin(), i=0; irn != mChildrenList.end(); ++irn, ++i)
+		for(i=0; i < nc; ++i)
 		{
-			//if(mOwnTree == (*irn)->mOwnTree) //RM
 			if(isSameTree(i))
 			{
-				delete (*irn);
+				delete mChildrenList[i];
 
 #ifndef NEW_LIKELIHOOD
 				delete [] mOtherTreeProb[i];
@@ -184,7 +185,6 @@ struct ForestNode
 		for(irn=mChildrenList.begin(), i=0; irn != mChildrenList.end(); ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
-			//if(mOwnTree == (*irn)->mOwnTree) //RM
 			if(isSameTree(i))
 			{
 				(*irn)->print(aNodeNames, aOut, aIndent+aIncrement, aIncrement);
@@ -241,7 +241,6 @@ struct ForestNode
 		for(irn=mChildrenList.begin(), i=0; irn != mChildrenList.end(); ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
-			//if(mOwnTree == (*irn)->mOwnTree) //RM
 			if(isSameTree(i))
 			{
 				cnt += (*irn)->countBranches(aAggressiveStrategy)+1;

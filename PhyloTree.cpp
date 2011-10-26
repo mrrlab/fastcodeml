@@ -7,6 +7,8 @@
 #include "MatrixSize.h"
 #include "MathSupport.h"
 #include "Exceptions.h"
+#include "AlignedMalloc.h"
+
 
 void PhyloTree::printTree(ParseTreeIteratorType const& aTreeIterator, int aIindent)
 {
@@ -353,10 +355,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	// Set the pointers. The sequence is: Branch -> Set -> Site -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
-		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)];
-		aForestNode->mProb[i] = &aProbVectors[N*(aNumSites*Nt*id+aNumSites*i+aTreeId)];
-		//aForestNode->mProb[i] = &aProbVectors[N*aNumSites*Nt*id+N*aNumSites*i+N*aTreeId];
-		//aForestNode->mProb[i] = aForestNode->mProb0+i*N;
+		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)]; 
 	}
 #endif
 
