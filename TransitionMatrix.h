@@ -189,14 +189,14 @@ private:
 
 private:
 	/// Order suggested by icc to improve locality
-	/// 'mV, mCodonFreq, mQ, mDim, mSqrtCodonFreq, mD, mNumGoodFreq, mU, mGoodFreq'
+	/// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double			mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
-	const double*	mCodonFreq;		///< Experimental codon frequencies
-	double			mQ[N*N];		///< The Q matrix
-	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
-	double			mD[N];			///< The matrix eigenvalues
-	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double			mU[N*N];		///< The left adjusted eigenvectors matrix
+	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
+	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+	double			mQ[N*N];		///< The Q matrix
+	double			mD[N];			///< The matrix eigenvalues
+	const double*	mCodonFreq;		///< Experimental codon frequencies
 	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
 };
 

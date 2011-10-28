@@ -86,6 +86,26 @@ int main(int ac, char **av)
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 		}
 #endif
+													std::cerr << "Compiled with: ";
+#ifdef _OPENMP
+													std::cerr << "USE_OPENMP ";
+#endif
+#ifdef NEW_LIKELIHOOD
+													std::cerr << "NEW_LIKELIHOOD ";
+#endif
+#ifdef USE_LAPACK
+													std::cerr << "USE_LAPACK ";
+#endif
+#ifdef USE_DGEMM
+													std::cerr << "USE_DGEMM ";
+#endif
+#ifdef USE_DSYRK
+													std::cerr << "USE_DSYRK ";
+#endif
+#ifdef USE_MKL_VML
+													std::cerr << "USE_MKL_VML";
+#endif
+													std::cerr << std::endl;
 		std::cerr << std::endl;
 	}
 
@@ -171,7 +191,7 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(9) << timer.get() << std::endl;}
 
 	// Print few statistics
-	if(cmd.mVerboseLevel >= 2) std::cerr << forest;
+	if(cmd.mVerboseLevel >= 1) std::cerr << forest;
 
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= 1) timer.start();

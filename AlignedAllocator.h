@@ -137,7 +137,7 @@ public:
     // base class assignment operator is inaccessible" within
     // the STL headers, but that warning is useless.
 private:
-    AlignedAllocator& operator=(const AlignedAllocator&);
+    AlignedAllocator& operator=(const AlignedAllocator& a) {return const_cast<AlignedAllocator&>(a);}
 };
 
 

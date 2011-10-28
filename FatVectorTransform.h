@@ -18,7 +18,7 @@ class FatVectorTransform
 public:
 	/// Constructor.
 	///
-	FatVectorTransform() : mNumBranches(0), mNumSites(0), mNoTransformations(true) {}
+	FatVectorTransform() : mNumSites(0), mNumBranches(0), mNoTransformations(true) {}
 
 	/// Destructor.
 	///
@@ -138,8 +138,8 @@ public:
 
 
 private:
-	unsigned int			mNumBranches;			///< The number of branches.
 	unsigned int			mNumSites;				///< The number of valid sites.
+	unsigned int			mNumBranches;			///< The number of branches.
 	std::vector<int>		mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are:
 													///< - SITE_EXISTS if the corresponding: (Branch, Site) exists
 													///< - SITE_NOT_EXISTS if doesn't exist

@@ -35,14 +35,14 @@ public:
 	{
 		mNumTimes     = aNumBranches;
 		mNumVariables = aNumVariables;
-		mVar.reserve(mNumTimes+mNumVariables);
+		//mVar.reserve(mNumTimes+mNumVariables);
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
 		mUpperBound.reserve(mNumTimes+mNumVariables);
 		mSeed = aSeed;
 		mNumEvaluations = 0;
 		mMaxLnL = -DBL_MAX;
-		mLikelihoods.reserve(Nt*aNumSites);
+		mLikelihoods.resize(Nt*aNumSites);
 	}
 
 	/// Destructor.

@@ -32,7 +32,7 @@ struct ForestNode
 #endif
 	unsigned int				mInternalNodeId;			///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
-	unsigned char				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
+	unsigned int				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
 #ifndef NEW_LIKELIHOOD
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
@@ -154,6 +154,16 @@ struct ForestNode
 		alignedFree(aPtr);
 	}
 
+	void* operator new(std::size_t /* aSize */, ForestNode* aHere)
+	{
+		return aHere;
+	}
+
+	void operator delete(void* /* aPtr */, ForestNode* /* aHere */)
+	{
+		// Do nothing
+	}
+
 	/// Print from this node down
 	///
 	/// @param[in] aNodeNames The list of node names
@@ -256,22 +266,13 @@ struct ForestNode
 
 	/// Bitmask for the mChildrenSameTreeFlags bitset
 	///
-	static const unsigned char mMaskTable[MAX_NUM_CHILDREN];
+	static const unsigned int mMaskTable[MAX_NUM_CHILDREN];
 
-	/// Set the given flag to true
-	///
-	/// @param[in] aChildIndex The index of the flag to be set to true
-	///
-	void setSameTreeFlag(unsigned int aChildIndex)
-	{
-		mChildrenSameTreeFlags |= mMaskTable[aChildIndex];
-	}
-
-	/// Reset the given flag to false
+	/// Mark child aChildIndex as not in the same tree (Reset the given flag to false)
 	///
 	/// @param[in] aChildIndex The index of the flag to be set to false
 	///
-	void resetSameTreeFlag(unsigned int aChildIndex)
+	void markNotSameTree(unsigned int aChildIndex)
 	{
 		mChildrenSameTreeFlags &= ~mMaskTable[aChildIndex];
 	}
@@ -291,7 +292,7 @@ struct ForestNode
 	///
 	void setAllFlagsSameTree(void)
 	{
-		mChildrenSameTreeFlags = 0xFF;
+		mChildrenSameTreeFlags = UINT_MAX;
 	}
 };
 

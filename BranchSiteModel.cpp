@@ -167,42 +167,37 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 		mVar.assign(aInitFromH0, aInitFromH0+mNumTimes+4);
 		mVar.push_back(1.001);
 	}
-	else 
+	else if(aTimesFromTree)
 	{
-		// Initialize from the tree (plus fixed values guessed from CodeML code)
-		if(aTimesFromTree)
-		{
-			// Initialize branch lengths from the phylo tree
-			aForest.setTimesFromLengths(mVar);
+		// Initialize branch lengths from the phylo tree
+		aForest.setTimesFromLengths(mVar);
 
-			// Initialization as in CodeML (seems)
-			mVar[mNumTimes+0] = 0.235087;											// w0
-			mVar[mNumTimes+1] = 0.4;												// k
-			mVar[mNumTimes+4] = 1.14833;											// w2
-
+		// Initialization as in CodeML (seems)
+		mVar[mNumTimes+0] = 0.235087;											// w0
+		mVar[mNumTimes+1] = 0.4;												// k
 #ifdef USE_ORIGINAL_PROPORTIONS
-			mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
-			mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
+		mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
+		mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
 #else
-			mVar[mNumTimes+2] = 0.813836;											// p0+p1
-			mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
+		mVar[mNumTimes+2] = 0.813836;											// p0+p1
+		mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
 #endif
-		}
-		else
-		{
-			// Initialize the variables to be optimized from random values
-			for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;		// T
-			mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;						// w0
-			mVar[mNumTimes+1] = 2.0;													// k
+		mVar[mNumTimes+4] = 1.14833;											// w2
+	}
+	else
+	{
+		// Initialize the variables to be optimized from random values
+		for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;		// T
+		mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;						// w0
+		mVar[mNumTimes+1] = 2.0;													// k
 #ifdef USE_ORIGINAL_PROPORTIONS
-			mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;					// x0 -> p0
-			mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;							// x1 -> p1
+		mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;					// x0 -> p0
+		mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;							// x1 -> p1
 #else
-			mVar[mNumTimes+2] = rand()/(double)RAND_MAX;								// p0+p1
-			mVar[mNumTimes+3] = rand()/(double)RAND_MAX;								// p0/(p0+p1)
+		mVar[mNumTimes+2] = rand()/(double)RAND_MAX;								// p0+p1
+		mVar[mNumTimes+3] = rand()/(double)RAND_MAX;								// p0/(p0+p1)
 #endif
-			mVar[mNumTimes+4] = 1.001;													// w2
-		}
+		mVar[mNumTimes+4] = 1.001;													// w2
 	}
 
 	// Set lower constrains

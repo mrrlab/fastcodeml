@@ -93,7 +93,7 @@ public:
 							double aSfg,
 						    unsigned int aFgBranch,
 						    const std::vector<double>& aParams);
-
+#ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
 	/// @param[in] aSetIdx Which set to use (starts from zero)
@@ -127,20 +127,29 @@ public:
 		}
 #endif
 	}
+#else
 
+	///	Multiply the aMin fat-vector by the precomputed exp(Q*t) matrix
+	///
+	/// @param[in] aSetIdx Which set to use (starts from zero)
+	/// @param[in] aBranch Which branch
+	/// @param[in] aNumSites Number of sites composing the fat-vector
+	/// @param[in] aMin The input fat-vector to be multiplied by the matrix exponential
+	/// @param[out] aMout The resulting fat-vector
+	///
 	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
 #ifdef USE_DSYRK
 	
-	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &N, &D0, aMout, &N);
+	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &VECTOR_SLOT, &D0, aMout, &VECTOR_SLOT);
 
 #if 0
 	for(int c=0; c < aNumSites; ++c)
 	{
 		for(int r=0; r < N; ++r)
 		{
-			aMout[c*N+r] *= mInvCodonFreq[r];
+			aMout[c*VECTOR_SLOT+r] *= mInvCodonFreq[r];
 		}
 	}
 #endif
@@ -148,12 +157,12 @@ public:
 #ifdef USE_MKL_VML
 	for(int c=0; c < aNumSites; ++c)
 	{
-		vdMul(N, &aMout[c*N], mInvCodonFreq, &aMout[c*N]);
+		vdMul(N, &aMout[c*VECTOR_SLOT], mInvCodonFreq, &aMout[c*VECTOR_SLOT]);
 	}
 #else
 	for(int r=0; r < N; ++r)
 	{
-		dscal_(&aNumSites, &mInvCodonFreq[r], aMout+r, &N);
+		dscal_(&aNumSites, &mInvCodonFreq[r], aMout+r, &VECTOR_SLOT);
 	}
 #endif
 
@@ -168,10 +177,10 @@ public:
 				mMatrices[aSetIdx*mNumMatrices+aBranch],
 				&N,
 				aMin,
-				&N,
+				&VECTOR_SLOT,
 				&D0,
 				aMout,
-				&N);
+				&VECTOR_SLOT);
 #else
 		dgemm_( "T",
 				"N",
@@ -182,10 +191,10 @@ public:
 				mMatrices[aSetIdx*mNumMatrices+aBranch],
 				&N,
 				aMin,
-				&N,
+				&VECTOR_SLOT,
 				&D0,
 				aMout,
-				&N);
+				&VECTOR_SLOT);
 #endif
 #else
 		for(int r=0; r < N; ++r)
@@ -193,12 +202,13 @@ public:
 			for(int c=0; c < aNumSites; ++c)
 			{
 				double x = 0;
-				for(int k=0; k < N; ++k) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+k]*aMin[c*N+k]; // aMin is transposed
-				aMout[c*N+r] = x; // also aMout is transposed
+				for(int k=0; k < N; ++k) x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+k]*aMin[c*VECTOR_SLOT+k]; // aMin is transposed
+				aMout[c*VECTOR_SLOT+r] = x; // also aMout is transposed
 			}
 		}
 #endif
 	}
+#endif
 
 	/// Return the number of sets contained.
 	///

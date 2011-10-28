@@ -261,23 +261,24 @@ private:
 
 
 private:
+	///'mNumSites, mCodonFreq, mNumBranches'
+	size_t					mNumSites;					///< Number of sites
+	const double*			mCodonFreq;					///< Experimental codon frequencies
+	size_t					mNumBranches;				///< Total number of branches of the original tree
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
 	std::vector<double>		mSiteMultiplicity;			///< Multiplicity of the valid sites
 	unsigned int			mVerbose;					///< If greather than zero prints more info
-	size_t					mNumBranches;				///< Total number of branches of the original tree
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
-	size_t					mNumSites;					///< Number of sites
 
 	/// Here are global data that will be removed from the various (site) trees
 	std::vector<std::string>
 							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
-	const double*			mCodonFreq;					///< Experimental codon frequencies
 
 #ifdef NEW_LIKELIHOOD
 
@@ -285,11 +286,11 @@ private:
 		
 	/// The mProbs and mProbsOut layout
 	///
-	/// [site0][site1][site2]...  [site0][site1][site2]...               each is 61 bytes long
-	/// [ set 0                  ][ set 1                  ]...          there are 4 (Nt) sets
-	/// [   node 0                                             ]...
+	/// [site0][site1][site2]...  [site0][site1][site2]...               each is VECTOR_SLOT bytes long (for which only the first N are significant)
+	/// [  set 0                 ][  set 1                 ]...          there are 4 (Nt) sets
+	/// [    node 0                                             ]...
 	///
-	/// site_index = node*(Nt*NumSites*N)+set*(NumSites*N)+site*(N)
+	/// site_index = node*(Nt*NumSites*VECTOR_SLOT) + set*(NumSites*VECTOR_SLOT) + site*(VECTOR_SLOT)
 	///
 	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 	CacheAlignedDoubleVector	mProbsOut;					///< mProbs after multiplication by exp(Qt)
