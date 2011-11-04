@@ -22,7 +22,17 @@ public:
 	///
 	/// @param[in] aVerboseLevel The verbosity level
 	///
-	Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
+	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel)
+	{
+		mMapBaseToIdx['t'] = 0;
+		mMapBaseToIdx['T'] = 0;
+		mMapBaseToIdx['c'] = 1;
+		mMapBaseToIdx['C'] = 1;
+		mMapBaseToIdx['a'] = 2;
+		mMapBaseToIdx['A'] = 2;
+		mMapBaseToIdx['g'] = 3;
+		mMapBaseToIdx['G'] = 3;
+	}
 
 	/// Destructor
 	///
@@ -89,6 +99,7 @@ private:
 	std::vector<unsigned int>	mMapSiteToDnaGene;	///< Map the site number to the position in mDnaGene
 	std::map<std::string, unsigned int>
 								mMapSpecieToDnaGene;///< Map specie name to position in the gene list mDnaGene
+	std::map<char, int>			mMapBaseToIdx;
 };
 
 #endif

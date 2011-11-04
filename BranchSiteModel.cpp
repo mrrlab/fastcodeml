@@ -275,8 +275,8 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	++mNumEvaluations;
 
 	// Check if steps can be skipped
-	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	const bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	const bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
@@ -296,16 +296,12 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
-	double fg_scale = mProportions[0]*mScaleQw0 +
-					  mProportions[1]*mScaleQ1  +
-					  mProportions[2]*mScaleQ1  +
-					  mProportions[3]*mScaleQ1;
+	const double fg_scale = mProportions[0]*mScaleQw0 +
+							mProportions[1]*mScaleQ1  +
+							mProportions[2]*mScaleQ1  +
+							mProportions[3]*mScaleQ1;
 
-	//double bg_scale = mProportions[0]*scale_qw0 +
-	//				  mProportions[1]*scale_q1  +
-	//				  mProportions[2]*scale_qw0 +
-	//				  mProportions[3]*scale_q1;
-	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
+	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
@@ -314,7 +310,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 	aForest.computeLikelihood(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
-	size_t num_sites = aForest.getNumSites();
+	const size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(unsigned int site=0; site < num_sites; ++site)
@@ -363,9 +359,9 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	++mNumEvaluations;
 
 	// Check if steps can be skipped
-	bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	bool changed_w2 = BranchSiteModel::isDifferent(aVar[mNumTimes+4], mPrevOmega2);
-	bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	const bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	const bool changed_w2 = BranchSiteModel::isDifferent(aVar[mNumTimes+4], mPrevOmega2);
+	const bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_w2) mPrevOmega2 = aVar[mNumTimes+4];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
@@ -391,11 +387,12 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
-	double fg_scale = mProportions[0]*mScaleQw0 +
-					  mProportions[1]*mScaleQ1  +
-					  mProportions[2]*mScaleQw2 +
-					  mProportions[3]*mScaleQw2;
-	double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
+	const double fg_scale = mProportions[0]*mScaleQw0 +
+							mProportions[1]*mScaleQ1  +
+							mProportions[2]*mScaleQw2 +
+							mProportions[3]*mScaleQw2;
+
+	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
@@ -404,7 +401,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranc
 	aForest.computeLikelihood(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
-	size_t num_sites = aForest.getNumSites();
+	const size_t num_sites = aForest.getNumSites();
 	const double* mult = aForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(unsigned int site=0; site < num_sites; ++site)
@@ -492,13 +489,13 @@ public:
 		unsigned int vs = aVars.size();
 		for(unsigned int i=0; i < vs; ++i)
 		{
-			double v = aVars[i];
+			const double v = aVars[i];
 			double eh = SMALL_DIFFERENCE * (fabs(v)+1.);
 			
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
 
-			double f1 = mModel->oneCycleMaximizer(*mForest, mFgBranch, x, false);
+			const double f1 = mModel->oneCycleMaximizer(*mForest, mFgBranch, x, false);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 

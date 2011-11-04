@@ -311,7 +311,7 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode)
 
 size_t PhyloTree::getMarkedInternalBranch(void) const
 {
-	size_t nin = mInternalNodes.size();
+	const size_t nin = mInternalNodes.size();
 	size_t marked_branch = 0;
 	for(; marked_branch < nin; ++marked_branch)
 	{
@@ -347,15 +347,17 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 
 	// Set the internal branch identifier
 	size_t int_id;
-	size_t nn = mInternalNodes.size();
+	const size_t nn = mInternalNodes.size();
 	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
 	aForestNode->mInternalNodeId = (int_id < nn) ? (unsigned int)int_id : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
-	// Set the pointers. The sequence is: Branch -> Set -> Site -> 1:N
+	// Set the pointers.        The sequence is: Branch -> Set -> Site -> 1:N
+	// Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
-		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)]; 
+		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)]; 
+		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)]; 
 	}
 #endif
 
@@ -365,6 +367,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	{
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
+		aForestNode->mChildrenCount++;
 #ifndef NEW_LIKELIHOOD
 		aForestNode->mOtherTreeProb.push_back(0);
 #endif

@@ -16,7 +16,7 @@ void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 #endif
 	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{
-		double t = (branch == (int)aFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
+		const double t = (branch == (int)aFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
 
 		aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 		aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
@@ -44,7 +44,7 @@ void TransitionMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 #endif
 	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{
-		double t = (branch == (int)aFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
+		const double t = (branch == (int)aFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
 
 		aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 		aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);

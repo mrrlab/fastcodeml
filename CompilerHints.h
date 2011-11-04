@@ -20,7 +20,7 @@
 
 #elif defined(__PGI)
 //  PGI C++
-#define ALIGN64 __attribute__ ((aligned (64)))
+#define ALIGN64 //__attribute__ ((aligned (64)))
 //#define PURE    __attribute__ ((pure))
 
 #else

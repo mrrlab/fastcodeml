@@ -33,7 +33,7 @@ public:
 	///
 	/// @param[in] aVerbose The verbosity level
 	///
-	Forest(unsigned int aVerbose=0)
+	explicit Forest(unsigned int aVerbose=0)
 	{
 		mVerbose = aVerbose;
 		mNumBranches = 0;

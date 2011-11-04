@@ -24,15 +24,17 @@ static const int MAX_NUM_CHILDREN = 8;
 struct ForestNode
 {
 	// Field order suggested by icc
-	unsigned int				mOwnTree;					///< Per tree identifier
+	//'mChildrenSameTreeFlags, mBranchId, mOwnTree, mChildrenCount, mParent, mProb, mInternalNodeId, mChildrenList, mSubtreeCodonsSignature, mOtherTreeProb'
+	unsigned short				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
+	unsigned short				mChildrenCount;
 	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
+	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD
 	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 #endif
 	unsigned int				mInternalNodeId;			///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
 	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
-	unsigned int				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node (after reduction it is emptied)
 #ifndef NEW_LIKELIHOOD
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
@@ -48,6 +50,7 @@ struct ForestNode
 #endif
 		setAllFlagsSameTree();
 		mChildrenList.reserve(2);
+		mChildrenCount = 0;
 	}
 
 	/// Destructor
@@ -55,18 +58,16 @@ struct ForestNode
 	~ForestNode()
 	{
 		// Delete children if in the same tree. Delete partial Prob arrays if not pointer to other tree partial Prob array
-		//std::vector<ForestNode*>::iterator irn;
-		unsigned int i;
-		unsigned int nc = mChildrenList.size();
-		//for(irn=mChildrenList.begin(), i=0; irn != mChildrenList.end(); ++irn, ++i)
-		for(i=0; i < nc; ++i)
+		const unsigned int nc = mChildrenCount;
+		for(unsigned int i=0; i < nc; ++i)
 		{
 			if(isSameTree(i))
 			{
 				delete mChildrenList[i];
 
 #ifndef NEW_LIKELIHOOD
-				delete [] mOtherTreeProb[i];
+				//delete [] mOtherTreeProb[i];
+				alignedFree(mOtherTreeProb[i]);
 #endif
 			}
 		}
@@ -98,6 +99,7 @@ struct ForestNode
 		mOtherTreeProb			= aNode.mOtherTreeProb;
 #endif
 		mChildrenSameTreeFlags	= aNode.mChildrenSameTreeFlags;
+		mChildrenCount			= aNode.mChildrenCount;
 	}
 
 	/// Assignment operator
@@ -124,6 +126,7 @@ struct ForestNode
 			mOtherTreeProb			= aNode.mOtherTreeProb;
 #endif
 			mChildrenSameTreeFlags	= aNode.mChildrenSameTreeFlags;
+			mChildrenCount			= aNode.mChildrenCount;
 		}
 
 		// Return ref for multiple assignment
@@ -154,11 +157,23 @@ struct ForestNode
 		alignedFree(aPtr);
 	}
 
+	/// Placement new required by PGI compiler
+	///
+	/// @param[in] aSize Requested size (ignored)
+	/// @param[in] aHere Where the placement new should go
+	///
+	/// @return The placed memory
+	///
 	void* operator new(std::size_t /* aSize */, ForestNode* aHere)
 	{
 		return aHere;
 	}
 
+	/// Placement delete required by PGI compiler
+	///
+	/// @param[in] aPtr Pointer to the memory area to be released (ignored)
+	/// @param[in] aHere Where the placement new should go (ignored)
+	///
 	void operator delete(void* /* aPtr */, ForestNode* /* aHere */)
 	{
 		// Do nothing
@@ -266,7 +281,7 @@ struct ForestNode
 
 	/// Bitmask for the mChildrenSameTreeFlags bitset
 	///
-	static const unsigned int mMaskTable[MAX_NUM_CHILDREN];
+	static const unsigned short mMaskTable[MAX_NUM_CHILDREN];
 
 	/// Mark child aChildIndex as not in the same tree (Reset the given flag to false)
 	///
@@ -285,14 +300,15 @@ struct ForestNode
 	///
 	bool isSameTree(unsigned int aChildIndex) const
 	{
-		return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) == mMaskTable[aChildIndex];
+		//return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) == mMaskTable[aChildIndex];
+		return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) != 0;
 	}
 
 	/// Set all flags to true
 	///
 	void setAllFlagsSameTree(void)
 	{
-		mChildrenSameTreeFlags = UINT_MAX;
+		mChildrenSameTreeFlags = 0xFFFF;
 	}
 };
 

@@ -32,7 +32,6 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 	// Count entries and create an indicator array
 	for(cnt=0; aParserOptions[cnt].pszArg != NULL; ++cnt) {}
 	std::vector<bool> done(cnt, false);
-	//done.assign(cnt, false);
 
 	// For each different option
 	for(i=0; i < cnt; ++i)

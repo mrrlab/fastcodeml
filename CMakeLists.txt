@@ -130,7 +130,7 @@ else()
 
 		#slow, but suitable for debugging
 		if(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -pedantic" CACHE "Debug mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter" CACHE "Debug mode options" STRING FORCE)
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wno-unused-result -Wno-write-strings -g -pg -fcheck-data-deps")
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -pg -fcheck-data-deps" CACHE STRING "Debug mode options")
 		endif(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
@@ -140,7 +140,7 @@ else()
 		# -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -Wno-unused-result -funroll-loops -funsafe-loop-optimizations -Wunsafe-loop-optimizations"
 
 		if(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-			set(CMAKE_CXX_FLAGS_RELEASE "error -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -funroll-loops" CACHE "Release mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -std=c++98 -Wextra -ffast-math -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING FORCE)
 		endif(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
 
 		#if(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
@@ -158,11 +158,11 @@ else()
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
 
-	set(BLAS_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "BLAS lib dir")
-	set(LAPACK_LINK_DIR "/apps/eiger/Intel-FOR-11.1/mkl/lib/em64t" CACHE PATH "LAPACK lib dir")
+	set(BLAS_LINK_DIR "/apps/eiger/Intel-CPP-11.1/mkl/lib/em64t" CACHE PATH "BLAS lib dir")
+	set(LAPACK_LINK_DIR "/apps/eiger/Intel-CPP-11.1/mkl/lib/em64t" CACHE PATH "LAPACK lib dir")
 	#set(MATH_LIB_NAMES blas lapack gfortranbegin gfortran CACHE STRING "Math libraries" )
 	set(MATH_LIB_NAMES mkl_intel_lp64 mkl_sequential mkl_lapack mkl_core m CACHE STRING "Math libraries" )
-	set(MKL_INCLUDE_DIR "/apps/eiger/Intel-FOR-11.1/mkl/include" CACHE PATH "MKL include dir")
+	set(MKL_INCLUDE_DIR "/apps/eiger/Intel-CPP-11.1/mkl/include" CACHE PATH "MKL include dir")
 
 	if(USE_LAPACK)
 		add_definitions(-DUSE_LAPACK)

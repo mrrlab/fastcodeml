@@ -43,7 +43,7 @@ public:
 	/// @param[in] aNumBranches Number of branches
 	/// @param[in] aNumSites Number of sites
 	///
-	inline void initNodeStatus(unsigned int aNumBranches, unsigned int aNumSites)
+	void initNodeStatus(unsigned int aNumBranches, unsigned int aNumSites)
 	{
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
@@ -59,7 +59,7 @@ public:
 	/// @param[in] aNumBranches Number of branches
 	/// @param[in] aNumSites Number of sites
 	///
-	inline void initNodeStatusMinimal(unsigned int aNumBranches, unsigned int aNumSites)
+	void initNodeStatusMinimal(unsigned int aNumBranches, unsigned int aNumSites)
 	{
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
@@ -74,7 +74,7 @@ public:
 	/// @param[in] aBranch Branch for which the node has been verified as existing
 	/// @param[in] aSite Site for which the node has been verified as existing
 	///
-	inline void setNodeExists(unsigned int aBranch, unsigned int aSite)
+	void setNodeExists(unsigned int aBranch, unsigned int aSite)
 	{
 		mNodeStatus[aBranch * mNumSites + aSite] = FatVectorTransform::SITE_EXISTS;
 	}
@@ -85,7 +85,7 @@ public:
 	/// @param[in] aSite Site for which the node has been checked
 	/// @param[in] aReusedSite Site from which the node takes its value
 	///
-	inline void setNodeReuses(unsigned int aBranch, unsigned int aSite, unsigned int aReusedSite)
+	void setNodeReuses(unsigned int aBranch, unsigned int aSite, unsigned int aReusedSite)
 	{
 		mNodeStatus[aBranch * mNumSites + aSite] = aReusedSite;
 	}
@@ -116,7 +116,7 @@ public:
 	///
 	/// @return The starting index in the fat vector
 	///
-	inline unsigned int getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
+	unsigned int getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
 
 	/// Get the number of items to be used for computation
 	///
@@ -124,7 +124,7 @@ public:
 	///
 	/// @return The count of sites to be used
 	///
-	inline unsigned int getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
+	unsigned int getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
 
 	/// Compact the fat vector at the leaves.
 	///

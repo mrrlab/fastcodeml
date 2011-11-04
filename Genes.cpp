@@ -197,7 +197,35 @@ void Genes::loadGenesFile(const char* aFilename)
 int Genes::idxCodon(const char* aCodon) const
 {
 	int i, j, k;
-
+#if 1
+	std::map<char, int>::const_iterator im = mMapBaseToIdx.find(aCodon[0]);
+	if(im == mMapBaseToIdx.end()) return -1;
+	i = im->second;
+	if(aCodon[0] == aCodon[1])
+	{
+		j = i;
+	}
+	else
+	{
+		im = mMapBaseToIdx.find(aCodon[1]);
+		if(im == mMapBaseToIdx.end()) return -1;
+		j = im->second;
+	}
+	if(aCodon[0] == aCodon[2])
+	{
+		k = i;
+	}
+	else if(aCodon[1] == aCodon[2])
+	{
+		k = j;
+	}
+	else
+	{
+		im = mMapBaseToIdx.find(aCodon[2]);
+		if(im == mMapBaseToIdx.end()) return -1;
+		k = im->second;
+	}
+#else
 	switch(aCodon[0])
 	{
 	case 'T':
@@ -263,7 +291,7 @@ int Genes::idxCodon(const char* aCodon) const
 	default:
 		return -1;
 	}
-
+#endif
 	// Check if it is a stop codon
 	if(i == 0)
 	{
@@ -284,7 +312,7 @@ int Genes::idxCodon(const char* aCodon) const
 int Genes::getCodonIdx(std::string aSpecie, unsigned int aSite) const
 {
 	// Find the specie
-	unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;
+	const unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;
 
 	// Access its gene
 	const char* gene = mDnaGene[idx].c_str();

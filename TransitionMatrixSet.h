@@ -101,7 +101,7 @@ public:
 	/// @param[in] aGin The input vector to be multiplied by the matrix exponential
 	/// @param[out] aGout The resulting vector
 	///
-	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
+	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
 #ifdef USE_DSYRK
@@ -137,7 +137,7 @@ public:
 	/// @param[in] aMin The input fat-vector to be multiplied by the matrix exponential
 	/// @param[out] aMout The resulting fat-vector
 	///
-	inline void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
+	void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
 #ifdef USE_DSYRK

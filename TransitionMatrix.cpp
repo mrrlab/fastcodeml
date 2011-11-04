@@ -27,22 +27,24 @@ static void EigenSort(double d[], double U[], int n)
     int k, j, i;
     double p;
 
-    for (i = 0; i < n - 1; i++)
+    for(i = 0; i < n - 1; i++)
     {
         p = d[k = i];
 
-        for (j = i + 1; j < n; j++)
-            if (d[j] >= p)
+        for(j = i + 1; j < n; j++)
+		{
+            if(d[j] >= p)
             {
                 p = d[k = j];
             }
+		}
 
-        if (k != i)
+        if(k != i)
         {
             d[k] = d[i];
             d[i] = p;
 
-            for (j = 0; j < n; j++)
+            for(j = 0; j < n; j++)
             {
                 p = U[j * n + i];
                 U[j *n + i] = U[j * n + k];
@@ -51,6 +53,8 @@ static void EigenSort(double d[], double U[], int n)
         }
     }
 }
+
+
 static void HouseholderRealSym(double a[], int n, double d[], double e[])
 {
     /* This uses HouseholderRealSym transformation to reduce a real symmetrical matrix
@@ -295,7 +299,7 @@ static int EigenTridagQLImplicit(double d[], double e[], int n, double z[])
     return status;
 }
 
-void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* aWork)
+void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* aWork)
 {
     /* This finds the eigen solution of a real symmetrical matrix aU[aDim*aDim]. In return,
        aU has the right vectors and aR has the eigenvalues.
@@ -310,6 +314,10 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
     int sts = EigenTridagQLImplicit(aR, aWork, aDim, aU);
 	if(sts < 0) throw std::range_error("Error in EigenTridagQLImplicit");
     EigenSort(aR, aU, aDim);
+
+    // Reorder eigenvalues so they are stored in reverse order
+    const int mid = aDim/2;
+    for(int i=0; i < mid; ++i) { double t = aR[i]; aR[i] = aR[aDim-1-i]; aR[aDim-1-i] = t; }
 }
 
 #else
@@ -321,12 +329,12 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
 //  Using LAPACK DSYEVR driver routine compute the eigenvalues and eigenvector of the symmetric input matrix aU[n*n]
 //  Reorders the output values so they are ordered as the ones computed by the original eigenRealSym() routine.
 //
-void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /* aIgnored */)
+void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /* aIgnored */)
 {
     int m;
     int info;
     int isuppz[2*N];
-    double tmp_u[N*N];
+    double ALIGN64 tmp_u[N*N];
 
 #ifndef OPTIMAL_WORKAREAS
 	// Allocate fixed workareas
@@ -382,16 +390,10 @@ void inline TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, do
 	//if(info > 0) throw std::range_error("No convergence in dsyevr");
 	//if(info < 0) throw std::invalid_argument("Invalid parameter to dsyevr");
 
-    // Reorder eigenvalues
-    int i;
-    int mid = aDim/2;
-    for(i=0; i < mid; ++i) { double t = aR[i]; aR[i] = aR[aDim-1-i]; aR[aDim-1-i] = t; }
-
-    // Reorder eigenvectors
-    int c, r;
-    for(c=0; c < aDim; ++c)
+	// Reorder eigenvectors (instead the eigenvalues are stored in reverse order)
+    for(int c=0; c < aDim; ++c)
     {
-        for(r=0; r < aDim; ++r)
+        for(int r=0; r < aDim; ++r)
         {
             aU[r*aDim+c] = tmp_u[(aDim-1-c)*aDim+r];
         }
@@ -557,7 +559,7 @@ void TransitionMatrix::eigenQREV(void)
 		}
     }
     else
-    {
+	{
 		int inew, jnew;
 
         for(i=0, inew=0; i < N; ++i)
@@ -693,7 +695,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		for(j=0; j < N; ++j)
 		{
 			x = 0.;
-			for(k=0; k < N; ++k) x += mU[i*N+k]*mV[k*N+j]*mD[k];
+			for(k=0; k < N; ++k) x += mU[i*N+k]*mV[k*N+j]*mD[N-1-k];
 			tmp[i*N+j] = x-mQ[i*N+j];
 
 			rms += (x-mQ[i*N+j])*(x-mQ[i*N+j]);
@@ -775,7 +777,7 @@ void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCo
 	std::cerr << "<<< D >>>" << std::scientific << std::endl;
 	for(c=0; c < aMaxCol; ++c)
 	{
-		std::cerr << std::setw(11) << std::setprecision(6) << mD[c] << ' ';
+		std::cerr << std::setw(11) << std::setprecision(6) << mD[N-1-c] << ' ';
 	}
 	std::cerr << std::fixed << std::endl;
 }

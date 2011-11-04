@@ -31,7 +31,7 @@ public:
 	/// - 0: No messages
 	/// - 3: Print the tree structure
 	///
-	PhyloTree(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
+	explicit PhyloTree(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
 
 	/// Destructor.
 	///

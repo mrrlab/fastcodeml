@@ -8,12 +8,9 @@
 #include "TransitionMatrix.h"
 #include "TransitionMatrixSet.h"
 #include "Forest.h"
-#include "AlignedAllocator.h"
-#include "Types.h"
 
 // Uncomment to use the original CodeML proportion definition
 //#define USE_ORIGINAL_PROPORTIONS
-
 
 /// Common routines for the Hypothesis test.
 ///
@@ -35,7 +32,6 @@ public:
 	{
 		mNumTimes     = aNumBranches;
 		mNumVariables = aNumVariables;
-		//mVar.reserve(mNumTimes+mNumVariables);
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
 		mUpperBound.reserve(mNumTimes+mNumVariables);
@@ -103,7 +99,7 @@ protected:
 	/// @param[in] aV1 The second optimization variables
 	/// @param[out] aProportions The four proportions output
 	///
-	inline void getProportions(double aV0, double aV1, double* aProportions) const
+	void getProportions(double aV0, double aV1, double* aProportions) const
 	{
 #ifdef USE_ORIGINAL_PROPORTIONS
 		aProportions[0] = exp(aV0);
@@ -130,10 +126,10 @@ protected:
 	///
 	/// @return True if the two parameters differs more than TOL
 	///
-	inline static bool isDifferent(double aFirst, double aSecond)
+	static bool isDifferent(double aFirst, double aSecond)
 	{
 		static const double TOL = 1e-7;
-		double diff = aFirst - aSecond;
+		const double diff = aFirst - aSecond;
 		return (diff > TOL || diff < -TOL);
 	}
 
@@ -196,8 +192,8 @@ public:
 
 
 private:
-	TransitionMatrix    mQw0;			///< Q matrix for the omega0 case
-	TransitionMatrix    mQ1;			///< Q matrix for the omega1 == 1 case
+	TransitionMatrix 	mQw0;			///< Q matrix for the omega0 case
+	TransitionMatrix 	mQ1;			///< Q matrix for the omega1 == 1 case
 	TransitionMatrixSet mSet;			///< Set of matrices used for the tree visits
 	double				mPrevK;			///< Previous k value used to compute matrices
 	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
@@ -264,5 +260,6 @@ private:
 	double				mScaleQw2;		///< Scale value for Qw2
 	double				mScaleQ1;		///< Scale value for Q1
 };
+
 
 #endif

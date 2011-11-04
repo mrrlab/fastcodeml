@@ -31,6 +31,9 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#ifdef USE_MKL_VML
+#include <mkl_vml.h>
+#endif
 #include "Timer.h"
 
 /// Main program for FastCodeML.
@@ -166,8 +169,8 @@ int main(int ac, char **av)
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;
-	size_t num_branches  = forest.getNumInternalBranches();
-	size_t marked_branch = forest.getMarkedInternalBranch();
+	const size_t num_branches  = forest.getNumInternalBranches();
+	const size_t marked_branch = forest.getMarkedInternalBranch();
 	if(cmd.mBranchFromFile && marked_branch < num_branches)
 	{
 		// Branch from file and valid
@@ -187,8 +190,12 @@ int main(int ac, char **av)
 		branch_end   = num_branches;
 	}
 
+#ifdef USE_MKL_VML
+	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
+#endif
+
 	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(9) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 1) std::cerr << forest;
@@ -260,7 +267,7 @@ int main(int ac, char **av)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(9) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions
