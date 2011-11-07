@@ -300,7 +300,6 @@ struct ForestNode
 	///
 	bool isSameTree(unsigned int aChildIndex) const
 	{
-		//return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) == mMaskTable[aChildIndex];
 		return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) != 0;
 	}
 
