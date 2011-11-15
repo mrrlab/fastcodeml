@@ -31,6 +31,8 @@ public:
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)
 	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
+	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
+	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	const char*		mTreeFile;				///< Newick tree file name
 	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
@@ -42,9 +44,8 @@ public:
 	bool			mNoAggressiveStep;		///< Do not apply aggressive common subtree reduction
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the Phylo Tree file (it is marked as #1)
-	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 result
-	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
+	bool			mNoTipPruning;			///< If set the pruning of branches going to leaves is avoided
 
 
 private:

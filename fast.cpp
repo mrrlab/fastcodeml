@@ -68,8 +68,16 @@ int main(int ac, char **av)
 		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
-		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
-		else                    					std::cerr << "Reduce forest: Aggressive" << std::endl;
+		else if(cmd.mNoAggressiveStep)
+		{
+			if(cmd.mNoTipPruning)					std::cerr << "Reduce forest: Normal (no tip pruning)" << std::endl;
+			else									std::cerr << "Reduce forest: Normal" << std::endl;
+		}
+		else
+		{
+			if(cmd.mNoTipPruning)					std::cerr << "Reduce forest: Aggressive (no tip pruning)" << std::endl;
+			else									std::cerr << "Reduce forest: Aggressive" << std::endl;
+		}
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
@@ -144,7 +152,7 @@ int main(int ac, char **av)
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
-		forest.reduceSubtrees();
+		forest.reduceSubtrees(cmd.mNoTipPruning);
 #ifndef NEW_LIKELIHOOD
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
 #endif
@@ -361,7 +369,7 @@ int main(int ac, char **av)
 ///         Ignore computed codon frequency and set all to 1/61
 /// 
 /// -e  --export (required argument)
-///         Export forest in GML format (if \%03d or \@03d is present, one is created for each fg branch)
+///         Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
 /// 
 /// -nr  --no-reduce (no argument)
 ///         Do not reduce forest by merging common subtrees
@@ -383,17 +391,20 @@ int main(int ac, char **av)
 /// 
 /// -np  --no-parallel (no argument)
 ///         Don't use parallel execution
-///
+/// 
 /// -bf  --branch-from-file (no argument)
-///        Do only the branch marked in the file as foreground branch
-///
+///         Do only the branch marked in the file as foreground branch
+/// 
 /// -hy  --only-hyp (required argument)
-///       Compute only H0 if 0, H1 if 1
-///
+///         Compute only H0 if 0, H1 if 1
+/// 
 /// -i0  --init-from-h0 (no argument)
-///        Start H1 optimization from H0 results
-///
-/// -m --maximizer (required argument)
-///        Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA)" },
-///
+///         Start H1 optimization from H0 results
+/// 
+/// -m  --maximizer (required argument)
+///         Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA, 2: LN_COBYLA)
+/// 
+/// -nt  --no-tip-pruning (no argument)
+///         Do not prune branches connected to leaves
+/// 
 /// @endverbatim

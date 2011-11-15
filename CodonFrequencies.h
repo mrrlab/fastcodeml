@@ -102,13 +102,24 @@ public:
 
 	/// Clone the array of codon not null indicators
 	///
-	/// @param[out] Bit set indicator array
+	/// @param[out] aGoodCodon Bit set indicator array
 	///
 	void cloneGoodCodonIndicators(std::bitset<N>& aGoodCodon) const {aGoodCodon = mGoodCodon;}
 
 private:
+	/// Set codon frequencies according to the F3x4 model
+	///
+	/// @param[in] aCodonCount The count of each codon occurrencies
+	///
 	void setCodonFrequenciesF3x4(const std::vector<unsigned int>& aCodonCount);
-	int  codon64to61(unsigned int aId64) const;
+
+	/// Convert the codon number in the 1 to 64 range to 1 to 61
+	///
+	/// @param[in] aId64 Codon id (0 to 63)
+	///
+	/// @return The corresponding id in the range 0 to 60
+	///
+	int codon64to61(unsigned int aId64) const;
 
 private:
 	static CodonFrequencies*	mInstance;					///< Pointer to the singleton instance
@@ -120,6 +131,7 @@ private:
 
 protected:
 	/// Protected constructor
+	///
 	CodonFrequencies() : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mCodonFreqInv(N, (double)N), mNumGoodCodons(N)
 	{
 		mGoodCodon.set();

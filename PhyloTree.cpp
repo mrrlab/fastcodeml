@@ -288,8 +288,8 @@ void PhyloTree::fillSpecies(TreeNode *aNode)
 
 void PhyloTree::getSpecies(std::vector<std::string>& aSpeciesList) const
 {
-	std::vector<TreeNode *>::const_iterator is;
-	for(is=mLeavesSpecies.begin(); is != mLeavesSpecies.end(); ++is)
+	std::vector<TreeNode *>::const_iterator is=mLeavesSpecies.begin();
+	for(; is != mLeavesSpecies.end(); ++is)
 	{
 		std::string label = (*is)->getLabel();
 		aSpeciesList.push_back(label);

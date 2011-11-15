@@ -25,19 +25,16 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aNumBranches Number of tree branches
+	/// @param[in] aNumSites Number of sites
 	/// @param[in] aSeed Random number generator seed
 	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
 	///
 	BranchSiteModel(size_t aNumBranches, size_t aNumSites, unsigned int aSeed, unsigned int aNumVariables)
+		: mNumTimes(aNumBranches), mNumVariables(aNumVariables), mMaxLnL(-DBL_MAX), mNumEvaluations(0), mSeed(aSeed)
 	{
-		mNumTimes     = aNumBranches;
-		mNumVariables = aNumVariables;
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
 		mUpperBound.reserve(mNumTimes+mNumVariables);
-		mSeed = aSeed;
-		mNumEvaluations = 0;
-		mMaxLnL = -DBL_MAX;
 		mLikelihoods.resize(Nt*aNumSites);
 	}
 
@@ -81,7 +78,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
 	const double* getStartingValues(void) const {return &mVar[0];}
 
@@ -134,7 +131,7 @@ protected:
 	}
 
 protected:
-	size_t						mNumTimes;			///< Number of branch lengths
+	unsigned int				mNumTimes;			///< Number of branch lengths
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
 	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
@@ -161,6 +158,7 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aNumBranches Number of tree branches
+	/// @param[in] aNumSites Number of sites
 	/// @param[in] aSeed Random number generator seed
 	///
 	BranchSiteModelNullHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
@@ -188,7 +186,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -216,6 +214,7 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aNumBranches Number of tree branches
+	/// @param[in] aNumSites Number of sites
 	/// @param[in] aSeed Random number generator seed
 	///
 	BranchSiteModelAltHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
@@ -245,7 +244,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:

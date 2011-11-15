@@ -31,11 +31,9 @@ public:
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	///
-	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets)
+	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices), mNumSets(aNumSets)
 	{
 		mMatrixSpace  = (double *)alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
-		mNumMatrices  = aNumMatrices;
-		mNumSets      = aNumSets;
 		mMatrices     = (double**)alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
 		mInvCodonFreq = cf->getInvCodonFrequencies();
@@ -61,7 +59,6 @@ public:
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	/// @param[in] aCodonFreq The codon frequency array
 	///
 	void computeMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
@@ -84,7 +81,6 @@ public:
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	/// @param[in] aCodonFreq The codon frequency array
 	///
 	void computeMatrixSetH1(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
@@ -107,11 +103,17 @@ public:
 #ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		
-#ifdef USE_MKL_VML
-		vdMul(N, aGout, mInvCodonFreq, aGout);
-#else
-		for(int i=0; i < N; ++i) aGout[i] *= mInvCodonFreq[i];
-#endif
+		// Manual unrolling gives the best results here
+		for(int i=0; i < 60; ) 
+		{
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+			aGout[i] *= mInvCodonFreq[i]; ++i;
+		}
+		aGout[60] *= mInvCodonFreq[60];
 
 #elif defined(USE_DGEMM)
 		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);

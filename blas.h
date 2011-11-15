@@ -280,7 +280,7 @@ void dsymv_(const char *uplo,
 ///  Arguments
 ///  ==========
 ///
-///  @param[in] SIDE   - CHARACTER*1.
+///  @param[in] side
 ///           On entry,  SIDE  specifies whether  the  symmetric matrix  A
 ///           appears on the  left or right  in the  operation as follows:
 ///
@@ -288,7 +288,7 @@ void dsymv_(const char *uplo,
 ///
 ///              SIDE = 'R' or 'r'   C := alpha*B*A + beta*C,
 ///
-///  @param[in] UPLO   - CHARACTER*1.
+///  @param[in] uplo
 ///           On  entry,   UPLO  specifies  whether  the  upper  or  lower
 ///           triangular  part  of  the  symmetric  matrix   A  is  to  be
 ///           referenced as follows:
@@ -299,19 +299,20 @@ void dsymv_(const char *uplo,
 ///              UPLO = 'L' or 'l'   Only the lower triangular part of the
 ///                                  symmetric matrix is to be referenced.
 ///
-///  @param[in] M      - INTEGER.
+///  @param[in] m
 ///           On entry,  M  specifies the number of rows of the matrix  C.
-///           M  must be at least zero.
+///           M must be at least zero.
 ///
-///  @param[in] N      - INTEGER.
+///  @param[in] n
 ///           On entry, N specifies the number of columns of the matrix C.
-///           N  must be at least zero.
+///           N must be at least zero.
 ///
-///  @param[in] ALPHA  - DOUBLE PRECISION.
+///  @param[in] alpha
 ///           On entry, ALPHA specifies the scalar alpha.
 ///
-///  @param[in] A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is
-///           m  when  SIDE = 'L' or 'l'  and is  n otherwise.
+///  @param[in] a
+///           Array of DIMENSION ( LDA, ka ), where ka is
+///           m when  SIDE = 'L' or 'l'  and is  n otherwise.
 ///           Before entry  with  SIDE = 'L' or 'l',  the  m by m  part of
 ///           the array  A  must contain the  symmetric matrix,  such that
 ///           when  UPLO = 'U' or 'u', the leading m by m upper triangular
@@ -320,7 +321,7 @@ void dsymv_(const char *uplo,
 ///           part of  A  is not referenced,  and when  UPLO = 'L' or 'l',
 ///           the leading  m by m  lower triangular part  of the  array  A
 ///           must  contain  the  lower triangular part  of the  symmetric
-///           matrix and the  strictly upper triangular part of  A  is not
+///           matrix and the strictly upper triangular part of  A  is not
 ///           referenced.
 ///           Before entry  with  SIDE = 'R' or 'r',  the  n by n  part of
 ///           the array  A  must contain the  symmetric matrix,  such that
@@ -333,33 +334,35 @@ void dsymv_(const char *uplo,
 ///           matrix and the  strictly upper triangular part of  A  is not
 ///           referenced.
 ///
-///  @param[in] LDA    - INTEGER.
+///  @param[in] lda
 ///           On entry, LDA specifies the first dimension of A as declared
 ///           in the calling (sub) program.  When  SIDE = 'L' or 'l'  then
 ///           LDA must be at least  max( 1, m ), otherwise  LDA must be at
 ///           least  max( 1, n ).
 ///
-///  @param[in] B      - DOUBLE PRECISION array of DIMENSION ( LDB, n ).
+///  @param[in] b
+///           Array of DIMENSION ( LDB, n ).
 ///           Before entry, the leading  m by n part of the array  B  must
 ///           contain the matrix B.
 ///
-///  @param[in] LDB    - INTEGER.
+///  @param[in] ldb
 ///           On entry, LDB specifies the first dimension of B as declared
 ///           in  the  calling  (sub)  program.   LDB  must  be  at  least
 ///           max( 1, m ).
 ///
-///  @param[in] BETA   - DOUBLE PRECISION.
+///  @param[in] beta
 ///           On entry,  BETA  specifies the scalar  beta.  When  BETA  is
 ///           supplied as zero then C need not be set on input.
 ///
-///  @param[in, out] C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ).
+///  @param[in, out] c
+///           Array of DIMENSION ( LDC, n ).
 ///           Before entry, the leading  m by n  part of the array  C must
 ///           contain the matrix  C,  except when  beta  is zero, in which
 ///           case C need not be set on entry.
 ///           On exit, the array  C  is overwritten by the  m by n updated
 ///           matrix.
 ///
-///  @param[in] LDC    - INTEGER.
+///  @param[in] ldc
 ///           On entry, LDC specifies the first dimension of C as declared
 ///           in  the  calling  (sub)  program.   LDC  must  be  at  least
 ///           max( 1, m ).

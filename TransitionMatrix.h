@@ -46,7 +46,6 @@ public:
 	///
 	/// @param[in] aOmega The omega value.
 	/// @param[in] aK The k value.
-	/// @param[in] aCodonFreq The codon frequency array
 	///
 	/// @return The Q matrix scale value.
 	///
@@ -55,7 +54,6 @@ public:
 	/// Fill the Q matrix and return the matrix scale value. Optimized routine to be used for omega == 1
 	///
 	/// @param[in] aK The k value.
-	/// @param[in] aCodonFreq The codon frequency array
 	///
 	/// @return The Q matrix scale value.
 	///
@@ -95,7 +93,7 @@ public:
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
 	/// @param[in] aT The time to use in the computation (it is always > 0)
 	///
-	void computeFullTransitionMatrix(double* aOut, double aT) const
+	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
 #if defined(USE_LAPACK) && defined(USE_DGEMM) && !defined(USE_DSYRK)
 
@@ -104,7 +102,6 @@ public:
 
 		//CHHS Compute D*V by multiplying row 1 by e^(first root), row 2 by e^(second root) etc.
 		int i, j;
-		//for(i=j=0; i < N; ++i, j+=N)
 		for(i=N-1,j=0; i >= 0; --i, j+=N)
 		{
 			double expt = exp(aT*mD[i]); // Remember, the eigenvalues are stored in reverse order
@@ -119,10 +116,19 @@ public:
 
 		double tm = aT / 2.;
 #ifndef USE_MKL_VML
+		// Manual unrolling gives the best results here.
+		// So it is exp(D*T/2). Remember, the eigenvalues are stored in reverse order
 		for(int c=0; c < N; ++c)
 		{
-			expt[c] = exp(tm*mD[N-1-c]); // So it is exp(D*T/2). Remember, the eigenvalues are stored in reverse order
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
+			expt[c] = exp(tm*mD[N-1-c]); ++c;
 		}
+		expt[N-1] = exp(tm*mD[0]);
+
 		for(int r=0; r < N; ++r)
 		{
 			for(int c=0; c < N; ++c)
@@ -131,7 +137,19 @@ public:
 			}
 		}
 #else
-		for(int c=0; c < N; ++c) tmp[c] = tm*mD[N-1-c]; // Remember, the eigenvalues are stored in reverse order
+		// Manual unrolling gives the best results here.
+		// Remember, the eigenvalues are stored in reverse order
+        for(int j=0; j < N-1; )
+        {
+            tmp[j] = tm*mD[N-1-j]; ++j; 
+            tmp[j] = tm*mD[N-1-j]; ++j;
+            tmp[j] = tm*mD[N-1-j]; ++j;
+            tmp[j] = tm*mD[N-1-j]; ++j;
+            tmp[j] = tm*mD[N-1-j]; ++j;
+            tmp[j] = tm*mD[N-1-j]; ++j;
+        }
+		tmp[60] = tm*mD[0];
+
 		vdExp(N, tmp, expt);
 		for(int r=0; r < N; ++r)
 		{
@@ -145,7 +163,6 @@ public:
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
 		double expt = exp(aT * mD[N-1]); // Remember, the eigenvalues are stored in reverse order
-
 		for(int i=0; i < N; ++i)
 		{
 			const double uexpt = mU[i*N] * expt;
@@ -184,7 +201,7 @@ private:
 	/// @param[out] aR The eigenvalues
 	/// @param[out] aWork A working area used only for non lapack version
 	///
-	void eigenRealSymm(double* aU, int aDim, double* aR, double* aWork);
+	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
 
 
 private:

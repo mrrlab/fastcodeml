@@ -9,6 +9,9 @@
 
 #include "AlignedMalloc.h"
 
+/// Aligned allocator definition
+/// Will be used to obtain a vector aligned to e.g. 64 std::vector<double, AlignedAllocator<double, 64> > aligned_vector;
+///
 template <typename T, size_t A> class AlignedAllocator
 {
 public:
@@ -22,7 +25,8 @@ public:
     typedef size_t size_type;
     typedef ptrdiff_t difference_type;
 
-    T * address(T& r) const {
+    T * address(T& r) const
+	{
         return &r;
     }
 
@@ -38,7 +42,9 @@ public:
         return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T);
     } 
 
-    // The following must be the same for all allocators.
+	/// Internal definition for AlignedAllocator
+    /// The following must be the same for all allocators.
+	///
     template <typename U> struct rebind
 	{
         typedef AlignedAllocator<U, A> other;
@@ -57,16 +63,16 @@ public:
 
     void destroy(T * const p) const; // Defined below.
 
-    // Returns true if and only if storage allocated from *this
-    // can be deallocated from other, and vice versa.
-    // Always returns true for stateless allocators.
+    /// Returns true if and only if storage allocated from *this
+    /// can be deallocated from other, and vice versa.
+    /// Always returns true for stateless allocators.
     bool operator==(const AlignedAllocator& other) const
 	{
         return true;
     }
 
-    // Default constructor, copy constructor, rebinding constructor, and destructor.
-    // Empty for stateless allocators.
+    /// Default constructor, copy constructor, rebinding constructor, and destructor.
+    /// Empty for stateless allocators.
     AlignedAllocator() { }
 
     AlignedAllocator(const AlignedAllocator&) { }
@@ -122,21 +128,21 @@ public:
         alignedFree(p);
     }
 
-    // The following will be the same for all allocators that ignore hints.
+    /// The following will be the same for all allocators that ignore hints.
     template <typename U> T * allocate(const size_t n, const U * /* const hint */) const
 	{
         return allocate(n);
     }
  
 
-    // Allocators are not required to be assignable, so
-    // all allocators should have a private unimplemented
-    // assignment operator. Note that this will trigger the
-    // off-by-default (enabled under /Wall) warning C4626
-    // "assignment operator could not be generated because a
-    // base class assignment operator is inaccessible" within
-    // the STL headers, but that warning is useless.
 private:
+    /// Allocators are not required to be assignable, so
+    /// all allocators should have a private unimplemented
+    /// assignment operator. Note that this will trigger the
+    /// off-by-default (enabled under /Wall) warning C4626
+    /// "assignment operator could not be generated because a
+    /// base class assignment operator is inaccessible" within
+    /// the STL headers, but that warning is useless.
     AlignedAllocator& operator=(const AlignedAllocator& a) {return const_cast<AlignedAllocator&>(a);}
 };
 
@@ -148,7 +154,7 @@ private:
     #pragma warning(disable: 4100) // unreferenced formal parameter
 #endif
 
-// The definition of destroy() must be the same for all allocators.
+/// The definition of destroy() must be the same for all allocators.
 template <typename T, size_t A> inline void AlignedAllocator<T, A>::destroy(T * const p) const
 {
     p->~T();

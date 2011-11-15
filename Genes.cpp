@@ -185,9 +185,9 @@ void Genes::loadGenesFile(const char* aFilename)
 	}
 
 	// Map from specie name to position in DnaGene
-	std::vector<std::string>::const_iterator is;
 	unsigned int idx = 0;
-	for(is=mDnaSpecies.begin(); is != mDnaSpecies.end(); ++is, ++idx)
+	std::vector<std::string>::const_iterator is=mDnaSpecies.begin();
+	for(; is != mDnaSpecies.end(); ++is, ++idx)
 	{
 		mMapSpecieToDnaGene[*is] = idx;
 	}

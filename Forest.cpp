@@ -13,6 +13,9 @@
 #include "MathSupport.h"
 #include "MatrixSize.h"
 #include "CompilerHints.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
@@ -114,19 +117,18 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 		num_leaves = leaves.size();
 
 		// Add codon code to leaves
-		std::vector<ForestNode*>::const_iterator il;
-		for(il=leaves.begin(); il != leaves.end(); ++il)
+		std::vector<ForestNode*>::const_iterator il=leaves.begin();
+		for(; il != leaves.end(); ++il)
 		{
 			// Node id (adjusted so root is 0)
 			unsigned int node = (*il)->mBranchId+1;
 
 			// Get the codon index and add it to the node signature
 			int codon = aGenes.getCodonIdx(mNodeNames[node], site);
-			(*il)->mSubtreeCodonsSignature.push_back(codon);
+			(*il)->mPreprocessingSupport->mSubtreeCodonsSignature.push_back(codon);
 
 			// Set leaves probability vector (Nt copies)
 #ifdef NEW_LIKELIHOOD
-			//for(int set=0; set < Nt; ++set) mProbs[node*(Nt*mNumSites*N)+set*(mNumSites*N)+site*(N)+codon] = 1.0; // The rest already zeroed by assign()
 			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0; // The rest already zeroed by assign()
 #else
 			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0; // The rest already zeroed by assign()
@@ -157,8 +159,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 	// Transform the map into a table (better for performance)
 	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
-	std::map<unsigned int, unsigned int>::const_iterator im;
-	for(im=map_internal_to_branchID.begin(); im != map_internal_to_branchID.end(); ++im)
+	std::map<unsigned int, unsigned int>::const_iterator im=map_internal_to_branchID.begin();
+	for(; im != map_internal_to_branchID.end(); ++im)
 	{
 		mTableInternalToBranchID[im->first] = im->second;
 	}
@@ -183,8 +185,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
         level_nodes.clear();
 
         // Put in a list all the children of the current level nodes
-        std::vector<ForestNode*>::const_iterator il;
-        for(il=curr_level.begin(); il != curr_level.end(); ++il)
+        std::vector<ForestNode*>::const_iterator il=curr_level.begin();
+        for(; il != curr_level.end(); ++il)
         {
             if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
         }
@@ -280,24 +282,29 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 }
 
 
-void Forest::reduceSubtrees(void)
+void Forest::reduceSubtrees(bool aNoTipPruning)
 {
+	//TEST
+	std::vector<unsigned int> empty_vector;
+	mTreeDependencies.resize(mNumSites, empty_vector);
+	mTreeRevDependencies.resize(mNumSites, empty_vector);
+
 	// Trees at the beginning of the forest point to trees ahead
 	// (this way a delete does not choke with pointers pointing to freed memory) 
-	int i, j;
 
 	// Try to merge equal subtrees
+	int i, j;
 	for(i=mNumSites-1; i > 0; --i)
 	{
 		for(j=i-1; j >= 0; --j)
 		{
-			reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
+			reduceSubtreesWalker(&mRoots[i], &mRoots[j], aNoTipPruning);
 		}
 	}
 }
 
 
-void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
+void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent, bool aNoTipPruning)
 {
 	unsigned int i;
 	const unsigned int nc = aNode->mChildrenCount;
@@ -306,12 +313,19 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 		// If one of the two has been already reduced, do nothing
 		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
 
+		// If no tip pruning skip this reduction
+		if(aNoTipPruning && aNodeDependent->mChildrenList[i]->mChildrenCount == 0) continue;
+
 		// Check if same subtree
-		if(aNode->mChildrenList[i]->mSubtreeCodonsSignature == aNodeDependent->mChildrenList[i]->mSubtreeCodonsSignature)
+		if(aNode->mChildrenList[i]->mPreprocessingSupport->mSubtreeCodonsSignature == aNodeDependent->mChildrenList[i]->mPreprocessingSupport->mSubtreeCodonsSignature)
 		{
 			delete aNodeDependent->mChildrenList[i];
 			aNodeDependent->mChildrenList[i] = aNode->mChildrenList[i];
 			aNodeDependent->markNotSameTree(i);
+
+			//TEST
+			mTreeDependencies[aNodeDependent->mOwnTree].push_back(aNode->mOwnTree);		// [tj] can be done after: t1 t2 t3
+			mTreeRevDependencies[aNode->mOwnTree].push_back(aNodeDependent->mOwnTree);	// [tj] should be ready before: t1 t2 t3
 		}
 	}
 
@@ -321,7 +335,10 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 		// If one of the two has been already reduced, do nothing
 		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
 
-		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i]);
+		// No need to continue along this path if no tip pruning
+		if(aNoTipPruning && aNodeDependent->mChildrenList[i]->mChildrenCount == 0) continue;
+
+		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i], aNoTipPruning);
 	}
 }
 
@@ -336,9 +353,8 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	else
 	{
 		// Clean myself
-		//aNode->mSubtreeCodonsSignature.clear();
-		std::vector<int> x;
-		aNode->mSubtreeCodonsSignature.swap(x);
+		delete aNode->mPreprocessingSupport;
+		aNode->mPreprocessingSupport = 0;
 
 		// Clean the children
 		const unsigned int nc = aNode->mChildrenCount;
@@ -352,8 +368,7 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 
 void Forest::groupByDependency(bool aForceSerial)
 {
-	size_t i;
-	unsigned int k;
+	unsigned int i, k;
 	mDependenciesClasses.clear();
 
 	// If no dependencies
@@ -364,66 +379,50 @@ void Forest::groupByDependency(bool aForceSerial)
 		for(k=0; k < (unsigned int)mNumSites; ++k) v[k] = (unsigned int)mNumSites-k-1; // Remember: prior (could) point to subsequent
 
 		mDependenciesClasses.push_back(v);
-		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class  0: " << std::setw(3) << v.size() << std::endl;
+		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class " << std::setw(3) << 0 << ": " << std::setw(4) << v.size() << std::endl;
 
 		return;
 	}
 
-	// Collect dependencies
-	std::vector< std::set<unsigned int> > dependencies(mNumSites);
-	for(i=0; i < mNumSites; ++i)
-	{
-		std::set<unsigned int> dep;
-		groupByDependencyWalker(&mRoots[i], dep);
-		dependencies[i] = dep;
-	}
-
 	// Prepare the search of dependencies
-	std::vector<bool> done;			// The sites that has dependencies satisfied in the previous level
-	std::vector<bool> prev;			// Dependencies till the previous level
-	done.assign(mNumSites, false);
-
-	// Trees without dependencies
+	std::vector<bool> done(mNumSites, false);	// The sites that has dependencies satisfied in the previous level
+	std::vector<bool> prev;						// Dependencies till the previous level
 	std::vector<unsigned int> v;
-	std::vector< std::set<unsigned int> >::iterator is;
-	for(is=dependencies.begin(),k=0; is != dependencies.end(); ++is,++k)
+
+	// Mark trees without dependencies
+	// mTreeDependencies[tj] can be done after: t1 t2 t3
+	for(i=0; i < (unsigned int)mNumSites; ++i)
 	{
-		if(is->empty())
+		if(mTreeDependencies[i].empty())
 		{
-			v.push_back(k);
-			done[k] = true;
+			done[i] = true;
+			v.push_back(i);
 		}
 	}
-	prev = done;
+
+	// Prepare the dependency list
 	mDependenciesClasses.push_back(v);
-	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class   0: " << std::setw(4) << v.size() << std::endl;
+	prev = done;
+	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class " << std::setw(3) << 0 << ": " << std::setw(4) << v.size() << std::endl;
 
 	// Start to find trees with one, two, ... dependencies
-	for(size_t numdep=1;; ++numdep)
+	for(unsigned int numdep=1;; ++numdep)
 	{
 		v.clear();
 		bool all_done = true;
-		std::vector< std::set<unsigned int> >::reverse_iterator ris;
-		for(ris=dependencies.rbegin(),k=mNumSites-1; ris != dependencies.rend(); ++ris,--k)
+		for(i=0; i < mNumSites; ++i)
 		{
-			// If tree k has been already processed skip it
-			if(done[k]) continue;
-
+			// If tree i has been already processed skip it
+			if(prev[i]) continue;
 			all_done = false;
+
+			unsigned int nc = mTreeDependencies[i].size();
 			bool all = true;
-			std::set<unsigned int>::iterator iv;
-			for(iv=ris->begin(); iv != ris->end(); ++iv)
-			{
-				if(!prev[*iv])
-				{
-					all = false;
-					break;
-				}
-			}
+			for(unsigned int j=0; j < nc; ++j) if(!prev[mTreeDependencies[i][j]]) {all = false; break;}
 			if(all)
 			{
-				v.push_back(k);
-				done[k] = true;
+				v.push_back(i);
+				done[i] = true;
 			}
 		}
 		if(all_done) break;
@@ -431,25 +430,88 @@ void Forest::groupByDependency(bool aForceSerial)
 		prev = done;
 		if(mVerbose >= 1) std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << v.size() << std::endl;
 	}
-}
 
+#ifdef _OPENMP
+	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
+	// This step makes sense only if run multithread
+	unsigned int num_threads = omp_get_max_threads();
 
-void Forest::groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& aDependency)
-{
-	size_t i;
-	const size_t nc = aNode->mChildrenCount;
-	for(i=0; i < nc; ++i)
+	std::set<unsigned int> jolly_sites;
+
+	// mTreeDependencies[tj] can be done after: t1 t2 t3
+	// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
+	// Check if can be balanced
+	const unsigned int num_classes = mDependenciesClasses.size();
+	for(unsigned int k=0; k < num_classes; ++k)
 	{
-		if(aNode->isSameTree(i))
+		// Can jolly sites be added?
+		// Try to have num sites at this level multiple of number of threads
+		unsigned int num_jolly = jolly_sites.size();
+		const unsigned int class_num_sites = mDependenciesClasses[k].size();
+		unsigned int over = class_num_sites % num_threads;
+		unsigned int needed_small = num_threads - over;
+		unsigned int needed_big   = (num_jolly >= needed_small) ? ((num_jolly - needed_small)/num_threads)*num_threads : 0;
+		unsigned int needed = needed_small + needed_big;
+		if(needed <= num_jolly)
 		{
-			groupByDependencyWalker(aNode->mChildrenList[i], aDependency);
+			for(unsigned int j=0; j < needed; ++j)
+			{
+				std::set<unsigned int>::iterator it = jolly_sites.begin();
+				unsigned int n = *it;
+				mDependenciesClasses[k].push_back(n);
+				jolly_sites.erase(it);
+			}
 		}
-		else
+		else if(class_num_sites > num_threads && over > 0)
 		{
-			unsigned int id = aNode->mChildrenList[i]->mOwnTree;
-			aDependency.insert(id);
+			// Else, can sites be removed from here?
+			// Count how many sites are jolly at this level
+			unsigned int num_level_jolly_sites = 0;
+			for(unsigned int s=0; s < class_num_sites; ++s)
+			{
+				// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
+				unsigned int site = mDependenciesClasses[k][s];
+				if(mTreeRevDependencies[site].empty()) ++num_level_jolly_sites;
+			}
+
+			// Sites can be removed from here
+			if(num_level_jolly_sites >= over)
+			{
+				std::vector<unsigned int> new_content;
+				for(unsigned int s=0; s < class_num_sites; ++s)
+				{
+					unsigned int site = mDependenciesClasses[k][s];
+					if(over && mTreeRevDependencies[site].empty())
+					{
+						jolly_sites.insert(site);
+						--over;
+					}
+					else
+					{
+						new_content.push_back(site);
+					}
+				}
+				mDependenciesClasses[k].swap(new_content);
+			}
 		}
 	}
+
+	// If there are stilljolly sites, add them to the last class
+	if(!jolly_sites.empty())
+	{
+		mDependenciesClasses[num_classes-1].insert(mDependenciesClasses[num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
+	}
+
+	// For debug print again the site class subdivision
+	if(mVerbose >= 1)
+	{
+		std::cerr << std::endl << "After balancing" << std::endl;
+		for(unsigned int numdep=0; numdep < num_classes; ++numdep)
+		{
+			std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClasses[numdep].size() << std::endl;
+		}
+	}
+#endif
 }
 
 
@@ -654,8 +716,8 @@ void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* 
 		aTimes[id] = mBranchLengths[id+1];
 	}
 
-	std::vector<ForestNode *>::const_iterator ifn;
-	for(ifn=aNode->mChildrenList.begin(); ifn != aNode->mChildrenList.end(); ++ifn)
+	std::vector<ForestNode *>::const_iterator ifn=aNode->mChildrenList.begin();
+	for(; ifn != aNode->mChildrenList.end(); ++ifn)
 	{
 		setTimesFromLengths(aTimes, *ifn);
 	}
@@ -669,8 +731,8 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 	// Get all forest connections
 	if(!aNode)
 	{
-		std::vector<ForestNode>::iterator ifn;
-		for(ifn=mRoots.begin(); ifn != mRoots.end(); ++ifn)
+		std::vector<ForestNode>::iterator ifn=mRoots.begin();
+		for(; ifn != mRoots.end(); ++ifn)
 		{
 			for(ifnp=ifn->mChildrenList.begin(); ifnp != ifn->mChildrenList.end(); ++ifnp)
 			{
@@ -700,8 +762,8 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 	//aLikelihoods.assign(num_sets*mNumSites, 1.0);
 	//aLikelihoods.resize(num_sets*mNumSites);
 
-	std::vector< std::vector<unsigned int> >::iterator ivs;
-	for(ivs=mDependenciesClasses.begin(); ivs != mDependenciesClasses.end(); ++ivs)
+	std::vector< std::vector<unsigned int> >::iterator ivs=mDependenciesClasses.begin();
+	for(; ivs != mDependenciesClasses.end(); ++ivs)
 	{
 		const int num_sites = ivs->size();
 		const int len       = num_sites*num_sets;
@@ -709,7 +771,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 #ifdef _MSC_VER
 		#pragma omp parallel for if(len > 3) default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
 #else
-		#pragma omp parallel for default(shared)
+		#pragma omp parallel for default(shared) schedule(auto)
 #endif
 		for(int i=0; i < len; ++i)
 		{
@@ -745,19 +807,26 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 			if(first)
 			{
 				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodWalker(m, aSet, aSetIdx), anode_prob);
-				if(anode_other_tree_prob) memcpy(anode_other_tree_prob+N*aSetIdx, anode_prob, N*sizeof(double));
+				if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
 				first = false;
 			}
 			else
 			{
 				double ALIGN64 temp[N];
-				double* x = anode_other_tree_prob ? anode_other_tree_prob+N*aSetIdx : temp;
+				double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
 				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodWalker(m, aSet, aSetIdx), x);
-#ifdef USE_MKL_VML
-				vdMul(N, anode_prob, x, anode_prob);
-#else
-				for(int i=0; i < N; ++i) anode_prob[i] *= x[i];
-#endif
+
+				// Manual unrolling gives the best results here
+                for(int i=0; i < N-1; )
+                {
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                }
+                anode_prob[60] *= x[60];
 			}
 		}
 		else
@@ -765,7 +834,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 			double* m_prob = m->mProb[aSetIdx];
 			if(first)
 			{
-				if(anode_other_tree_prob) memcpy(anode_prob, anode_other_tree_prob+N*aSetIdx, N*sizeof(double));
+				if(anode_other_tree_prob) memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
 				else aSet.doTransition(aSetIdx, branch_id, m_prob, anode_prob);
 				first = false;
 			}
@@ -775,18 +844,25 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 				double* x;
 				if(anode_other_tree_prob) 
 				{
-					x = anode_other_tree_prob+N*aSetIdx;
+					x = anode_other_tree_prob+VECTOR_SLOT*aSetIdx;
 				}
 				else
 				{
 					aSet.doTransition(aSetIdx, branch_id, m_prob, temp);
 					x = temp;
 				}
-#ifdef USE_MKL_VML
-				vdMul(N, anode_prob, x, anode_prob);
-#else
-				for(int i=0; i < N; ++i) anode_prob[i] *= x[i];
-#endif
+
+				// Manual unrolling gives the best results here
+                for(int i=0; i < N-1; )
+                {
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                        anode_prob[i] *= x[i]; ++i;
+                }
+                anode_prob[60] *= x[60];
 			}
 		}
 	}
@@ -814,7 +890,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 #ifdef _MSC_VER
         #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level)
 #else
-        #pragma omp parallel for default(shared)
+        #pragma omp parallel for default(shared) schedule(auto)
 #endif
         for(int i=0; i < len; ++i)
         {
@@ -843,7 +919,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 #ifdef _MSC_VER
     #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods)
 #else
-    #pragma omp parallel for default(shared)
+    #pragma omp parallel for default(shared) schedule(auto)
 #endif
     for(int i=0; i < len; ++i)
     {
@@ -890,8 +966,7 @@ void Forest::addAggressiveReduction(ForestNode* aNode)
 				ForestNode *other = m->mParent;
 
 				// Add the array on the other side
-				//if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = new double[N*Nt];
-				if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = (double*)alignedMalloc(N*Nt*sizeof(double), CACHE_LINE_ALIGN);
+				if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = (double*)alignedMalloc(VECTOR_SLOT*Nt*sizeof(double), CACHE_LINE_ALIGN);
 
 				// Add the pointer here
 				aNode->mOtherTreeProb[i] = other->mOtherTreeProb[i];
@@ -991,8 +1066,8 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 		unsigned int id = aNodeId+1;
 
 		unsigned int idx;
-		std::vector<ForestNode *>::const_iterator icl;
-		for(icl=aNode->mChildrenList.begin(),idx=0; icl != aNode->mChildrenList.end(); ++icl,++idx)
+		std::vector<ForestNode *>::const_iterator icl=aNode->mChildrenList.begin();
+		for(idx=0; icl != aNode->mChildrenList.end(); ++icl,++idx)
 		{
 			if(aNode->isSameTree(idx))
 			{

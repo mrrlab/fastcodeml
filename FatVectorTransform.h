@@ -150,7 +150,8 @@ private:
 		SITE_FIRST_NUM  =  0						///< if greather or equal to this value the position contains the index from which the value should be copied
 	};
 
-	/// Representation of a range to be copied
+	/// Representation of a range to be copied and the number of items to be copied
+	///
 	struct Range
 	{
 		Range(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo; cnt = 1;}
@@ -161,6 +162,9 @@ private:
 
 		//bool operator<(Range& rhs) { return from < rhs.from; } ///< This is needed for sorting
 	};
+
+	/// Representation of the copy of one item
+	///
 	struct RangeNoCnt
 	{
 		RangeNoCnt(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo;}
@@ -168,11 +172,11 @@ private:
 		unsigned int from;		///< Starting index from which to copy
 		unsigned int to;		///< Starting index to which the values should be copied
 	};
-	typedef std::vector<Range> VectorOfRanges;
-	typedef std::vector<VectorOfRanges> VectorOfVectorOfRanges;
-	typedef std::vector<RangeNoCnt> VectorOfRangesNoCnt;
-	typedef std::vector<VectorOfRangesNoCnt> VectorOfVectorOfRangesNoCnt;
-	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;
+	typedef std::vector<Range> VectorOfRanges;									///< Vector of ranges (from position, to position, number of items)
+	typedef std::vector<VectorOfRanges> VectorOfVectorOfRanges;					///< Vector of vectors of ranges
+	typedef std::vector<RangeNoCnt> VectorOfRangesNoCnt;						///< Vector of single item copy (from position, to position)
+	typedef std::vector<VectorOfRangesNoCnt> VectorOfVectorOfRangesNoCnt;		///< Vector of vectors of single item copies
+	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;	///< Vector of pairs of values
 
 	VectorOfPairs						mLimits;				///< Lower index and total count for each branch
 	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes (one list for each branch)

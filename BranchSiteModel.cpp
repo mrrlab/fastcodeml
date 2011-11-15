@@ -107,19 +107,6 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 	mLowerBound.push_back(0.0);				// p0/(p0+p1)
 #endif
 
-#if 0
-	for(i=0; i < mNumTimes; ++i) mLowerBound[i] = 4e-6;		// T
-	mLowerBound[mNumTimes+0] = 1e-6;						// w0
-	mLowerBound[mNumTimes+1] = 0.0001;						// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mLowerBound[mNumTimes+2] = -99;							// x0 -> p0
-	mLowerBound[mNumTimes+3] = -99;							// x1 -> p1
-#else
-	mLowerBound[mNumTimes+2] = 0.0;							// p0+p1
-	mLowerBound[mNumTimes+3] = 0.0;							// p0/(p0+p1)
-#endif
-#endif
-
 	// Set upper constrains
 	mUpperBound.assign(mNumTimes, 50.0);	// T
 	mUpperBound.push_back(1.0);				// w0
@@ -130,19 +117,6 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 #else
 	mUpperBound.push_back(1.0);				// p0+p1
 	mUpperBound.push_back(1.0);				// p0/(p0+p1)
-#endif
-
-#if 0
-	for(i=0; i < mNumTimes; ++i) mUpperBound[i] = 50.0;		// T
-	mUpperBound[mNumTimes+0] = 1.0;							// w0
-	mUpperBound[mNumTimes+1] = 20.0;						// k (in the old code is 999)
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mUpperBound[mNumTimes+2] = 99;							// x0 -> p0
-	mUpperBound[mNumTimes+3] = 99;							// x1 -> p1
-#else
-	mUpperBound[mNumTimes+2] = 1.0;							// p0+p1
-	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
-#endif
 #endif
 
 	// Check the initial values are inside the domain
@@ -213,22 +187,6 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 #endif
 	mLowerBound.push_back(1.0);				// w2
 
-#if 0
-	// Set lower constrains
-	for(i=0; i < mNumTimes; ++i) mLowerBound[i] = 4e-6;		// T
-
-	mLowerBound[mNumTimes+0] = 1e-6;						// w0
-	mLowerBound[mNumTimes+1] = 0.0001;						// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mLowerBound[mNumTimes+2] = -99;							// x0 -> p0
-	mLowerBound[mNumTimes+3] = -99;							// x1 -> p1
-#else
-	mLowerBound[mNumTimes+2] = 0.0;							// p0+p1
-	mLowerBound[mNumTimes+3] = 0.0;							// p0/(p0+p1)
-#endif
-	mLowerBound[mNumTimes+4] = 1.0;							// w2
-#endif
-
 	// Set upper constrains
 	mUpperBound.assign(mNumTimes, 50.0);	// T
 	mUpperBound.push_back(1.0);				// w0
@@ -242,21 +200,6 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 #endif
 	mUpperBound.push_back(999.0);			// w2 (in the old code is 999)
 
-#if 0
-	// Set upper constrains
-	for(i=0; i < mNumTimes; ++i) mUpperBound[i] = 50.0;		// T
-	mUpperBound[mNumTimes+0] = 1.0;							// w0
-	mUpperBound[mNumTimes+1] = 20.0;						// k (in the old code is 999)
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mUpperBound[mNumTimes+2] = 99;							// x0 -> p0
-	mUpperBound[mNumTimes+3] = 99;							// x1 -> p1
-#else
-	mUpperBound[mNumTimes+2] = 1.0;							// p0+p1
-	mUpperBound[mNumTimes+3] = 1.0;							// p0/(p0+p1)
-#endif
-	mUpperBound[mNumTimes+4] = 999.0;						// w2 (in the old code is 999)
-#endif
-
 	// Check the initial values are inside the domain
 	for(i=0; i < mNumTimes+5; ++i)
 	{
@@ -269,7 +212,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 }
 
 
-double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -353,7 +296,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBran
 }
 
 	
-double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, size_t aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;

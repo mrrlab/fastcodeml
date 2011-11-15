@@ -34,14 +34,8 @@ public:
 	/// @param[in] aVerbose The verbosity level
 	///
 	explicit Forest(unsigned int aVerbose=0)
-	{
-		mVerbose = aVerbose;
-		mNumBranches = 0;
-		mNumInternalBranches = 0;
-		mMarkedInternalBranch = UINT_MAX;
-		mNumSites = 0;
-		mCodonFreq = 0;
-	}
+		: mNumSites(0), mCodonFreq(0), mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX)
+	{}
 
 	/// Destructor
 	///
@@ -79,7 +73,9 @@ public:
 
 	/// Reduce common subtrees on the whole forest
 	///
-	void reduceSubtrees(void);
+	/// @param[in] aNoTipPruning If set the branches going to leaves are not pruned
+	///
+	void reduceSubtrees(bool aNoTipPruning=false);
 
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction
@@ -208,15 +204,9 @@ private:
 	///
 	/// @param[in] aNode The subtree to be tested (i.e. if it exists in both trees)
 	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
+	/// @param[in] aNoTipPruning If set the branches going to leaves are not pruned
 	///
-	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
-
-	/// Check dependencies of a tree with other trees
-	///
-	/// @param[in] aNode The tree node from which the walker should start
-	/// @param[out] aDependency The id of the trees on which this tree depends
-	///
-	void groupByDependencyWalker(ForestNode* aNode, std::set<unsigned int>& aDependency);
+	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent, bool aNoTipPruning);
 
 	/// Check coherence between tree and genes.
 	///
@@ -256,6 +246,7 @@ private:
 	/// Walk the tree to fill the mMapInternalToBranchID map.
 	///
 	///	@param[in] aNode The node from which to start
+	/// @param[out] aMapInternalToBranchID Maps internal branch id to branch id
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
@@ -301,6 +292,8 @@ private:
 	/// Unified array for each branch probability vector
 	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
+	std::vector< std::vector<unsigned int> > mTreeDependencies;
+	std::vector< std::vector<unsigned int> > mTreeRevDependencies;
 };
 
 #endif

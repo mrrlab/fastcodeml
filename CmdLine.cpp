@@ -96,6 +96,7 @@ CmdLine::CmdLine()
 	mComputeHypothesis		= UINT_MAX;
 	mInitH1fromH0			= false;
 	mOptimizationAlgo		= 0;
+	mNoTipPruning			= false;
 }
 
 
@@ -120,7 +121,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H1_FROM_H0,
-		OPT_OPTIM_ALGO
+		OPT_OPTIM_ALGO,
+		OPT_NO_TIP_PRUNING
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -163,6 +165,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
 		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA, 2: LN_COBYLA)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
+		{ OPT_NO_TIP_PRUNING,	"-nt",					SO_NONE,	"Do not prune branches connected to leaves" },
+		{ OPT_NO_TIP_PRUNING,	"--no-tip-pruning",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -262,6 +266,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_OPTIM_ALGO:
 			mOptimizationAlgo = atoi(args.OptionArg());
 			break;
+
+		case OPT_NO_TIP_PRUNING:
+			mNoTipPruning = true;
+			break;
 		}
 	}
 	
@@ -287,7 +295,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	
 	// Some final checks and sets
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
-	if(mDoNotReduceForest) mNoAggressiveStep = true;
+	if(mDoNotReduceForest) {mNoAggressiveStep = true; mNoTipPruning = false;}
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
