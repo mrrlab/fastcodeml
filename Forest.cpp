@@ -369,6 +369,8 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 void Forest::groupByDependency(bool aForceSerial)
 {
 	unsigned int i, k;
+
+	// Clear previous groupings
 	mDependenciesClasses.clear();
 
 	// If no dependencies
@@ -387,7 +389,7 @@ void Forest::groupByDependency(bool aForceSerial)
 	// Prepare the search of dependencies
 	std::vector<bool> done(mNumSites, false);	// The sites that has dependencies satisfied in the previous level
 	std::vector<bool> prev;						// Dependencies till the previous level
-	std::vector<unsigned int> v;
+	std::vector<unsigned int> v;				// Temporary list of sites
 
 	// Mark trees without dependencies
 	// mTreeDependencies[tj] can be done after: t1 t2 t3
@@ -433,15 +435,15 @@ void Forest::groupByDependency(bool aForceSerial)
 
 #ifdef _OPENMP
 	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
-	// This step makes sense only if run multithread
-	unsigned int num_threads = omp_get_max_threads();
+	// This step makes sense only if run multithread and if there are more than one class
+	const unsigned int num_threads = omp_get_max_threads();
+	const unsigned int num_classes = mDependenciesClasses.size();
+	if(num_threads < 2 || num_classes < 2) return;
 
+	// This set will contain the sites that can be postponed without problem
 	std::set<unsigned int> jolly_sites;
 
-	// mTreeDependencies[tj] can be done after: t1 t2 t3
-	// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
 	// Check if can be balanced
-	const unsigned int num_classes = mDependenciesClasses.size();
 	for(unsigned int k=0; k < num_classes; ++k)
 	{
 		// Can jolly sites be added?
@@ -496,7 +498,7 @@ void Forest::groupByDependency(bool aForceSerial)
 		}
 	}
 
-	// If there are stilljolly sites, add them to the last class
+	// If there are still jolly sites, add them to the last class
 	if(!jolly_sites.empty())
 	{
 		mDependenciesClasses[num_classes-1].insert(mDependenciesClasses[num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
@@ -771,7 +773,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 #ifdef _MSC_VER
 		#pragma omp parallel for if(len > 3) default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
 #else
-		#pragma omp parallel for default(shared) schedule(auto)
+		#pragma omp parallel for default(shared)
 #endif
 		for(int i=0; i < len; ++i)
 		{

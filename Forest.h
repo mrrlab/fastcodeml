@@ -14,7 +14,9 @@
 #include "TransitionMatrix.h"
 #include "TransitionMatrixSet.h"
 #include "MatrixSize.h"
+#ifdef NEW_LIKELIHOOD
 #include "FatVectorTransform.h"
+#endif
 #include "AlignedAllocator.h"
 #include "CodonFrequencies.h"
 #include "Types.h"
@@ -292,8 +294,8 @@ private:
 	/// Unified array for each branch probability vector
 	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
-	std::vector< std::vector<unsigned int> > mTreeDependencies;
-	std::vector< std::vector<unsigned int> > mTreeRevDependencies;
+	std::vector< std::vector<unsigned int> > mTreeDependencies;		///< mTreeDependencies[tj] = <t1 t2 t3> means: tj can be done after: t1 t2 t3
+	std::vector< std::vector<unsigned int> > mTreeRevDependencies;	///< mTreeRevDependencies[tj] = <t1 t2 t3> means: tj should be ready before: t1 t2 t3
 };
 
 #endif
