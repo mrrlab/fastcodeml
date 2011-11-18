@@ -758,7 +758,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 #ifndef NEW_LIKELIHOOD
 // Compute likelihood with the original approach
 //
-void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
+void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	const unsigned int num_sets = aSet.size();
 	//aLikelihoods.assign(num_sets*mNumSites, 1.0);
@@ -782,7 +782,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 			const unsigned int site_idx = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
 			const unsigned int site     = (*ivs)[site_idx];
 
-			double* g = computeLikelihoodWalker(&mRoots[site], aSet, set_idx);
+			double* g = computeLikelihoodsWalker(&mRoots[site], aSet, set_idx);
 
 			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
 		}
@@ -790,7 +790,7 @@ void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoub
 }
 
 
-double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
+double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
 {
 	bool first = true;
 	double* anode_prob = aNode->mProb[aSetIdx];
@@ -808,7 +808,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 		{
 			if(first)
 			{
-				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodWalker(m, aSet, aSetIdx), anode_prob);
+				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), anode_prob);
 				if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
 				first = false;
 			}
@@ -816,7 +816,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 			{
 				double ALIGN64 temp[N];
 				double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
-				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodWalker(m, aSet, aSetIdx), x);
+				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), x);
 
 				// Manual unrolling gives the best results here
                 for(int i=0; i < N-1; )
@@ -874,7 +874,7 @@ double* Forest::computeLikelihoodWalker(ForestNode* aNode, const TransitionMatri
 #else
 // Compute likelihood with the new "Long Vector" approach
 //
-void Forest::computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
+void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	// Initialize variables
     const unsigned int num_sets = aSet.size();

@@ -78,15 +78,19 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
+	/// Get variable values
+	///
+	/// @return Pointer to the set of optimized variables
+	///
 	const double* getStartingValues(void) const {return &mVar[0];}
 
 	enum {
-		OPTIM_LD_LBFGS		= 0,
-		OPTIM_LN_BOBYQA		= 1,
-		OPTIM_LN_COBYLA		= 2,
-		OPTIM_MLSL_LDS		= 99
+		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
+		OPTIM_LN_BOBYQA		= 1,	///< One gradient free optimizer
+		OPTIM_LN_COBYLA		= 2,	///< Another gradient free optimizer
+		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
 
 protected:
@@ -186,7 +190,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -244,7 +248,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:

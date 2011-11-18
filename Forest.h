@@ -108,7 +108,7 @@ public:
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
-	void computeLikelihood(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+	void computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
 
 	/// Export the forest in GML format
 	///
@@ -242,7 +242,7 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
-	double* computeLikelihoodWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
+	double* computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
 #endif
 
 	/// Walk the tree to fill the mMapInternalToBranchID map.
@@ -294,8 +294,8 @@ private:
 	/// Unified array for each branch probability vector
 	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
-	std::vector< std::vector<unsigned int> > mTreeDependencies;		///< mTreeDependencies[tj] = <t1 t2 t3> means: tj can be done after: t1 t2 t3
-	std::vector< std::vector<unsigned int> > mTreeRevDependencies;	///< mTreeRevDependencies[tj] = <t1 t2 t3> means: tj should be ready before: t1 t2 t3
+	std::vector< std::vector<unsigned int> > mTreeDependencies;		///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3
+	std::vector< std::vector<unsigned int> > mTreeRevDependencies;	///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
 };
 
 #endif

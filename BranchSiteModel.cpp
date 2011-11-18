@@ -19,6 +19,7 @@ static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
 // Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
+
 void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 {
 	std::vector<double>::const_iterator ix;
@@ -212,7 +213,7 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 }
 
 
-double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -250,7 +251,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
-	aForest.computeLikelihood(mSet, mLikelihoods);
+	aForest.computeLikelihoods(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = aForest.getNumSites();
@@ -296,7 +297,7 @@ double BranchSiteModelNullHyp::oneCycleMaximizer(Forest& aForest, unsigned int a
 }
 
 	
-double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -341,7 +342,7 @@ double BranchSiteModelAltHyp::oneCycleMaximizer(Forest& aForest, unsigned int aF
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
-	aForest.computeLikelihood(mSet, mLikelihoods);
+	aForest.computeLikelihoods(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = aForest.getNumSites();
@@ -411,7 +412,7 @@ public:
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		double f0 = mModel->oneCycleMaximizer(*mForest, mFgBranch, aVars, mTrace);
+		double f0 = mModel->computeLikelihood(*mForest, mFgBranch, aVars, mTrace);
 
 		if(!aGrad.empty())
 		{
@@ -438,7 +439,7 @@ public:
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
 
-			const double f1 = mModel->oneCycleMaximizer(*mForest, mFgBranch, x, false);
+			const double f1 = mModel->computeLikelihood(*mForest, mFgBranch, x, false);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 
@@ -489,7 +490,7 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	mNumEvaluations = 0;
 
 	// If only the initial step is requested, do it and return
-	if(aOnlyInitialStep) return oneCycleMaximizer(aForest, aFgBranch, mVar, aTrace);
+	if(aOnlyInitialStep) return computeLikelihood(aForest, aFgBranch, mVar, aTrace);
 
 	// Select the maximizer algorithm
 	std::auto_ptr<nlopt::opt> opt;
