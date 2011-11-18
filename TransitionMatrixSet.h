@@ -7,6 +7,7 @@
 #include "TransitionMatrix.h"
 #include "AlignedMalloc.h"
 #include "CodonFrequencies.h"
+#include "MathSupport.h"
 
 #ifdef USE_LAPACK
 #include "blas.h"
@@ -103,17 +104,7 @@ public:
 #ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		
-		// Manual unrolling gives the best results here
-		for(int i=0; i < 60; ) 
-		{
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-			aGout[i] *= mInvCodonFreq[i]; ++i;
-		}
-		aGout[60] *= mInvCodonFreq[60];
+		elementWiseMult(aGout, mInvCodonFreq);
 
 #elif defined(USE_DGEMM)
 		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);

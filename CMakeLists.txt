@@ -140,7 +140,7 @@ else()
 		# -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -Wno-unused-result -funroll-loops -funsafe-loop-optimizations -Wunsafe-loop-optimizations"
 
 		if(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fstrict-aliasing -Wstrict-aliasing -std=c++98 -Wextra -ffast-math -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fstrict-aliasing -Wstrict-aliasing -std=c++98 -Wextra -ffast-math -msse2 -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING FORCE)
 		endif(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
 
 		#if(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
