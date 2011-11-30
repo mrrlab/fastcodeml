@@ -87,6 +87,11 @@ public:
 	void addAggressiveReduction(ForestNode* aNode=0);
 #endif
 
+	/// Measure the number of branches to be computed at each site
+	///
+	void measureEffort(void);
+	void printEffortByGroup(std::ostream& aOut);
+
 	/// Remove all work data used for reduction
 	///
 	/// @param[in] aNode The node from which to start. Pass zero to start from the root of all the trees in the forest.
@@ -294,8 +299,9 @@ private:
 	/// Unified array for each branch probability vector
 	CacheAlignedDoubleVector	mProbs;						///< The concatenation of all the probability vectors for all the nodes and all the classes
 #endif
-	std::vector< std::vector<unsigned int> > mTreeDependencies;		///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3
-	std::vector< std::vector<unsigned int> > mTreeRevDependencies;	///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
+	std::vector< std::vector<unsigned int> >	mTreeDependencies;		///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3
+	std::vector< std::vector<unsigned int> >	mTreeRevDependencies;	///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
+	std::vector<unsigned int>					mEffort;
 };
 
 #endif

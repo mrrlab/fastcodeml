@@ -1,6 +1,7 @@
 
 #ifndef TRANSITIONMATRIXSET_H
 #define TRANSITIONMATRIXSET_H
+#include <iostream>
 
 #include <vector>
 #include "MatrixSize.h"
@@ -103,7 +104,7 @@ public:
 #ifdef USE_LAPACK
 #ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
-		
+
 		elementWiseMult(aGout, mInvCodonFreq);
 
 #elif defined(USE_DGEMM)

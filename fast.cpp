@@ -35,6 +35,9 @@
 #include <mkl_vml.h>
 #endif
 #include "Timer.h"
+#ifdef USE_MPI
+#include "HighLevelCoordinator.h"
+#endif
 
 /// Main program for FastCodeML.
 ///
@@ -49,12 +52,23 @@ int main(int ac, char **av)
 {
 	try
 	{
+#ifdef USE_MPI
+	// Start the high level parallel executor (based on MPI)
+	HighLevelCoordinator hlc(&ac, &av);
+#endif
+
 	// For reporting
 	unsigned int num_threads = 1;
 
 	// Parse the command line
 	CmdLine cmd;
 	cmd.parseCmdLine(ac, av);
+
+#ifdef USE_MPI
+	// Shutdown messages from all MPI processes except the master
+	int verbose_level = cmd.mVerboseLevel;
+	if(!hlc.isMaster()) cmd.mVerboseLevel = 0;
+#endif
 
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel > 0)
@@ -100,6 +114,13 @@ int main(int ac, char **av)
 													std::cerr << "Compiled with: ";
 #ifdef _OPENMP
 													std::cerr << "USE_OPENMP ";
+#endif
+#ifdef USE_MPI
+#ifdef USE_THREAD_MPI
+													std::cerr << "USE_THREAD_MPI ";
+#else
+													std::cerr << "USE_MPI ";
+#endif
 #endif
 #ifdef NEW_LIKELIHOOD
 													std::cerr << "NEW_LIKELIHOOD ";
@@ -156,6 +177,7 @@ int main(int ac, char **av)
 #ifndef NEW_LIKELIHOOD
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
 #endif
+		forest.measureEffort();
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
@@ -174,6 +196,27 @@ int main(int ac, char **av)
 
 	// Subdivide the trees in groups based on dependencies
 	forest.groupByDependency(cmd.mForceSerial || cmd.mDoNotReduceForest);
+	forest.printEffortByGroup(std::cerr);
+
+	// Get the time needed by data preprocessing
+	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+
+#ifdef USE_MPI
+	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
+	if(cmd.mVerboseLevel >= 1) timer.start();
+	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mOptimizationAlgo);
+
+	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
+	if(sts)
+	{
+		if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*hlc.numJobs() << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+		return 0;
+	}
+	else
+	{
+		timer.stop();
+	}
+#endif
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;
@@ -201,9 +244,6 @@ int main(int ac, char **av)
 #ifdef USE_MKL_VML
 	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
 #endif
-
-	// Get the time needed by the serial part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 1) std::cerr << forest;

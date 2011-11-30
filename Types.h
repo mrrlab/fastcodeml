@@ -7,7 +7,7 @@
 #include "MatrixSize.h"
 
 typedef std::vector<double, AlignedAllocator<double, CACHE_LINE_ALIGN> > CacheAlignedDoubleVector;
-//typedef std::vector<double> CacheAlignedDoubleVector;
+typedef std::vector<double, AlignedAllocator<double, 16> > SSEAlignedDoubleVector;
 
 #endif
 

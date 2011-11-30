@@ -2,6 +2,10 @@
 #ifndef MATHSUPPORT_H
 #define MATHSUPPORT_H
 
+#ifdef _CRAYC
+#undef __SSE2__
+#endif
+
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif

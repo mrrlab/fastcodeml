@@ -284,7 +284,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 void Forest::reduceSubtrees(bool aNoTipPruning)
 {
-	//TEST
+	// Setup dependency vectors
 	std::vector<unsigned int> empty_vector;
 	mTreeDependencies.resize(mNumSites, empty_vector);
 	mTreeRevDependencies.resize(mNumSites, empty_vector);
@@ -323,7 +323,7 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent,
 			aNodeDependent->mChildrenList[i] = aNode->mChildrenList[i];
 			aNodeDependent->markNotSameTree(i);
 
-			//TEST
+			// Record dependencies
 			mTreeDependencies[aNodeDependent->mOwnTree].push_back(aNode->mOwnTree);		// [tj] can be done after: t1 t2 t3
 			mTreeRevDependencies[aNode->mOwnTree].push_back(aNodeDependent->mOwnTree);	// [tj] should be ready before: t1 t2 t3
 		}
@@ -365,6 +365,65 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	}
 }
 
+void Forest::measureEffort(void)
+{
+	// Initialize effort array
+	mEffort.clear();
+	mEffort.reserve(mNumSites);
+
+	for(size_t i=0; i < mNumSites; ++i)
+	{
+		unsigned int cntAggressive = mRoots[i].countBranches(true)+1;
+		mEffort.push_back(cntAggressive);
+	}
+}
+
+
+void Forest::printEffortByGroup(std::ostream& aOut)
+{
+	std::vector<unsigned int> core_effort;
+#ifdef _OPENMP
+	unsigned int nthreads = omp_get_max_threads();
+#else
+	unsigned int nthreads = 1;
+#endif
+
+	const unsigned int num_classes = mDependenciesClasses.size();
+	for(unsigned int k=0; k < num_classes; ++k)
+	{
+		const unsigned int class_num_sites = mDependenciesClasses[k].size();
+		core_effort.assign(nthreads, 0);
+
+		unsigned int sites_per_core_base = class_num_sites/nthreads;
+		unsigned int sites_per_core_plus = class_num_sites-sites_per_core_base*nthreads;
+		if(mVerbose >= 1) std::cerr << std::setw(2) << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
+		for(unsigned int j=0; j < class_num_sites; ++j)
+		{
+			unsigned int site = mDependenciesClasses[k][j];
+			
+			unsigned int idx = 0;
+			if(sites_per_core_plus == 0)
+			{
+				idx = j/sites_per_core_base;
+			}
+			else if(j >= (sites_per_core_base+1)*sites_per_core_plus)
+			{
+				idx = (j-(sites_per_core_base+1)*sites_per_core_plus)/sites_per_core_base+sites_per_core_plus;
+			}
+			else
+			{
+				idx = j/(sites_per_core_base+1);
+			}
+			core_effort[idx] += mEffort[site];
+		}
+		if(mVerbose >= 1)
+		{
+			aOut << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
+			for(unsigned int i=0; i < nthreads; ++i) aOut << std::setw(4) << core_effort[i];
+			aOut << std::endl;
+		}
+	}
+}
 
 void Forest::groupByDependency(bool aForceSerial)
 {

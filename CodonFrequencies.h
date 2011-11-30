@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cfloat>
 #include "MatrixSize.h"
+#include "Types.h"
 
 /// If codon probability is greater than this value, the codon is marked as "good codon".
 ///
@@ -125,7 +126,7 @@ private:
 	static CodonFrequencies*	mInstance;					///< Pointer to the singleton instance
 	std::vector<double>			mCodonFrequencies;			///< Experimental codon frequencies
 	std::vector<double>			mCodonFreqSqrt;				///< Square root of experimental codon frequencies
-	std::vector<double>			mCodonFreqInv;				///< Inverse of experimental codon frequencies
+	SSEAlignedDoubleVector		mCodonFreqInv;				///< Inverse of experimental codon frequencies (must be aligned for SSE instructions)
 	std::bitset<N>				mGoodCodon;					///< True if the corresponding codon frequency is not small
 	unsigned int				mNumGoodCodons;				///< Number of codons whose frequency is not zero
 

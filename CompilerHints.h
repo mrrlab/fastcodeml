@@ -27,6 +27,12 @@
 #define RESTRICT
 //#define PURE    __attribute__ ((pure))
 
+#elif defined(_CRAYC)
+//  Cray C++
+#define ALIGN64 __attribute__ ((aligned (64)))
+#define RESTRICT restrict
+//#define PURE    __attribute__ ((pure))
+
 #else
 #warning "Unknown compiler detected"
 #define ALIGN64

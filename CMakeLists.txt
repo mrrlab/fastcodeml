@@ -17,6 +17,7 @@ set(SRCS
 	FatVectorTransform.cpp
 	CodonFrequencies.cpp
 	AlignedAllocator.cpp
+	HighLevelCoordinator.cpp
 )
 
 # Search for Boost version 1.42 minimum
@@ -42,6 +43,20 @@ if(USE_OPENMP)
 	find_package(OpenMP)
 endif(USE_OPENMP)
 
+SET(USE_MPI YES CACHE BOOL "Use MPI for high level parallelization")
+if(USE_MPI)
+# Find MPI
+	#set(MPI_COMPILER "$ENV{MPI_ROOT}/bin/mpicxx")
+	#set(MPI_CXX_COMPILER "$ENV{MPI_ROOT}/bin/mpicxx")
+	#set(MPI_LIBRARY "$ENV{MPI_ROOT}/lib/libmpich.a")
+	#set(MPI_INCLUDE_PATH "$ENV{MPI_ROOT}/include")
+
+	find_package(MPI)
+endif(USE_MPI)
+if(MPI_FOUND)
+	SET(USE_THREAD_MPI YES CACHE BOOL "Use multithread MPI if available")
+endif(MPI_FOUND)
+
 
 # Set options for the various platforms
 if($ENV{HOST} MATCHES "matterhorn")
@@ -63,41 +78,49 @@ if($ENV{HOST} MATCHES "matterhorn")
 		add_definitions(-DNEW_LIKELIHOOD)
 	endif(USE_NEW_LIKELIHOOD)
 
-elseif($ENV{HOST} MATCHES "rosa")
+elseif($ENV{HOST} MATCHES "todi")
 
 	SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
 	SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
-	set(BLAS_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "BLAS lib dir")
-	set(LAPACK_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "LAPACK lib dir")
-	set(MATH_LIB_NAMES acml gfortranbegin gfortran CACHE STRING "Math libraries" )
-	set(MKL_INCLUDE_DIR "/apps/eiger/Intel-FOR-11.1/mkl/include" CACHE PATH "MKL include dir")
+	#set(BLAS_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "BLAS lib dir")
+	#set(LAPACK_LINK_DIR "/opt/acml/4.4.0/pgi64/lib" CACHE PATH "LAPACK lib dir")
+	#set(MATH_LIB_NAMES acml gfortranbegin gfortran CACHE STRING "Math libraries" )
+	#set(MKL_INCLUDE_DIR "/apps/eiger/Intel-FOR-11.1/mkl/include" CACHE PATH "MKL include dir")
 
 	if(USE_LAPACK)
 		add_definitions(-DUSE_LAPACK)
-		link_directories( ${BLAS_LINK_DIR} )
-		link_directories( ${LAPACK_LINK_DIR} )
+	#	link_directories( ${BLAS_LINK_DIR} )
+	#	link_directories( ${LAPACK_LINK_DIR} )
 		if(USE_DGEMM)
 			add_definitions(-DUSE_DGEMM)
 		endif(USE_DGEMM)
 		if(USE_DSYRK)
 			add_definitions(-DUSE_DSYRK)
 		endif(USE_DSYRK)
-		if(USE_MKL_VML)
-			add_definitions(-DUSE_MKL_VML)
-		endif(USE_MKL_VML)
+	#	if(USE_MKL_VML)
+	#		add_definitions(-DUSE_MKL_VML)
+	#	endif(USE_MKL_VML)
 	endif(USE_LAPACK)
 
 	set(NLOPT_LINK_DIR "/users/mvalle/apps/lib" CACHE PATH "NLopt lib dir")
 	set(NLOPT_INCLUDE_DIR "/users/mvalle/apps/include" CACHE PATH "NLopt include dir")
 	link_directories( ${NLOPT_LINK_DIR} )
 	include_directories(${NLOPT_INCLUDE_DIR})
-	if(USE_MKL_VML)
-		include_directories(${MKL_INCLUDE_DIR})
-	endif(USE_MKL_VML)
+	#if(USE_MKL_VML)
+	#	include_directories(${MKL_INCLUDE_DIR})
+	#endif(USE_MKL_VML)
 
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
+
+	if(MPI_FOUND)
+		include_directories(${MPI_INCLUDE_PATH})
+		add_definitions(-DUSE_MPI)
+		if(USE_THREAD_MPI)
+			add_definitions(-DUSE_THREAD_MPI)
+		endif(USE_THREAD_MPI)
+	endif(MPI_FOUND)
 	
 	if(USE_NEW_LIKELIHOOD)
 		add_definitions(-DNEW_LIKELIHOOD)
@@ -111,7 +134,14 @@ elseif(WIN32)
 	add_definitions(/D_CRT_SECURE_NO_WARNINGS)
 	add_definitions(/D_SECURE_SCL=0)
 	add_definitions(/Oi)
-
+	if(MPI_FOUND)
+		include_directories(${MPI_INCLUDE_PATH})
+		add_definitions(/DUSE_MPI)
+		if(USE_THREAD_MPI)
+			add_definitions(/DUSE_THREAD_MPI)
+		endif(USE_THREAD_MPI)
+	endif(MPI_FOUND)
+	
 	if(OPENMP_FOUND)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif(OPENMP_FOUND)
@@ -157,6 +187,14 @@ else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
 	endif (OPENMP_FOUND)
+
+	if(MPI_FOUND)
+		include_directories(${MPI_INCLUDE_PATH})
+		add_definitions(-DUSE_MPI)
+		if(USE_THREAD_MPI)
+			add_definitions(-DUSE_THREAD_MPI)
+		endif(USE_THREAD_MPI)
+	endif(MPI_FOUND)
 
 	set(BLAS_LINK_DIR "/apps/eiger/Intel-CPP-11.1/mkl/lib/em64t" CACHE PATH "BLAS lib dir")
 	set(LAPACK_LINK_DIR "/apps/eiger/Intel-CPP-11.1/mkl/lib/em64t" CACHE PATH "LAPACK lib dir")
@@ -209,6 +247,9 @@ else(WIN32)
 	endif(USE_LAPACK)
 endif(WIN32)
 
+if(MPI_FOUND)
+	target_link_libraries(fast ${MPI_LIBRARY})
+endif(MPI_FOUND)
 
 # Make documentation
 find_package(Doxygen)
