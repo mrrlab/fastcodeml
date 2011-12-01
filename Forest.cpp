@@ -503,7 +503,7 @@ void Forest::groupByDependency(bool aForceSerial)
 	std::set<unsigned int> jolly_sites;
 
 	// Check if can be balanced
-	for(unsigned int k=0; k < num_classes; ++k)
+	for(k=0; k < num_classes; ++k)
 	{
 		// Can jolly sites be added?
 		// Try to have num sites at this level multiple of number of threads

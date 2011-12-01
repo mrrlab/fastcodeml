@@ -274,7 +274,7 @@ double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int a
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
 
-		//if(p <= 0) std::cerr << std::setw(4) << site << ' ' << std::setw(10) << p << ' ' << std::setw(10) << x << ' ' << mMaxLnL << std::endl;
+		// DBG
 		//if(p <= 0)
 		//{
 		//	std::cerr << std::setw(4) << site << ' ';

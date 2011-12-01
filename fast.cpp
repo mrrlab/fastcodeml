@@ -177,7 +177,6 @@ int main(int ac, char **av)
 #ifndef NEW_LIKELIHOOD
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
 #endif
-		forest.measureEffort();
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
@@ -196,6 +195,7 @@ int main(int ac, char **av)
 
 	// Subdivide the trees in groups based on dependencies
 	forest.groupByDependency(cmd.mForceSerial || cmd.mDoNotReduceForest);
+	forest.measureEffort();
 	forest.printEffortByGroup(std::cerr);
 
 	// Get the time needed by data preprocessing
