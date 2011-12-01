@@ -1,7 +1,6 @@
 
 #include "TransitionMatrixSet.h"
 
-
 void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const TransitionMatrix& aQ1,
 											 double aSbg,
