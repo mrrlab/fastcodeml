@@ -282,8 +282,8 @@ void HighLevelCoordinator::doMaster(void)
 	for(unsigned int branch=0; branch < mNumBranches; ++branch)
 	{
 		std::cerr << "Branch: "  << std::setw(3)  << branch <<
-					"  Lnl H0: " << std::setw(12) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
-					"  Lnl H1: " << std::setw(12) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1] << std::endl;
+					"  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
+					"  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1] << std::endl;
 	}
 }
 
