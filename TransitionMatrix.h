@@ -118,7 +118,7 @@ public:
 #ifndef USE_MKL_VML
 		// Manual unrolling gives the best results here.
 		// So it is exp(D*T/2). Remember, the eigenvalues are stored in reverse order
-		for(int c=0; c < N; )
+		for(int c=0; c < N-1; )
 		{
 			expt[c] = exp(tm*mD[N-1-c]); ++c;
 			expt[c] = exp(tm*mD[N-1-c]); ++c;
