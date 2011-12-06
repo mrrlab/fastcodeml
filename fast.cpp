@@ -111,6 +111,10 @@ int main(int ac, char **av)
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 		}
 #endif
+#ifdef USE_MPI
+		if(hlc.numJobs() > 1)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
+		else										std::cerr << "Num. MPI proc: Insufficient, single task execution" << std::endl;
+#endif
 													std::cerr << "Compiled with: ";
 #ifdef _OPENMP
 													std::cerr << "USE_OPENMP ";
@@ -209,7 +213,7 @@ int main(int ac, char **av)
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)
 	{
-		if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*hlc.numJobs() << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+		if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 		return 0;
 	}
 	else

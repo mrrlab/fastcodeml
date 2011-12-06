@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include "BayesTest.h"
 
+static const double MIN_PROB = 0.95;
+
 BayesTest::BayesTest(size_t aNumSites) : mNumSites(aNumSites)
 {
 	mSiteClassProb.resize(4*mNumSites);
@@ -36,7 +38,7 @@ void BayesTest::computeNEB(void)
 {
 }
 
-void BayesTest::printPositiveSelSites(unsigned int aFgBranch)
+void BayesTest::printPositiveSelSites(unsigned int aFgBranch) const
 {
 	bool print_title = true;
 
@@ -45,7 +47,7 @@ void BayesTest::printPositiveSelSites(unsigned int aFgBranch)
 	{
 		// Check if is a type 2 site with prob > 95%
 		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
-		if(prob > 0.95)
+		if(prob > MIN_PROB)
 		{
 			// Put a title the firts time
 			if(print_title)
@@ -61,4 +63,23 @@ void BayesTest::printPositiveSelSites(unsigned int aFgBranch)
 }
 
 
+unsigned int BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const
+{
+	// Prepare the output vectors
+	aPositiveSelSites.clear();
+	aPositiveSelSitesProb.clear();
 
+	// For all sites
+	for(unsigned int site=0; site < mNumSites; ++site)
+	{
+		// Check if it is a type 2 site with prob > 95%
+		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
+		if(prob > MIN_PROB)
+		{
+			aPositiveSelSites.push_back(site);
+			aPositiveSelSitesProb.push_back(prob);
+		}
+	}
+
+	return aPositiveSelSites.size();
+}

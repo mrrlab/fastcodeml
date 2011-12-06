@@ -15,53 +15,87 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
 #include "HighLevelCoordinator.h"
 #include "BranchSiteModel.h"
 #include "Exceptions.h"
 #include "BayesTest.h"
 
+/// For each internal branch there are three jobs to be executed: H0, H1 and BEB
 static const int JOBS_PER_BRANCH = 3;
-static const int MASTER_JOB = 0;
 
 enum JobStatus
 {
-	JOB_WAITING,
-	JOB_ASSIGNED,
-	JOB_COMPLETED,
-	JOB_SKIP
+	JOB_WAITING,			///< Not yet assigned
+	JOB_ASSIGNED,			///< Assigned but not finished
+	JOB_COMPLETED,			///< Job completed
+	JOB_SKIP				///< Job should not execute due to preconditions
 };
 
 enum JobType
 {
-	JOB_H0=0,
-	JOB_H1=1,
-	JOB_BEB=2,
-	JOB_SHUTDOWN=3
+	JOB_H0			= 0,	///< H0 computation
+	JOB_H1			= 1,	///< H1 computation
+	JOB_BEB			= 2,	///< BEB computation (done only if H0 and H1 already done and passing the likelihood ratio test)
+	JOB_SHUTDOWN	= 3		///< Shutdown the worker
 };
 
 enum MessageType
 {
-	MSG_WORK_REQUEST,
-	MSG_FINISH_AND_WORK_REQUEST,
-	MSG_NEW_JOB
+	MSG_WORK_REQUEST,		///< Worker asking for a new job to execute
+	MSG_NEW_JOB				///< New job from the master
 };
 
-
+/// Table of work to be done and intermediate results
+///
 struct HighLevelCoordinator::WorkTable
 {
-	WorkTable(unsigned int aNumBranches) :
-					mNumBranches(aNumBranches),
-					mJobStatus(aNumBranches*JOBS_PER_BRANCH, JOB_WAITING),
-					mWorkList(aNumBranches*JOBS_PER_BRANCH, JOB_WAITING),
-					mResults(aNumBranches*JOBS_PER_BRANCH, 0.0) {}
+	/// Constructor
+	///
+	/// @param[in] aNumInternalBranches Number of internal branches that can be marked as foreground branch.
+	///
+	WorkTable(unsigned int aNumInternalBranches) :
+					mNumInternalBranches(aNumInternalBranches),
+					mJobStatus(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
+					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
+					mResults(aNumInternalBranches*JOBS_PER_BRANCH, 0.0) {}
 
-	unsigned int mNumBranches;
-	std::vector<int> mJobStatus;
-	std::vector<int> mWorkList;
-	std::vector<double> mResults;
+	unsigned int mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
+	std::vector<int> mJobStatus;		///< Corresponding step status
+	std::vector<int> mWorkList;			///< Who is doing this step
+	std::vector<double> mResults;		///< LnL results from H0 and H1 (here the BEB column is here to simplify processing)
 
+	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
+	///
+	/// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0, JOB_H1, JOB_BEB, JOB_SHUTDOWN) and [1] to the branch number (or zero for JOB_SHUTDOWN)
+	/// @param [in] aRank The current worker rank
+	///
+	/// @return True if a job has been assigned, false if the job is JOB_SHUTDOWN
+	///
 	bool getNextJob(int* aJob, int aRank);
+
+	/// Mark the job assigned to the aRank worker as finished
+	///
+	/// @param[in] aRank The rank of the current worker
+	///
+	/// @return The identifier of the finished job
+	///
+	/// @exception FastCodeMLFatal If job not found
+	///
 	int markJobFinished(int aRank);
+
+	/// Get the job type (JOB_H0, JOB_H1, JOB_BEB) for the given job identifier.
+	///
+	/// @param[in] aIdx Job identifier returned by markJobFinished()
+	///
+	/// @return The job type
+	///
+	int getJobType(int aIdx) const {return aIdx % JOBS_PER_BRANCH;}
+
+	/// Check that all jobs have been processed
+	///
+	/// @exception FastCodeMLFatalNoMsg If jobs still pending
+	///
 	void checkAllJobsDone(void) const;
 };
 
@@ -71,7 +105,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 	// Assign all H0 jobs, then all H1 jobs
 	for(unsigned int kind=JOB_H0; kind <= JOB_H1; ++kind)
 	{
-		for(unsigned int branch=0; branch < mNumBranches; ++branch)
+		for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
 		{
 			unsigned int idx = branch*JOBS_PER_BRANCH+kind;
 			if(mJobStatus[idx] == JOB_WAITING)
@@ -86,7 +120,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 	}
 
 	// Assign BEB jobs if possible
-	for(unsigned int branch=0; branch < mNumBranches; ++branch)
+	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		// The BEB job should be pending
 		if(mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] != JOB_WAITING) continue;
@@ -103,9 +137,11 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 		}
 
 		// Assign the BEB job
-		unsigned int idx = branch*JOBS_PER_BRANCH+JOB_BEB;
 		aJob[0] = JOB_BEB;
 		aJob[1] = branch;
+
+		// Mark it as assigned
+		unsigned int idx = branch*JOBS_PER_BRANCH+JOB_BEB;
 		mJobStatus[idx] = JOB_ASSIGNED;
 		mWorkList[idx]  = aRank;
 		return true;
@@ -120,7 +156,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 
 int HighLevelCoordinator::WorkTable::markJobFinished(int aRank)
 {
-	for(unsigned int i=0; i < mNumBranches*JOBS_PER_BRANCH; ++i)
+	for(unsigned int i=0; i < mNumInternalBranches*JOBS_PER_BRANCH; ++i)
 	{
 		if(mJobStatus[i] == JOB_ASSIGNED && mWorkList[i] == aRank)
 		{
@@ -131,6 +167,7 @@ int HighLevelCoordinator::WorkTable::markJobFinished(int aRank)
 
 	throw FastCodeMLFatal("No job found in markJobFinished");
 }
+
 
 
 void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
@@ -149,43 +186,61 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 }
 
 
-HighLevelCoordinator::HighLevelCoordinator(int* aArgc, char*** aArgv) : mVerbose(0), mRank(MASTER_JOB), mSize(0), mNumBranches(0), mWorkTable(0)
+HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(MASTER_JOB), mSize(0), mNumInternalBranches(0), mWorkTable(0)
 {
 #ifdef USE_THREAD_MPI
-	const int requested = MPI_THREAD_MULTIPLE;
+	//const int requested = MPI_THREAD_MULTIPLE;
+	const int requested = MPI_THREAD_SINGLE;
+	//const int requested = MPI_THREAD_SERIALIZED;
 #else
-	const int requested = MPI_THREAD_FUNNELED;
+	const int requested = MPI_THREAD_SERIALIZED;
 #endif
 	int provided;
-	MPI_Init_thread(aArgc, aArgv, requested, &provided);
-	if(provided != requested) throw FastCodeMLFatal("Requested threading level not provided by MPI library");
+	MPI_Init_thread(aRgc, aRgv, requested, &provided);
+	if(provided != requested)
+	{
+		mSize = 0;
+		// Don't support threads, don't execute under MPI
+	}
+	else
+	{
+		MPI_Comm_size(MPI_COMM_WORLD, &mSize);
+		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
+	}
 
-	MPI_Comm_size(MPI_COMM_WORLD, &mSize);
-	MPI_Comm_rank(MPI_COMM_WORLD, &mRank);	
+	// If there are too few MPI processes, terminate the unused workers
+	if(mSize < 3 && mRank  != MASTER_JOB)
+	{
+		MPI_Finalize();
+		throw FastCodeMLSuccess();
+	}
 }
 
 
 HighLevelCoordinator::~HighLevelCoordinator()
 {
-	MPI_Finalize();
 	delete mWorkTable;
+	MPI_Finalize();
 }
 
 
 bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo)
 {
-	// If only one MPI process, return
-	if(mSize <= 1) return false;
-
-	// Initialize structures
-	mVerbose = aVerbose;
-	mNumBranches = aForest.getNumInternalBranches();
+	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
+	if(mSize < 3) return false;
 
 	// Start the jobs
 	if(mRank == MASTER_JOB)
 	{
+		// Initialize structures
+		mVerbose = aVerbose;
+		mNumInternalBranches = aForest.getNumInternalBranches();
+
+		// Check if the number of worker is ok
+		if(mSize > (int)(2*mNumInternalBranches+1) && mVerbose >= 1) std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
+
 		// In the master initialize the work table
-		mWorkTable = new WorkTable(mNumBranches);
+		mWorkTable = new WorkTable(mNumInternalBranches);
 
 		// In the master process initialize the master or master+one worker
 #if defined(_OPENMP) && defined(USE_THREAD_MPI)
@@ -243,7 +298,8 @@ void HighLevelCoordinator::doMaster(void)
 		if(lnl < DBL_MAX)
 		{
 			int idx = mWorkTable->markJobFinished(worker);
-			if(mVerbose >= 1) std::cerr << "Lnl: " << lnl << " from worker " << worker << std::endl;
+			int job_type = mWorkTable->getJobType(idx);
+			if(mVerbose >= 1) std::cerr << "Lnl: " << lnl << " for task: " << job_type << " from worker " << worker << std::endl;
 			mWorkTable->mResults[idx] = lnl;
 		}
 		else
@@ -256,7 +312,27 @@ void HighLevelCoordinator::doMaster(void)
 		int job[2];
 		mWorkTable->getNextJob(job, worker);
 		MPI_Send((void*)job, 2, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
-		if(mVerbose >= 1) std::cerr << "Sent [" << job[0] << ' ' << job[1] << "] to " <<  worker << std::endl;
+		if(mVerbose >= 1)
+		{
+			switch(job[0])
+			{
+			case JOB_H0:
+				std::cerr << "Sent H0 [" << job[1] << "] to " <<  worker << std::endl;
+				break;
+			case JOB_H1:
+				std::cerr << "Sent H1 [" << job[1] << "] to " <<  worker << std::endl;
+				break;
+			case JOB_BEB:
+				std::cerr << "Sent BEB [" << job[1] << "] to " <<  worker << std::endl;
+				break;
+			case JOB_SHUTDOWN:
+				std::cerr << "Sent SHUTDOWN to " <<  worker << std::endl;
+				break;
+			default:
+				std::cerr << "Sent " << job[0] << " [" << job[1] << "] to " <<  worker << std::endl;
+				break;
+			}
+		}
 
 		// If no more jobs
 		if(job[0] == JOB_SHUTDOWN)
@@ -279,7 +355,7 @@ void HighLevelCoordinator::doMaster(void)
 
 	// Print results
 	std::cerr << std::endl;
-	for(unsigned int branch=0; branch < mNumBranches; ++branch)
+	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		std::cerr << "Branch: "  << std::setw(3)  << branch <<
 					"  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
@@ -326,9 +402,15 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			{
 			BayesTest bt(aForest.getNumSites());
 			bt.computeBEB();
-			bt.printPositiveSelSites(job[1]);
+			std::vector<unsigned int> aPositiveSelSites;
+			std::vector<double> aPositiveSelSitesProb;
+			unsigned int num_sites = bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
+			if(num_sites)
+			{
+				// Return the two vectors to master
 			}
 			lnl = 0;
+			}
 			break;
 		}
 
