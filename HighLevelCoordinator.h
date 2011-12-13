@@ -75,13 +75,13 @@ private:
 
 
 private:
-	unsigned int		mVerbose;		///< The verbose level
-	int					mRank;			///< Rank of the current process (Master as rank == MASTER_JOB)
-	int					mSize;			///< Number of MPI processes
-	unsigned int		mNumInternalBranches;	///< Num 
+	unsigned int		mVerbose;				///< The verbose level
+	int					mRank;					///< Rank of the current process (Master as rank == MASTER_JOB)
+	int					mSize;					///< Number of MPI processes
+	unsigned int		mNumInternalBranches;	///< Number of internal branches (i.e. the ones that can be foreground branch)
 
 	struct WorkTable;
-	WorkTable*			mWorkTable;
+	WorkTable*			mWorkTable;				///< Management of the work list
 };
 
 

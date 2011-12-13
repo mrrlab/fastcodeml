@@ -24,13 +24,31 @@ class BranchSiteModel
 public:
 	/// Constructor.
 	///
+	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aNumBranches Number of tree branches
 	/// @param[in] aNumSites Number of sites
 	/// @param[in] aSeed Random number generator seed
 	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
 	///
-	BranchSiteModel(size_t aNumBranches, size_t aNumSites, unsigned int aSeed, unsigned int aNumVariables)
-		: mNumTimes(aNumBranches), mNumVariables(aNumVariables), mMaxLnL(-DBL_MAX), mNumEvaluations(0), mSeed(aSeed)
+	BranchSiteModel(Forest& aForest,
+					size_t aNumBranches,
+					size_t aNumSites,
+					unsigned int aSeed,
+					unsigned int aNumVariables,
+					bool aOnlyInitialStep,
+					bool aTimesFromTree,
+					bool aTrace,
+					unsigned int aOptAlgo=0)
+		: mForest(aForest),
+		  mNumTimes(aNumBranches),
+		  mNumVariables(aNumVariables),
+		  mMaxLnL(-DBL_MAX),
+		  mNumEvaluations(0),
+		  mOnlyInitialStep(aOnlyInitialStep),
+		  mTimesFromTree(aTimesFromTree),
+		  mTrace(aTrace),
+		  mOptAlgo(aOptAlgo),
+		  mSeed(aSeed)
 	{
 		mVar.resize(mNumTimes+mNumVariables);
 		mLowerBound.reserve(mNumTimes+mNumVariables);
@@ -44,41 +62,35 @@ public:
 
 	/// Set the times on the tree from the variables
 	///
-	/// @param[in,out] aForest The forest to be updated
-	///
-	void saveComputedTimes(Forest& aForest) const
+	void saveComputedTimes(void) const
 	{
-		aForest.setLengthsFromTimes(mVar);
+		mForest.setLengthsFromTimes(mVar);
 	}
 
 	/// Formatted print of the maximizer variables array
 	///
 	/// @param[in] aVars The variables array to be printed
+	/// @param[in] aLnl The likelihood value to be printed
 	///
-	void printVar(const std::vector<double>& aVars) const;
+	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX) const;
 
 	/// Compute the maximum likelihood for the given forest
 	///
-	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
-	/// @param[in] aOnlyInitialStep If set do not maximize, compute only the starting point
-	/// @param[in] aTrace If set the maximization is traced
-	/// @param[in] aOptAlgo The optimization method to be used
 	///
 	/// @return The maximum Likelihood value
 	///
-	double maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0);
+	double maximizeLikelihood(size_t aFgBranch);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
-	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
-	/// @param[in] aTrace Set to trace the cycle result
+	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
 
 	/// Get variable values
 	///
@@ -135,6 +147,7 @@ protected:
 	}
 
 protected:
+	Forest&						mForest;
 	unsigned int				mNumTimes;			///< Number of branch lengths
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
@@ -144,6 +157,10 @@ protected:
 	double						mMaxLnL;			///< Maximum value of LnL found during optimization
 	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
 	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
+	bool						mOnlyInitialStep;
+	bool						mTimesFromTree;
+	bool						mTrace;
+	unsigned int				mOptAlgo;
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be passed to the optimizer
@@ -161,36 +178,34 @@ class BranchSiteModelNullHyp : public BranchSiteModel
 public:
 	/// Constructor.
 	///
-	/// @param[in] aNumBranches Number of tree branches
-	/// @param[in] aNumSites Number of sites
-	/// @param[in] aSeed Random number generator seed
-	///
-	BranchSiteModelNullHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, aNumSites, aSeed, 4), mSet(aNumBranches, 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
-
-	/// Compute the null hypothesis log likelihood.
-	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
-	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	/// @param[in] aSeed Random number generator seed
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTimesFromTree Initial times are from the file plus fixed values for the other variables
 	/// @param[in] aTrace If set the maximization is traced
 	/// @param[in] aOptAlgo The optimization algorithm to use
 	///
+	BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo=0)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTimesFromTree, aTrace, aOptAlgo), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+
+	/// Compute the null hypothesis log likelihood.
+	///
+	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	///
 	/// @return The log likelihood for the null hypothesis
 	///
-	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo=0);
+	double operator()(size_t aFgBranch);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
-	/// @param[in] aTrace Set to trace the cycle result
+	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -217,26 +232,24 @@ class BranchSiteModelAltHyp : public BranchSiteModel
 public:
 	/// Constructor.
 	///
-	/// @param[in] aNumBranches Number of tree branches
-	/// @param[in] aNumSites Number of sites
-	/// @param[in] aSeed Random number generator seed
-	///
-	BranchSiteModelAltHyp(size_t aNumBranches, size_t aNumSites, unsigned int aSeed)
-		: BranchSiteModel(aNumBranches, aNumSites, aSeed, 5), mSet(aNumBranches, 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
-
-	/// Compute the alternative hypothesis log likelihood.
-	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
-	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	/// @param[in] aSeed Random number generator seed
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTimesFromTree Initial times are from the file plus fixed values for the other variables
 	/// @param[in] aTrace If set the maximization is traced
-	/// @param[in] aInitFromH0 If not null uses these results from H0 to initalize H1 values
 	/// @param[in] aOptAlgo The optimization algorithm to use
+	///
+	BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo=0)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTimesFromTree, aTrace, aOptAlgo), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+
+	/// Compute the alternative hypothesis log likelihood.
+	///
+	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	/// @param[in] aInitFromH0 If not null uses these results from H0 to initalize H1 values
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
-	double computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0, unsigned int aOptAlgo=0);
+	double operator()(size_t aFgBranch, const double* aInitFromH0);
 
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
@@ -244,11 +257,11 @@ public:
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
-	/// @param[in] aTrace Set to trace the cycle result
+	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
 
 
 private:

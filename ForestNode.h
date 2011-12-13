@@ -215,9 +215,12 @@ struct ForestNode
 		else                            aOut << '('                    << '|' << mBranchId << ") ";
 
 		// Print the indexes of the codons accumulated till this node
-		std::vector<int>::const_iterator ig=mPreprocessingSupport->mSubtreeCodonsSignature.begin();
-		for(; ig != mPreprocessingSupport->mSubtreeCodonsSignature.end(); ++ig) aOut << *ig << ' ';
-		aOut << std::endl;
+		if(mPreprocessingSupport)
+		{
+			std::vector<int>::const_iterator ig=mPreprocessingSupport->mSubtreeCodonsSignature.begin();
+			for(; ig != mPreprocessingSupport->mSubtreeCodonsSignature.end(); ++ig) aOut << *ig << ' ';
+			aOut << std::endl;
+		}
 
 		// Print the subtree
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();

@@ -52,17 +52,33 @@ int main(int ac, char **av)
 {
 	try
 	{
+	// If used, intitialize the MKL VML library
+#ifdef USE_MKL_VML
+	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
+#endif
+
 #ifdef USE_MPI
 	// Start the high level parallel executor (based on MPI)
 	HighLevelCoordinator hlc(&ac, &av);
 #endif
 
-	// For reporting
-	unsigned int num_threads = 1;
-
 	// Parse the command line
 	CmdLine cmd;
 	cmd.parseCmdLine(ac, av);
+
+	// Adjust and report the number of threads that will be used
+#ifdef _OPENMP
+	unsigned int num_threads = omp_get_max_threads();
+	if(num_threads < 2 || cmd.mForceSerial)
+	{
+		cmd.mForceSerial = true;
+		num_threads = 1;
+		omp_set_num_threads(1);
+	}
+#else
+	cmd.mForceSerial = true;
+	unsigned int num_threads = 1;
+#endif
 
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
@@ -99,17 +115,19 @@ int main(int ac, char **av)
 		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
 													std::cerr << "Optimizer:     " << cmd.mOptimizationAlgo << std::endl;
 #ifdef _OPENMP
-		if(cmd.mForceSerial)
+		if(num_threads > 1)
 		{
-			num_threads = 1;
-			omp_set_num_threads(1);
-		}
-		else
-		{
-			num_threads = omp_get_max_threads();
 													std::cerr << "Num. threads:  " << num_threads << std::endl
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 		}
+		else
+		{
+													std::cerr << "Num. threads:  1 serial" << std::endl
+		                                                      << "Num. cores:    1"  << std::endl;
+		}
+#else
+													std::cerr << "Num. threads:  1 serial" << std::endl
+		                                                      << "Num. cores:    1"  << std::endl;
 #endif
 #ifdef USE_MPI
 		if(hlc.numJobs() > 1)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
@@ -245,10 +263,6 @@ int main(int ac, char **av)
 		branch_end   = num_branches;
 	}
 
-#ifdef USE_MKL_VML
-	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
-#endif
-
 	// Print few statistics
 	if(cmd.mVerboseLevel >= 1) std::cerr << forest;
 
@@ -261,18 +275,18 @@ int main(int ac, char **av)
 		if(cmd.mVerboseLevel >= 1) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the null model maximum loglikelihood
-		BranchSiteModelNullHyp h0(forest.getNumBranches(), forest.getNumSites(), cmd.mSeed);
+		BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 		double lnl0 = 0;
-		if(cmd.mComputeHypothesis != 1)	lnl0 = h0.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
+		if(cmd.mComputeHypothesis != 1)	lnl0 = h0(fg_branch);
 
 		// Compute the alternate model maximum loglikelihood
-		BranchSiteModelAltHyp h1(forest.getNumBranches(), forest.getNumSites(), cmd.mSeed);
+		BranchSiteModelAltHyp h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 		double lnl1 = 0;
 		if(cmd.mComputeHypothesis != 0)
 		{
 			const double* starting_values = 0;
 			if(cmd.mInitH1fromH0) starting_values = h0.getStartingValues();
-			lnl1 = h1.computeModel(forest, fg_branch, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, starting_values, cmd.mOptimizationAlgo);
+			lnl1 = h1(fg_branch, starting_values);
 		}
 
 		if(cmd.mVerboseLevel >= 1)
@@ -281,13 +295,13 @@ int main(int ac, char **av)
 			if(cmd.mComputeHypothesis != 1)
 			{
 				std::cerr << "LnL0: ";
-				std::cerr << lnl0;
+				std::cerr << std::setprecision(6) << lnl0;
 				std::cerr << " ";
 			}
 			if(cmd.mComputeHypothesis != 0)
 			{
 				std::cerr << "LnL1: ";
-				std::cerr << lnl1;
+				std::cerr << std::setprecision(6) << lnl1;
 			}
 			std::cerr << std::endl;
 		}
@@ -298,11 +312,11 @@ int main(int ac, char **av)
 			switch(cmd.mExportComputedTimes)
 			{
 			case 0:
-				h0.saveComputedTimes(forest);
+				h0.saveComputedTimes();
 				break;
 
 			case 1:
-				h1.saveComputedTimes(forest);
+				h1.saveComputedTimes();
 				break;
 			}
 			forest.exportForest(cmd.mGraphFile, fg_branch);

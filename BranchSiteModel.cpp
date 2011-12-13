@@ -20,8 +20,16 @@ static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 
-void BranchSiteModel::printVar(const std::vector<double>& aVars) const
+void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) const
 {
+	// Write the data with an uniform precision
+	std::streamsize prec = std::cerr.precision(7);
+	std::cerr.setf(std::ios::fixed);
+
+	// Write the LnL value (if set)
+	if(aLnl != DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
+
+	// Print all the variables
 	std::vector<double>::const_iterator ix;
 	int k;
 	double v0 = 0;
@@ -31,17 +39,17 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 		{
 		case 0:
 			std::cerr << std::endl;
-			std::cerr << std::setprecision(4) <<   "w0: " << *ix;
+			std::cerr <<   "w0: " << *ix;
 			break;
 		case 1:
-			std::cerr << std::setprecision(4) << "  k: " << *ix;
+			std::cerr <<  "  k: " << *ix;
 			break;
 		case 2:
-			std::cerr << std::setprecision(4) << "  v0: " << *ix;
+			std::cerr << "  v0: " << *ix;
 			v0 = *ix;
 			break;
 		case 3:
-			std::cerr << std::setprecision(4) << "  v1: " << *ix;
+			std::cerr << "  v1: " << *ix;
 			{
 				double p[4];
 				getProportions(v0, *ix, p);
@@ -49,26 +57,27 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars) const
 			}
 			break;
 		case 4:
-			std::cerr << std::setprecision(4) << "  w2: " << *ix;
+			std::cerr << "  w2: " << *ix;
 			break;
 		default:
-			std::cerr << std::setprecision(7) << *ix << ' ';
+			std::cerr << *ix << ' ';
 			break;
 		}
 	}
 	std::cerr << std::endl;
+	std::cerr.precision(prec);
 }
 
 
-double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, unsigned int aOptAlgo)
+double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 {
 	unsigned int i;
 
 	// Initialize the variables to be optimized
-	if(aTimesFromTree)
+	if(mTimesFromTree)
 	{
 		// Initialize branch lengths from the phylo tree
-		aForest.setTimesFromLengths(mVar);
+		mForest.setTimesFromLengths(mVar);
 
 		// Initialization as in CodeML (seems)
 		mVar[mNumTimes+0] = 0.235087;											// w0
@@ -128,11 +137,11 @@ double BranchSiteModelNullHyp::computeModel(Forest& aForest, size_t aFgBranch, b
 	}
 
 	// Run the optimizer
-	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
+	return maximizeLikelihood(aFgBranch);
 }
 
 
-double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTimesFromTree, bool aTrace, const double* aInitFromH0, unsigned int aOptAlgo)
+double BranchSiteModelAltHyp::operator()(size_t aFgBranch, const double* aInitFromH0)
 {
 	unsigned int i;
 
@@ -142,10 +151,10 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 		mVar.assign(aInitFromH0, aInitFromH0+mNumTimes+4);
 		mVar.push_back(1.001);
 	}
-	else if(aTimesFromTree)
+	else if(mTimesFromTree)
 	{
 		// Initialize branch lengths from the phylo tree
-		aForest.setTimesFromLengths(mVar);
+		mForest.setTimesFromLengths(mVar);
 
 		// Initialization as in CodeML (seems)
 		mVar[mNumTimes+0] = 0.235087;											// w0
@@ -209,11 +218,11 @@ double BranchSiteModelAltHyp::computeModel(Forest& aForest, size_t aFgBranch, bo
 	}
 
 	// Run the optimizer
-	return maximizeLikelihood(aForest, aFgBranch, aOnlyInitialStep, aTrace, aOptAlgo);
+	return maximizeLikelihood(aFgBranch);
 }
 
 
-double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -248,14 +257,14 @@ double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int a
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
-	aForest.computeLikelihoods(mSet, mLikelihoods);
+	mForest.computeLikelihoods(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
-	const size_t num_sites = aForest.getNumSites();
-	const double* mult = aForest.getSiteMultiplicity();
+	const size_t num_sites = mForest.getNumSites();
+	const double* mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(unsigned int site=0; site < num_sites; ++site)
 	{
@@ -288,8 +297,7 @@ double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int a
 	if(aTrace && lnl > mMaxLnL)
 	{
 		mMaxLnL = lnl;
-		std::cerr << std::endl << lnl << std::endl;
-		printVar(aVar);
+		printVar(aVar, lnl);
 	}
 	//std::cerr << lnl << std::endl;
 
@@ -297,7 +305,7 @@ double BranchSiteModelNullHyp::computeLikelihood(Forest& aForest, unsigned int a
 }
 
 	
-double BranchSiteModelAltHyp::computeLikelihood(Forest& aForest, unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -339,14 +347,14 @@ double BranchSiteModelAltHyp::computeLikelihood(Forest& aForest, unsigned int aF
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
-	aForest.computeLikelihoods(mSet, mLikelihoods);
+	mForest.computeLikelihoods(mSet, mLikelihoods);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
-	const size_t num_sites = aForest.getNumSites();
-	const double* mult = aForest.getSiteMultiplicity();
+	const size_t num_sites = mForest.getNumSites();
+	const double* mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(unsigned int site=0; site < num_sites; ++site)
 	{
@@ -374,8 +382,7 @@ double BranchSiteModelAltHyp::computeLikelihood(Forest& aForest, unsigned int aF
 	if(aTrace && lnl > mMaxLnL)
 	{
 		mMaxLnL = lnl;
-		std::cerr << std::endl << lnl << std::endl;
-		printVar(aVar);
+		printVar(aVar, lnl);
 	}
 
 	return lnl;
@@ -395,13 +402,12 @@ public:
 	/// Saves the parameters for the routine.
 	///
 	/// @param[in] aModel The model to be evaluated
-	/// @param[in] aForest The phylogenetic tree forest
 	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
 	/// @param[in] aTrace If set the optimization progress is traced
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
 	///
-	MaximizerFunction(BranchSiteModel* aModel, Forest* aForest, unsigned int aFgBranch, bool aTrace, std::vector<double>& aUpper)
-					: mModel(aModel), mForest(aForest), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper) {}
+	MaximizerFunction(BranchSiteModel* aModel, unsigned int aFgBranch, bool aTrace, std::vector<double>& aUpper)
+					: mModel(aModel), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper) {}
 
 	/// Functor.
 	/// It computes the function and the gradient if needed.
@@ -412,7 +418,7 @@ public:
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		double f0 = mModel->computeLikelihood(*mForest, mFgBranch, aVars, mTrace);
+		double f0 = mModel->computeLikelihood(mFgBranch, aVars, mTrace);
 
 		if(!aGrad.empty())
 		{
@@ -439,7 +445,7 @@ public:
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
 
-			const double f1 = mModel->computeLikelihood(*mForest, mFgBranch, x, false);
+			const double f1 = mModel->computeLikelihood(mFgBranch, x, false);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 
@@ -462,21 +468,20 @@ public:
 
 private:
 	BranchSiteModel*	mModel;		///< Pointer to the model to be evaluated
-	Forest*				mForest;	///< Pointer to the forest
 	unsigned int		mFgBranch;	///< Branch number of the foreground branch
 	bool				mTrace;		///< If set traces the optimization progresses
 	std::vector<double>	mUpper;		///< Upper limit of the variables to constrain the interval on which the gradient should be computed
 };
 
 
-double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo)
+double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 {
 	// Print starting values
-	if(aTrace)
+	if(mTrace)
 	{
 		std::cerr << std::endl;
 		std::cerr << "*****************************************" << std::endl;
-		std::cerr << "*** Starting" << std::endl;
+		std::cerr << "*** Starting branch " << aFgBranch << std::endl;
 		printVar(mVar);
 		std::cerr << "*** Upper" << std::endl;
 		printVar(mUpperBound);
@@ -490,26 +495,26 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	mNumEvaluations = 0;
 
 	// If only the initial step is requested, do it and return
-	if(aOnlyInitialStep) return computeLikelihood(aForest, aFgBranch, mVar, aTrace);
+	if(mOnlyInitialStep) return computeLikelihood(aFgBranch, mVar, mTrace);
 
 	// Select the maximizer algorithm
 	std::auto_ptr<nlopt::opt> opt;
-	switch(aOptAlgo)
+	switch(mOptAlgo)
 	{
 	case OPTIM_LD_LBFGS:
-		opt.reset(new nlopt::opt(nlopt::LD_LBFGS,    mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::LD_LBFGS,   mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_LN_BOBYQA:
-		opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,  mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_LN_COBYLA:
-		opt.reset(new nlopt::opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::LN_COBYLA,  mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:
-		opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS,  mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumTimes+mNumVariables));
 		{
 		// For global optimization put a timeout of one hour
 		opt->set_maxtime(60*60);
@@ -522,8 +527,6 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 
 	//	opt = new nlopt::opt(nlopt::GN_DIRECT_L, mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::GN_ISRES,    mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::LN_COBYLA,   mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::LN_BOBYQA,   mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
 	//	opt = new nlopt::opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
@@ -550,14 +553,14 @@ double BranchSiteModel::maximizeLikelihood(Forest& aForest, size_t aFgBranch, bo
 	double maxl = 0;
 	try
 	{
-		MaximizerFunction compute(this, &aForest, aFgBranch, aTrace, mUpperBound);
+		MaximizerFunction compute(this, aFgBranch, mTrace, mUpperBound);
 
 		opt->set_max_objective(MaximizerFunction::wrap, &compute);
 
 		nlopt::result result = opt->optimize(mVar, maxl);
 
 		// Print the final optimum value
-		if(aTrace)
+		if(mTrace)
 		{
 			std::cerr << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 			switch(result)

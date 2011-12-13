@@ -299,11 +299,5 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
-#ifdef _OPENMP
-	if(omp_get_max_threads() < 2) mForceSerial = true;
-	if(mForceSerial) omp_set_num_threads(1);
-#else
-	mForceSerial = true;
-#endif
 }
 

@@ -317,16 +317,16 @@ void HighLevelCoordinator::doMaster(void)
 			switch(job[0])
 			{
 			case JOB_H0:
-				std::cerr << "Sent H0 [" << job[1] << "] to " <<  worker << std::endl;
+				std::cerr << "Sent H0 [" << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_H1:
-				std::cerr << "Sent H1 [" << job[1] << "] to " <<  worker << std::endl;
+				std::cerr << "Sent H1 [" << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_BEB:
-				std::cerr << "Sent BEB [" << job[1] << "] to " <<  worker << std::endl;
+				std::cerr << "Sent BEB [" << job[1] << "] to " << worker << std::endl;
 				break;
 			case JOB_SHUTDOWN:
-				std::cerr << "Sent SHUTDOWN to " <<  worker << std::endl;
+				std::cerr << "Sent SHUTDOWN to "               << worker << std::endl;
 				break;
 			default:
 				std::cerr << "Sent " << job[0] << " [" << job[1] << "] to " <<  worker << std::endl;
@@ -357,9 +357,9 @@ void HighLevelCoordinator::doMaster(void)
 	std::cerr << std::endl;
 	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
 	{
-		std::cerr << "Branch: "  << std::setw(3)  << branch <<
-					"  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
-					"  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1] << std::endl;
+		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
+					 "  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
+					 "  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1] << std::endl;
 	}
 }
 
@@ -385,16 +385,16 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 
 		case JOB_H0:
 			{
-			BranchSiteModelNullHyp h0(aForest.getNumBranches(), aForest.getNumSites(), aSeed);
-			lnl = h0.computeModel(aForest, job[1], aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
+			BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
+			lnl = h0(job[1]);
 			}
 			break;
 
 		case JOB_H1:
 			{
-			BranchSiteModelAltHyp h1(aForest.getNumBranches(), aForest.getNumSites(), aSeed);
+			BranchSiteModelAltHyp h1(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
 			const double* starting_values = 0; // for now
-			lnl = h1.computeModel(aForest, job[1], aNoMaximization, aTimesFromFile, false, starting_values, aOptimizationAlgo);
+			lnl = h1(job[1], starting_values);
 			}
 			break;
 
