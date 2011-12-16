@@ -75,9 +75,7 @@ public:
 
 	/// Reduce common subtrees on the whole forest
 	///
-	/// @param[in] aNoTipPruning If set the branches going to leaves are not pruned
-	///
-	void reduceSubtrees(bool aNoTipPruning=false);
+	void reduceSubtrees(void);
 
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction
@@ -86,11 +84,6 @@ public:
 	///
 	void addAggressiveReduction(ForestNode* aNode=0);
 #endif
-
-	/// Measure the number of branches to be computed at each site
-	///
-	void measureEffort(void);
-	void printEffortByGroup(std::ostream& aOut);
 
 	/// Remove all work data used for reduction
 	///
@@ -105,7 +98,7 @@ public:
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	///
-	void groupByDependency(bool aForceSerial);
+	void prepareDependencies(bool aForceSerial);
 
 	/// Compute the log likelihood of the forest given the set of precomputed matrices.
 	/// If NEW_LIKELIHOOD is defined, this routine adopts the experimental "Long Vector" approach.
@@ -207,13 +200,45 @@ public:
 
 
 private:
+	/// Group trees by dependencies.
+	/// First group contains trees with no dependencies.
+	/// Second group contains trees that depends only on trees of the first group.
+	/// Third group contains trees that depends on first and second groups. And so on.
+	///
+	/// @param[in] aForceSerial Don't group so the execution is serial
+	///
+	void groupByDependency(bool aForceSerial);
+
+	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
+	///
+	/// @param[in] aForceSerial Don't group so the execution is serial
+	///
+	/// @return True if the grouping changed
+	///
+	bool balanceDependencies(bool aForceSerial);
+
+	/// Print the size of each class
+	///
+	void printDependencies(void);
+
+	/// Measure the number of branches to be computed at each site
+	///
+	/// @param[out] aEffort Effort per site
+	///
+	void measureEffort(std::vector<unsigned int>& aEffort);
+
+	/// For each group print the total effort per thread.
+	///
+	/// @param[in] aEffort Effort per site
+	///
+	void printEffortByGroup(const std::vector<unsigned int>& aEffort);
+
 	/// Reduce the common subtree between two (sub)trees
 	///
 	/// @param[in] aNode The subtree to be tested (i.e. if it exists in both trees)
 	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
-	/// @param[in] aNoTipPruning If set the branches going to leaves are not pruned
 	///
-	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent, bool aNoTipPruning);
+	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
 
 	/// Check coherence between tree and genes.
 	///
@@ -301,7 +326,6 @@ private:
 #endif
 	std::vector< std::vector<unsigned int> >	mTreeDependencies;		///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3
 	std::vector< std::vector<unsigned int> >	mTreeRevDependencies;	///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
-	std::vector<unsigned int>					mEffort;
 };
 
 #endif

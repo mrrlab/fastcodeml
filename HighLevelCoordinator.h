@@ -38,7 +38,7 @@ public:
 	/// @param[in] aVerbose The verbose level
 	/// @param[in] aNoMaximization If true non likelihood maximization takes place
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
-	/// @param[in] aOptimizationAlg The maximization algorithm to be used
+	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
@@ -66,10 +66,9 @@ private:
 	///
 	/// @param[in,out] aForest The filled forest
 	/// @param[in] aSeed The random number generator seed 
-	/// @param[in] aVerbose The verbose level
 	/// @param[in] aNoMaximization If true non likelihood maximization takes place
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
-	/// @param[in] aOptimizationAlg The maximization algorithm to be used
+	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
 	///
 	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo);
 

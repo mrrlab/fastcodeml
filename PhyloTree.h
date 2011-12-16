@@ -41,7 +41,7 @@ public:
 	///
 	/// @param[in] aFilename The filename
 	///
-	void loadTree(const char *aFilename);
+	void loadTreeFile(const char *aFilename);
 
 	/// Load a phylo tree definition from a Newick formatted string. Errors are signalled by exceptions.
 	///

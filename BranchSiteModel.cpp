@@ -136,6 +136,10 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 
+	// Initialize the variables used to avoid unneeded recomputing
+	mPrevK      = DBL_MAX;
+	mPrevOmega0 = DBL_MAX;
+
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch);
 }
@@ -216,6 +220,11 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch, const double* aInitFr
 		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
+
+	// Initialize the variables used to avoid unneeded recomputing
+	mPrevK      = DBL_MAX;
+	mPrevOmega0 = DBL_MAX;
+	mPrevOmega2 = DBL_MAX;
 
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch);

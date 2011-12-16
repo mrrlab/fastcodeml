@@ -365,6 +365,9 @@ void HighLevelCoordinator::doMaster(void)
 
 void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo)
 {
+	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
+	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
+
 	// This value signals that this is the first work request
 	double lnl = DBL_MAX;
 	for(;;)
@@ -385,14 +388,12 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 
 		case JOB_H0:
 			{
-			BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
 			lnl = h0(job[1]);
 			}
 			break;
 
 		case JOB_H1:
 			{
-			BranchSiteModelAltHyp h1(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
 			const double* starting_values = 0; // for now
 			lnl = h1(job[1], starting_values);
 			}

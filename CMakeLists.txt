@@ -33,17 +33,16 @@ endif(Boost_FOUND)
 
 # Get the configuration switches
 OPTION(USE_LAPACK         "Use BLAS/LAPACK" ON)
-OPTION(USE_DGEMM          "Use DGEMM for UDV computation" OFF)
-OPTION(USE_DSYRK          "Use new DSYRK method for matrix exponentiation" ON)
 OPTION(USE_MKL_VML        "Use Intel MKL vectorized routines" OFF)
 OPTION(USE_NEW_LIKELIHOOD "Use the new loglikelihood computation method" OFF)
 OPTION(USE_OPENMP         "Compile with OpenMP support" ON)
 OPTION(USE_MPI            "Use MPI for high level parallelization" ON)
-OPTION(USE_THREAD_MPI     "Use multithread MPI if available" ON)
+OPTION(USE_THREAD_MPI     "Use multithread MPI if available" OFF)
 if(NOT WIN32)
 OPTION(BUILD_NOT_SHARED   "Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
 OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
+OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
 
 
 # Search for OpenMP support
@@ -76,7 +75,7 @@ set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "LAPACK lib dir")
 set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir")
 set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
 set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
-set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries") 
+set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')") 
 
 
 # Set compiler switches
@@ -102,14 +101,6 @@ endif(USE_MKL_VML)
 
 if(USE_LAPACK)
 	add_definitions(-DUSE_LAPACK)
-
-	if(USE_DGEMM)
-		add_definitions(-DUSE_DGEMM)
-	endif(USE_DGEMM)
-
-	if(USE_DSYRK)
-		add_definitions(-DUSE_DSYRK)
-	endif(USE_DSYRK)
 endif(USE_LAPACK)
 
 if(MPI_FOUND)
@@ -118,6 +109,10 @@ if(MPI_FOUND)
 		add_definitions(-DUSE_THREAD_MPI)
 	endif(USE_THREAD_MPI)
 endif(MPI_FOUND)
+
+if(USE_ORIGINAL_PROPORTIONS)
+	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
+endif(USE_ORIGINAL_PROPORTIONS)
 
 
 # Set paths
@@ -190,11 +185,10 @@ add_executable(fast ${SRCS})
 
 
 # Link libraries
-if(USE_LAPACK)
-	target_link_libraries(fast ${MATH_LIB_NAMES} nlopt)
-else(USE_LAPACK)
-	target_link_libraries(fast nlopt)
-endif(USE_LAPACK)
+target_link_libraries(fast nlopt)
+if(MATH_LIB_NAMES)
+	target_link_libraries(fast ${MATH_LIB_NAMES})
+endif(MATH_LIB_NAMES)
 
 if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})

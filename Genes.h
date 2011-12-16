@@ -99,7 +99,7 @@ private:
 	std::vector<unsigned int>	mMapSiteToDnaGene;	///< Map the site number to the position in mDnaGene
 	std::map<std::string, unsigned int>
 								mMapSpecieToDnaGene;///< Map specie name to position in the gene list mDnaGene
-	std::map<char, int>			mMapBaseToIdx;
+	std::map<char, int>			mMapBaseToIdx;		///< Map DNA base letter (TCAG) to number 0 to 3
 };
 
 #endif

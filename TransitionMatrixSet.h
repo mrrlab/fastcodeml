@@ -102,16 +102,9 @@ public:
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
-#ifdef USE_DSYRK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
 		elementWiseMult(aGout, mInvCodonFreq);
-
-#elif defined(USE_DGEMM)
-		dgemv_("N", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
-#else
-		dgemv_("T", &N, &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
-#endif
 #else
 		for(int r=0; r < N; ++r)
 		{
@@ -134,19 +127,8 @@ public:
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
-#ifdef USE_DSYRK
 	
 	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &VECTOR_SLOT, &D0, aMout, &VECTOR_SLOT);
-
-#if 0
-	for(int c=0; c < aNumSites; ++c)
-	{
-		for(int r=0; r < N; ++r)
-		{
-			aMout[c*VECTOR_SLOT+r] *= mInvCodonFreq[r];
-		}
-	}
-#endif
 
 #ifdef USE_MKL_VML
 	for(int c=0; c < aNumSites; ++c)
@@ -160,36 +142,6 @@ public:
 	}
 #endif
 
-
-#elif defined(USE_DGEMM)
-		dgemm_( "N",
-				"N",
-				&N,
-				&aNumSites,
-				&N,
-				&D1,
-				mMatrices[aSetIdx*mNumMatrices+aBranch],
-				&N,
-				aMin,
-				&VECTOR_SLOT,
-				&D0,
-				aMout,
-				&VECTOR_SLOT);
-#else
-		dgemm_( "T",
-				"N",
-				&N,
-				&aNumSites,
-				&N,
-				&D1,
-				mMatrices[aSetIdx*mNumMatrices+aBranch],
-				&N,
-				aMin,
-				&VECTOR_SLOT,
-				&D0,
-				aMout,
-				&VECTOR_SLOT);
-#endif
 #else
 		for(int r=0; r < N; ++r)
 		{

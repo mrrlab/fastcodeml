@@ -45,7 +45,6 @@ public:
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the Phylo Tree file (it is marked as #1)
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 result
-	bool			mNoTipPruning;			///< If set the pruning of branches going to leaves is avoided
 
 
 private:

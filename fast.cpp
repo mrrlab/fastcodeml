@@ -2,16 +2,16 @@
 ///
 /// @section intro_sect Introduction
 /// 
-/// FastCodeML is a rewrite of CodeML based directly on the pseudocode document and will be the base
-/// on which the parallel (HPC) version will be created.
-/// Still missing computeBEB and computeNEB routines, but the rest works.
+/// FastCodeML is a rewrite of CodeML based directly on the pseudocode document.
+/// It incorporate various parallelization strategies to be able to exploit modern HPC machines architecture.
+/// For this reason there are various part of the code that can be selected at compile time or run time to experiment with various, possible solutions.
 ///
 /// @section contacts_sect Contacts
 ///
 /// Contact us if you want more information on the project, want to collaborate or suggest new ideas.
 /// 
 ///     - Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
-///     - The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group
+///     - The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
 ///
 
 #include <iostream>
@@ -98,16 +98,8 @@ int main(int ac, char **av)
 		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
-		else if(cmd.mNoAggressiveStep)
-		{
-			if(cmd.mNoTipPruning)					std::cerr << "Reduce forest: Normal (no tip pruning)" << std::endl;
-			else									std::cerr << "Reduce forest: Normal" << std::endl;
-		}
-		else
-		{
-			if(cmd.mNoTipPruning)					std::cerr << "Reduce forest: Aggressive (no tip pruning)" << std::endl;
-			else									std::cerr << "Reduce forest: Aggressive" << std::endl;
-		}
+		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
+		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
@@ -147,14 +139,11 @@ int main(int ac, char **av)
 #ifdef NEW_LIKELIHOOD
 													std::cerr << "NEW_LIKELIHOOD ";
 #endif
+#ifdef USE_ORIGINAL_PROPORTIONS
+													std::cerr << "USE_ORIGINAL_PROPORTIONS ";
+#endif
 #ifdef USE_LAPACK
 													std::cerr << "USE_LAPACK ";
-#endif
-#ifdef USE_DGEMM
-													std::cerr << "USE_DGEMM ";
-#endif
-#ifdef USE_DSYRK
-													std::cerr << "USE_DSYRK ";
 #endif
 #ifdef USE_MKL_VML
 													std::cerr << "USE_MKL_VML";
@@ -177,7 +166,7 @@ int main(int ac, char **av)
 
 	// Load the phylogenetic tree
 	PhyloTree t(cmd.mVerboseLevel);
-	t.loadTree(cmd.mTreeFile);
+	t.loadTreeFile(cmd.mTreeFile);
 
 	// Create and load the forest
 	Forest forest(cmd.mVerboseLevel);
@@ -195,7 +184,7 @@ int main(int ac, char **av)
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
-		forest.reduceSubtrees(cmd.mNoTipPruning);
+		forest.reduceSubtrees();
 #ifndef NEW_LIKELIHOOD
 		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
 #endif
@@ -216,9 +205,7 @@ int main(int ac, char **av)
 #endif
 
 	// Subdivide the trees in groups based on dependencies
-	forest.groupByDependency(cmd.mForceSerial || cmd.mDoNotReduceForest);
-	forest.measureEffort();
-	forest.printEffortByGroup(std::cerr);
+	forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
 
 	// Get the time needed by data preprocessing
 	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
@@ -398,7 +385,7 @@ int main(int ac, char **av)
 /// @section misc_sect Miscellaneous rules
 /// In case of error main should return 1.
 ///
-/// But array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int. 
+/// Array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int. 
 ///
 ///
 /// @page cmd_page Command Line switches
@@ -461,8 +448,5 @@ int main(int ac, char **av)
 /// 
 /// -m  --maximizer (required argument)
 ///         Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA, 2: LN_COBYLA)
-/// 
-/// -nt  --no-tip-pruning (no argument)
-///         Do not prune branches connected to leaves
 /// 
 /// @endverbatim

@@ -37,7 +37,7 @@ struct ForestNode
 	// Field order suggested by icc
 	//'mChildrenSameTreeFlags, mBranchId, mOwnTree, mChildrenCount, mParent, mProb, mInternalNodeId, mChildrenList, mOtherTreeProb'
 	unsigned short				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
-	unsigned short				mChildrenCount;
+	unsigned short				mChildrenCount;				///< Number of children of this node
 	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
@@ -272,6 +272,8 @@ struct ForestNode
 	/// Count the total branches in the forest
 	///
 	/// @param[in] aAggressiveStrategy If true use the aggressive simplification strategy
+	///
+	/// @return The total number of branches of the forest
 	///
 	unsigned int countBranches(bool aAggressiveStrategy=false) const
 	{

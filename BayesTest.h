@@ -45,7 +45,7 @@ public:
 	/// Extract the sites under positive selection and the corresponding probability.
 	///
 	/// @param[out] aPositiveSelSites Vector of sites under positive selection
-	/// @param[out] aPositiveSelSites Corresponding probabilities
+	/// @param[out] aPositiveSelSitesProb Corresponding probabilities
 	///
 	/// @return The number of returned sites
 	///

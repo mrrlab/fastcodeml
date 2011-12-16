@@ -9,9 +9,6 @@
 #include "TransitionMatrixSet.h"
 #include "Forest.h"
 
-// Uncomment to use the original CodeML proportion definition
-//#define USE_ORIGINAL_PROPORTIONS
-
 /// Common routines for the Hypothesis test.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -29,6 +26,10 @@ public:
 	/// @param[in] aNumSites Number of sites
 	/// @param[in] aSeed Random number generator seed
 	/// @param[in] aNumVariables Number of extra variables (k, w0, w2, p0, p1)
+	/// @param[in] aOnlyInitialStep Compute only the first step, no optimization involved
+	/// @param[in] aTimesFromTree Takes the time from the input tree
+	/// @param[in] aTrace If set print a trace of the maximization process
+	/// @param[in] aOptAlgo Maximization algorithm to be used
 	///
 	BranchSiteModel(Forest& aForest,
 					size_t aNumBranches,
@@ -147,7 +148,7 @@ protected:
 	}
 
 protected:
-	Forest&						mForest;
+	Forest&						mForest;			///< The forest to be used
 	unsigned int				mNumTimes;			///< Number of branch lengths
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
@@ -157,10 +158,10 @@ protected:
 	double						mMaxLnL;			///< Maximum value of LnL found during optimization
 	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
 	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
-	bool						mOnlyInitialStep;
-	bool						mTimesFromTree;
-	bool						mTrace;
-	unsigned int				mOptAlgo;
+	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
+	bool						mTimesFromTree;		///< Read the initial times from the tree
+	bool						mTrace;				///< Enable maximization tracing
+	unsigned int				mOptAlgo;			///< Optimization algorithm to use
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be passed to the optimizer
@@ -198,7 +199,6 @@ public:
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
-	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
@@ -251,10 +251,8 @@ public:
 	///
 	double operator()(size_t aFgBranch, const double* aInitFromH0);
 
-
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///
-	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far

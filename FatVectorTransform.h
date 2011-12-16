@@ -154,6 +154,8 @@ private:
 	///
 	struct Range
 	{
+		/// Constructor
+		///
 		Range(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo; cnt = 1;}
 
 		unsigned int from;		///< Starting index from which to copy
@@ -167,6 +169,8 @@ private:
 	///
 	struct RangeNoCnt
 	{
+		/// Constructor
+		///
 		RangeNoCnt(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo;}
 
 		unsigned int from;		///< Starting index from which to copy

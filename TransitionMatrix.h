@@ -95,21 +95,7 @@ public:
 	///
 	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
-#if defined(USE_LAPACK) && defined(USE_DGEMM) && !defined(USE_DSYRK)
-
-		double ALIGN64 tmp[N*N];
-		memcpy(tmp, mV, sizeof(double)*N*N);
-
-		//CHHS Compute D*V by multiplying row 1 by e^(first root), row 2 by e^(second root) etc.
-		int i, j;
-		for(i=N-1,j=0; i >= 0; --i, j+=N)
-		{
-			double expt = exp(aT*mD[i]); // Remember, the eigenvalues are stored in reverse order
-			dscal_(&N, &expt, tmp+j, &I1); //CHHS Scale single row  DSCAL(N,DA,DX,INCX); y = alpha * y  
-		}
-		dgemm_("T", "T", &N, &N, &N, &D1, mU, &N, tmp, &N, &D0, aOut, &N);
-
-#elif defined(USE_LAPACK) && defined(USE_DSYRK)
+#ifdef USE_LAPACK
 
 		double ALIGN64 tmp[N*N];
 		double ALIGN64 expt[N];

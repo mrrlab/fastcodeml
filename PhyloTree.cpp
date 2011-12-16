@@ -147,7 +147,7 @@ void PhyloTree::clear(void)
 }
 
 
-void PhyloTree::loadTree(const char *aFilename)
+void PhyloTree::loadTreeFile(const char *aFilename)
 {
     std::ifstream in(aFilename);
 	if(!in)

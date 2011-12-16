@@ -282,7 +282,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 }
 
 
-void Forest::reduceSubtrees(bool aNoTipPruning)
+void Forest::reduceSubtrees(void)
 {
 	// Setup dependency vectors
 	std::vector<unsigned int> empty_vector;
@@ -298,13 +298,13 @@ void Forest::reduceSubtrees(bool aNoTipPruning)
 	{
 		for(j=i-1; j >= 0; --j)
 		{
-			reduceSubtreesWalker(&mRoots[i], &mRoots[j], aNoTipPruning);
+			reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
 		}
 	}
 }
 
 
-void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent, bool aNoTipPruning)
+void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 {
 	unsigned int i;
 	const unsigned int nc = aNode->mChildrenCount;
@@ -312,9 +312,6 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent,
 	{
 		// If one of the two has been already reduced, do nothing
 		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
-
-		// If no tip pruning skip this reduction
-		if(aNoTipPruning && aNodeDependent->mChildrenList[i]->mChildrenCount == 0) continue;
 
 		// Check if same subtree
 		if(aNode->mChildrenList[i]->mPreprocessingSupport->mSubtreeCodonsSignature == aNodeDependent->mChildrenList[i]->mPreprocessingSupport->mSubtreeCodonsSignature)
@@ -335,10 +332,7 @@ void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent,
 		// If one of the two has been already reduced, do nothing
 		if(!(aNode->isSameTree(i)) || !(aNodeDependent->isSameTree(i))) continue;
 
-		// No need to continue along this path if no tip pruning
-		if(aNoTipPruning && aNodeDependent->mChildrenList[i]->mChildrenCount == 0) continue;
-
-		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i], aNoTipPruning);
+		reduceSubtreesWalker(aNode->mChildrenList[i], aNodeDependent->mChildrenList[i]);
 	}
 }
 
@@ -365,21 +359,22 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	}
 }
 
-void Forest::measureEffort(void)
+void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 {
 	// Initialize effort array
-	mEffort.clear();
-	mEffort.reserve(mNumSites);
+	aEffort.clear();
+	aEffort.reserve(mNumSites);
 
+	// Effort is number of branches plus one to have always non zero values
 	for(size_t i=0; i < mNumSites; ++i)
 	{
 		unsigned int cntAggressive = mRoots[i].countBranches(true)+1;
-		mEffort.push_back(cntAggressive);
+		aEffort.push_back(cntAggressive);
 	}
 }
 
 
-void Forest::printEffortByGroup(std::ostream& aOut)
+void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort)
 {
 	std::vector<unsigned int> core_effort;
 #ifdef _OPENMP
@@ -396,7 +391,7 @@ void Forest::printEffortByGroup(std::ostream& aOut)
 
 		unsigned int sites_per_core_base = class_num_sites/nthreads;
 		unsigned int sites_per_core_plus = class_num_sites-sites_per_core_base*nthreads;
-		if(mVerbose >= 1) std::cerr << std::setw(2) << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
+		if(mVerbose >= 1) std::cerr << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
 		for(unsigned int j=0; j < class_num_sites; ++j)
 		{
 			unsigned int site = mDependenciesClasses[k][j];
@@ -414,14 +409,46 @@ void Forest::printEffortByGroup(std::ostream& aOut)
 			{
 				idx = j/(sites_per_core_base+1);
 			}
-			core_effort[idx] += mEffort[site];
+			core_effort[idx] += aEffort[site];
 		}
 		if(mVerbose >= 1)
 		{
-			aOut << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
-			for(unsigned int i=0; i < nthreads; ++i) aOut << std::setw(4) << core_effort[i];
-			aOut << std::endl;
+			std::cerr << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
+			for(unsigned int i=0; i < nthreads; ++i) std::cerr << std::setw(4) << core_effort[i];
+			std::cerr << std::endl;
 		}
+	}
+}
+
+
+void Forest::prepareDependencies(bool aForceSerial)
+{
+	// Compute the dependencies: for each class list all sites that should be done at this level
+	groupByDependency(aForceSerial);
+
+	if(mVerbose >= 1)
+	{
+		printDependencies();
+	}
+
+	// Move sites that can be move up the hierarchy to have classes with a number of sites multiple of number of threads
+	bool done = balanceDependencies(aForceSerial);
+
+	if(done && mVerbose >= 1)
+	{
+		std::cerr << std::endl << "After balancing" << std::endl;
+		printDependencies();
+	}
+
+	/// Compute the effort (ie the number of branches+1) for each thread in each class
+	/// This should be finished
+	/// @todo Finish the intra class balancing using effort values
+	///
+	if(mVerbose >= 1)
+	{
+		std::vector<unsigned int> effort;
+		measureEffort(effort);
+		printEffortByGroup(effort);
 	}
 }
 
@@ -440,7 +467,6 @@ void Forest::groupByDependency(bool aForceSerial)
 		for(k=0; k < (unsigned int)mNumSites; ++k) v[k] = (unsigned int)mNumSites-k-1; // Remember: prior (could) point to subsequent
 
 		mDependenciesClasses.push_back(v);
-		if(mVerbose >= 1) std::cerr << std::endl << "Trees in class " << std::setw(3) << 0 << ": " << std::setw(4) << v.size() << std::endl;
 
 		return;
 	}
@@ -464,7 +490,6 @@ void Forest::groupByDependency(bool aForceSerial)
 	// Prepare the dependency list
 	mDependenciesClasses.push_back(v);
 	prev = done;
-	if(mVerbose >= 1) std::cerr << std::endl << "Trees in class " << std::setw(3) << 0 << ": " << std::setw(4) << v.size() << std::endl;
 
 	// Start to find trees with one, two, ... dependencies
 	for(unsigned int numdep=1;; ++numdep)
@@ -489,21 +514,27 @@ void Forest::groupByDependency(bool aForceSerial)
 		if(all_done) break;
 		mDependenciesClasses.push_back(v);
 		prev = done;
-		if(mVerbose >= 1) std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << v.size() << std::endl;
 	}
+}
+
+
+bool Forest::balanceDependencies(bool aForceSerial)
+{
+	// Do nothing if no dependencies
+	if(aForceSerial) return false;
 
 #ifdef _OPENMP
 	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
 	// This step makes sense only if run multithread and if there are more than one class
 	const unsigned int num_threads = omp_get_max_threads();
 	const unsigned int num_classes = mDependenciesClasses.size();
-	if(num_threads < 2 || num_classes < 2) return;
+	if(num_threads < 2 || num_classes < 2) return false;
 
 	// This set will contain the sites that can be postponed without problem
 	std::set<unsigned int> jolly_sites;
 
 	// Check if can be balanced
-	for(k=0; k < num_classes; ++k)
+	for(unsigned int k=0; k < num_classes; ++k)
 	{
 		// Can jolly sites be added?
 		// Try to have num sites at this level multiple of number of threads
@@ -563,16 +594,20 @@ void Forest::groupByDependency(bool aForceSerial)
 		mDependenciesClasses[num_classes-1].insert(mDependenciesClasses[num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
 	}
 
-	// For debug print again the site class subdivision
-	if(mVerbose >= 1)
-	{
-		std::cerr << std::endl << "After balancing" << std::endl;
-		for(unsigned int numdep=0; numdep < num_classes; ++numdep)
-		{
-			std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClasses[numdep].size() << std::endl;
-		}
-	}
+	return true;
+#else
+	return false;
 #endif
+}
+
+
+void Forest::printDependencies(void)
+{
+	const unsigned int num_classes = mDependenciesClasses.size();
+	for(unsigned int numdep=0; numdep < num_classes; ++numdep)
+	{
+		std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClasses[numdep].size() << std::endl;
+	}
 }
 
 

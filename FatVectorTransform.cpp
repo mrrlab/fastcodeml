@@ -1,4 +1,6 @@
 
+#ifdef NEW_LIKELIHOOD
+
 #include <iostream>
 #include <iomanip>
 #include <cstring>
@@ -477,3 +479,5 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 		}
 	}
 }
+
+#endif
