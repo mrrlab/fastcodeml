@@ -1,7 +1,7 @@
 
 #ifndef TRANSITIONMATRIXSET_H
 #define TRANSITIONMATRIXSET_H
-#include <iostream>
+//#include <iostream>
 
 #include <vector>
 #include "MatrixSize.h"

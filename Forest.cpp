@@ -440,10 +440,10 @@ void Forest::prepareDependencies(bool aForceSerial)
 		printDependencies();
 	}
 
-	/// Compute the effort (ie the number of branches+1) for each thread in each class
-	/// This should be finished
+	// Compute the effort (ie the number of branches+1) for each thread in each class
+	//
 	/// @todo Finish the intra class balancing using effort values
-	///
+	//
 	if(mVerbose >= 1)
 	{
 		std::vector<unsigned int> effort;

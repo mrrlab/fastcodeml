@@ -512,6 +512,22 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	{
 	case OPTIM_LD_LBFGS:
 		opt.reset(new nlopt::opt(nlopt::LD_LBFGS,   mNumTimes+mNumVariables));
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LD_VAR1:
+		opt.reset(new nlopt::opt(nlopt::LD_VAR1,   mNumTimes+mNumVariables));
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LD_VAR2:
+		opt.reset(new nlopt::opt(nlopt::LD_VAR2,   mNumTimes+mNumVariables));
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LD_TNEWTON:
+		opt.reset(new nlopt::opt(nlopt::LD_TNEWTON_PRECOND_RESTART,   mNumTimes+mNumVariables));
+		opt->set_vector_storage(20);
 		break;
 
 	case OPTIM_LN_BOBYQA:

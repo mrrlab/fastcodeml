@@ -130,11 +130,7 @@ int main(int ac, char **av)
 													std::cerr << "USE_OPENMP ";
 #endif
 #ifdef USE_MPI
-#ifdef USE_THREAD_MPI
-													std::cerr << "USE_THREAD_MPI ";
-#else
 													std::cerr << "USE_MPI ";
-#endif
 #endif
 #ifdef NEW_LIKELIHOOD
 													std::cerr << "NEW_LIKELIHOOD ";
@@ -256,18 +252,20 @@ int main(int ac, char **av)
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= 1) timer.start();
 
+	// Initialize the models
+	BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
+	BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
+
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
 	{
 		if(cmd.mVerboseLevel >= 1) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the null model maximum loglikelihood
-		BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 		double lnl0 = 0;
 		if(cmd.mComputeHypothesis != 1)	lnl0 = h0(fg_branch);
 
 		// Compute the alternate model maximum loglikelihood
-		BranchSiteModelAltHyp h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
 		double lnl1 = 0;
 		if(cmd.mComputeHypothesis != 0)
 		{

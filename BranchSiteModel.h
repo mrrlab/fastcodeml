@@ -101,8 +101,13 @@ public:
 
 	enum {
 		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
-		OPTIM_LN_BOBYQA		= 1,	///< One gradient free optimizer
-		OPTIM_LN_COBYLA		= 2,	///< Another gradient free optimizer
+		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
+		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
+		OPTIM_LD_TNEWTON	= 3,	///< Preconditioned inexact truncated Newton algorithm with restart
+
+		OPTIM_LN_BOBYQA		= 11,	///< One gradient free optimizer
+		OPTIM_LN_COBYLA		= 12,	///< Another gradient free optimizer
+
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
 

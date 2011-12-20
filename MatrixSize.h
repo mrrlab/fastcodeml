@@ -11,7 +11,7 @@ static const int N = 61;
 
 /// Number of possible codons (64)
 ///
-//static const int Nf = 64;
+static const int N64 = 64;
 
 /// Max number of possible tree traversals for each cycle (4)
 ///

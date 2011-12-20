@@ -2,6 +2,13 @@
 #ifndef BLAS_H
 #define BLAS_H
 
+#ifdef _MSC_VER
+#define ddot_ DDOT
+#define dsymv_ DSYMV
+#define dsyevr_ DSYEVR
+#define dsyrk_ DSYRK
+#endif
+
 #ifdef __cplusplus
 extern "C" { 
 #endif

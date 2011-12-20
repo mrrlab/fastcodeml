@@ -28,7 +28,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 
 #ifdef CHECK_ALGO
 	// Print the table of codon counts
-	for(k=0; k < 64; ++k)
+	for(k=0; k < N64; ++k)
 	{
 		int id = codon64to61(k);
 		if(id < 0) std::cerr << std::setw(5) << 0;
@@ -41,7 +41,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 
 	memset(fb3x4sg, 0, 12*sizeof(double));
 
-    for(k = 0; k < 64; k++)
+    for(k = 0; k < N64; k++)
     {
 		int kk = codon64to61(k);
 		if(kk < 0) continue;
@@ -68,7 +68,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 #endif
 
 	// Compute codon frequency from the 3x4 table
-	for(k=0; k < 64; ++k)
+	for(k=0; k < N64; ++k)
 	{
 		int kk = codon64to61(k);
 		if(kk < 0) continue;

@@ -334,7 +334,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
     int m;
     int info;
     int isuppz[2*N];
-    double ALIGN64 tmp_u[N*N];
+    double ALIGN64 tmp_u[N*N64];
 
 #ifndef OPTIMAL_WORKAREAS
 	// Allocate fixed workareas
@@ -357,7 +357,8 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	// Compute the optimal size of the workareas
 	double opt_work;
 	int opt_iwork;
-    dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
+    //dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
+    dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
 	if(info != 0) throw std::runtime_error("Error sizing workareas");
 
 	//Notice that LAPACK stores an integer value in a double array
@@ -376,9 +377,9 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 		std::cerr << "Optimal iwork: " << liwork << " (" << lfiwork << ")" << std::endl;
 	}
 #endif
-
     // Compute eigenvalues and eigenvectors for the full symmetric matrix
-    dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, work, &lwork, iwork, &liwork, &info);
+    //dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, work, &lwork, iwork, &liwork, &info);
+    dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, work, &lwork, iwork, &liwork, &info);
 
 #ifdef OPTIMAL_WORKAREAS
 	// Release workareas, if allocated
@@ -387,7 +388,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 #endif
 
 	// Check convergence
-	//if(info > 0) throw std::range_error("No convergence in dsyevr");
+	if(info > 0) throw std::range_error("No convergence in dsyevr");
 	//if(info < 0) throw std::invalid_argument("Invalid parameter to dsyevr");
 
 	// Reorder eigenvectors (instead the eigenvalues are stored in reverse order)
@@ -395,13 +396,14 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
     {
         for(int r=0; r < aDim; ++r)
         {
-            aU[r*aDim+c] = tmp_u[(aDim-1-c)*aDim+r];
+            //aU[r*aDim+c] = tmp_u[(aDim-1-c)*aDim+r];
+            aU[r*aDim+c] = tmp_u[(aDim-1-c)*N64+r];
         }
     }
 }
 #endif
 
-#if defined(USE_LAPACK) && defined(USE_DSYRK)
+#ifdef USE_LAPACK
 
 void TransitionMatrix::eigenQREV(void)
 {

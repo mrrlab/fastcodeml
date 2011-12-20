@@ -97,7 +97,7 @@ public:
 	{
 #ifdef USE_LAPACK
 
-		double ALIGN64 tmp[N*N];
+		double ALIGN64 tmp[N*N64]; // The rows are padded to 64 to increase performance
 		double ALIGN64 expt[N];
 
 		double tm = aT / 2.;
@@ -119,7 +119,8 @@ public:
 		{
 			for(int c=0; c < N; ++c)
 			{
-				tmp[r*N+c] = expt[c]*mV[r*N+c];
+				tmp[r*N64+c] = expt[c]*mV[r*N+c];
+				//tmp[r*N+c] = expt[c]*mV[r*N+c];
 			}
 		}
 #else
@@ -139,11 +140,13 @@ public:
 		vdExp(N, tmp, expt);
 		for(int r=0; r < N; ++r)
 		{
-			vdMul(N, expt, &mV[r*N], &tmp[r*N]);
+			vdMul(N, expt, &mV[r*N], &tmp[r*N64]);
+			//vdMul(N, expt, &mV[r*N], &tmp[r*N]);
 		}
 #endif
 
-		dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
+		dsyrk_("U", "T", &N, &N, &D1, tmp, &N64, &D0, aOut, &N);
+		//dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
 
 #else
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
