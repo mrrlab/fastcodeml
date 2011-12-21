@@ -9,9 +9,9 @@ void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const std::vector<double>& aParams)
 {
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams)
+	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams) schedule(static)
 #else
-	#pragma omp parallel for default(shared)
+	#pragma omp parallel for default(shared) schedule(static)
 #endif
 	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{
@@ -37,9 +37,9 @@ void TransitionMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 											 const std::vector<double>& aParams)
 {
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams)
+	#pragma omp parallel for default(none) shared(aFgBranch, aQw0, aQ1, aSbg, aSfg, aParams) schedule(static)
 #else
-	#pragma omp parallel for default(shared)
+	#pragma omp parallel for default(shared) schedule(static)
 #endif
 	for(int branch=0; branch < (int)mNumMatrices; ++branch)
 	{

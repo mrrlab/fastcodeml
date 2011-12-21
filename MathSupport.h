@@ -76,7 +76,7 @@ inline double dot(const double* aV1, const double* aV2)
 /// Element-wise vector-vector multiplication (specialized to 61 elements vectors)
 ///
 /// @param[in,out] aVres Vector that should be multiplied by the aV one
-/// @param[in] aV Multiplicand
+/// @param[in] aV Multiplicand (that is: for(i=0; i < N; ++i) aVres[i] *= aV[i])
 ///
 inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 {

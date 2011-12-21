@@ -29,12 +29,6 @@ public:
 	/// @todo Missing computeBEB routine. The values that are output are simulated.
 	///
 	void computeBEB(void);
-
-	/// Naive Empirical Bayes (NEB) test.
-	///
-	/// @todo Missing computeNEB routine
-	///
-	void computeNEB(void);
 	
 	/// Print the sites under positive selection.
 	///

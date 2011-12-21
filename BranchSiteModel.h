@@ -99,6 +99,12 @@ public:
 	///
 	const double* getStartingValues(void) const {return &mVar[0];}
 
+	/// Get variable values
+	///
+	/// @param[out] aVariables Vector that will be filled with the variables
+	///
+	void getVariables(std::vector<double>& aVariables) const {aVariables = mVar;}
+
 	enum {
 		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
 		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
@@ -254,7 +260,7 @@ public:
 	///
 	/// @return The log likelihood for the alternative hypothesis
 	///
-	double operator()(size_t aFgBranch, const double* aInitFromH0);
+	double operator()(size_t aFgBranch, const double* aInitFromH0=0);
 
 	/// Compute one iteration of the maximum likelihood computation for the given forest
 	///

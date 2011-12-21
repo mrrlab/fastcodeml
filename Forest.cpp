@@ -865,9 +865,9 @@ void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDou
 		const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
-		#pragma omp parallel for if(len > 3) default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods)
+		#pragma omp parallel for default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods) schedule(static)
 #else
-		#pragma omp parallel for default(shared)
+		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{
@@ -913,16 +913,7 @@ double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatr
 				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), x);
 
 				// Manual unrolling gives the best results here
-                for(int i=0; i < N-1; )
-                {
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                }
-                anode_prob[60] *= x[60];
+				elementWiseMult(anode_prob, x);
 			}
 		}
 		else
@@ -949,16 +940,7 @@ double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatr
 				}
 
 				// Manual unrolling gives the best results here
-                for(int i=0; i < N-1; )
-                {
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                        anode_prob[i] *= x[i]; ++i;
-                }
-                anode_prob[60] *= x[60];
+				elementWiseMult(anode_prob, x);
 			}
 		}
 	}
@@ -984,9 +966,9 @@ void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDou
         const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
-        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level)
+        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(static)
 #else
-        #pragma omp parallel for default(shared)
+        #pragma omp parallel for default(shared) schedule(static)
 #endif
         for(int i=0; i < len; ++i)
         {
@@ -1013,9 +995,9 @@ void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDou
     const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
-    #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods)
+    #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods) schedule(static)
 #else
-    #pragma omp parallel for default(shared)
+    #pragma omp parallel for default(shared) schedule(static)
 #endif
     for(int i=0; i < len; ++i)
     {

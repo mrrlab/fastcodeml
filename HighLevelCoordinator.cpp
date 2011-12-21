@@ -43,7 +43,8 @@ enum JobType
 enum MessageType
 {
 	MSG_WORK_REQUEST,		///< Worker asking for a new job to execute
-	MSG_NEW_JOB				///< New job from the master
+	MSG_NEW_JOB,			///< New job from the master
+	MSG_GET_RESULTS			///< Get step results from worker
 };
 
 enum JobRequestType
@@ -52,6 +53,10 @@ enum JobRequestType
 	REQ_HX_RESULT,				///< New job from the master
 	REQ_BEB_RESULT				///< New job from the master
 };
+
+// Scaling value for transforming probabilities into integers for transmission
+static const double PROB_SCALING = 1e9;
+
 
 /// Table of work to be done and intermediate results
 ///
@@ -70,7 +75,7 @@ struct HighLevelCoordinator::WorkTable
 	unsigned int mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
 	std::vector<int> mJobStatus;		///< Corresponding step status
 	std::vector<int> mWorkList;			///< Who is doing this step
-	std::vector<double> mResults;		///< LnL results from H0 and H1 (here the BEB column is here to simplify processing)
+	std::vector<double> mResults;		///< LnL results from H0 and H1 (here the BEB column contains the number of positive selection sites)
 
 	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
 	///
@@ -261,9 +266,9 @@ void HighLevelCoordinator::doMaster(void)
 {
 	// Push work to free workers
 	unsigned int num_workers = 0;
+#ifndef NEW_MPI
 	for(;;)
 	{
-#ifndef NEW_MPI
 		// Wait for a request of work packet (or the result of the previous work packet)
 		double lnl;
 		MPI_Status status;
@@ -324,13 +329,21 @@ void HighLevelCoordinator::doMaster(void)
 		//world.send(k, tag_data, s.num_atoms[job]);
 		//world.send(k, tag_data, s.coords[job]);
 		//world.send(k, tag_data, cutoff);
+	}
 #else
-		// Wait for a request of work packet (or the result of the previous work packet)
+	std::vector<double> resultsDouble;
+	std::vector<int> resultsInteger;
+	double lnl;
+
+	for(;;)
+	{
+		// Wait for a request of work packet
 		int job_request[2];
 		MPI_Status status;
 		MPI_Recv((void*)&job_request, 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
 		int worker = status.MPI_SOURCE;
 
+		// Act on the request (job_request[0] values are from the JobRequestType enum, [1] is the response length)
 		switch(job_request[0])
 		{
 		case REQ_ANNOUNCE_WORKER:
@@ -340,18 +353,15 @@ void HighLevelCoordinator::doMaster(void)
 
 		case REQ_HX_RESULT:
 			{
-			double lnl = 0;
-			// Get results
-			if(job_request[1] > 0)
-			{
-				std::vector<double> results(job_request[1]);
-				MPI_Recv((void*)&results[0], job_request[1], MPI_DOUBLE, worker, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
-				lnl = results[0];
-			}
+			// Get the variables and last the loglikelihood value
+			resultsDouble.resize(job_request[1]);
+			MPI_Recv((void*)&resultsDouble[0], job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+			lnl = resultsDouble[job_request[1]-1];
 
+			// Mark the step as done and save the results (only lnl for now)
 			int idx = mWorkTable->markJobFinished(worker);
 			int job_type = mWorkTable->getJobType(idx);
-			if(mVerbose >= 1) std::cerr << "Lnl: " << lnl << " for task: " << job_type << " from worker " << worker << std::endl;
+			if(mVerbose >= 1) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for task: " << job_type << " from worker " << worker << std::endl;
 			mWorkTable->mResults[idx] = lnl;
 			}
 			break;
@@ -361,20 +371,19 @@ void HighLevelCoordinator::doMaster(void)
 			// Get results
 			if(job_request[1] > 0)
 			{
-				std::vector<int> results(job_request[1]);
-				MPI_Recv((void*)&results[0], job_request[1], MPI_INTEGER, worker, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
+				resultsInteger.resize(job_request[1]);
+				MPI_Recv((void*)&resultsInteger[0], job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 			}
 			
 			// Look how to code and visualize the results of BEB
 			int idx = mWorkTable->markJobFinished(worker);
-			int job_type = mWorkTable->getJobType(idx);
 			if(mVerbose >= 1) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
-			mWorkTable->mResults[idx] = 0;
+			mWorkTable->mResults[idx] = (double)(job_request[1]/2);
 			}
 			break;
 		}
 
-		// Send work packet or shutdown request
+		// Send work packet or shutdown request (job[1] is the fg branch)
 		int job[2];
 		mWorkTable->getNextJob(job, worker);
 		MPI_Send((void*)job, 2, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
@@ -406,10 +415,9 @@ void HighLevelCoordinator::doMaster(void)
 			--num_workers;
 			if(mVerbose >= 1) std::cerr << "Workers remaining " << num_workers << std::endl;
 			if(num_workers == 0) break;
-			continue;
 		}
-#endif
 	}
+#endif
 
 	// Verify all jobs have been done
 	mWorkTable->checkAllJobsDone();
@@ -420,7 +428,10 @@ void HighLevelCoordinator::doMaster(void)
 	{
 		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
 					 "  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
-					 "  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1] << std::endl;
+					 "  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1];
+		int ns = (int)mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_BEB];
+		if(ns > 0) 	std::cerr << "  Pos. Sel. Sites: "   << std::setw(3) << ns;
+		std::cerr << std::endl;
 	}
 }
 
@@ -428,7 +439,6 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 {
 	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
 	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
-	const double* starting_values = 0; // for now
 
 #ifndef NEW_MPI
 	// This value signals that this is the first work request
@@ -472,21 +482,13 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			}
 			break;
 		}
-
-		// Receive all the work data
-		//std::vector<float> unit_cell;
-		//world.recv(master_process, tag_data, unit_cell);
-		//std::vector<int> num_atoms;
-		//world.recv(master_process, tag_data, num_atoms);
-		//std::vector<float> coords;
-		//world.recv(master_process, tag_data, coords);
-		//float cutoff;
-		//world.recv(master_process, tag_data, cutoff);
 	}
 #else
 	// This value signals that this is the first work request
-	double lnl = DBL_MAX;
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
+	std::vector<double> valuesDouble;
+	std::vector<int> valuesInteger;
+	MPI_Status status;
 
 	for(;;)
 	{
@@ -494,9 +496,20 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		MPI_Request request;
 		MPI_Isend((void*)&job_request, 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
 
-		// Receive the job number or the shutdown request
+		// If needed, send step results
+		switch(job_request[0])
+		{
+		case REQ_HX_RESULT:
+			MPI_Send((void*)&valuesDouble[0], job_request[1], MPI_DOUBLE, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			break;
+
+		case REQ_BEB_RESULT:
+			if(job_request[1]) MPI_Send((void*)&valuesInteger[0], job_request[1], MPI_INTEGER, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			break;
+		}
+
+		// Receive the job to execute or the shutdown request
 		int job[2];
-		MPI_Status status;
 		MPI_Recv((void*)job, 2, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
 
 		switch(job[0])
@@ -505,38 +518,59 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			return;
 
 		case JOB_H0:
-			lnl = h0(job[1]);
+			{
+			// Compute H0
+			double lnl = h0(job[1]);
+
+			// Assemble the results to be passed to the master
+			h0.getVariables(valuesDouble);
+			valuesDouble.push_back(lnl);
+			job_request[0] = REQ_HX_RESULT;
+			job_request[1] = valuesDouble.size();
+			}
 			break;
 
 		case JOB_H1:
-			lnl = h1(job[1], starting_values);
+			{
+			// Compute H1
+			double lnl = h1(job[1]);
+
+			// Assemble the results to be passed to the master
+			h1.getVariables(valuesDouble);
+			valuesDouble.push_back(lnl);
+			job_request[0] = REQ_HX_RESULT;
+			job_request[1] = valuesDouble.size();
+			}
 			break;
 
 		case JOB_BEB:
 			{
+			// Compute the BEB
 			BayesTest bt(aForest.getNumSites());
 			bt.computeBEB();
+
+			// Extract the results
 			std::vector<unsigned int> aPositiveSelSites;
 			std::vector<double> aPositiveSelSitesProb;
 			unsigned int num_sites = bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
+
+			// Assemble the results
+			job_request[0] = REQ_BEB_RESULT;
+			job_request[1] = 2*num_sites;
 			if(num_sites)
 			{
-				// Return the two vectors to master
+				// Assemble consecutive pairs (site, probability) into an array of integers
+				valuesInteger.clear();
+				for(unsigned int i=0; i < num_sites; ++i)
+				{
+					valuesInteger.push_back(aPositiveSelSites[i]);
+					int v = (int)(aPositiveSelSitesProb[i]*PROB_SCALING+0.5);
+					valuesInteger.push_back(v);
+				}
 			}
-			lnl = 0;
 			}
 			break;
 		}
-
-		// Receive all the work data
-		//std::vector<float> unit_cell;
-		//world.recv(master_process, tag_data, unit_cell);
-		//std::vector<int> num_atoms;
-		//world.recv(master_process, tag_data, num_atoms);
-		//std::vector<float> coords;
-		//world.recv(master_process, tag_data, coords);
-		//float cutoff;
-		//world.recv(master_process, tag_data, cutoff);
 	}
 #endif
 }
