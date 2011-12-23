@@ -101,6 +101,8 @@ int main(int ac, char **av)
 		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
 		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
+		else if(cmd.mInitFromConst)					std::cerr << "Times:         From tree file (rest hardcoded)" << std::endl;
+		else if(cmd.mInitH1fromH0)					std::cerr << "Times:         From H0" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
@@ -209,7 +211,7 @@ int main(int ac, char **av)
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= 1) timer.start();
-	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mOptimizationAlgo);
+	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mInitFromConst, cmd.mOptimizationAlgo);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)
@@ -253,8 +255,8 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= 1) timer.start();
 
 	// Initialize the models
-	BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
-	BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mTrace, cmd.mOptimizationAlgo);
+	BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo);
+	BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo);
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
@@ -263,15 +265,28 @@ int main(int ac, char **av)
 
 		// Compute the null model maximum loglikelihood
 		double lnl0 = 0;
-		if(cmd.mComputeHypothesis != 1)	lnl0 = h0(fg_branch);
+		if(cmd.mComputeHypothesis != 1)
+		{
+			if(cmd.mTimesFromFile) h0.initFromTree();
+			else if(cmd.mInitFromConst) h0.initFromTreeAndFixed();
+			
+			lnl0 = h0(fg_branch);
+		}
 
 		// Compute the alternate model maximum loglikelihood
 		double lnl1 = 0;
 		if(cmd.mComputeHypothesis != 0)
 		{
-			const double* starting_values = 0;
-			if(cmd.mInitH1fromH0) starting_values = h0.getStartingValues();
-			lnl1 = h1(fg_branch, starting_values);
+			if(cmd.mInitH1fromH0)
+			{
+				std::vector<double> starting_values;
+				h0.getVariables(starting_values);
+				h1.initFromResult(starting_values);
+			}
+			else if(cmd.mTimesFromFile) h1.initFromTree();
+			else if(cmd.mInitFromConst) h1.initFromTreeAndFixed();
+
+			lnl1 = h1(fg_branch);
 		}
 
 		if(cmd.mVerboseLevel >= 1)
@@ -447,4 +462,7 @@ int main(int ac, char **av)
 /// -m  --maximizer (required argument)
 ///         Optimizer algorithm (0: LD_LBFGS, 1: LN_BOBYQA, 2: LN_COBYLA)
 /// 
+/// -ic  --init-from-const (no argument)
+///        Initial branch lengths from tree file and the rest from hardcoded constants
+///
 /// @endverbatim

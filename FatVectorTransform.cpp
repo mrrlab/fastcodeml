@@ -76,9 +76,8 @@ void FatVectorTransform::printCountGoodElements(void) const
 		}
 		if(begin_idx == mNumSites)
 		{
-			char msg[128];
-			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %u", b);
-			throw FastCodeMLFatal(msg);
+			std::cerr << "No SITE_EXISTS in mNodePresent at branch: " << b << std::endl;
+			throw FastCodeMLFatalNoMsg();
 		}
 
 		size_t end_idx = mNumSites;
@@ -157,9 +156,8 @@ void FatVectorTransform::compactMatrix(void)
 		}
 		if(begin_idx == mNumSites)
 		{
-			char msg[128];
-			sprintf(msg, "No SITE_EXISTS in mNodePresent at branch: %u", b);
-			throw FastCodeMLFatal(msg);
+			std::cerr << "No SITE_EXISTS in mNodePresent at branch: " << b << std::endl;
+			throw FastCodeMLFatalNoMsg();
 		}
 
 		// Compute the last valid site (actually it points one after)

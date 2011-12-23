@@ -12,8 +12,13 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 
+#define TEST_H
+#ifdef TEST_H
+static double SMALL_DIFFERENCE;
+#else
 /// How much a variable should be changed to compute gradient
 static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
+#endif
 
 // Starting value for the maximum likelihood
 // Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -69,31 +74,108 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 }
 
 
-double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
+void BranchSiteModel::setLimits(unsigned int aNumTimes, unsigned int aNumVariables)
 {
-	unsigned int i;
-
-	// Initialize the variables to be optimized
-	if(mTimesFromTree)
+	// Reserve space
+	mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
+	
+	// Set lower constrains							// Set upper constrains
+	mLowerBound.assign(aNumTimes, 4e-6);			mUpperBound.assign(aNumTimes, 50.0);	// T
+	mLowerBound.push_back(1e-6);					mUpperBound.push_back(1.0);				// w0
+	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x0 -> p0
+	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x1 -> p1
+#else
+	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0+p1
+	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0/(p0+p1)
+#endif
+	if(aNumVariables >= 5)
 	{
-		// Initialize branch lengths from the phylo tree
-		mForest.setTimesFromLengths(mVar);
+		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2
+	}
+}
 
-		// Initialization as in CodeML (seems)
-		mVar[mNumTimes+0] = 0.235087;											// w0
-		mVar[mNumTimes+1] = 0.4;												// k
+
+void BranchSiteModel::initFromTree(void)
+{
+	// Initialize branch lengths from the phylo tree
+	mForest.setTimesFromLengths(mVar);
+
+	// Ask for initialization completion
+	mInitType = INIT_TYPE_TIMES;
+}
+
+
+void BranchSiteModel::initFromTreeAndFixed(void)
+{
+	// Initialize branch lengths from the phylo tree
+	mForest.setTimesFromLengths(mVar);
+
+	// Initialization as in CodeML (seems)
+	mVar[mNumTimes+0] = 0.235087;											// w0
+	mVar[mNumTimes+1] = 0.4;												// k
 
 #ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
-		mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
+	mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
+	mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
 #else
-		mVar[mNumTimes+2] = 0.813836;											// p0+p1
-		mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
+	mVar[mNumTimes+2] = 0.813836;											// p0+p1
+	mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
 #endif
+	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
+	{
+		mVar[mNumTimes+4] = 1.14833;										// w2
+
+		// Ask for initialization completion
+		mInitType = INIT_TYPE_RES_5;
 	}
 	else
 	{
+		// Ask for initialization completion
+		mInitType = INIT_TYPE_RES_4;
+	}
+}
+
+
+void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen)
+{
+	// Adjust the length to be copied
+	if(aValidLen == 0) aValidLen = aPreviousResult.size();
+
+	// Too long, cut. Too short, ignore. 
+	if(aValidLen > mNumTimes+mNumVariables) aValidLen = mNumTimes+mNumVariables;
+	else if(aValidLen < mNumTimes)
+	{
+		mInitType = INIT_TYPE_NONE;
+		return;
+	}
+	else if(aValidLen < mNumTimes+4) aValidLen = mNumTimes;
+
+	// Copy the requested values
+	mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+aValidLen);
+	mVar.resize(mNumTimes+mNumVariables);
+
+	// Ask for initialization completion
+	if(aValidLen == mNumTimes)        mInitType = INIT_TYPE_TIMES;
+	else if(aValidLen == mNumTimes+4) mInitType = INIT_TYPE_RES_4;
+	else                              mInitType = INIT_TYPE_RES_5;
+}
+
+
+void BranchSiteModel::initVariables(void)
+{
+	unsigned int i;
+
+	// Initialize time
+	if(mInitType == INIT_TYPE_NONE)
+	{
 		for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;	// T
+	}
+
+	// Initialize w0, k, v1, v2
+	if(mInitType == INIT_TYPE_TIMES || mInitType == INIT_TYPE_NONE)
+	{
 		mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;					// w0
 		mVar[mNumTimes+1] = 2.0;												// k
 #ifdef USE_ORIGINAL_PROPORTIONS
@@ -105,36 +187,28 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 #endif
 	}
 
-	// Set lower constrains
-	mLowerBound.assign(mNumTimes, 4e-6);	// T
-	mLowerBound.push_back(1e-6);			// w0
-	mLowerBound.push_back(0.0001);			// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mLowerBound.push_back(-99.0);			// x0 -> p0
-	mLowerBound.push_back(-99.0);			// x1 -> p1
-#else
-	mLowerBound.push_back(0.0);				// p0+p1
-	mLowerBound.push_back(0.0);				// p0/(p0+p1)
-#endif
+	// Initialize w2 if needed
+	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
+	{
+		mVar[mNumTimes+4] = 1.001 + 0.149 * rand()/(double)RAND_MAX;			// w2
+	}
 
-	// Set upper constrains
-	mUpperBound.assign(mNumTimes, 50.0);	// T
-	mUpperBound.push_back(1.0);				// w0
-	mUpperBound.push_back(20.0);			// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mUpperBound.push_back(99.0);			// x0 -> p0
-	mUpperBound.push_back(99.0);			// x1 -> p1
-#else
-	mUpperBound.push_back(1.0);				// p0+p1
-	mUpperBound.push_back(1.0);				// p0/(p0+p1)
-#endif
+	// Re-initialize the next time
+	mInitType = INIT_TYPE_NONE;
 
 	// Check the initial values are inside the domain
-	for(i=0; i < mNumTimes+4; ++i)
+	for(i=0; i < mNumTimes+mNumVariables; ++i)
 	{
 		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
+}
+
+
+double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
+{
+	// Initialize the variables to be optimized
+	initVariables();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK      = DBL_MAX;
@@ -145,81 +219,10 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 }
 
 
-double BranchSiteModelAltHyp::operator()(size_t aFgBranch, const double* aInitFromH0)
+double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 {
-	unsigned int i;
-
-	// Initialize the variables to be optimized from the H0 values
-	if(aInitFromH0)
-	{
-		mVar.assign(aInitFromH0, aInitFromH0+mNumTimes+4);
-		mVar.push_back(1.001);
-	}
-	else if(mTimesFromTree)
-	{
-		// Initialize branch lengths from the phylo tree
-		mForest.setTimesFromLengths(mVar);
-
-		// Initialization as in CodeML (seems)
-		mVar[mNumTimes+0] = 0.235087;											// w0
-		mVar[mNumTimes+1] = 0.4;												// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
-		mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
-#else
-		mVar[mNumTimes+2] = 0.813836;											// p0+p1
-		mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
-#endif
-		mVar[mNumTimes+4] = 1.14833;											// w2
-	}
-	else
-	{
-		// Initialize the variables to be optimized from random values
-		for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;		// T
-		mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;						// w0
-		mVar[mNumTimes+1] = 2.0;													// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;					// x0 -> p0
-		mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;							// x1 -> p1
-#else
-		mVar[mNumTimes+2] = rand()/(double)RAND_MAX;								// p0+p1
-		mVar[mNumTimes+3] = rand()/(double)RAND_MAX;								// p0/(p0+p1)
-#endif
-		mVar[mNumTimes+4] = 1.001;													// w2
-	}
-
-	// Set lower constrains
-	mLowerBound.assign(mNumTimes, 4e-6);	// T
-	mLowerBound.push_back(1e-6);			// w0
-	mLowerBound.push_back(0.0001);			// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mLowerBound.push_back(-99.0);			// x0 -> p0
-	mLowerBound.push_back(-99.0);			// x1 -> p1
-#else
-	mLowerBound.push_back(0.0);				// p0+p1
-	mLowerBound.push_back(0.0);				// p0/(p0+p1)
-#endif
-	mLowerBound.push_back(1.0);				// w2
-
-	// Set upper constrains
-	mUpperBound.assign(mNumTimes, 50.0);	// T
-	mUpperBound.push_back(1.0);				// w0
-	mUpperBound.push_back(20.0);			// k
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mUpperBound.push_back(99.0);			// x0 -> p0
-	mUpperBound.push_back(99.0);			// x1 -> p1
-#else
-	mUpperBound.push_back(1.0);				// p0+p1
-	mUpperBound.push_back(1.0);				// p0/(p0+p1)
-#endif
-	mUpperBound.push_back(999.0);			// w2 (in the old code is 999)
-
-	// Check the initial values are inside the domain
-	for(i=0; i < mNumTimes+5; ++i)
-	{
-		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
-		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
-	}
+	// Initialize the variables to be optimized
+	initVariables();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK      = DBL_MAX;
@@ -445,11 +448,15 @@ public:
 	void gradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		std::vector<double> x = aVars;
-		unsigned int vs = aVars.size();
+		const unsigned int vs = aVars.size();
 		for(unsigned int i=0; i < vs; ++i)
 		{
 			const double v = aVars[i];
+#ifdef USE_ORIGINAL_PROPORTIONS
 			double eh = SMALL_DIFFERENCE * (fabs(v)+1.);
+#else
+			double eh = SMALL_DIFFERENCE * (v+1.);
+#endif
 			
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
@@ -485,6 +492,12 @@ private:
 
 double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 {
+#ifdef TEST_H
+	const char *p = getenv("SMALL_DIFFERENCE_SCALE");
+	double m = 1;
+	if(p) m = atof(p);
+	SMALL_DIFFERENCE = m*sqrt(DBL_EPSILON);
+#endif
 	// Print starting values
 	if(mTrace)
 	{

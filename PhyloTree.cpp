@@ -173,7 +173,7 @@ void PhyloTree::loadTreeFile(const char *aFilename)
 	}
 
 	// Find the tree definition end
-	size_t p2 = str.rfind(";");
+	size_t p2 = str.rfind(';');
     if(p2 == std::string::npos)
 	{
 		std::cerr << "File " << aFilename << " is empty" << std::endl;
@@ -288,7 +288,7 @@ void PhyloTree::fillSpecies(TreeNode *aNode)
 
 void PhyloTree::getSpecies(std::vector<std::string>& aSpeciesList) const
 {
-	std::vector<TreeNode *>::const_iterator is=mLeavesSpecies.begin();
+	std::vector<TreeNode *>::const_iterator is = mLeavesSpecies.begin();
 	for(; is != mLeavesSpecies.end(); ++is)
 	{
 		std::string label = (*is)->getLabel();
@@ -386,7 +386,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 	if(aTreeNode == 0)
 	{
 		aTreeNode = &mTreeRoot;
-		aNodeId   = UINT_MAX;
+		aNodeId = UINT_MAX;
 		id = 0;
 		*aMarkedIntBranch = getMarkedInternalBranch();
 	}

@@ -5,9 +5,6 @@
 #include "CmdLine.h"
 #include "simpleopt/SimpleOpt.h"
 #include "Exceptions.h"
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 const char *CmdLine::getLastErrorText(CSimpleOpt& aOptParser)
 {
@@ -96,6 +93,7 @@ CmdLine::CmdLine()
 	mComputeHypothesis		= UINT_MAX;
 	mInitH1fromH0			= false;
 	mOptimizationAlgo		= 0;
+	mInitFromConst			= false;
 }
 
 
@@ -120,7 +118,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H1_FROM_H0,
-		OPT_OPTIM_ALGO
+		OPT_OPTIM_ALGO,
+		OPT_INIT_FROM_CONST
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -133,7 +132,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_HELP,				"-?",					SO_NONE,    "This help" },
 		{ OPT_HELP,				"-h",					SO_NONE,    "" },
 		{ OPT_HELP,				"--help",				SO_NONE,    "" },
-		{ OPT_SEED,				"-s",					SO_REQ_SEP, "Random number generator seed" },
+		{ OPT_SEED,				"-s",					SO_REQ_SEP, "Random number generator seed (0 < seed < 1000000000)" },
 		{ OPT_SEED,				"--seed",				SO_REQ_SEP, "" },
 		{ OPT_BRANCH,			"-b",					SO_REQ_SEP, "Do only this branch as foreground branch" },
 		{ OPT_BRANCH,			"--branch",				SO_REQ_SEP, "" },
@@ -163,6 +162,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
 		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:TNEWTON 11:BOBYQA, 12:COBYLA)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
+		{ OPT_INIT_FROM_CONST,	"-ic",					SO_NONE,	"Initial branch lengths from tree file and the rest from hardcoded constants" },
+		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -186,10 +187,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			throw FastCodeMLFatalNoMsg();
         }
 
+		int tmpi;
 		switch(args.OptionId())
 		{
 		case OPT_VERBOSE:
-			mVerboseLevel = atoi(args.OptionArg());
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid verbose level");
+			mVerboseLevel = tmpi;
 			break;
 
 		case OPT_QUIET:
@@ -203,11 +207,15 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			throw FastCodeMLSuccess();
 
 		case OPT_SEED:
-			mSeed = atoi(args.OptionArg());
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid seed value");
+			mSeed = tmpi;
 			break;
 
 		case OPT_BRANCH:
-			mBranch = atoi(args.OptionArg());
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid branch value");
+			mBranch = tmpi;
 			break;
 
 		case OPT_IGNORE_FREQ:
@@ -253,6 +261,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_ONE_HYP_ONLY:
 			mComputeHypothesis = atoi(args.OptionArg());
+			if(mComputeHypothesis != 0 && mComputeHypothesis != 1) throw FastCodeMLFatal("Invalid hypothesis specified");
 			break;
 
 		case OPT_INIT_H1_FROM_H0:
@@ -261,6 +270,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_OPTIM_ALGO:
 			mOptimizationAlgo = atoi(args.OptionArg());
+			break;
+
+		case OPT_INIT_FROM_CONST:
+			mInitFromConst = true;
 			break;
 		}
 	}
@@ -271,8 +284,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	case 0:
 		std::cerr << "Missing NEWICK TREE file" << std::endl;
 		// Falltrough
-	case 1:
 
+	case 1:
 		std::cerr << "Missing GENE file" << std::endl << std::endl;
 		std::cerr << "Usage:" << std::endl;
 		std::cerr << "    " << usage_msg << std::endl << std::endl;
@@ -291,5 +304,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
+	if(mInitFromConst) mTimesFromFile = false;
 }
 

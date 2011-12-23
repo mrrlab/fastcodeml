@@ -230,7 +230,8 @@ HighLevelCoordinator::~HighLevelCoordinator()
 }
 
 
-bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo)
+bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose, bool aNoMaximization,
+									 bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo)
 {
 	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
 	if(mSize < 3) return false;
@@ -253,7 +254,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsign
 	}
 	else
 	{
-		doWorker(aForest, aSeed, aNoMaximization, aTimesFromFile, aOptimizationAlgo);
+		doWorker(aForest, aSeed, aNoMaximization, aTimesFromFile, aInitFromConst, aOptimizationAlgo);
 	}
 
 	// All done
@@ -435,10 +436,10 @@ void HighLevelCoordinator::doMaster(void)
 	}
 }
 
-void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo)
+void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo)
 {
-	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
-	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, aTimesFromFile, false, aOptimizationAlgo);
+	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo);
+	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo);
 
 #ifndef NEW_MPI
 	// This value signals that this is the first work request
@@ -520,6 +521,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		case JOB_H0:
 			{
 			// Compute H0
+			if(aTimesFromFile) h0.initFromTree();
+			else if(aInitFromConst) h0.initFromTreeAndFixed();
 			double lnl = h0(job[1]);
 
 			// Assemble the results to be passed to the master
@@ -533,6 +536,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		case JOB_H1:
 			{
 			// Compute H1
+			if(aTimesFromFile) h1.initFromTree();
+			else if(aInitFromConst) h1.initFromTreeAndFixed();
 			double lnl = h1(job[1]);
 
 			// Assemble the results to be passed to the master

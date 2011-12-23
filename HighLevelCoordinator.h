@@ -38,11 +38,18 @@ public:
 	/// @param[in] aVerbose The verbose level
 	/// @param[in] aNoMaximization If true non likelihood maximization takes place
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
+	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
 	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
-	bool startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose=0, bool aNoMaximization=false, bool aTimesFromFile=true, unsigned int aOptimizationAlgo=0);
+	bool startWork(Forest& aForest,
+				   unsigned int aSeed,
+				   unsigned int aVerbose=0,
+				   bool aNoMaximization=false,
+				   bool aTimesFromFile=false,
+				   bool aInitFromConst=false,
+				   unsigned int aOptimizationAlgo=0);
 
 	/// Is this process the master one?
 	///
@@ -68,9 +75,10 @@ private:
 	/// @param[in] aSeed The random number generator seed 
 	/// @param[in] aNoMaximization If true non likelihood maximization takes place
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
+	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
 	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
 	///
-	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, unsigned int aOptimizationAlgo);
+	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo);
 
 
 private:
