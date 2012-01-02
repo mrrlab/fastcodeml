@@ -196,10 +196,10 @@ protected:
 
 	/// Valid values for the mInitType variable
 	enum {
-		INIT_TYPE_NONE,			///< All variable to optimize should be initialized
-		INIT_TYPE_TIMES,		///< All variable to optimize should be initialized except times
-		INIT_TYPE_RES_4,		///< All variable to optimize should be initialized except times, w0, k, v1, v2
-		INIT_TYPE_RES_5			///< All variable to ottimize have been initialized
+		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
+		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
+		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
+		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
 	};
 
 private:

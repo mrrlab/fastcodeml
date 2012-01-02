@@ -354,6 +354,7 @@ struct SimpleGlobBase
     SimpleGlobBase() {
         memset(&m_glob, 0, sizeof(m_glob));
         m_uiCurr = (size_t)-1;
+        m_bIsDir = false;
     }
 
     ~SimpleGlobBase() {

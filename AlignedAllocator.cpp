@@ -23,15 +23,15 @@ void* alignedMalloc(size_t size, size_t alignment)
 {
     uintptr_t r = (uintptr_t)malloc(size + --alignment + sizeof(uintptr_t));
     uintptr_t t = r + sizeof(uintptr_t);
-    uintptr_t o =(t + alignment) & ~(uintptr_t)alignment;
-    if (!r) return NULL;
+    uintptr_t o = (t + alignment) & ~(uintptr_t)alignment;
+    if(!r) return NULL;
     ((uintptr_t*)o)[-1] = r;
     return (void*)o;
 }
 
 void alignedFree(void* p)
 {
-    if (!p) return;
+    if(!p) return;
     free((void*)(((uintptr_t*)p)[-1]));
 }
 

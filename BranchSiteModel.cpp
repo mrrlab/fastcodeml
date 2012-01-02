@@ -12,7 +12,7 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 
-#define TEST_H
+//#define TEST_H
 #ifdef TEST_H
 static double SMALL_DIFFERENCE;
 #else
@@ -183,7 +183,7 @@ void BranchSiteModel::initVariables(void)
 		mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;						// x1 -> p1
 #else
 		mVar[mNumTimes+2] = rand()/(double)RAND_MAX;							// p0+p1
-		mVar[mNumTimes+3] =	rand()/(double)RAND_MAX;							// p0/(p0+p1)
+		mVar[mNumTimes+3] = rand()/(double)RAND_MAX;							// p0/(p0+p1)
 #endif
 	}
 
@@ -274,7 +274,7 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods);
 
-	// For all (valid) sites. Don't parallelize: time increase and the results are errant
+	// For all (valid) sites. Don't parallelize: time increases and results are errant
 	const size_t num_sites = mForest.getNumSites();
 	const double* mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
@@ -539,7 +539,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		break;
 
 	case OPTIM_LD_TNEWTON:
-		opt.reset(new nlopt::opt(nlopt::LD_TNEWTON_PRECOND_RESTART,   mNumTimes+mNumVariables));
+		//opt.reset(new nlopt::opt(nlopt::LD_TNEWTON_PRECOND_RESTART,   mNumTimes+mNumVariables));
+		//opt.reset(new nlopt::opt(nlopt::LD_MMA,   mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::LD_SLSQP,   mNumTimes+mNumVariables));
 		opt->set_vector_storage(20);
 		break;
 
@@ -548,7 +550,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		break;
 
 	case OPTIM_LN_COBYLA:
-		opt.reset(new nlopt::opt(nlopt::LN_COBYLA,  mNumTimes+mNumVariables));
+		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA,  mNumTimes+mNumVariables));
+		//opt.reset(new nlopt::opt(nlopt::LN_SBPLX,  mNumTimes+mNumVariables));
+		opt.reset(new nlopt::opt(nlopt::LN_NELDERMEAD,  mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:

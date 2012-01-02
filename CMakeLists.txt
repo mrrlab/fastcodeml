@@ -143,8 +143,8 @@ endif($ENV{HOST} MATCHES "matterhorn")
 
 if($ENV{HOST} MATCHES "julier")
 
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mkl" CACHE "Release mode linker options" STRING FORCE)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -mkl -restrict -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Release mode options" STRING FORCE)
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mkl=sequential" CACHE "Release mode linker options" STRING FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -mkl=sequential -restrict -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Release mode options" STRING FORCE)
 
 endif($ENV{HOST} MATCHES "julier")
 
