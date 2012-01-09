@@ -19,7 +19,7 @@ public:
 	{}
 };
 
-/// Fatal error in FastCodeML.
+/// Fatal error in FastCodeML with no associated message.
 /// The message explains the reason but it is not printed because a more detailed message has already been output.
 ///
 class FastCodeMLFatalNoMsg : public FastCodeMLFatal
@@ -31,7 +31,7 @@ public:
 	{}
 };
 
-/// Early termination message.
+/// Early successful termination exception.
 /// It does not signal a fatal error, but something like having printed the help.
 ///
 class FastCodeMLSuccess : public std::exception

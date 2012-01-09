@@ -94,6 +94,7 @@ CmdLine::CmdLine()
 	mInitH1fromH0			= false;
 	mOptimizationAlgo		= 0;
 	mInitFromConst			= false;
+	mDeltaValueForGradient	= 0.0; // Zero means use the default value
 }
 
 
@@ -119,7 +120,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H1_FROM_H0,
 		OPT_OPTIM_ALGO,
-		OPT_INIT_FROM_CONST
+		OPT_INIT_FROM_CONST,
+		OPT_DELTA_VAL
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -160,10 +162,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H1_FROM_H0,	"-i0",					SO_NONE,	"Start H1 optimization from H0 results" },
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
-		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:TNEWTON 11:BOBYQA, 12:COBYLA)" },
+		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_FROM_CONST,	"-ic",					SO_NONE,	"Initial branch lengths from tree file and the rest from hardcoded constants" },
 		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },
+		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
+		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -275,6 +279,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_INIT_FROM_CONST:
 			mInitFromConst = true;
 			break;
+
+		case OPT_DELTA_VAL:
+			mDeltaValueForGradient = atof(args.OptionArg());
+			if(mDeltaValueForGradient < 0.0) mDeltaValueForGradient = 0.0;
 		}
 	}
 	

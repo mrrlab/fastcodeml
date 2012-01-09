@@ -9,8 +9,9 @@
 
 #include "AlignedMalloc.h"
 
-/// Aligned allocator definition
-/// Will be used to obtain a vector aligned to e.g. 64 std::vector<double, AlignedAllocator<double, 64> > aligned_vector;
+/// Aligned allocator definition.
+/// Will be used to obtain a vector aligned to a given power of 2.
+/// Example allocation aligned to 64: std::vector<double, AlignedAllocator<double, 64> > aligned_vector;
 ///
 template <typename T, size_t A> class AlignedAllocator
 {
@@ -42,7 +43,7 @@ public:
         return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T);
     } 
 
-	/// Internal definition for AlignedAllocator
+	/// Internal definition for AlignedAllocator.
     /// The following must be the same for all allocators.
 	///
     template <typename U> struct rebind
@@ -66,6 +67,11 @@ public:
     /// Returns true if and only if storage allocated from *this
     /// can be deallocated from other, and vice versa.
     /// Always returns true for stateless allocators.
+	///
+	/// @param[in] other The other allocator to be compared
+	///
+	/// @return Always true, this is a stateless allocator.
+	///
     bool operator==(const AlignedAllocator& other) const
 	{
         return true;
@@ -143,7 +149,8 @@ private:
     /// "assignment operator could not be generated because a
     /// base class assignment operator is inaccessible" within
     /// the STL headers, but that warning is useless.
-    AlignedAllocator& operator=(const AlignedAllocator& a) {return const_cast<AlignedAllocator&>(a);}
+    AlignedAllocator& operator=(const AlignedAllocator& a) {return this;}
+    //AlignedAllocator& operator=(const AlignedAllocator& a) {return const_cast<AlignedAllocator&>(a);}
 };
 
 

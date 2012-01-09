@@ -36,7 +36,7 @@ public:
 	///
 	void printPositiveSelSites(unsigned int aFgBranch) const;
 
-	/// Extract the sites under positive selection and the corresponding probability.
+	/// Extract the sites under positive selection and the corresponding probabilities.
 	///
 	/// @param[out] aPositiveSelSites Vector of sites under positive selection
 	/// @param[out] aPositiveSelSitesProb Corresponding probabilities

@@ -37,19 +37,24 @@ public:
 	///
 	~PhyloTree();
 
-	/// Load a phylo tree definition from a Newick formatted file. Errors are signalled by exceptions.
+	/// Load a phylo tree definition from a Newick formatted file.
 	///
 	/// @param[in] aFilename The filename
 	///
+	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
+	///
 	void loadTreeFile(const char *aFilename);
 
-	/// Load a phylo tree definition from a Newick formatted string. Errors are signalled by exceptions.
+	/// Load a phylo tree definition from a Newick formatted string.
 	///
 	/// @param[in] aTreeAsString The string to be loaded
 	///
+	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
+	///
 	void loadTreeFromSting(const std::string& aTreeAsString);
 
-	/// Show the parsing error point. The output is valid only if loadTree() ends in error.
+	/// Show the parsing error point.
+	/// The output is valid only if loadTree() ends in error.
 	///
 	/// @return The text parsed so far without error
 	///
@@ -89,13 +94,14 @@ public:
 	///
 	const std::string getMarkerOnNode(unsigned int aInternalBranchIdx) const {return mInternalNodes[aInternalBranchIdx]->getType();}
 
-	/// Return the index of the first marked branch
+	/// Return the index of the first marked branch.
 	///
 	/// @return The index of the marked internal branch or UINT_MAX if none marked
 	///
 	size_t getMarkedInternalBranch(void) const;
 
-	/// Clone the tree using ForestNode. Called without aTreeNode starts from the tree root.
+	/// Clone the tree using ForestNode.
+	/// Called without aTreeNode starts from the tree root.
 	///
 	/// @param[out] aForestNode The ForestNode that becomes the root of the cloned tree
 	/// @param[in] aTreeId The tree running id.
@@ -108,7 +114,7 @@ public:
 	///
 	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
-	/// Extract global data (e.g. data that do not depend on the site) from the phylo tree
+	/// Extract global data (data that do not depend on the site) from the phylo tree.
 	///
 	/// @param[out] aNodeNames Ordered list of the node labels
 	/// @param[out] aBranchLengths Ordered list of branch lists as read from the file
@@ -125,6 +131,8 @@ private:
 	///
 	/// @param[in] aTreeIterator Tree iterator
 	/// @param[in,out] aNode Node from which the construction should continue
+	///
+	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
 	///
 	void evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNode *aNode);
 
@@ -146,6 +154,7 @@ private:
 	/// @param[in,out] aNode The tree  node (recursively called function starting from the tree root)
 	///
 	void fillInternalBranches(TreeNode *aNode);
+
 
 private:
 	std::string				mParsedPortion;		///< In case of error part of the string successfully parsed else it is empty.

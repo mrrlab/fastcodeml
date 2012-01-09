@@ -140,9 +140,8 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 		// The corresponding H0 and H1 jobs should be completed
 		if(mJobStatus[branch*JOBS_PER_BRANCH+JOB_H0] != JOB_COMPLETED || mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] != JOB_COMPLETED) continue;
 
-		// If the previous results passes the LRT, then compute the BEB
-		// LRT test: -2*(lnl0-lnl1) > 3.84
-		if(mResults[branch*JOBS_PER_BRANCH+JOB_H1] - mResults[branch*JOBS_PER_BRANCH+JOB_H0] <= 1.920729)
+		// If the previous results do not pass the LRT, then skip the BEB computation
+		if(!BranchSiteModel::performLRT(mResults[branch*JOBS_PER_BRANCH+JOB_H0], mResults[branch*JOBS_PER_BRANCH+JOB_H1]))
 		{
 			mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] = JOB_SKIP;
 			continue;
@@ -231,7 +230,7 @@ HighLevelCoordinator::~HighLevelCoordinator()
 
 
 bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose, bool aNoMaximization,
-									 bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo)
+									 bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo, double aDeltaValueForGradient)
 {
 	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
 	if(mSize < 3) return false;
@@ -254,84 +253,19 @@ bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsign
 	}
 	else
 	{
-		doWorker(aForest, aSeed, aNoMaximization, aTimesFromFile, aInitFromConst, aOptimizationAlgo);
+		doWorker(aForest, aSeed, aNoMaximization, aTimesFromFile, aInitFromConst, aOptimizationAlgo, aDeltaValueForGradient);
 	}
 
 	// All done
 	return true;
 }
 
-#define NEW_MPI
 
 void HighLevelCoordinator::doMaster(void)
 {
 	// Push work to free workers
 	unsigned int num_workers = 0;
-#ifndef NEW_MPI
-	for(;;)
-	{
-		// Wait for a request of work packet (or the result of the previous work packet)
-		double lnl;
-		MPI_Status status;
-		MPI_Recv((void*)&lnl, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
-		int worker = status.MPI_SOURCE;
 
-		// If message contains the result of a previous step, collect the results
-		if(lnl < DBL_MAX)
-		{
-			int idx = mWorkTable->markJobFinished(worker);
-			int job_type = mWorkTable->getJobType(idx);
-			if(mVerbose >= 1) std::cerr << "Lnl: " << lnl << " for task: " << job_type << " from worker " << worker << std::endl;
-			mWorkTable->mResults[idx] = lnl;
-		}
-		else
-		{
-			// This is an initial request for work
-			++num_workers;
-		}
-
-		// Send work packet or shutdown request
-		int job[2];
-		mWorkTable->getNextJob(job, worker);
-		MPI_Send((void*)job, 2, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
-		if(mVerbose >= 1)
-		{
-			switch(job[0])
-			{
-			case JOB_H0:
-				std::cerr << "Sent H0 [" << job[1] << "] to "  << worker << std::endl;
-				break;
-			case JOB_H1:
-				std::cerr << "Sent H1 [" << job[1] << "] to "  << worker << std::endl;
-				break;
-			case JOB_BEB:
-				std::cerr << "Sent BEB [" << job[1] << "] to " << worker << std::endl;
-				break;
-			case JOB_SHUTDOWN:
-				std::cerr << "Sent SHUTDOWN to "               << worker << std::endl;
-				break;
-			default:
-				std::cerr << "Sent " << job[0] << " [" << job[1] << "] to " <<  worker << std::endl;
-				break;
-			}
-		}
-
-		// If no more jobs
-		if(job[0] == JOB_SHUTDOWN)
-		{
-			--num_workers;
-			if(mVerbose >= 1) std::cerr << "Workers remaining " << num_workers << std::endl;
-			if(num_workers == 0) break;
-			continue;
-		}
-
-		// Send the work packet content
-		//world.send(k, tag_data, s.unit_cells[job]);
-		//world.send(k, tag_data, s.num_atoms[job]);
-		//world.send(k, tag_data, s.coords[job]);
-		//world.send(k, tag_data, cutoff);
-	}
-#else
 	std::vector<double> resultsDouble;
 	std::vector<int> resultsInteger;
 	double lnl;
@@ -418,7 +352,6 @@ void HighLevelCoordinator::doMaster(void)
 			if(num_workers == 0) break;
 		}
 	}
-#endif
 
 	// Verify all jobs have been done
 	mWorkTable->checkAllJobsDone();
@@ -436,55 +369,12 @@ void HighLevelCoordinator::doMaster(void)
 	}
 }
 
-void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo)
+void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst,
+									unsigned int aOptimizationAlgo, double aDeltaValueForGradient)
 {
-	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo);
-	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo);
+	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo, aDeltaValueForGradient);
+	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo, aDeltaValueForGradient);
 
-#ifndef NEW_MPI
-	// This value signals that this is the first work request
-	double lnl = DBL_MAX;
-	for(;;)
-	{
-		// Signal I'm ready for work
-		MPI_Request request;
-		MPI_Isend((void*)&lnl, 1, MPI_DOUBLE, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
-
-		// Receive the job number or the shutdown request
-		int job[2];
-		MPI_Status status;
-		MPI_Recv((void*)job, 2, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
-
-		switch(job[0])
-		{
-		case JOB_SHUTDOWN:
-			return;
-
-		case JOB_H0:
-			lnl = h0(job[1]);
-			break;
-
-		case JOB_H1:
-			lnl = h1(job[1], starting_values);
-			break;
-
-		case JOB_BEB:
-			{
-			BayesTest bt(aForest.getNumSites());
-			bt.computeBEB();
-			std::vector<unsigned int> aPositiveSelSites;
-			std::vector<double> aPositiveSelSitesProb;
-			unsigned int num_sites = bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
-			if(num_sites)
-			{
-				// Return the two vectors to master
-			}
-			lnl = 0;
-			}
-			break;
-		}
-	}
-#else
 	// This value signals that this is the first work request
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
 	std::vector<double> valuesDouble;
@@ -577,7 +467,6 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			break;
 		}
 	}
-#endif
 }
 
 

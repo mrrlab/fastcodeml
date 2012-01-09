@@ -12,14 +12,6 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 
-//#define TEST_H
-#ifdef TEST_H
-static double SMALL_DIFFERENCE;
-#else
-/// How much a variable should be changed to compute gradient
-static const double SMALL_DIFFERENCE = sqrt(DBL_EPSILON);
-#endif
-
 // Starting value for the maximum likelihood
 // Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
 static const double VERY_LOW_LIKELIHOOD = -1e14;
@@ -417,9 +409,10 @@ public:
 	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
 	/// @param[in] aTrace If set the optimization progress is traced
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
+	/// @param[in] aDeltaForGradient The variable increment to compute gradient
 	///
-	MaximizerFunction(BranchSiteModel* aModel, unsigned int aFgBranch, bool aTrace, std::vector<double>& aUpper)
-					: mModel(aModel), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper) {}
+	MaximizerFunction(BranchSiteModel* aModel, unsigned int aFgBranch, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient)
+					: mModel(aModel), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient) {}
 
 	/// Functor.
 	/// It computes the function and the gradient if needed.
@@ -452,10 +445,11 @@ public:
 		for(unsigned int i=0; i < vs; ++i)
 		{
 			const double v = aVars[i];
+
 #ifdef USE_ORIGINAL_PROPORTIONS
-			double eh = SMALL_DIFFERENCE * (fabs(v)+1.);
+			double eh = mDeltaForGradient * (fabs(v)+1.);
 #else
-			double eh = SMALL_DIFFERENCE * (v+1.);
+			double eh = mDeltaForGradient * (v+1.);
 #endif
 			
 			x[i] += eh;
@@ -483,21 +477,16 @@ public:
 	}
 
 private:
-	BranchSiteModel*	mModel;		///< Pointer to the model to be evaluated
-	unsigned int		mFgBranch;	///< Branch number of the foreground branch
-	bool				mTrace;		///< If set traces the optimization progresses
-	std::vector<double>	mUpper;		///< Upper limit of the variables to constrain the interval on which the gradient should be computed
+	BranchSiteModel*	mModel;				///< Pointer to the model to be evaluated
+	unsigned int		mFgBranch;			///< Branch number of the foreground branch
+	bool				mTrace;				///< If set traces the optimization progresses
+	std::vector<double>	mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
+	double				mDeltaForGradient;	///< The variable increment to compute gradient
 };
 
 
 double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 {
-#ifdef TEST_H
-	const char *p = getenv("SMALL_DIFFERENCE_SCALE");
-	double m = 1;
-	if(p) m = atof(p);
-	SMALL_DIFFERENCE = m*sqrt(DBL_EPSILON);
-#endif
 	// Print starting values
 	if(mTrace)
 	{
@@ -519,7 +508,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	// If only the initial step is requested, do it and return
 	if(mOnlyInitialStep) return computeLikelihood(aFgBranch, mVar, mTrace);
 
-	// Select the maximizer algorithm
+	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
 	std::auto_ptr<nlopt::opt> opt;
 	switch(mOptAlgo)
 	{
@@ -538,21 +527,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		opt->set_vector_storage(20);
 		break;
 
-	case OPTIM_LD_TNEWTON:
-		//opt.reset(new nlopt::opt(nlopt::LD_TNEWTON_PRECOND_RESTART,   mNumTimes+mNumVariables));
-		//opt.reset(new nlopt::opt(nlopt::LD_MMA,   mNumTimes+mNumVariables));
+	case OPTIM_LD_SLSQP:
 		opt.reset(new nlopt::opt(nlopt::LD_SLSQP,   mNumTimes+mNumVariables));
 		opt->set_vector_storage(20);
 		break;
 
 	case OPTIM_LN_BOBYQA:
 		opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,  mNumTimes+mNumVariables));
-		break;
-
-	case OPTIM_LN_COBYLA:
-		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA,  mNumTimes+mNumVariables));
-		//opt.reset(new nlopt::opt(nlopt::LN_SBPLX,  mNumTimes+mNumVariables));
-		opt.reset(new nlopt::opt(nlopt::LN_NELDERMEAD,  mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:
@@ -567,14 +548,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		}
 		break;
 
-	//	opt = new nlopt::opt(nlopt::GN_DIRECT_L, mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::GN_ISRES,    mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::LN_SBPLX,    mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::LD_MMA,      mNumTimes+mNumVariables);
-	//	opt = new nlopt::opt(nlopt::LD_SLSQP,    mNumTimes+mNumVariables);
-
 	default:
-		throw FastCodeMLFatal("Invalid optimization algorithm");
+		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line");
 	}
 
 	// Initialize bounds and termination criteria
@@ -595,7 +570,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	double maxl = 0;
 	try
 	{
-		MaximizerFunction compute(this, aFgBranch, mTrace, mUpperBound);
+		MaximizerFunction compute(this, aFgBranch, mTrace, mUpperBound, mDeltaForGradient);
 
 		opt->set_max_objective(MaximizerFunction::wrap, &compute);
 

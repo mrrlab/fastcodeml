@@ -29,6 +29,7 @@ public:
 	/// @param[in] aOnlyInitialStep Compute only the first step, no optimization involved
 	/// @param[in] aTrace If set print a trace of the maximization process
 	/// @param[in] aOptAlgo Maximization algorithm to be used
+	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
 	BranchSiteModel(Forest& aForest,
 					size_t aNumBranches,
@@ -37,7 +38,8 @@ public:
 					unsigned int aNumVariables,
 					bool aOnlyInitialStep,
 					bool aTrace,
-					unsigned int aOptAlgo=0)
+					unsigned int aOptAlgo,
+					double aDeltaValueForGradient)
 		: mForest(aForest),
 		  mNumTimes(aNumBranches),
 		  mNumVariables(aNumVariables),
@@ -47,6 +49,7 @@ public:
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
 		  mInitType(INIT_TYPE_NONE),
+		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
 		  mSeed(aSeed)
 	{
 		mVar.resize(mNumTimes+mNumVariables);
@@ -77,7 +80,7 @@ public:
 	///
 	double maximizeLikelihood(size_t aFgBranch);
 
-	/// Compute one iteration of the maximum likelihood computation for the given forest
+	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
@@ -93,15 +96,25 @@ public:
 	///
 	void getVariables(std::vector<double>& aVariables) const {aVariables = mVar;}
 
-	/// Valid values for the optimization algorithm
-	enum {
+	/// Perform the Likelihood Ratio Test.
+	/// LRT test: -2*(lnl0-lnl1) > chisq(.95, df=1)
+	///
+	/// @param[in] aLnL0 Max LogLikelihood for H0
+	/// @param[in] aLnL1 Max LogLikelihood for H1
+	///
+	///	@return True if the test is passed
+	///
+	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > 1.92072941;}
+
+	/// Valid values (on the command line) for the optimization algorithm
+	enum OptimAlgoIdentifier
+	{
 		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
 		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
 		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
-		OPTIM_LD_TNEWTON	= 3,	///< Preconditioned inexact truncated Newton algorithm with restart
+		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
 
-		OPTIM_LN_BOBYQA		= 11,	///< One gradient free optimizer
-		OPTIM_LN_COBYLA		= 12,	///< Another gradient free optimizer
+		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
@@ -138,7 +151,7 @@ protected:
 	/// @param[in] aFirst First number to compare
 	/// @param[in] aSecond Second term to compare
 	///
-	/// @return True if the two parameters differs more than TOL
+	/// @return True if the two parameters differs more than (hardcoded) TOL
 	///
 	static bool isDifferent(double aFirst, double aSecond)
 	{
@@ -146,6 +159,7 @@ protected:
 		const double diff = aFirst - aSecond;
 		return (diff > TOL || diff < -TOL);
 	}
+
 
 private:
 	/// Set upper and lower limits for the maximization domain
@@ -179,8 +193,18 @@ public:
 	void initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen=0);
 
 protected:
+	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
+	enum InitVarStatus
+	{
+		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
+		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
+		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
+		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
+	};
+
+protected:
 	Forest&						mForest;			///< The forest to be used
-	unsigned int				mNumTimes;			///< Number of branch lengths
+	unsigned int				mNumTimes;			///< Number of branch lengths values
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
 	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
@@ -192,19 +216,14 @@ protected:
 	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
 	bool						mTrace;				///< Enable maximization tracing
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
-	unsigned int				mInitType;			///< From where the variables have been initialized
-
-	/// Valid values for the mInitType variable
-	enum {
-		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
-		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
-		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
-		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
-	};
+	InitVarStatus				mInitType;			///< From where the variables have been initialized
+	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
 
 private:
-	unsigned int				mSeed;				///< Random number generator seed to be passed to the optimizer
+	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
 };
+
+
 
 /// Null Hypothesis test.
 ///
@@ -223,19 +242,20 @@ public:
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTrace If set the maximization is traced
 	/// @param[in] aOptAlgo The optimization algorithm to use
+	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
-	BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTrace, aOptAlgo), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+	BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
 	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
 	///
-	/// @return The log likelihood for the null hypothesis
+	/// @return The log likelihood under the null hypothesis
 	///
 	double operator()(size_t aFgBranch);
 
-	/// Compute one iteration of the maximum likelihood computation for the given forest
+	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
@@ -275,19 +295,20 @@ public:
 	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
 	/// @param[in] aTrace If set the maximization is traced
 	/// @param[in] aOptAlgo The optimization algorithm to use
+	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
-	BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTrace, aOptAlgo), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+	BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///
 	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
 	///
-	/// @return The log likelihood for the alternative hypothesis
+	/// @return The log likelihood under the alternative hypothesis
 	///
 	double operator()(size_t aFgBranch);
 
-	/// Compute one iteration of the maximum likelihood computation for the given forest
+	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables

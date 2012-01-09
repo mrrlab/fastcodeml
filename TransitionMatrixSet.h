@@ -16,7 +16,7 @@
 #include <mkl_vml_functions.h>
 #endif
 
-/// Routines that manage the set of transition matrices for all branches of a tree.
+/// Set of transition matrices for all branches of a tree.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-04-05 (initial version)

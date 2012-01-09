@@ -7,7 +7,7 @@
 #include <map>
 #include "MatrixSize.h"
 
-/// The gene for the set of species under analysis.
+/// The genes of the set of species under analysis.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-22 (initial version)

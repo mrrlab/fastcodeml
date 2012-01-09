@@ -9,7 +9,7 @@
 ///
 static const int MASTER_JOB = 0;
 
-/// Coordinator class for high level parallization.
+/// Coordinator class for high level parallelization.
 /// This class encapsulates MPI usage to parallelize FastCodeML above the maximizer level
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -40,6 +40,7 @@ public:
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
 	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
 	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
+	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
@@ -49,7 +50,8 @@ public:
 				   bool aNoMaximization=false,
 				   bool aTimesFromFile=false,
 				   bool aInitFromConst=false,
-				   unsigned int aOptimizationAlgo=0);
+				   unsigned int aOptimizationAlgo=0,
+				   double aDeltaValueForGradient=0.0);
 
 	/// Is this process the master one?
 	///
@@ -57,7 +59,7 @@ public:
 	///
 	bool isMaster(void) const {return mRank == MASTER_JOB;}
 
-	/// Return the number of MPI processes
+	/// Return the number of MPI processes.
 	///
 	/// @return The number of MPI processes
 	///
@@ -77,8 +79,9 @@ private:
 	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
 	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
 	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
+	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
-	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo);
+	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo, double aDeltaValueForGradient);
 
 
 private:

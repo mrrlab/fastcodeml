@@ -27,6 +27,7 @@ public:
 
 
 public:
+	double			mDeltaValueForGradient;	///< The variable increment to compute gradient
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)

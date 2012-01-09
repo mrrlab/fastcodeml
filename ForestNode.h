@@ -173,6 +173,8 @@ struct ForestNode
 
 	/// Placement new required by PGI compiler
 	///
+	/// @fn void* operator new(std::size_t aSize, ForestNode* aHere)
+	///
 	/// @param[in] aSize Requested size (ignored)
 	/// @param[in] aHere Where the placement new should go
 	///
@@ -184,6 +186,8 @@ struct ForestNode
 	}
 
 	/// Placement delete required by PGI compiler
+	///
+	/// @fn void operator delete(void* aPtr, ForestNode* aHere)
 	///
 	/// @param[in] aPtr Pointer to the memory area to be released (ignored)
 	/// @param[in] aHere Where the placement new should go (ignored)

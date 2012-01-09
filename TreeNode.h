@@ -6,7 +6,7 @@
 #include <vector>
 #include "MatrixSize.h"
 
-/// Internal representation of the Phylogenetic tree
+/// Phylogenetic tree node representation 
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-08-31 (initial version)

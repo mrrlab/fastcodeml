@@ -132,7 +132,7 @@ public:
 	///
 	void preCompactLeaves(CacheAlignedDoubleVector& aProbs);
 
-	/// Compact the fat vector at a certain level in the tree (TBD)
+	/// Compact the fat vector at a certain level in the tree
 	///
 	void postCompact(CacheAlignedDoubleVector& aStepResults, CacheAlignedDoubleVector& aProbs, unsigned int aLevel, unsigned int aNumSets);
 
@@ -140,13 +140,14 @@ public:
 private:
 	unsigned int			mNumSites;				///< The number of valid sites.
 	unsigned int			mNumBranches;			///< The number of branches.
-	std::vector<int>		mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are:
-													///< - SITE_EXISTS if the corresponding: (Branch, Site) exists
-													///< - SITE_NOT_EXISTS if doesn't exist
-													///< - The site number from which the value is taken (reused)
-	enum {
+	std::vector<int>		mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are as in BranchSitePositionStatus enum
+
+	/// The values that mNodePresent array could take
+	///
+	enum BranchSitePositionStatus
+	{
 		SITE_EXISTS     = -2,						///< The position (Branch, Site) in mNodePresent exists
-		SITE_NOT_EXISTS = -1,						///< The position (Branch, Site) in mNodePresent refers to a not existend node
+		SITE_NOT_EXISTS = -1,						///< The position (Branch, Site) in mNodePresent refers to a not existent node
 		SITE_FIRST_NUM  =  0						///< if greather or equal to this value the position contains the index from which the value should be copied
 	};
 
@@ -173,9 +174,10 @@ private:
 		///
 		RangeNoCnt(unsigned int aFrom, unsigned int aTo) {from = aFrom; to = aTo;}
 
-		unsigned int from;		///< Starting index from which to copy
-		unsigned int to;		///< Starting index to which the values should be copied
+		unsigned int from;		///< Index from which to copy
+		unsigned int to;		///< Index to which the value should be copied
 	};
+
 	typedef std::vector<Range> VectorOfRanges;									///< Vector of ranges (from position, to position, number of items)
 	typedef std::vector<VectorOfRanges> VectorOfVectorOfRanges;					///< Vector of vectors of ranges
 	typedef std::vector<RangeNoCnt> VectorOfRangesNoCnt;						///< Vector of single item copy (from position, to position)

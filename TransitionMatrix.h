@@ -194,8 +194,8 @@ private:
 
 
 private:
-	/// Order suggested by icc to improve locality
-	/// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
+	// Order suggested by icc to improve locality
+	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
 	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
