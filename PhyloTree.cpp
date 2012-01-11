@@ -181,11 +181,11 @@ void PhyloTree::loadTreeFile(const char *aFilename)
 	}
 
 	// Pass the tree part to the parser
-	loadTreeFromSting(str.substr(p1, p2-p1+1));
+	loadTreeFromString(str.substr(p1, p2-p1+1));
 }
 
 
-void PhyloTree::loadTreeFromSting(const std::string& aTreeAsString)
+void PhyloTree::loadTreeFromString(const std::string& aTreeAsString)
 {
 	// Clear the tree and initialize the parser
 	mTreeRoot.clearNode();

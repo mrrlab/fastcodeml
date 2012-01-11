@@ -18,6 +18,7 @@ set(SRCS
 	CodonFrequencies.cpp
 	AlignedAllocator.cpp
 	HighLevelCoordinator.cpp
+	CodeMLoptimizer.cpp
 )
 
 

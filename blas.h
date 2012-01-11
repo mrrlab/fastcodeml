@@ -403,10 +403,20 @@ double ddot_(const int *n,
 				const double *dy,
 				const int *incy);
 
-//double dnrm2_(const int *n,
-//				const double *dx,
-//				const int *incx);
-//
+/// Computes the Euclidean norm of a vector.
+/// 
+/// DNRM2 computes the Euclidean (L2) norm of a double precision real vector
+///
+/// @param[in]      n  Number of elements in the operand vector.
+/// @param[in]      x  Array of dimension (n-1) * |incx| + 1. Array x contains the operand vector.
+/// @param[in]      incx  Increment between elements of x.
+/// 
+/// @return Resulting Euclidean norm.
+/// 
+double dnrm2_(const int *n,
+				const double *dx,
+				const int *incx);
+
 
 /// Scales a double precision vector.
 ///

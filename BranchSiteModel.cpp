@@ -11,6 +11,7 @@
 #include "BranchSiteModel.h"
 #include "MathSupport.h"
 #include "Exceptions.h"
+#include "CodeMLoptimizer.h"
 
 // Starting value for the maximum likelihood
 // Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -24,7 +25,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 	std::cerr.setf(std::ios::fixed);
 
 	// Write the LnL value (if set)
-	if(aLnl != DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
+	if(aLnl < DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
 
 	// Print all the variables
 	std::vector<double>::const_iterator ix;
@@ -191,8 +192,8 @@ void BranchSiteModel::initVariables(void)
 	// Check the initial values are inside the domain
 	for(i=0; i < mNumTimes+mNumVariables; ++i)
 	{
-		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
-		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
+		if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
+		if(mVar[i] >= mUpperBound[i]) mVar[i] = mUpperBound[i]*0.9;
 	}
 }
 
@@ -411,7 +412,11 @@ public:
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
 	/// @param[in] aDeltaForGradient The variable increment to compute gradient
 	///
-	MaximizerFunction(BranchSiteModel* aModel, unsigned int aFgBranch, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient)
+	MaximizerFunction(BranchSiteModel* aModel,
+					  unsigned int aFgBranch,
+					  bool aTrace,
+					  const std::vector<double>& aUpper,
+					  double aDeltaForGradient)
 					: mModel(aModel), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient) {}
 
 	/// Functor.
@@ -451,7 +456,7 @@ public:
 #else
 			double eh = mDeltaForGradient * (v+1.);
 #endif
-			
+
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
 
@@ -507,6 +512,32 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 
 	// If only the initial step is requested, do it and return
 	if(mOnlyInitialStep) return computeLikelihood(aFgBranch, mVar, mTrace);
+
+	// Special case for the CodeML optimizer
+	if(mOptAlgo == OPTIM_LD_MING2)
+	{
+		try
+		{
+			// Create the optimizer
+			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient);
+
+			// Do the maximization
+			double maxl = optim.minimizeFunction(aFgBranch, mVar);
+			
+			if(mTrace)
+			{
+				std::cerr << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+				std::cerr <<              "Final log-likelihood value: " << maxl << std::endl;
+				printVar(mVar);
+			}
+			return maxl;
+		}
+		catch(std::exception& e)
+		{
+			std::cerr << "Exception in computation: " << e.what() << std::endl;
+			throw FastCodeMLFatalNoMsg();
+		}
+	}
 
 	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
 	std::auto_ptr<nlopt::opt> opt;

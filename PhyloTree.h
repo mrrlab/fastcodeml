@@ -51,7 +51,7 @@ public:
 	///
 	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
 	///
-	void loadTreeFromSting(const std::string& aTreeAsString);
+	void loadTreeFromString(const std::string& aTreeAsString);
 
 	/// Show the parsing error point.
 	/// The output is valid only if loadTree() ends in error.
