@@ -162,7 +162,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H1_FROM_H0,	"-i0",					SO_NONE,	"Start H1 optimization from H0 results" },
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
-		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA)" },
+		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_FROM_CONST,	"-ic",					SO_NONE,	"Initial branch lengths from tree file and the rest from hardcoded constants" },
 		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },

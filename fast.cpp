@@ -464,7 +464,7 @@ int main(int ac, char **av)
             Start H1 optimization from H0 results
 
     -m  --maximizer (required argument)
-            Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA)
+            Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)
 
     -ic  --init-from-const (no argument)
            Initial branch lengths from tree file and the rest from
