@@ -45,7 +45,7 @@ void BayesTest::computeBEB(void)
 	}
 }
 
-void BayesTest::printPositiveSelSites(unsigned int aFgBranch) const
+void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 {
 	bool print_title = true;
 
@@ -70,7 +70,7 @@ void BayesTest::printPositiveSelSites(unsigned int aFgBranch) const
 }
 
 
-unsigned int BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const
+void BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const
 {
 	// Prepare the output vectors
 	aPositiveSelSites.clear();
@@ -87,6 +87,4 @@ unsigned int BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPosi
 			aPositiveSelSitesProb.push_back(prob);
 		}
 	}
-
-	return aPositiveSelSites.size();
 }

@@ -447,7 +447,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			// Extract the results
 			std::vector<unsigned int> aPositiveSelSites;
 			std::vector<double> aPositiveSelSitesProb;
-			unsigned int num_sites = bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
+			bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
+			unsigned int num_sites = aPositiveSelSites.size();
 
 			// Assemble the results
 			job_request[0] = REQ_BEB_RESULT;

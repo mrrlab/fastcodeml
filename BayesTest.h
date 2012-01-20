@@ -34,20 +34,18 @@ public:
 	///
 	/// @param[in] aFgBranch Identifier of the branch marked as foreground branch
 	///
-	void printPositiveSelSites(unsigned int aFgBranch) const;
+	void printPositiveSelSites(size_t aFgBranch) const;
 
 	/// Extract the sites under positive selection and the corresponding probabilities.
 	///
 	/// @param[out] aPositiveSelSites Vector of sites under positive selection
 	/// @param[out] aPositiveSelSitesProb Corresponding probabilities
 	///
-	/// @return The number of returned sites
-	///
-	unsigned int extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const;
+	void extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const;
 
 private:
 	std::vector<double> mSiteClassProb;		///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
-	unsigned int mNumSites;					///< Number of sites.
+	size_t				mNumSites;			///< Number of sites.
 };
 
 #endif
