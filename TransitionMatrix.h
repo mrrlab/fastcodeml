@@ -18,6 +18,9 @@
 #include "blas.h"
 #endif
 
+// Uncomment to enable various check routines
+//#define CHECK_ALGO
+
 /// The transition matrix plus its eigen decomposition.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)

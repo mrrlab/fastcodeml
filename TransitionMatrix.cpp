@@ -473,10 +473,10 @@ void TransitionMatrix::eigenQREV(void)
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mNumGoodFreq and mV is used as workarea
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
-		// Construct D
+		// Construct D (D is stored in reverse order)
         for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
-            mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
+            mD[i] = mGoodFreq[N-1-i] ? mD[inew--] : 0.;
         }
 
 		// Construct R
@@ -585,10 +585,10 @@ void TransitionMatrix::eigenQREV(void)
 
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
-		// Construct D
+		// Construct D (D is stored in reverse order)
         for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
         {
-            mD[i] = mGoodFreq[i] ? mD[inew--] : 0.;
+            mD[i] = mGoodFreq[N-1-i] ? mD[inew--] : 0.;
         }
 
 		// Construct V
@@ -646,6 +646,10 @@ void TransitionMatrix::eigenQREV(void)
 	{
 		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
 	}
+#ifdef CHECK_ALGO
+	std::cerr << "*=*=*=* Check eigen" << std::endl;
+	checkEigen(true);
+#endif
 }
 #endif
 
@@ -654,7 +658,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 {
 	int i, j, k;
 	int m = (N < 7) ? N : 7; // How many elements to print
-	static const double EPS = 1e-14;
+	static const double EPS = 1e-15;
 
 	double tmp[N*N];
 	double x;
@@ -672,7 +676,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		}
 	}
 
-	std::cerr << "RMS UV:  " << sqrt(rms/(N*N)) << std::endl;
+	std::cerr << "RMS UV:  " << std::scientific << sqrt(rms/(N*N)) << std::endl;
 
 	if(aFull)
 	{
@@ -703,7 +707,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 			rms += (x-mQ[i*N+j])*(x-mQ[i*N+j]);
 		}
 	}
-	std::cerr << "RMS UDV: " << sqrt(rms/(N*N)) << std::endl;
+	std::cerr << "RMS UDV: " << std::scientific << sqrt(rms/(N*N)) << std::endl;
 
 	if(aFull)
 	{

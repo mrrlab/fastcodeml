@@ -22,7 +22,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 {
 	// Write the data with an uniform precision
 	std::streamsize prec = std::cerr.precision(7);
-	std::cerr.setf(std::ios::fixed);
+	std::cerr.setf(std::ios::fixed, std::ios::floatfield);
 
 	// Write the LnL value (if set)
 	if(aLnl < DBL_MAX) std::cerr << std::endl << aLnl << std::endl;

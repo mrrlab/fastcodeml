@@ -63,7 +63,7 @@ static const int MAX_ITERATIONS=10000;
 
 double Ming2::minimizeFunction(unsigned int aFgBranch, std::vector<double>& aVars)
 {
-	unsigned int np = aVars.size();
+	int np = (int)aVars.size();
 	std::vector<double> space(np*(np*2+9+2));
 	std::vector<int> ispace(2*np);
 	const double e = 1e-8;
