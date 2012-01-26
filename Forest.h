@@ -17,7 +17,6 @@
 #ifdef NEW_LIKELIHOOD
 #include "FatVectorTransform.h"
 #endif
-#include "AlignedAllocator.h"
 #include "CodonFrequencies.h"
 #include "Types.h"
 

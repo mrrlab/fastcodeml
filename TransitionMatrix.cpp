@@ -5,6 +5,10 @@
 #include <iostream>
 #include <iomanip>
 #include "MatrixSize.h"
+
+// Uncomment to enable various check routines
+//#define CHECK_ALGO
+
 #include "TransitionMatrix.h"
 
 // Now the size of the workareas for DSYEVR are hardcoded.
@@ -541,9 +545,14 @@ void TransitionMatrix::eigenQREV(void)
                 mU[i*N + j] = mU[j*N + i] = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
 			}
 		}
-
+#ifdef CHECK_ALGO
+double z[N*N]; memcpy(z, mU, N*N*sizeof(double));
+#endif
         eigenRealSymm(mU, N, mD, mV);
 
+#ifdef CHECK_ALGO
+checkReducedEigen(N, z, true);
+#endif
         for(i=0; i < N; ++i)
 		{
             for(j=0; j < N; ++j)
@@ -583,7 +592,14 @@ void TransitionMatrix::eigenQREV(void)
             }
         }
 
+#ifdef CHECK_ALGO
+double z[N*N]; memcpy(z, mU, mNumGoodFreq*mNumGoodFreq*sizeof(double));
+#endif
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
+
+#ifdef CHECK_ALGO
+checkReducedEigen(mNumGoodFreq, z, true);
+#endif
 
 		// Construct D (D is stored in reverse order)
         for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
@@ -654,11 +670,222 @@ void TransitionMatrix::eigenQREV(void)
 #endif
 
 #ifdef CHECK_ALGO
+void TransitionMatrix::checkReducedEigen(int aDim, const double* aPrev, bool aFull) const
+{
+	int i, j, k;
+	int m = (N < 7) ? N : 7; // How many elements to print
+	static const double EPS = 1e-14;
+
+	double tmp[N*N];
+	double x;
+	double rms = 0;
+	for(i=0; i < aDim; ++i)
+	{
+		for(j=0; j < aDim; ++j)
+		{
+			x = 0.;
+			for(k=0; k < aDim; ++k) x += mU[i*aDim+k]*mU[j*aDim+k];
+			tmp[i*aDim+j] = (i == j) ? x-1 : x;
+
+			if(i == j) rms += (x-1.)*(x-1.);
+			else       rms += x*x;
+		}
+	}
+
+	std::cerr << "----------------------------------------------------------------------------------------" << std::endl;
+	std::cerr << "RMS UV (reduced):  " << std::scientific << sqrt(rms)/aDim << std::endl;
+
+	if(aFull)
+	{
+		std::cerr.precision(4);
+		for(i=0; i < m; ++i)
+		{
+			for(j=0; j < m; ++j)
+			{
+				if(fabs(tmp[i*aDim+j]) < EPS)
+					std::cerr << std::setw(12) << 0 << ' ';
+				else
+					std::cerr << std::setw(12) << tmp[i*aDim+j] << ' ';
+			}
+			std::cerr << std::endl;
+		}
+		std::cerr << std::endl;
+	}
+
+	rms = 0;
+	for(i=0; i < aDim; ++i)
+	{
+		for(j=0; j < aDim; ++j)
+		{
+			x = 0.;
+			for(k=0; k < aDim; ++k) x += mU[i*aDim+k]*mU[j*aDim+k]*mD[aDim-1-k];
+			tmp[i*aDim+j] = (mGoodFreq[j] && mGoodFreq[i]) ? x-aPrev[i*aDim+j] : 0;
+			rms += tmp[i*aDim+j]*tmp[i*aDim+j];
+		}
+	}
+	std::cerr << "RMS UDV (reduced): " << std::scientific << sqrt(rms)/aDim << std::endl;
+
+	if(aFull)
+	{
+		std::cerr.precision(4);
+		for(i=0; i < m; ++i)
+		{
+			for(j=0; j < m; ++j)
+			{
+				if(fabs(tmp[i*aDim+j]) < EPS)
+					std::cerr << std::setw(12) << 0 << ' ';
+				else
+					std::cerr << std::setw(12) << tmp[i*aDim+j] << ' ';
+			}
+			std::cerr << std::endl;
+		}
+		std::cerr << std::endl;
+	}
+
+	x = 0.;
+	i = 0;
+	for(j=0; j < aDim; ++j)
+	{
+		x += mD[j]*mD[j];
+		if(mD[j] > EPS || mD[j] < -EPS) ++i;
+	}
+	std::cerr << "D len (reduced): " << sqrt(x) << " total " << aDim << " non null: " << i << std::endl;
+
+	// Try to expand the reduced input matrix
+	double q[N*N], d[N], u[N*N], v[N*N];
+	int inew, jnew;
+
+    for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i) //row
+    {
+        if(mGoodFreq[i])
+        {
+            for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                if(mGoodFreq[j])
+                {
+                    q[i*N + j] = aPrev[inew*mNumGoodFreq + jnew];
+                    --jnew;
+                }
+                else
+                {
+                    q[i*N + j] = 0.;
+                }
+
+            --inew;
+        }
+        else
+            for(j=0; j < N; ++j)
+            {
+                q[i*N + j] = 0.;
+            }
+    }
+	
+	// Construct D (D is stored in reverse order)
+    for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
+    {
+        d[i] = mGoodFreq[N-1-i] ? mD[inew--] : 0.;
+    }
+
+	// Construct V
+    for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
+    {
+        if(mGoodFreq[i])
+        {
+            for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                if(mGoodFreq[j])
+                {
+                    v[i*N + j] = mU[jnew*mNumGoodFreq + inew];
+                    --jnew;
+                }
+                else
+                {
+                    v[i*N + j] = (i == j) ? 1. : 0.;
+                }
+
+            --inew;
+        }
+        else
+            for(j=0; j < N; ++j)
+            {
+                v[i*N + j] = (i == j) ? 1. : 0.;
+            }
+    }
+
+	// Construct U
+    for(i=N-1, inew=mNumGoodFreq-1; i >= 0; --i)
+    {
+        if(mGoodFreq[i])
+        {
+            for(j=N-1, jnew=mNumGoodFreq-1; j >= 0; --j)
+                if(mGoodFreq[j])
+                {
+                    u[i*N + j] = mU[inew*mNumGoodFreq + jnew];
+                    --jnew;
+                }
+                else
+                {
+                    u[i*N + j] = (i == j) ? 1. : 0.;
+                }
+
+            --inew;
+        }
+        else
+            for(j=0; j < N; ++j)
+            {
+                u[i*N + j] = (i == j) ? 1. : 0.;
+            }
+    }
+
+	rms = 0;
+	for(i=0; i < N; ++i)
+	{
+		for(j=0; j < N; ++j)
+		{
+			x = 0.;
+			for(k=0; k < N; ++k) x += u[i*N+k]*v[k*N+j];
+			tmp[i*N+j] = (i == j) ? x-1. : x;
+
+			if(i == j) rms += (x-1.)*(x-1.);
+			else       rms += x*x;
+		}
+	}
+	std::cerr << "RMS UV  (synth): " << std::scientific << sqrt(rms)/N << std::endl;
+	rms = 0;
+	for(i=0; i < N; ++i)
+	{
+		for(j=0; j < N; ++j)
+		{
+			x = 0.;
+			for(k=0; k < N; ++k) x += u[i*N+k]*d[N-1-k]*v[k*N+j];
+			tmp[i*N+j] = x-q[i*N+j];
+
+			rms += tmp[i*N+j]*tmp[i*N+j];
+		}
+	}
+	std::cerr << "RMS UDV (synth): " << std::scientific << sqrt(rms)/N << std::endl;
+	if(aFull)
+	{
+		std::cerr.precision(4);
+		for(i=0; i < m; ++i)
+		{
+			for(j=0; j < m; ++j)
+			{
+				if(fabs(tmp[i*N+j]) < EPS)
+					std::cerr << std::setw(12) << 0 << ' ';
+				else
+					std::cerr << std::setw(12) << tmp[i*N+j] << ' ';
+			}
+			std::cerr << std::endl;
+		}
+		std::cerr << std::endl;
+	}
+	std::cerr << mNumGoodFreq << std::endl;
+}
+
 void TransitionMatrix::checkEigen(bool aFull) const
 {
 	int i, j, k;
 	int m = (N < 7) ? N : 7; // How many elements to print
-	static const double EPS = 1e-15;
+	static const double EPS = 1e-14;
 
 	double tmp[N*N];
 	double x;
@@ -676,7 +903,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		}
 	}
 
-	std::cerr << "RMS UV:  " << std::scientific << sqrt(rms/(N*N)) << std::endl;
+	std::cerr << "RMS UV:  " << std::scientific << sqrt(rms)/N << std::endl;
 
 	if(aFull)
 	{
@@ -702,12 +929,11 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		{
 			x = 0.;
 			for(k=0; k < N; ++k) x += mU[i*N+k]*mV[k*N+j]*mD[N-1-k];
-			tmp[i*N+j] = x-mQ[i*N+j];
-
-			rms += (x-mQ[i*N+j])*(x-mQ[i*N+j]);
+			tmp[i*N+j] = (mGoodFreq[j] && mGoodFreq[i]) ? x-mQ[i*N+j] : 0.;
+			rms += tmp[i*N+j]*tmp[i*N+j];
 		}
 	}
-	std::cerr << "RMS UDV: " << std::scientific << sqrt(rms/(N*N)) << std::endl;
+	std::cerr << "RMS UDV: " << std::scientific << sqrt(rms)/N << std::endl;
 
 	if(aFull)
 	{
@@ -733,7 +959,7 @@ void TransitionMatrix::checkEigen(bool aFull) const
 		x += mD[j]*mD[j];
 		if(mD[j] > EPS || mD[j] < -EPS) ++i;
 	}
-	std::cerr << "D len: " << sqrt(x) << " non null: " << i << std::endl;
+	std::cerr << "D len: " << sqrt(x) << " total " << N << " non null: " << i << std::endl;
 }
 
 void TransitionMatrix::print(unsigned int aMaxRow, unsigned int aMaxCol) const

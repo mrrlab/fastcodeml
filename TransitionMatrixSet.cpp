@@ -1,7 +1,7 @@
 
 #include "TransitionMatrixSet.h"
 
-void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
+void TransitionMatrixSet::computeMatrixSet(const TransitionMatrix& aQw0,
 											 const TransitionMatrix& aQ1,
 											 double aSbg,
 											 double aSfg,
@@ -28,7 +28,7 @@ void TransitionMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 }
 
 
-void TransitionMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
+void TransitionMatrixSet::computeMatrixSet(const TransitionMatrix& aQw0,
 											 const TransitionMatrix& aQ1,
 											 const TransitionMatrix& aQw2,
 											 double aSbg,

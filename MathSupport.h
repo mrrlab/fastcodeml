@@ -113,5 +113,20 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 #endif
 }
 
+
+/// Check if two values are sufficiently different
+///
+/// @param[in] aFirst First number to compare
+/// @param[in] aSecond Second term to compare
+///
+/// @return True if the two parameters differs more than (hardcoded) TOL
+///
+inline bool isDifferent(double aFirst, double aSecond)
+{
+	static const double TOL = 1e-7;
+	const double diff = aFirst - aSecond;
+	return (diff > TOL || diff < -TOL);
+}
+
 #endif
 

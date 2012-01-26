@@ -108,6 +108,12 @@ public:
 	///
 	void getVariables(std::vector<double>& aVariables) const {aVariables = mVar;}
 
+	/// Get the number of function evaluation.
+	///
+	/// @return The number of likelihood function calls
+	///
+	unsigned int getNumEvaluations(void) const {return mNumEvaluations;}
+
 	/// Perform the Likelihood Ratio Test.
 	/// LRT test: -2*(lnl0-lnl1) > chisq(.95, df=1)
 	///
@@ -159,21 +165,6 @@ protected:
 		aProportions[3] = (1-aV0)*(1-aV1);
 #endif
 	}
-
-	/// Check if two values are sufficiently different
-	///
-	/// @param[in] aFirst First number to compare
-	/// @param[in] aSecond Second term to compare
-	///
-	/// @return True if the two parameters differs more than (hardcoded) TOL
-	///
-	static bool isDifferent(double aFirst, double aSecond)
-	{
-		static const double TOL = 1e-7;
-		const double diff = aFirst - aSecond;
-		return (diff > TOL || diff < -TOL);
-	}
-
 
 private:
 	/// Set upper and lower limits for the maximization domain

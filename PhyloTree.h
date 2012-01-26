@@ -7,8 +7,6 @@
 #include "TreeNode.h"
 #include "ForestNode.h"
 #include "TransitionMatrix.h"
-#include "AlignedAllocator.h"
-#include "Types.h"
 
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>

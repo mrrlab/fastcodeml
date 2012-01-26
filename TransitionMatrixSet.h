@@ -61,7 +61,7 @@ public:
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
-	void computeMatrixSetH0(const TransitionMatrix& aQw0,
+	void computeMatrixSet(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 							double aSbg,
 							double aSfg,
@@ -83,7 +83,7 @@ public:
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
-	void computeMatrixSetH1(const TransitionMatrix& aQw0,
+	void computeMatrixSet(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 						    const TransitionMatrix& aQw2,
 							double aSbg,

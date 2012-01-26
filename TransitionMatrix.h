@@ -18,9 +18,6 @@
 #include "blas.h"
 #endif
 
-// Uncomment to enable various check routines
-//#define CHECK_ALGO
-
 /// The transition matrix plus its eigen decomposition.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -75,6 +72,14 @@ public:
 	/// @param[in] aFull If true also partially print the matrices
 	///
 	void checkEigen(bool aFull=false) const;
+
+	/// Check the eigen decomposition on the reduced matrix.
+	///
+	/// @param[in] aDim Dimension of the reduced matrix
+	/// @param[in] aPrev The reduced matrix before the eigendecomposition
+	/// @param[in] aFull If true also partially print the matrices
+	///
+	void checkReducedEigen(int aDim, const double* aPrev, bool aFull=false) const;
 
 	/// Print the Q matrix
 	///

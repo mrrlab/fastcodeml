@@ -233,8 +233,8 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	++mNumEvaluations;
 
 	// Check if steps can be skipped
-	const bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	const bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	const bool changed_w0 = isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	const bool changed_k  = isDifferent(aVar[mNumTimes+1], mPrevK);
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
@@ -262,7 +262,7 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSet(mQw0, mQ1, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods);
@@ -316,9 +316,9 @@ double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const st
 	++mNumEvaluations;
 
 	// Check if steps can be skipped
-	const bool changed_w0 = BranchSiteModel::isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	const bool changed_w2 = BranchSiteModel::isDifferent(aVar[mNumTimes+4], mPrevOmega2);
-	const bool changed_k  = BranchSiteModel::isDifferent(aVar[mNumTimes+1], mPrevK);
+	const bool changed_w0 = isDifferent(aVar[mNumTimes+0], mPrevOmega0);
+	const bool changed_w2 = isDifferent(aVar[mNumTimes+4], mPrevOmega2);
+	const bool changed_k  = isDifferent(aVar[mNumTimes+1], mPrevK);
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_w2) mPrevOmega2 = aVar[mNumTimes+4];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
@@ -352,7 +352,7 @@ double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const st
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSet(mQw0, mQ1, mQw2, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods);
