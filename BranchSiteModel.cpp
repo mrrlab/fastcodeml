@@ -267,6 +267,28 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods);
 
+#ifdef NON_RECURSIVE_VISIT
+	// TEST
+	{
+		CacheAlignedDoubleVector nl(mLikelihoods.size());
+		mForest.computeLikelihoodsNR(mSet, nl);
+
+		double rms = 0;
+		const size_t num_sites = mForest.getNumSites();
+		for(unsigned int site=0; site < num_sites; ++site)
+		{
+			for(int p=0; p < 3; ++p)
+			{
+				double p0 = log(mLikelihoods[p*num_sites+site]);
+				double p1 = log(nl[p*num_sites+site]);
+				rms += (p0-p1)*(p0-p1);
+				std::cerr << site << ' ' << p << ' ' << std::setw(10) << std::setprecision(6) << p0 << ' ' << p1 << std::endl;
+			}
+		}
+		std::cerr << "RMS: " << rms << std::endl;
+	}
+#endif
+
 	// For all (valid) sites. Don't parallelize: time increases and results are errant
 	const size_t num_sites = mForest.getNumSites();
 	const double* mult = mForest.getSiteMultiplicity();

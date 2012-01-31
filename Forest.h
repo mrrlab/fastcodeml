@@ -99,6 +99,12 @@ public:
 	///
 	void prepareDependencies(bool aForceSerial);
 
+#ifdef NON_RECURSIVE_VISIT
+	ForestNode* prepareNonRecursiveVisit(ForestNode* aNode=0, unsigned int aSite=0);
+
+	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+#endif
+
 	/// Compute the log likelihood of the forest given the set of precomputed matrices.
 	/// If NEW_LIKELIHOOD is defined, this routine adopts the experimental "Long Vector" approach.
 	///
@@ -265,13 +271,24 @@ private:
 #ifndef NEW_LIKELIHOOD
 	/// Walker for the computation of tree likelihood
 	///
-	/// @param[in] aNode
+	/// @param[in] aNode The node from which the visit should start
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[in] aSetIdx Identifier of the set of matrices to be used
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
 	double* computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
+#endif
+
+#ifdef NON_RECURSIVE_VISIT
+	/// Walker for the computation of tree likelihood
+	///
+	/// @param[in] aStartThreading The starting pointer to visit a tree for which the likelihood should be computed
+	/// @param[in] aSet Set of exp(Q*t) matrices
+	/// @param[in] aSetIdx Identifier of the set of matrices to be used
+	/// @param[in] aSiteIdx The site under computation
+	///
+	void computeLikelihoodsWalkerNR(ForestNode* aStartThreading, const TransitionMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx);
 #endif
 
 	/// Walk the tree to fill the mMapInternalToBranchID map.

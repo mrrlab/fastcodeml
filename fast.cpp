@@ -203,6 +203,11 @@ int main(int ac, char **av)
 	}
 #endif
 
+#ifdef NON_RECURSIVE_VISIT
+	// Prepare the pointers to visit the trees without recursion
+	forest.prepareNonRecursiveVisit();
+#endif
+
 	// Subdivide the trees in groups based on dependencies
 	forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
 

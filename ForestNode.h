@@ -50,10 +50,18 @@ struct ForestNode
 #ifndef NEW_LIKELIHOOD
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
 #endif
+#ifdef NON_RECURSIVE_VISIT
+	ForestNode*					mStartThreading;			///< (valid only for the root) First node to visit for the non-recursive traversal
+	ForestNode*					mNext;						///< Next node to visit for the non-recursive traversal
+	bool						mFirstChild;
+#endif
 
 	/// Constructor
 	///
 	ForestNode() : mChildrenCount(0), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
+#ifdef NON_RECURSIVE_VISIT
+					, mStartThreading(0), mNext(0), mFirstChild(false)
+#endif
 	{
 #ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
@@ -112,6 +120,11 @@ struct ForestNode
 
 		mPreprocessingSupport = new ForestNodeSupport;
 		mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
+#ifdef NON_RECURSIVE_VISIT
+		mStartThreading			= aNode.mStartThreading;
+		mNext					= aNode.mNext;
+		mFirstChild				= aNode.mFirstChild;
+#endif
 	}
 
 	/// Assignment operator
@@ -141,6 +154,11 @@ struct ForestNode
 
 			mPreprocessingSupport = new ForestNodeSupport;
 			mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
+#ifdef NON_RECURSIVE_VISIT
+			mStartThreading			= aNode.mStartThreading;
+			mNext					= aNode.mNext;
+			mFirstChild				= aNode.mFirstChild;
+#endif
 		}
 
 		// Return ref for multiple assignment

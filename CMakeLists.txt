@@ -43,6 +43,7 @@ OPTION(BUILD_NOT_SHARED   "Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
 OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
+OPTION(USE_NON_RECURSIVE_ML "Try a non recursive computation of Maximum Likelihood using the old algorithm (experimental)" OFF)
 
 
 # Search for OpenMP support
@@ -110,6 +111,14 @@ endif(MPI_FOUND)
 if(USE_ORIGINAL_PROPORTIONS)
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
+
+if(USE_NON_RECURSIVE_ML)
+	if(USE_NEW_LIKELIHOOD)
+		message(SEND_ERROR "USE_NON_RECURSIVE_ML not compatible with USE_NEW_LIKELIHOOD")
+	else(USE_NEW_LIKELIHOOD)
+		add_definitions(-DNON_RECURSIVE_VISIT)
+	endif(USE_NEW_LIKELIHOOD)
+endif(USE_NON_RECURSIVE_ML)
 
 
 # Set paths
