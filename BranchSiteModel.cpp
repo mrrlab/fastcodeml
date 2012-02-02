@@ -265,9 +265,13 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	mSet.computeMatrixSet(mQw0, mQ1, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
-	mForest.computeLikelihoods(mSet, mLikelihoods);
-
 #ifdef NON_RECURSIVE_VISIT
+	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
+#else
+	mForest.computeLikelihoods(mSet, mLikelihoods);
+#endif
+
+#if 0
 	// TEST
 	{
 		CacheAlignedDoubleVector nl(mLikelihoods.size());
@@ -377,7 +381,11 @@ double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const st
 	mSet.computeMatrixSet(mQw0, mQ1, mQw2, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
 
 	// Compute likelihoods
+#ifdef NON_RECURSIVE_VISIT
+	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
+#else
 	mForest.computeLikelihoods(mSet, mLikelihoods);
+#endif
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = mForest.getNumSites();

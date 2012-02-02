@@ -53,6 +53,10 @@ public:
 		mProbsOut.clear();
 		mNodesByLevel.clear();
 #endif
+#ifdef NON_RECURSIVE_VISIT
+		mVisitTree.clear();
+		mVisitTreeParents.clear();
+#endif
 	}
 	
 	/// Build the forest and reduces the subtrees
@@ -100,7 +104,7 @@ public:
 	void prepareDependencies(bool aForceSerial);
 
 #ifdef NON_RECURSIVE_VISIT
-	ForestNode* prepareNonRecursiveVisit(ForestNode* aNode=0, unsigned int aSite=0);
+	void prepareNonRecursiveVisit(void);
 
 	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
 #endif
@@ -281,14 +285,27 @@ private:
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
+	/// Walker to prepare the non recursive visit list
+	///
+	/// @param[in] aNode The current node to be visited
+	/// @param[in] aParentNode
+	/// @param[in] aSite
+	/// @param[in,out] aVisitList
+	/// @param[in,out] aParentList
+	///
+	void prepareNonRecursiveVisitWalker(ForestNode* aNode,
+										ForestNode* aParentNode,
+										unsigned int aSite, 
+										std::vector<ForestNode*>& aVisitList, 
+										std::vector<ForestNode*>& aParentList);
+
 	/// Walker for the computation of tree likelihood
 	///
-	/// @param[in] aStartThreading The starting pointer to visit a tree for which the likelihood should be computed
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[in] aSetIdx Identifier of the set of matrices to be used
 	/// @param[in] aSiteIdx The site under computation
 	///
-	void computeLikelihoodsWalkerNR(ForestNode* aStartThreading, const TransitionMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx);
+	void computeLikelihoodsWalkerNR(const TransitionMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx);
 #endif
 
 	/// Walk the tree to fill the mMapInternalToBranchID map.
@@ -342,6 +359,11 @@ private:
 #endif
 	std::vector< std::vector<unsigned int> >	mTreeDependencies;		///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3
 	std::vector< std::vector<unsigned int> >	mTreeRevDependencies;	///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
+
+#ifdef NON_RECURSIVE_VISIT
+	std::vector< std::vector<ForestNode*> >		mVisitTree;				///< List of pointers to tree nodes (a list per site) in the non-recursive visit order
+	std::vector< std::vector<ForestNode*> >		mVisitTreeParents;		///< List of parent pointers for the corresponding nodes in the mVisitTree
+#endif
 };
 
 #endif

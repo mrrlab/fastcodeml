@@ -51,16 +51,15 @@ struct ForestNode
 	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
 #endif
 #ifdef NON_RECURSIVE_VISIT
-	ForestNode*					mStartThreading;			///< (valid only for the root) First node to visit for the non-recursive traversal
-	ForestNode*					mNext;						///< Next node to visit for the non-recursive traversal
 	bool						mFirstChild;
+	unsigned int				mChildIdx;					///< Mark the child position in the parent node
 #endif
 
 	/// Constructor
 	///
 	ForestNode() : mChildrenCount(0), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
-					, mStartThreading(0), mNext(0), mFirstChild(false)
+					, mFirstChild(false), mChildIdx(0)
 #endif
 	{
 #ifndef NEW_LIKELIHOOD
@@ -121,9 +120,8 @@ struct ForestNode
 		mPreprocessingSupport = new ForestNodeSupport;
 		mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
 #ifdef NON_RECURSIVE_VISIT
-		mStartThreading			= aNode.mStartThreading;
-		mNext					= aNode.mNext;
 		mFirstChild				= aNode.mFirstChild;
+		mChildIdx				= aNode.mChildIdx;
 #endif
 	}
 
@@ -155,9 +153,8 @@ struct ForestNode
 			mPreprocessingSupport = new ForestNodeSupport;
 			mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
 #ifdef NON_RECURSIVE_VISIT
-			mStartThreading			= aNode.mStartThreading;
-			mNext					= aNode.mNext;
 			mFirstChild				= aNode.mFirstChild;
+			mChildIdx				= aNode.mChildIdx;
 #endif
 		}
 
