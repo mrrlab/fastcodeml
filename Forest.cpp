@@ -893,13 +893,14 @@ double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatr
 	for(unsigned int idx=0; idx < nc; ++idx)
 	{
 		// Copy to local var to avoid aliasing
-		ForestNode *m = aNode->mChildrenList[idx];
-		const unsigned int branch_id = m->mBranchId;
 		double* anode_other_tree_prob = aNode->mOtherTreeProb[idx];
 
-		// If the node is in the same tree recurse, else use the value
+		// If the node is in the same tree recurse and eventually save the value, else use the value
 		if(aNode->isSameTree(idx))
 		{
+			ForestNode *m = aNode->mChildrenList[idx];
+			const unsigned int branch_id = m->mBranchId;
+
 			if(first)
 			{
 				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), anode_prob);
@@ -911,36 +912,19 @@ double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatr
 				double ALIGN64 temp[N];
 				double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
 				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), x);
-
-				// Manual unrolling gives the best results here
 				elementWiseMult(anode_prob, x);
 			}
 		}
 		else
 		{
-			double* m_prob = m->mProb[aSetIdx];
 			if(first)
 			{
-				if(anode_other_tree_prob) memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
-				else aSet.doTransition(aSetIdx, branch_id, m_prob, anode_prob);
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
 				first = false;
 			}
 			else
 			{
-				double ALIGN64 temp[N];
-				double* x;
-				if(anode_other_tree_prob) 
-				{
-					x = anode_other_tree_prob+VECTOR_SLOT*aSetIdx;
-				}
-				else
-				{
-					aSet.doTransition(aSetIdx, branch_id, m_prob, temp);
-					x = temp;
-				}
-
-				// Manual unrolling gives the best results here
-				elementWiseMult(anode_prob, x);
+				elementWiseMult(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx);
 			}
 		}
 	}
@@ -1082,25 +1066,6 @@ void Forest::prepareNonRecursiveVisit(void)
 		mVisitTree.push_back(visit_list);
 		mVisitTreeParents.push_back(parent_list);
 	}
-
-#if 0
-	// TEST 
-	std::cerr << std::endl;
-	for(unsigned int i=0; i < ns; ++i)
-	{
-		unsigned int nv = mVisitTree[i].size();
-		for(unsigned int j=0; j < nv; ++j)
-		{
-			ForestNode* n = mVisitTree[i][j];
-
-			const char* not_same = (n->mOwnTree != i) ? " N" : "  ";
-			const char* is_first = n->mFirstChild ? "+" : " ";
-			std::cerr << n->mBranchId+1 << " <" << mNodeNames[n->mBranchId + 1] << ">\t" << is_first << not_same;
-			std::cerr << "\t" << n->mOwnTree << ' ' << i << std::endl;
-		}
-		std::cerr << std::endl;
-	}
-#endif
 }
 
 void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aParentNode, unsigned int aSite, std::vector<ForestNode*>& aVisitList, std::vector<ForestNode*>& aParentList)
@@ -1205,23 +1170,11 @@ void Forest::computeLikelihoodsWalkerNR(const TransitionMatrixSet& aSet, unsigne
 
 			if(n->mFirstChild)
 			{
-				if(other_tree_prob) memcpy(res_prob, other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
-				else aSet.doTransition(aSetIdx, branch_id, node_prob, res_prob);
+				memcpy(res_prob, other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
 			}
 			else
 			{
-				double ALIGN64 temp[N];
-				double* x;
-				if(other_tree_prob) 
-				{
-					x = other_tree_prob+VECTOR_SLOT*aSetIdx;
-				}
-				else
-				{
-					aSet.doTransition(aSetIdx, branch_id, node_prob, temp);
-					x = temp;
-				}
-				elementWiseMult(res_prob, x);
+				elementWiseMult(res_prob, other_tree_prob+VECTOR_SLOT*aSetIdx);
 			}
 		}
 	}

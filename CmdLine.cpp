@@ -87,7 +87,6 @@ CmdLine::CmdLine()
 	mNoMaximization			= false;
 	mExportComputedTimes	= UINT_MAX;
 	mTrace					= false;
-	mNoAggressiveStep		= false;
 	mForceSerial			= false;
 	mBranchFromFile			= false;
 	mComputeHypothesis		= UINT_MAX;
@@ -114,7 +113,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_ONE_STEP,
 		OPT_COMP_TIMES,
 		OPT_TRACE,
-		OPT_NO_AGGRESSIVE,
 		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
@@ -152,8 +150,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_COMP_TIMES,		"--export-comp-times",	SO_REQ_SEP,	"" },
 		{ OPT_TRACE,			"-r",					SO_NONE,	"Trace the maximization run" },
 		{ OPT_TRACE,			"--trace",				SO_NONE,	"" },
-		{ OPT_NO_AGGRESSIVE,	"-na",					SO_NONE,	"Don't apply aggressive forest reduction" },
-		{ OPT_NO_AGGRESSIVE,	"--no-aggressive",		SO_NONE,	"" },
 		{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
 		{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
 		{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
@@ -251,10 +247,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mTrace = true;
 			break;
 
-		case OPT_NO_AGGRESSIVE:
-			mNoAggressiveStep = true;
-			break;
-
 		case OPT_FORCE_SERIAL:
 			mForceSerial = true;
 			break;
@@ -308,7 +300,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	
 	// Some final checks and settings
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
-	if(mDoNotReduceForest) mNoAggressiveStep = true;
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;

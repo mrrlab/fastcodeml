@@ -42,7 +42,6 @@ public:
 	bool			mTimesFromFile;			///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
-	bool			mNoAggressiveStep;		///< Do not apply aggressive common subtree reduction
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the Phylo Tree file (it is marked as #1)
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 result

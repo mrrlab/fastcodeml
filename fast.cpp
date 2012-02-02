@@ -98,7 +98,6 @@ int main(int ac, char **av)
 		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
-		else if(cmd.mNoAggressiveStep)				std::cerr << "Reduce forest: Normal" << std::endl;
 		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
 		else if(cmd.mInitFromConst)					std::cerr << "Times:         From tree file (rest hardcoded)" << std::endl;
@@ -138,6 +137,9 @@ int main(int ac, char **av)
 #endif
 #ifdef NEW_LIKELIHOOD
 													std::cerr << "NEW_LIKELIHOOD ";
+#endif
+#ifdef NON_RECURSIVE_VISIT
+													std::cerr << "NON_RECURSIVE_VISIT ";
 #endif
 #ifdef USE_ORIGINAL_PROPORTIONS
 													std::cerr << "USE_ORIGINAL_PROPORTIONS ";
@@ -185,7 +187,7 @@ int main(int ac, char **av)
 	{
 		forest.reduceSubtrees();
 #ifndef NEW_LIKELIHOOD
-		if(!cmd.mNoAggressiveStep) forest.addAggressiveReduction();
+		forest.addAggressiveReduction();
 #endif
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
