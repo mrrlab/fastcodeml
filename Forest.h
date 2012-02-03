@@ -104,8 +104,15 @@ public:
 	void prepareDependencies(bool aForceSerial);
 
 #ifdef NON_RECURSIVE_VISIT
+	/// Prepare the list of threading pointers for non-recursive trees visit
+	///
 	void prepareNonRecursiveVisit(void);
 
+	/// Compute likelihood visiting the trees in a non-recursive way
+	///
+	/// @param[in] aSet Set of exp(Q*t) matrices
+	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
+	///
 	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
 #endif
 
@@ -288,10 +295,10 @@ private:
 	/// Walker to prepare the non recursive visit list
 	///
 	/// @param[in] aNode The current node to be visited
-	/// @param[in] aParentNode
-	/// @param[in] aSite
-	/// @param[in,out] aVisitList
-	/// @param[in,out] aParentList
+	/// @param[in] aParentNode Parent node for aNode
+	/// @param[in] aSite The current site
+	/// @param[in,out] aVisitList The list of nodes to be visited in the order of visit.
+	/// @param[in,out] aParentList The corresponding parent nodes
 	///
 	void prepareNonRecursiveVisitWalker(ForestNode* aNode,
 										ForestNode* aParentNode,

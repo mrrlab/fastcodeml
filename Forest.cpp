@@ -855,8 +855,6 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	const unsigned int num_sets = aSet.size();
-	//aLikelihoods.assign(num_sets*mNumSites, 1.0);
-	//aLikelihoods.resize(num_sets*mNumSites);
 
 	std::vector< std::vector<unsigned int> >::iterator ivs=mDependenciesClasses.begin();
 	for(; ivs != mDependenciesClasses.end(); ++ivs)
@@ -1070,7 +1068,6 @@ void Forest::prepareNonRecursiveVisit(void)
 
 void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aParentNode, unsigned int aSite, std::vector<ForestNode*>& aVisitList, std::vector<ForestNode*>& aParentList)
 {
-	//std::cerr << aSite << " Call: " << aNode->mBranchId << " <" << mNodeNames[aNode->mBranchId + 1] << "> " << aNode->mOwnTree << std::endl;
 	// Collect the number of children of the current node
 	const unsigned int nc = aNode->mChildrenCount;
 
@@ -1097,7 +1094,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 
 	// If it is not the root node
 	// Store the nodes in the visit order except the root that should not be visited
-	// Store also the respective parents
+	// Store also the respective parent node
 	if(aParentNode)
 	{	
 		aVisitList.push_back(aNode);
