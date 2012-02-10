@@ -16,6 +16,10 @@
 #include "blas.h"
 #endif
 
+#ifdef USE_MKL_VML
+#include <mkl_vml_functions.h>
+#endif
+
 #if 0
 /// Dot product for vectors of variable length.
 ///
@@ -98,6 +102,8 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 		i += 2;
     }
 	aVres[N-1] *= aV[N-1];
+#elif defined(USE_MKL_VML)
+	vdMul(N, aVres, aV, aVres);
 #else
 	// Manual unrolling gives the best results here
 	for(int i=0; i < 60; )

@@ -207,6 +207,9 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 	mPrevK      = DBL_MAX;
 	mPrevOmega0 = DBL_MAX;
 
+	// Initialize the matrix set
+	mSet.initForH0(mForest.adjustFgBranchIdx(aFgBranch));
+
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch);
 }
@@ -222,12 +225,15 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 	mPrevOmega0 = DBL_MAX;
 	mPrevOmega2 = DBL_MAX;
 
+	// Initialize the matrix set
+	mSet.initForH1(mForest.adjustFgBranchIdx(aFgBranch));
+
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch);
 }
 
 
-double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -262,35 +268,17 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSet(mQw0, mQ1, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 #ifdef NON_RECURSIVE_VISIT
 	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
 #else
+#ifdef NEW_LIKELIHOOD
 	mForest.computeLikelihoods(mSet, mLikelihoods);
+#else
+	mForest.computeLikelihoodsTC(mSet, mLikelihoods, 0);
 #endif
-
-#if 0
-	// TEST
-	{
-		CacheAlignedDoubleVector nl(mLikelihoods.size());
-		mForest.computeLikelihoodsNR(mSet, nl);
-
-		double rms = 0;
-		const size_t num_sites = mForest.getNumSites();
-		for(unsigned int site=0; site < num_sites; ++site)
-		{
-			for(int p=0; p < 3; ++p)
-			{
-				double p0 = log(mLikelihoods[p*num_sites+site]);
-				double p1 = log(nl[p*num_sites+site]);
-				rms += (p0-p1)*(p0-p1);
-				std::cerr << site << ' ' << p << ' ' << std::setw(10) << std::setprecision(6) << p0 << ' ' << p1 << std::endl;
-			}
-		}
-		std::cerr << "RMS: " << rms << std::endl;
-	}
 #endif
 
 	// For all (valid) sites. Don't parallelize: time increases and results are errant
@@ -336,7 +324,7 @@ double BranchSiteModelNullHyp::computeLikelihood(unsigned int aFgBranch, const s
 }
 
 	
-double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace)
 {
 	// One more function invocation
 	++mNumEvaluations;
@@ -378,13 +366,17 @@ double BranchSiteModelAltHyp::computeLikelihood(unsigned int aFgBranch, const st
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSet(mQw0, mQ1, mQw2, bg_scale, fg_scale, mForest.adjustFgBranchIdx(aFgBranch), aVar);
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 #ifdef NON_RECURSIVE_VISIT
 	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
 #else
+#ifdef NEW_LIKELIHOOD
 	mForest.computeLikelihoods(mSet, mLikelihoods);
+#else
+	mForest.computeLikelihoodsTC(mSet, mLikelihoods, 1);
+#endif
 #endif
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
@@ -443,11 +435,10 @@ public:
 	/// @param[in] aDeltaForGradient The variable increment to compute gradient
 	///
 	MaximizerFunction(BranchSiteModel* aModel,
-					  unsigned int aFgBranch,
 					  bool aTrace,
 					  const std::vector<double>& aUpper,
 					  double aDeltaForGradient)
-					: mModel(aModel), mFgBranch(aFgBranch), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient) {}
+					: mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient) {}
 
 	/// Functor.
 	/// It computes the function and the gradient if needed.
@@ -458,7 +449,7 @@ public:
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		double f0 = mModel->computeLikelihood(mFgBranch, aVars, mTrace);
+		double f0 = mModel->computeLikelihood(aVars, mTrace);
 
 		if(!aGrad.empty())
 		{
@@ -490,7 +481,7 @@ public:
 			x[i] += eh;
 			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
 
-			const double f1 = mModel->computeLikelihood(mFgBranch, x, false);
+			const double f1 = mModel->computeLikelihood(x, false);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 
@@ -513,7 +504,6 @@ public:
 
 private:
 	BranchSiteModel*	mModel;				///< Pointer to the model to be evaluated
-	unsigned int		mFgBranch;			///< Branch number of the foreground branch
 	bool				mTrace;				///< If set traces the optimization progresses
 	std::vector<double>	mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
 	double				mDeltaForGradient;	///< The variable increment to compute gradient
@@ -541,7 +531,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	mNumEvaluations = 0;
 
 	// If only the initial step is requested, do it and return
-	if(mOnlyInitialStep) return computeLikelihood(aFgBranch, mVar, mTrace);
+	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
 
 	// Special case for the CodeML optimizer
 	if(mOptAlgo == OPTIM_LD_MING2)
@@ -631,7 +621,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	double maxl = 0;
 	try
 	{
-		MaximizerFunction compute(this, aFgBranch, mTrace, mUpperBound, mDeltaForGradient);
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient);
 
 		opt->set_max_objective(MaximizerFunction::wrap, &compute);
 

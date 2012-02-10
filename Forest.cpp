@@ -19,62 +19,6 @@
 
 const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
-#if 0
-void chkleaves(CacheAlignedDoubleVector& p, int slot, const char *filename)
-{
-	std::ofstream out(filename, std::ios_base::trunc | std::ios_base::out);
-	if(!out.good()) return;
-
-	int nslots = p.size()/slot;
-
-	for(int i=0; i < nslots; ++i)
-	{
-		for(int j=0; j < N; ++j)
-		{
-			if(p[i*slot+j] > 0.1)
-			{
-				out << std::setw(5) << i << std::setw(3) << j << std::endl;
-				break;
-			}
-		}
-	}
-	out.close();
-}
-
-void crc(const std::vector<double>& v, unsigned int nsites)
-{
-	union { double value; unsigned char bytes[sizeof(double)]; } data;
-	int  c1 = 52845; 
-	int  c2 = 22719;
-	unsigned int nv = v.size();
-
-	for(unsigned int n=0; n < (nv/(VECTOR_SLOT*nsites*Nt)); ++n)
-	{
-		std::cerr << std::setw(2) << n << ": ";
-		for(unsigned int s=0; s < nsites; ++s)
-		{
-			long sum = 0;
-			int r = 55665;
-			for(int j=0; j < N; ++j)
-			{
-				data.value = v[n*(Nt*nsites*VECTOR_SLOT)+s*(VECTOR_SLOT)+j];
-
-				for(unsigned int k = 0; k < sizeof(double); ++k)
-				{
-					unsigned char cipher = (data.bytes[k] ^ (r >> 8));
-					r = (cipher + r) * c1 + c2;
-					sum += cipher;
-				}
-			}
-			if(sum == 0xfb9d) std::cerr << "  -  ";
-			else  			  std::cerr << std::hex << sum << ' ';
-		}
-		std::cerr << std::endl;
-	}
-	std::cerr << std::endl;
-}
-#endif
-
 
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq)
 {
@@ -133,7 +77,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 #else
 			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0; // The rest already zeroed by assign()
 #endif
-
 			// Count codons
 			codon_count[codon] += mult[site];
 		}
@@ -430,6 +373,9 @@ void Forest::prepareDependencies(bool aForceSerial)
 	{
 		printDependencies();
 	}
+	
+	// Prepare more detailed inter-tree dependencies lists
+	prepareDependenciesClassesAndTrees();
 
 	// Move sites that can be move up the hierarchy to have classes with a number of sites multiple of number of threads
 	bool done = balanceDependencies(aForceSerial);
@@ -849,87 +795,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 }
 
 
-#ifndef NEW_LIKELIHOOD
-// Compute likelihood with the original approach
-//
-void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
-{
-	const unsigned int num_sets = aSet.size();
-
-	std::vector< std::vector<unsigned int> >::iterator ivs=mDependenciesClasses.begin();
-	for(; ivs != mDependenciesClasses.end(); ++ivs)
-	{
-		const int num_sites = ivs->size();
-		const int len       = num_sites*num_sets;
-
-#ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods) schedule(static)
-#else
-		#pragma omp parallel for default(shared) schedule(static)
-#endif
-		for(int i=0; i < len; ++i)
-		{
-			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int set_idx  = i / num_sites;
-			const unsigned int site_idx = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
-			const unsigned int site     = (*ivs)[site_idx];
-
-			double* g = computeLikelihoodsWalker(&mRoots[site], aSet, set_idx);
-
-			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
-		}
-	}
-}
-
-
-double* Forest::computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
-{
-	bool first = true;
-	double* anode_prob = aNode->mProb[aSetIdx];
-
-	const unsigned int nc = aNode->mChildrenCount;
-	for(unsigned int idx=0; idx < nc; ++idx)
-	{
-		// Copy to local var to avoid aliasing
-		double* anode_other_tree_prob = aNode->mOtherTreeProb[idx];
-
-		// If the node is in the same tree recurse and eventually save the value, else use the value
-		if(aNode->isSameTree(idx))
-		{
-			ForestNode *m = aNode->mChildrenList[idx];
-			const unsigned int branch_id = m->mBranchId;
-
-			if(first)
-			{
-				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), anode_prob);
-				if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
-				first = false;
-			}
-			else
-			{
-				double ALIGN64 temp[N];
-				double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
-				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalker(m, aSet, aSetIdx), x);
-				elementWiseMult(anode_prob, x);
-			}
-		}
-		else
-		{
-			if(first)
-			{
-				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
-				first = false;
-			}
-			else
-			{
-				elementWiseMult(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx);
-			}
-		}
-	}
-
-	return anode_prob;
-}
-#else
+#ifdef NEW_LIKELIHOOD
 // Compute likelihood with the new "Long Vector" approach
 //
 void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
@@ -1284,5 +1150,159 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 		return id;
 	}
 }
+
+void chkleaves(CacheAlignedDoubleVector& p, int slot, const char *filename)
+{
+	std::ofstream out(filename, std::ios_base::trunc | std::ios_base::out);
+	if(!out.good()) return;
+
+	int nslots = p.size()/slot;
+
+	for(int i=0; i < nslots; ++i)
+	{
+		for(int j=0; j < N; ++j)
+		{
+			if(p[i*slot+j] > 0.1)
+			{
+				out << std::setw(5) << i << std::setw(3) << j << std::endl;
+				break;
+			}
+		}
+	}
+	out.close();
+}
+
+void crc(const std::vector<double>& v, unsigned int nsites)
+{
+	union { double value; unsigned char bytes[sizeof(double)]; } data;
+	int  c1 = 52845; 
+	int  c2 = 22719;
+	unsigned int nv = v.size();
+
+	for(unsigned int n=0; n < (nv/(VECTOR_SLOT*nsites*Nt)); ++n)
+	{
+		std::cerr << std::setw(2) << n << ": ";
+		for(unsigned int s=0; s < nsites; ++s)
+		{
+			long sum = 0;
+			int r = 55665;
+			for(int j=0; j < N; ++j)
+			{
+				data.value = v[n*(Nt*nsites*VECTOR_SLOT)+s*(VECTOR_SLOT)+j];
+
+				for(unsigned int k = 0; k < sizeof(double); ++k)
+				{
+					unsigned char cipher = (data.bytes[k] ^ (r >> 8));
+					r = (cipher + r) * c1 + c2;
+					sum += cipher;
+				}
+			}
+			if(sum == 0xfb9d) std::cerr << "  -  ";
+			else  			  std::cerr << std::hex << sum << ' ';
+		}
+		std::cerr << std::endl;
+	}
+	std::cerr << std::endl;
+}
 #endif
+
+void Forest::prepareDependenciesClassesAndTrees(void)
+{
+	for(unsigned int h=0; h <= 1; ++h)
+	{
+		unsigned int num_classes = h ? 4 : 3;
+
+		mDependenciesClassesAndTrees[h].clear();
+		unsigned int nc = mDependenciesClasses.size();
+		for(unsigned int i=0; i < nc; ++i)
+		{
+			std::vector<std::pair<unsigned int, unsigned int> > l;
+
+			for(unsigned int cl=0; cl < num_classes; ++cl)
+			{
+				const unsigned int nt = mDependenciesClasses[i].size();
+				for(unsigned int j=0; j < nt; ++j)
+				{
+					l.push_back(std::pair<unsigned int, unsigned int>(mDependenciesClasses[i][j], cl));
+				}
+			}
+			mDependenciesClassesAndTrees[h].push_back(l);
+		}
+	}
+}
+
+
+void Forest::computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
+{
+	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
+	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
+	{
+		const int len = ivs->size();
+
+#ifdef _MSC_VER
+		#pragma omp parallel for default(none) shared(aSet, len, ivs, aLikelihoods) schedule(static)
+#else
+		#pragma omp parallel for default(shared) schedule(static)
+#endif
+		for(int i=0; i < len; ++i)
+		{
+			// Compute likelihood array at the root of one tree (the access order is the fastest)
+			const unsigned int site    = (*ivs)[i].first;
+			const unsigned int set_idx = (*ivs)[i].second;
+
+			double* g = computeLikelihoodsWalkerTC(&mRoots[site], aSet, set_idx);
+
+			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+		}
+	}
+}
+
+
+double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
+{
+	bool first = true;
+	double* anode_prob = aNode->mProb[aSetIdx];
+
+	const unsigned int nc = aNode->mChildrenCount;
+	for(unsigned int idx=0; idx < nc; ++idx)
+	{
+		// Copy to local var to avoid aliasing
+		double* anode_other_tree_prob = aNode->mOtherTreeProb[idx];
+
+		// If the node is in the same tree recurse and eventually save the value, else use the value
+		if(aNode->isSameTree(idx))
+		{
+			ForestNode *m = aNode->mChildrenList[idx];
+			const unsigned int branch_id = m->mBranchId;
+
+			if(first)
+			{
+				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalkerTC(m, aSet, aSetIdx), anode_prob);
+				if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
+				first = false;
+			}
+			else
+			{
+				double ALIGN64 temp[N];
+				double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
+				aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalkerTC(m, aSet, aSetIdx), x);
+				elementWiseMult(anode_prob, x);
+			}
+		}
+		else
+		{
+			if(first)
+			{
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
+				first = false;
+			}
+			else
+			{
+				elementWiseMult(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx);
+			}
+		}
+	}
+
+	return anode_prob;
+}
 

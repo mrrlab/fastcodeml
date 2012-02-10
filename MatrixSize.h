@@ -1,19 +1,17 @@
 
 #ifndef MATRIXSIZE_H
 #define MATRIXSIZE_H
+
 /// The matrix side (64 possible three-letters codons less 3 STOP codons)
 ///
 static const int N = 61;
-
-/// Number of codon classes (4)
-///
-//static const int Nc = 4;
 
 /// Number of possible codons (64)
 ///
 static const int N64 = 64;
 
 /// Max number of possible tree traversals for each cycle (4)
+/// This is also the number of codon classes
 ///
 static const int Nt = 4;
 

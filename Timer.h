@@ -2,9 +2,9 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <time.h>
+#ifdef _MSC_VER
 
-#ifdef WIN32
+#include <time.h>
 
 /// Simple timer.
 ///
@@ -52,6 +52,7 @@ private:
 };
 
 #else
+
 #include <sys/time.h> // gettimeofday
 
 /// Simple timer
@@ -107,6 +108,3 @@ private:
 
 #endif
 #endif
-
-
-

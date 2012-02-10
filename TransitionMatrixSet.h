@@ -48,6 +48,18 @@ public:
 		alignedFree(mMatrices);
 	}
 
+	/// Initialize the set for a given foreground branch number for H0
+	///
+	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
+	///
+	void initForH0(unsigned int aFgBranch);
+
+	/// Initialize the set for a given foreground branch number for H1
+	///
+	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
+	///
+	void initForH1(unsigned int aFgBranch);
+
 	/// Compute the three sets of matrices for the H0 hypothesis
 	/// The sets are (these are the bg and fg matrices): 
 	/// - set 0: w0, w0
@@ -58,14 +70,12 @@ public:
 	///	@param[in] aQ1 The mQ1 transition matrix
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
-	void computeMatrixSet(const TransitionMatrix& aQw0,
+	void computeMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 							double aSbg,
 							double aSfg,
-						    unsigned int aFgBranch,
 						    const std::vector<double>& aParams);
 
 	/// Compute the four sets of matrices for the H1 hypothesis
@@ -80,15 +90,13 @@ public:
 	///	@param[in] aQw2 The mQw2 transition matrix
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
-	void computeMatrixSet(const TransitionMatrix& aQw0,
+	void computeMatrixSetH1(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 						    const TransitionMatrix& aQw2,
 							double aSbg,
 							double aSfg,
-						    unsigned int aFgBranch,
 						    const std::vector<double>& aParams);
 #ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
@@ -162,8 +170,9 @@ public:
 	unsigned int size(void) const {return mNumSets;}
 
 private:
-	unsigned int	mNumMatrices;		///< Number of matrices in each set
+	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets
+	int				mFgBranch;			///< Foreground branch number (should be int)
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies

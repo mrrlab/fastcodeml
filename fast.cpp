@@ -186,6 +186,7 @@ int main(int ac, char **av)
 	if(!cmd.mDoNotReduceForest)
 	{
 		forest.reduceSubtrees();
+
 #ifndef NEW_LIKELIHOOD
 		forest.addAggressiveReduction();
 #endif
@@ -277,7 +278,7 @@ int main(int ac, char **av)
 		{
 			if(cmd.mTimesFromFile) h0.initFromTree();
 			else if(cmd.mInitFromConst) h0.initFromTreeAndFixed();
-			
+
 			lnl0 = h0(fg_branch);
 		}
 

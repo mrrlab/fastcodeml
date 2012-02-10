@@ -82,13 +82,12 @@ public:
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -262,13 +261,12 @@ public:
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -283,7 +281,7 @@ public:
 	double computeLikelihood(double* aVar, int aVarLen, unsigned int aFgBranch, bool aTrace)
 	{
 		std::vector<double> x(aVar, aVar+aVarLen);
-		return computeLikelihood(aFgBranch, x, aTrace);
+		return computeLikelihood(x, aTrace);
 	}
 
 private:
@@ -336,7 +334,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(unsigned int aFgBranch, const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -351,7 +349,7 @@ public:
 	double computeLikelihood(double* aVar, int aVarLen, unsigned int aFgBranch, bool aTrace)
 	{
 		std::vector<double> x(aVar, aVar+aVarLen);
-		return computeLikelihood(aFgBranch, x, aTrace);
+		return computeLikelihood(x, aTrace);
 	}
 
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.0)
 project(FastCodeML)
 
 # Source code
@@ -35,7 +35,6 @@ endif(Boost_FOUND)
 # Get the configuration switches
 OPTION(USE_LAPACK         "Use BLAS/LAPACK" ON)
 OPTION(USE_MKL_VML        "Use Intel MKL vectorized routines" OFF)
-OPTION(USE_NEW_LIKELIHOOD "Use the new loglikelihood computation method" OFF)
 OPTION(USE_OPENMP         "Compile with OpenMP support" ON)
 OPTION(USE_MPI            "Use MPI for high level parallelization" ON)
 if(NOT WIN32)
@@ -43,7 +42,8 @@ OPTION(BUILD_NOT_SHARED   "Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
 OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
-OPTION(USE_NON_RECURSIVE_ML "Try a non recursive computation of Maximum Likelihood using the old algorithm (experimental)" OFF)
+SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector")
+SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector)
 
 
 # Search for OpenMP support
@@ -92,10 +92,6 @@ else(WIN32)
 	endif(BUILD_NOT_SHARED)
 endif(WIN32)
 
-if(USE_NEW_LIKELIHOOD)
-	add_definitions(-DNEW_LIKELIHOOD)
-endif(USE_NEW_LIKELIHOOD)
-
 if(USE_MKL_VML)
 	add_definitions(-DUSE_MKL_VML)
 endif(USE_MKL_VML)
@@ -112,13 +108,18 @@ if(USE_ORIGINAL_PROPORTIONS)
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
 
-if(USE_NON_RECURSIVE_ML)
-	if(USE_NEW_LIKELIHOOD)
-		message(SEND_ERROR "USE_NON_RECURSIVE_ML not compatible with USE_NEW_LIKELIHOOD")
-	else(USE_NEW_LIKELIHOOD)
+# Select on method to compute likelihood
+# if(USE_LIKELIHOOD_METHOD MATCHES "Original")
+	# message(STATUS "USE_LIKELIHOOD_METHOD='${USE_LIKELIHOOD_METHOD}'")
+# endif(USE_LIKELIHOOD_METHOD MATCHES "Original")
+
+if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
 		add_definitions(-DNON_RECURSIVE_VISIT)
-	endif(USE_NEW_LIKELIHOOD)
-endif(USE_NON_RECURSIVE_ML)
+endif(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
+
+if(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
+	add_definitions(-DNEW_LIKELIHOOD)
+endif(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 
 
 # Set paths
@@ -157,6 +158,11 @@ if($ENV{HOST} MATCHES "julier")
 	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -mkl=sequential -restrict -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Release mode options" STRING FORCE)
 
 endif($ENV{HOST} MATCHES "julier")
+
+if($ENV{HOST} MATCHES "rosa")
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mkl=sequential" CACHE "Release mode linker options" STRING FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -restrict -mkl=sequential -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Release mode options" STRING FORCE)
+endif($ENV{HOST} MATCHES "rosa")
 
 if($ENV{HOST} MATCHES "eiger")
 

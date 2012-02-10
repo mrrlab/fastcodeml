@@ -103,6 +103,14 @@ public:
 	///
 	void prepareDependencies(bool aForceSerial);
 
+	/// Compute likelihood visiting the trees in a non-recursive way
+	///
+	/// @param[in] aSet Set of exp(Q*t) matrices
+	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
+	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
+	///
+	void computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+
 #ifdef NON_RECURSIVE_VISIT
 	/// Prepare the list of threading pointers for non-recursive trees visit
 	///
@@ -225,6 +233,10 @@ private:
 	///
 	void groupByDependency(bool aForceSerial);
 
+	/// Prepare more detailed dependency lists
+	///
+	void prepareDependenciesClassesAndTrees(void);
+
 	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
@@ -279,7 +291,7 @@ private:
 							std::vector< std::pair<int, int> >& aNodeTo,
 							std::vector<double>& aLength) const;
 
-#ifndef NEW_LIKELIHOOD
+
 	/// Walker for the computation of tree likelihood
 	///
 	/// @param[in] aNode The node from which the visit should start
@@ -288,8 +300,7 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
-	double* computeLikelihoodsWalker(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
-#endif
+	double* computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
 
 #ifdef NON_RECURSIVE_VISIT
 	/// Walker to prepare the non recursive visit list
@@ -324,7 +335,6 @@ private:
 
 
 private:
-	///'mNumSites, mCodonFreq, mNumBranches'
 	size_t					mNumSites;					///< Number of sites
 	const double*			mCodonFreq;					///< Experimental codon frequencies
 	size_t					mNumBranches;				///< Total number of branches of the original tree
@@ -336,6 +346,9 @@ private:
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
 	std::vector< std::vector<unsigned int> >
 							mDependenciesClasses;		///< The groups of dependencies between trees
+	typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
+							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
+	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)
 
 	/// Here are global data that will be removed from the various (site) trees
 	std::vector<std::string>
