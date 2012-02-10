@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <fstream>
 #include <cstring>
+#include <cstdio>
 #include <algorithm>
 #include "Forest.h"
 #include "ForestNode.h"

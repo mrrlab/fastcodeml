@@ -15,7 +15,7 @@ inline static double square(double a) {return a*a;}
 inline static void   zero(double x[], int n) {memset(x, 0, n*sizeof(double));}
 inline static void   xtoy(const double x[], double y[], int n) {memcpy(y, x, n*sizeof(double));}
 
-inline static void identity(double x[], int n) 
+inline static void identityMatrix(double* x, int n) 
 {
 	memset(x, 0, n*n*sizeof(double));
 	for(int i = 0; i < n; i++) x[i*n + i] = 1.0;
@@ -173,7 +173,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 
     gradientB(n, x0, f0, g0, tv, xmark);
 
-    identity(H, nfree);
+    identityMatrix(H, nfree);
 
     for(mIround = 0; mIround < MAX_ITERATIONS; ++mIround)
     {
@@ -232,7 +232,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
                 else
                 {
                     mAlwaysCenter = true;
-                    identity(H, n);
+                    identityMatrix(H, n);
                     fail = 1;
                 }
             }
@@ -243,7 +243,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
                     printf(".. ");
                 }
 
-                identity(H, nfree);
+                identityMatrix(H, nfree);
                 fail = 1;
             }
         }
@@ -377,7 +377,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 
         if (fabs(v) < small)
         {
-            identity(H, nfree);
+            identityMatrix(H, nfree);
             fail = 1;
             continue;
         }
