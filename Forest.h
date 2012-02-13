@@ -68,11 +68,11 @@ public:
 	/// Print the class statistics as: cout << r;
 	///
 	/// @param[in] aOut Output stream
-	/// @param[in] aObj The object to be printed
+	/// @param[in] aForest The forest to be printed
 	///
 	/// @return The output stream
 	///
-	friend std::ostream& operator<< (std::ostream& aOut, const Forest& aObj);
+	friend std::ostream& operator<< (std::ostream& aOut, const Forest& aForest);
 
 	/// Reduce common subtrees on the whole forest
 	///
@@ -244,11 +244,22 @@ private:
 	/// @return True if the grouping changed
 	///
 	bool balanceDependencies(bool aForceSerial);
+
+	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
+	///
+	/// @param[in] aForceSerial Don't group so the execution is serial
+	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
+	///
+	/// @return True if the grouping changed
+	///
 	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp);
 
 	/// Print the size of each class
 	///
 	void printDependencies(void);
+
+	/// Print the size of each class
+	///
 	void printDependenciesClassesAndTrees(void);
 
 	/// Measure the number of branches to be computed at each site

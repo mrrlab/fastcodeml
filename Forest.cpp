@@ -685,34 +685,34 @@ void Forest::printDependenciesClassesAndTrees(void)
 }
 
 
- std::ostream& operator<< (std::ostream& aOut, const Forest& aObj)
+ std::ostream& operator<< (std::ostream& aOut, const Forest& aForest)
 {
 	size_t i;
 
 	aOut << std::endl;
-	aOut << "Num branches:       " << std::setw(7) << aObj.mNumBranches << std::endl;
-	aOut << "Unique sites:       " << std::setw(7) << aObj.mNumSites << std::endl;
-	aOut << "Total branches:     " << std::setw(7) << aObj.mNumBranches*aObj.mNumSites << std::endl;
+	aOut << "Num branches:       " << std::setw(7) << aForest.mNumBranches << std::endl;
+	aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites << std::endl;
+	aOut << "Total branches:     " << std::setw(7) << aForest.mNumBranches*aForest.mNumSites << std::endl;
 
 	// Count total branches on the reduced forest
 	unsigned int cnt = 0;
 	unsigned int cntAggressive = 0;
-	for(i=0; i < aObj.mNumSites; ++i)
+	for(i=0; i < aForest.mNumSites; ++i)
 	{
-		cnt += aObj.mRoots[i].countBranches();
-		cntAggressive += aObj.mRoots[i].countBranches(true);
+		cnt += aForest.mRoots[i].countBranches();
+		cntAggressive += aForest.mRoots[i].countBranches(true);
 	}
-	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << (double)(cnt*100.)/(double)(aObj.mNumBranches*aObj.mNumSites) << '%' << std::endl;
-	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << (double)(cntAggressive*100.)/(double)(aObj.mNumBranches*aObj.mNumSites) << '%' << std::endl;
+	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << (double)(cnt*100.)/(double)(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
+	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << (double)(cntAggressive*100.)/(double)(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << std::endl;
 
 	// Print forest
-	if(aObj.mVerbose >= 2)
+	if(aForest.mVerbose >= 2)
 	{
-		for(i=0; i < aObj.mNumSites; ++i)
+		for(i=0; i < aForest.mNumSites; ++i)
 		{
 			aOut << "=== Site " << i << " ===" << std::endl;
-			aObj.mRoots[i].print(aObj.getNodeNames(), aOut);
+			aForest.mRoots[i].print(aForest.getNodeNames(), aOut);
 			aOut << std::endl;
 		}
 	}
