@@ -19,6 +19,7 @@ set(SRCS
 	AlignedAllocator.cpp
 	HighLevelCoordinator.cpp
 	CodeMLoptimizer.cpp
+	ForestExport.cpp
 )
 
 

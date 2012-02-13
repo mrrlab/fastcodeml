@@ -61,7 +61,7 @@ static inline double distance(const double x[], const double y[], int n)
 static const int MAX_ITERATIONS=10000;
 
 
-double Ming2::minimizeFunction(unsigned int aFgBranch, std::vector<double>& aVars)
+double Ming2::minimizeFunction(std::vector<double>& aVars)
 {
 	int np = (int)aVars.size();
 	std::vector<double> space(np*(np*2+9+2));
@@ -73,7 +73,6 @@ double Ming2::minimizeFunction(unsigned int aFgBranch, std::vector<double>& aVar
 
 	mAlwaysCenter = false;
 	double lnL = 0;
-	mFgBranch = aFgBranch;
 	int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0], &mUpperBound[0], &space[0], &ispace[0], e, np);
 	if(sts < 0) std::cerr << "Check ming2 convergence" << std::endl;
 	std::cerr.sync_with_stdio(sy);
@@ -160,7 +159,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
     }
 
     //f0 = *f = (*fun) (x, n);	++mNumFunCall;
-	f0 = *f = -mModel->computeLikelihood(x, n, mFgBranch, mTraceFun);
+	f0 = *f = -mModel->computeLikelihood(x, n, mTraceFun);
     xtoy(x, x0, n);
     mSIZEp = 99;
 
@@ -389,7 +388,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 
     /* try to remove this after updating LineSearch2() */
     //*f = (*fun) (x, n);	++mNumFunCall;
-	*f = -mModel->computeLikelihood(x, n, mFgBranch, mTraceFun);
+	*f = -mModel->computeLikelihood(x, n, mTraceFun);
 
     if (mNoisy > 2)
     {
@@ -440,7 +439,7 @@ double Ming2::fun_LineSearch(double t, const double x0[], const double p[], doub
 {
     for(int i=0; i < n; ++i) x[i] = x0[i] + t * p[i];
     //return ((*fun) (x, n));
-	return -mModel->computeLikelihood(x, n, mFgBranch, mTraceFun);
+	return -mModel->computeLikelihood(x, n, mTraceFun);
 }
 
 
@@ -827,7 +826,7 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[], double spa
             x0[i] -= eh;
             x1[i] += eh;
             //g[i] = ((*fun) (x1, n) - (*fun) (x0, n)) / (eh * 2.0);
-			g[i] = (-mModel->computeLikelihood(x1, n, mFgBranch, mTraceFun) + mModel->computeLikelihood(x0, n, mFgBranch, mTraceFun)) / (eh * 2.0);
+			g[i] = (-mModel->computeLikelihood(x1, n, mTraceFun) + mModel->computeLikelihood(x0, n, mTraceFun)) / (eh * 2.0);
         }
         else  		/* forward or backward */
         {
@@ -839,7 +838,7 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[], double spa
             }
 
             x1[i] += eh;
-            g[i] = (-mModel->computeLikelihood(x1, n, mFgBranch, mTraceFun) - f0) / eh;
+            g[i] = (-mModel->computeLikelihood(x1, n, mTraceFun) - f0) / eh;
         }
     }
 }

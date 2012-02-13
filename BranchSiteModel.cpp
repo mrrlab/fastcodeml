@@ -272,7 +272,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	// Compute likelihoods
 #ifdef NON_RECURSIVE_VISIT
-	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
+	mForest.computeLikelihoodsNR(mSet, mLikelihoods, 0);
 #else
 #ifdef NEW_LIKELIHOOD
 	mForest.computeLikelihoods(mSet, mLikelihoods);
@@ -370,7 +370,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	// Compute likelihoods
 #ifdef NON_RECURSIVE_VISIT
-	mForest.computeLikelihoodsNR(mSet, mLikelihoods);
+	mForest.computeLikelihoodsNR(mSet, mLikelihoods, 1);
 #else
 #ifdef NEW_LIKELIHOOD
 	mForest.computeLikelihoods(mSet, mLikelihoods);
@@ -542,7 +542,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient);
 
 			// Do the maximization
-			double maxl = optim.minimizeFunction(aFgBranch, mVar);
+			double maxl = optim.minimizeFunction(mVar);
 			
 			if(mTrace)
 			{

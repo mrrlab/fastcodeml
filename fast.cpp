@@ -26,6 +26,7 @@
 #include "MatrixSize.h"
 #include "BayesTest.h"
 #include "Forest.h"
+#include "ForestExport.h"
 #include "Exceptions.h"
 #include "BranchSiteModel.h"
 #ifdef _OPENMP
@@ -329,7 +330,10 @@ int main(int ac, char **av)
 				h1.saveComputedTimes();
 				break;
 			}
-			forest.exportForest(cmd.mGraphFile, fg_branch);
+
+			// Use the forest export class
+			ForestExport fe(forest);
+			fe.exportForest(cmd.mGraphFile, fg_branch);
 		}
 
 		// If the run passes the LRT, then compute the BEB

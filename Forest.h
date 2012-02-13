@@ -2,12 +2,9 @@
 #ifndef FOREST_H
 #define FOREST_H
 
-#include <iostream>
 #include <fstream>
 #include <vector>
 #include <utility>
-#include <map>
-#include <set>
 #include "PhyloTree.h"
 #include "Genes.h"
 #include "ForestNode.h"
@@ -19,6 +16,7 @@
 #endif
 #include "CodonFrequencies.h"
 #include "Types.h"
+#include "ForestExport.h"
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
@@ -103,6 +101,7 @@ public:
 	///
 	void prepareDependencies(bool aForceSerial);
 
+#if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 	/// Compute likelihood visiting the trees in a non-recursive way
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
@@ -110,6 +109,7 @@ public:
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
 	void computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+#endif
 
 #ifdef NON_RECURSIVE_VISIT
 	/// Prepare the list of threading pointers for non-recursive trees visit
@@ -120,10 +120,12 @@ public:
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
+	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
-	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 #endif
 
+#ifdef NEW_LIKELIHOOD
 	/// Compute the log likelihood of the forest given the set of precomputed matrices.
 	/// If NEW_LIKELIHOOD is defined, this routine adopts the experimental "Long Vector" approach.
 	///
@@ -131,13 +133,11 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
 	void computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+#endif
 
-	/// Export the forest in GML format
+	/// Export the forest as graph file
 	///
-	/// @param[in] aFilename The filename to be written
-	/// @param[in] aCounter Value to substitute \%d or \@d in filename (it is a printf format)
-	///
-	void exportForest(const char* aFilename, unsigned int aCounter=0) const;
+	friend class ForestExport;
 
 	/// Return the total number of branches
 	///
@@ -244,10 +244,12 @@ private:
 	/// @return True if the grouping changed
 	///
 	bool balanceDependencies(bool aForceSerial);
+	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp);
 
 	/// Print the size of each class
 	///
 	void printDependencies(void);
+	void printDependenciesClassesAndTrees(void);
 
 	/// Measure the number of branches to be computed at each site
 	///
@@ -277,21 +279,7 @@ private:
 	///
 	void checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const;
 
-	/// Walker for the exporter
-	///
-	///	@param[in] aNode The node from which to start
-	///	@param[in] aBranchLengths List of all branch lengths
-	/// @param[out] aNodeFrom List of starting nodes
-	/// @param[out] aNodeTo List of ending nodes
-	/// @param[out] aLength Resulting branch lengths to label branches in exported tree
-	///
-	void exportForestWalker(const ForestNode* aNode,
-							const std::vector<double>& aBranchLengths,
-							std::vector< std::pair<int, int> >& aNodeFrom,
-							std::vector< std::pair<int, int> >& aNodeTo,
-							std::vector<double>& aLength) const;
-
-
+#if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 	/// Walker for the computation of tree likelihood
 	///
 	/// @param[in] aNode The node from which the visit should start
@@ -301,6 +289,7 @@ private:
 	/// @return The vector of codons probabilities at the aNode node
 	///
 	double* computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
+#endif
 
 #ifdef NON_RECURSIVE_VISIT
 	/// Walker to prepare the non recursive visit list

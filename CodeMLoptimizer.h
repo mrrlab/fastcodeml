@@ -30,20 +30,18 @@ public:
 			mLowerBound(aLowerBound),
 			mUpperBound(aUpperBound),
 			mDeltaForGradient(aDeltaForGradient),
-			mFgBranch(0),
 			mNoisy(0),
 			mAlwaysCenter(false),
 			mIround(0),
 			mSIZEp(0.) {}
 
-	/// Do the minimization of: aModel->computeLikelihood(x, n, mFgBranch, mTraceFun);
+	/// Do the minimization of: aModel->computeLikelihood(x, n, mTraceFun);
 	///
-	/// @param[in] aFgBranch The foreground branch number
 	/// @param[in,out] aVars The variables that should be optimized
 	///
 	/// @return The maximum loglikelihood value
 	///
-	double minimizeFunction(unsigned int aFgBranch, std::vector<double>& aVars);
+	double minimizeFunction(std::vector<double>& aVars);
 
 private:
 	/// The original ming2 minimizer.
@@ -128,7 +126,7 @@ private:
 	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	double						mDeltaForGradient;	///< This is the original Small_Diff value
-	unsigned int				mFgBranch;			///< The selected foreground branch
+	//unsigned int				mFgBranch;			///< The selected foreground branch
 
 private:
 	/// The following variables are from the original code

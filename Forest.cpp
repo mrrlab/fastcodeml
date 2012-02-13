@@ -312,8 +312,8 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 	// Effort is number of branches plus one to have always non zero values
 	for(size_t i=0; i < mNumSites; ++i)
 	{
-		unsigned int cntAggressive = mRoots[i].countBranches(true)+1;
-		aEffort.push_back(cntAggressive);
+		unsigned int cnt_aggressive = mRoots[i].countBranches(true)+1;
+		aEffort.push_back(cnt_aggressive);
 	}
 }
 
@@ -386,6 +386,17 @@ void Forest::prepareDependencies(bool aForceSerial)
 		std::cerr << std::endl << "After balancing" << std::endl;
 		printDependencies();
 	}
+
+	// Balance the precomputed dependency lists for both hypothesis
+	bool done_ct = balanceDependenciesClassesAndTrees(aForceSerial, 0) &&
+				   balanceDependenciesClassesAndTrees(aForceSerial, 1);
+
+	if(done_ct && mVerbose >= 1)
+	{
+		std::cerr << std::endl << "After balancing (Classes&Trees)" << std::endl;
+		printDependenciesClassesAndTrees();
+	}
+
 
 	// Compute the effort (ie the number of branches+1) for each thread in each class
 	//
@@ -470,7 +481,9 @@ bool Forest::balanceDependencies(bool aForceSerial)
 	// Do nothing if no dependencies
 	if(aForceSerial) return false;
 
-#ifdef _OPENMP
+#ifndef _OPENMP
+	return false;
+#else
 	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
 	// This step makes sense only if run multithread and if there are more than one class
 	const unsigned int num_threads = omp_get_max_threads();
@@ -542,8 +555,108 @@ bool Forest::balanceDependencies(bool aForceSerial)
 	}
 
 	return true;
-#else
+#endif
+}
+
+
+bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
+{
+	// Do nothing if no dependencies or no parallel execution
+	if(aForceSerial) return false;
+
+#ifndef _OPENMP
 	return false;
+#else
+	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
+	// This step makes sense only if run multithread and if there are more than one class
+	const unsigned int num_threads = omp_get_max_threads();
+	const unsigned int num_classes = mDependenciesClassesAndTrees[aHyp].size();
+	if(num_threads < 2 || num_classes < 2) return false;
+
+	// Compute effort per site (hyp.: all codon classes have the same effort)
+	//std::vector<unsigned int> effort(mNumSites);
+
+	// Effort is number of branches plus one to have always non zero values
+	//for(size_t i=0; i < mNumSites; ++i) effort[i] = mRoots[i].countBranches(true)+1;
+
+	// This set will contain the site & class pairs that can be postponed without problem
+	std::set<std::pair<unsigned int, unsigned int> > jolly_sites;
+
+	// Check if the current level can be balanced
+	for(unsigned int k=0; k < num_classes; ++k)
+	{
+		// Can jolly sites be added?
+		// Try to have num sites at this level multiple of number of threads
+		unsigned int num_jolly = jolly_sites.size();
+		const unsigned int class_num_sites = mDependenciesClassesAndTrees[aHyp][k].size();
+		unsigned int over = class_num_sites % num_threads;
+
+		// The number of computations that should be removed or added to have a multiple of num_threads
+		unsigned int needed_remove = (class_num_sites <= num_threads) ? 0 : over;
+		unsigned int needed_add    = (num_jolly >= over) ? num_threads - over + ((num_jolly - num_threads + over)/num_threads)*num_threads : 0;
+
+		std::cerr << "Jolly: " << num_jolly << " Over: " << over << " th: " << num_threads << std::endl;
+		std::cerr << k << ' ' << std::setw(2) << class_num_sites << " Remove: " << needed_remove << " Add: " << needed_add << std::endl;
+
+		// There are at least the number needed to add in the jolly list, so add them
+		if(needed_add > 0)
+		{
+			for(unsigned int j=0; j < needed_add; ++j)
+			{
+				std::set<std::pair<unsigned int, unsigned int> >::iterator it = jolly_sites.begin();
+				mDependenciesClassesAndTrees[aHyp][k].push_back(*it);
+				jolly_sites.erase(it);
+			}
+		}
+		else if(needed_remove > 0)
+		{
+			// Else, can sites be removed from here?
+			// Count how many sites are jolly at this level
+			unsigned int num_level_jolly_sites = 0;
+			for(unsigned int s=0; s < class_num_sites; ++s)
+			{
+				// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
+				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+				if(mTreeRevDependencies[site].empty()) ++num_level_jolly_sites;
+			}
+
+			std::cerr << "Possible jollies: " << num_level_jolly_sites << " Over: " << over << std::endl;
+
+			// Sites can be removed from here
+			if(num_level_jolly_sites >= over)
+			{
+				// Increase, if possible, the "over" value
+				over += ((num_level_jolly_sites - over)/num_threads)*num_threads;
+
+				// Save what remains at this level
+				std::vector<std::pair<unsigned int, unsigned int> > new_content;
+
+				for(unsigned int s=0; s < class_num_sites; ++s)
+				{
+					unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+					if(over && mTreeRevDependencies[site].empty())
+					{
+						jolly_sites.insert(mDependenciesClassesAndTrees[aHyp][k][s]);
+						--over;
+					}
+					else
+					{
+						new_content.push_back(mDependenciesClassesAndTrees[aHyp][k][s]);
+					}
+				}
+				mDependenciesClassesAndTrees[aHyp][k].swap(new_content);
+			}
+		}
+	}
+
+	// If there are still jolly sites, add them to the last class
+	if(!jolly_sites.empty())
+	{
+		mDependenciesClassesAndTrees[aHyp][num_classes-1].insert(mDependenciesClassesAndTrees[aHyp][num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
+	}
+
+	std::cerr << std::endl;
+	return true;
 #endif
 }
 
@@ -554,6 +667,20 @@ void Forest::printDependencies(void)
 	for(unsigned int numdep=0; numdep < num_classes; ++numdep)
 	{
 		std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClasses[numdep].size() << std::endl;
+	}
+}
+
+
+void Forest::printDependenciesClassesAndTrees(void)
+{
+	for(unsigned int h=0; h <= 1; ++h)
+	{
+		std::cerr << std::endl << "Hypothesis H" << h << std::endl;
+		const unsigned int num_classes = mDependenciesClassesAndTrees[h].size();
+		for(unsigned int numdep=0; numdep < num_classes; ++numdep)
+		{
+			std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClassesAndTrees[h][numdep].size() << std::endl;
+		}
 	}
 }
 
@@ -593,137 +720,6 @@ void Forest::printDependencies(void)
 	return aOut;
 }
 
-void Forest::exportForest(const char* aFilename, unsigned int aCounter) const
- {
-	 std::vector< std::pair<int, int> > node_from;
-	 std::vector< std::pair<int, int> > node_to;
-	 std::vector< double >				branch_length;
-
-	 // Get all forest connections
-	 std::vector<ForestNode>::const_iterator ifn;
-	 for(ifn=mRoots.begin(); ifn != mRoots.end(); ++ifn)
-	 {
-		 exportForestWalker(&(*ifn), mBranchLengths, node_from, node_to, branch_length);
-	 }
-
-	// Remove duplicated nodes
-	std::set< std::pair<int, int> > vertices;
-	std::vector< std::pair<int, int> >::const_iterator ip;
-	for(ip = node_from.begin(); ip != node_from.end(); ++ip) vertices.insert(*ip);
-	for(ip = node_to.begin(); ip != node_to.end(); ++ip) vertices.insert(*ip);
-
-	// Convert to node indices
-	std::map<std::pair<int, int>, int> map;
-	int idx;
-	std::set< std::pair<int, int> >::const_iterator iv;
-	for(iv=vertices.begin(), idx=1; iv != vertices.end(); ++iv, ++idx)
-	{
-		std::pair<int, int> p(iv->first, iv->second);
-		map[p] = idx;
-	}
-
-	// Map values to branches (identified by the end node)
-	std::map<std::pair<int, int>, double> map_value;
-	std::map<std::pair<int, int>, bool> map_same;
-	for(size_t i=0; i < node_to.size(); ++i)
-	{
-		map_value[node_to[i]] = branch_length[i];
-	}
-
-	// Check if the filename contains a %03d format
-	char temp_filename[1024];
-	if(strrchr(aFilename, '%'))
-	{
-		sprintf(temp_filename, aFilename, aCounter);
-		aFilename = temp_filename;
-	}
-	else if(strrchr(aFilename, '@'))
-	{
-		char z[1024];
-		strncpy(z, aFilename, 1023);
-		z[1023] = '\0';
-		char *p = strrchr(z, '@');
-		*p = '%';
-		sprintf(temp_filename, z, aCounter);
-		aFilename = temp_filename;
-	}
-
-	// Open the file and write the forest
-	std::ofstream net(aFilename, std::ios_base::trunc | std::ios_base::out);
-	if(!net.good())
-	{
-		std::cerr << "Cannot create net file <" << aFilename << ">" << std::endl;
-	}
-	else
-	{
-		net << "graph [\n";
-		net << "comment \"Created by FastCodeML\"\n";
-		net << "directed 1\n";
-		net << "Version 1\n";
-
-		for(iv=vertices.begin(), idx=1; iv != vertices.end(); ++iv, ++idx)
-		{
-			net << "node [\n";
-			net << "   id " << idx << '\n';
-			if(iv->second == 0)
-			{
-				net << "   label \"Root " << iv->first << "\"\n";
-				net << "   type 0\n";
-			}
-			else
-			{
-				std::string s = mNodeNames[iv->second];
-				if(s.empty()) net << "   label \"" << iv->second << "\"\n";
-				else          net << "   label \"" << s << "\"\n";
-				net << "   type 1\n";
-			}
-			net << "]\n";
-		}
-
-		for(size_t i=0; i < node_from.size(); ++i)
-		{
-			std::pair<int, int> pf(node_from[i].first, node_from[i].second);
-			std::pair<int, int> pt(node_to[i].first,   node_to[i].second);
-			bool same_tree = node_from[i].first == node_to[i].first;
-
-			net << "edge [\n";
-			net << "   source " <<  map[pf] << '\n';
-			net << "   target " <<  map[pt] << '\n';
-			net << "   label \"" << std::fixed << std::setprecision(2) << map_value[pt] << (same_tree ? "" : "+") << "\"\n"; // Trailing plus means not same tree link
-			net << "]\n";
-		}
-		net << "]\n";
-		net.close();
-	}
-}
-
-
-void Forest::exportForestWalker(const ForestNode* aNode,
-								const std::vector<double>& aBranchLengths,
-								std::vector< std::pair<int, int> >& aNodeFrom,
-								std::vector< std::pair<int, int> >& aNodeTo,
-								std::vector< double >& aLength) const
-{
-	int my_node_id = aNode->mBranchId+1;
-	int my_tree_id = aNode->mOwnTree;
-
-	const unsigned int nc = aNode->mChildrenCount;
-	for(unsigned int i=0; i < nc; ++i)
-	{
-		ForestNode *n = aNode->mChildrenList[i];
-		int your_node_id = n->mBranchId+1;
-		int your_tree_id = n->mOwnTree;
-
-		std::pair<int, int> p_from(my_tree_id, my_node_id);
-		std::pair<int, int> p_to(your_tree_id, your_node_id);
-
-		aNodeFrom.push_back(p_from);
-		aNodeTo.push_back(p_to);
-		aLength.push_back(mBranchLengths[your_node_id]);
-
-		if(your_tree_id == my_tree_id) exportForestWalker(n, aBranchLengths, aNodeFrom, aNodeTo, aLength);
-	}
-}
 
 void Forest::checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const
 {
@@ -971,27 +967,23 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 
 
 
-void Forest::computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
+void Forest::computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
-	const unsigned int num_sets = aSet.size();
-
-	std::vector< std::vector<unsigned int> >::iterator ivs=mDependenciesClasses.begin();
-	for(; ivs != mDependenciesClasses.end(); ++ivs)
+	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
+	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
 	{
-		const int num_sites = ivs->size();
-		const int len       = num_sites*num_sets;
+		const int len = ivs->size();
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, ivs, num_sets, num_sites, aLikelihoods) schedule(static)
+		#pragma omp parallel for default(none) shared(aSet, len, ivs, aLikelihoods) schedule(static)
 #else
 		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int set_idx  = i / num_sites;
-			const unsigned int site_idx = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
-			const unsigned int site     = (*ivs)[site_idx];
+			const unsigned int site    = (*ivs)[i].first;
+			const unsigned int set_idx = (*ivs)[i].second;
 
 			computeLikelihoodsWalkerNR(aSet, set_idx, site);
 
@@ -1232,6 +1224,7 @@ void Forest::prepareDependenciesClassesAndTrees(void)
 	}
 }
 
+#if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 
 void Forest::computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
@@ -1306,4 +1299,6 @@ double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMa
 
 	return anode_prob;
 }
+
+#endif
 

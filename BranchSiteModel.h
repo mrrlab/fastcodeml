@@ -94,12 +94,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aVarLen The optimizer variables array length
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(double* aVar, int aVarLen, unsigned int aFgBranch, bool aTrace) =0;
+	virtual double computeLikelihood(double* aVar, int aVarLen, bool aTrace) =0;
 
 	/// Get variable values
 	///
@@ -273,12 +272,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aVarLen The optimizer variables array length
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(double* aVar, int aVarLen, unsigned int aFgBranch, bool aTrace)
+	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
 	{
 		std::vector<double> x(aVar, aVar+aVarLen);
 		return computeLikelihood(x, aTrace);
@@ -341,12 +339,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aVarLen The optimizer variables array length
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aTrace If set visualize the best result so far
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(double* aVar, int aVarLen, unsigned int aFgBranch, bool aTrace)
+	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
 	{
 		std::vector<double> x(aVar, aVar+aVarLen);
 		return computeLikelihood(x, aTrace);
