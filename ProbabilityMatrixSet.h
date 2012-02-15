@@ -1,6 +1,6 @@
 
-#ifndef TRANSITIONMATRIXSET_H
-#define TRANSITIONMATRIXSET_H
+#ifndef PROBABILITYMATRIXSET_H
+#define PROBABILITYMATRIXSET_H
 
 #include <vector>
 #include "MatrixSize.h"
@@ -16,14 +16,14 @@
 #include <mkl_vml_functions.h>
 #endif
 
-/// Set of transition matrices for all branches of a tree.
+/// Set of probability matrices for all branches of a tree.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-04-05 (initial version)
 ///     @version 1.0
 ///
 ///
-class TransitionMatrixSet
+class ProbabilityMatrixSet
 {
 public:
 
@@ -32,7 +32,7 @@ public:
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	///
-	TransitionMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices), mNumSets(aNumSets)
+	ProbabilityMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices), mNumSets(aNumSets)
 	{
 		mMatrixSpace  = (double *)alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
 		mMatrices     = (double**)alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
@@ -42,7 +42,7 @@ public:
 
 	/// Destructor.
 	///
-	~TransitionMatrixSet()
+	~ProbabilityMatrixSet()
 	{
 		alignedFree(mMatrixSpace);
 		alignedFree(mMatrices);

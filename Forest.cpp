@@ -23,9 +23,6 @@ const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 
 
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq)
 {
-	// Check coherence between tree and genes
-	checkCoherence(aTree, aGenes);
-
 	// Collect global data that refers to the tree and that should not be duplicated on each tree of the forest
 	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, &mMarkedInternalBranch);
 
@@ -318,6 +315,100 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 }
 
 
+void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort, unsigned int aHyp)
+{
+	std::vector<unsigned int> core_effort;
+#ifdef _OPENMP
+	unsigned int nthreads = omp_get_max_threads();
+#else
+	unsigned int nthreads = 1;
+#endif
+
+	const unsigned int num_classes = mDependenciesClassesAndTrees[aHyp].size();
+	for(unsigned int k=0; k < num_classes; ++k)
+	{
+		const unsigned int class_num_sites = mDependenciesClassesAndTrees[aHyp][k].size();
+		core_effort.assign(nthreads, 0);
+
+		unsigned int sites_per_core_base = class_num_sites/nthreads;
+		unsigned int sites_per_core_plus = class_num_sites-sites_per_core_base*nthreads;
+		if(mVerbose >= 1) std::cerr << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
+		for(unsigned int j=0; j < class_num_sites; ++j)
+		{
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			
+			unsigned int idx = 0;
+			if(sites_per_core_plus == 0)
+			{
+				idx = j/sites_per_core_base;
+			}
+			else if(j >= (sites_per_core_base+1)*sites_per_core_plus)
+			{
+				idx = (j-(sites_per_core_base+1)*sites_per_core_plus)/sites_per_core_base+sites_per_core_plus;
+			}
+			else
+			{
+				idx = j/(sites_per_core_base+1);
+			}
+			core_effort[idx] += aEffort[site];
+		}
+		if(mVerbose >= 1)
+		{
+			std::cerr << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
+			for(unsigned int i=0; i < nthreads; ++i) std::cerr << std::setw(4) << core_effort[i];
+			std::cerr << std::endl;
+		}
+	}
+}
+
+unsigned int Forest::totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp)
+{
+	unsigned int total_effort = 0;
+
+	std::vector<unsigned int> core_effort;
+#ifdef _OPENMP
+	unsigned int nthreads = omp_get_max_threads();
+#else
+	unsigned int nthreads = 1;
+#endif
+
+	const unsigned int num_classes = mDependenciesClassesAndTrees[aHyp].size();
+	for(unsigned int k=0; k < num_classes; ++k)
+	{
+		const unsigned int class_num_sites = mDependenciesClassesAndTrees[aHyp][k].size();
+		core_effort.assign(nthreads, 0);
+
+		unsigned int sites_per_core_base = class_num_sites/nthreads;
+		unsigned int sites_per_core_plus = class_num_sites-sites_per_core_base*nthreads;
+
+		for(unsigned int j=0; j < class_num_sites; ++j)
+		{
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			
+			unsigned int idx = 0;
+			if(sites_per_core_plus == 0)
+			{
+				idx = j/sites_per_core_base;
+			}
+			else if(j >= (sites_per_core_base+1)*sites_per_core_plus)
+			{
+				idx = (j-(sites_per_core_base+1)*sites_per_core_plus)/sites_per_core_base+sites_per_core_plus;
+			}
+			else
+			{
+				idx = j/(sites_per_core_base+1);
+			}
+			core_effort[idx] += aEffort[site];
+		}
+
+		unsigned int max_effort = 0;
+		for(unsigned int i=0; i < nthreads; ++i) if(core_effort[i] > max_effort) max_effort = core_effort[i];
+		total_effort += max_effort;
+	}
+
+	return total_effort;
+}
+
 void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort)
 {
 	std::vector<unsigned int> core_effort;
@@ -369,34 +460,37 @@ void Forest::prepareDependencies(bool aForceSerial)
 {
 	// Compute the dependencies: for each class list all sites that should be done at this level
 	groupByDependency(aForceSerial);
-
-	if(mVerbose >= 1)
-	{
-		printDependencies();
-	}
 	
 	// Prepare more detailed inter-tree dependencies lists
 	prepareDependenciesClassesAndTrees();
 
-	// Move sites that can be move up the hierarchy to have classes with a number of sites multiple of number of threads
-	bool done = balanceDependencies(aForceSerial);
+	// Compute effort per site
+	std::vector<unsigned int> effort;
+	measureEffort(effort);
 
-	if(done && mVerbose >= 1)
+	// Print count and total effort before balancing
+	if(mVerbose >= 1)
 	{
-		std::cerr << std::endl << "After balancing" << std::endl;
-		printDependencies();
+		std::cerr << std::endl << "Before balancing (Classes&Trees)" << std::endl;
+		printDependenciesClassesAndTrees();
+		std::cerr << std::endl;
+		std::cerr << "H0 total: " << totalEffort(effort, 0) << std::endl;
+		std::cerr << "H1 total: " << totalEffort(effort, 1) << std::endl;
 	}
 
 	// Balance the precomputed dependency lists for both hypothesis
 	bool done_ct = balanceDependenciesClassesAndTrees(aForceSerial, 0) &&
 				   balanceDependenciesClassesAndTrees(aForceSerial, 1);
 
+	// Print classes after balancing
 	if(done_ct && mVerbose >= 1)
 	{
 		std::cerr << std::endl << "After balancing (Classes&Trees)" << std::endl;
 		printDependenciesClassesAndTrees();
+		std::cerr << std::endl;
+		std::cerr << "H0 total: " << totalEffort(effort, 0) << std::endl;
+		std::cerr << "H1 total: " << totalEffort(effort, 1) << std::endl;
 	}
-
 
 	// Compute the effort (ie the number of branches+1) for each thread in each class
 	//
@@ -404,9 +498,11 @@ void Forest::prepareDependencies(bool aForceSerial)
 	//
 	if(mVerbose >= 1)
 	{
-		std::vector<unsigned int> effort;
-		measureEffort(effort);
-		printEffortByGroup(effort);
+		std::cerr << std::endl << "Hypothesis H0" << std::endl;
+		printEffortByGroup(effort, 0);
+
+		std::cerr << std::endl << "Hypothesis H1" << std::endl;
+		printEffortByGroup(effort, 1);
 	}
 }
 
@@ -592,8 +688,9 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 		unsigned int over = class_num_sites % num_threads;
 
 		// The number of computations that should be removed or added to have a multiple of num_threads
-		unsigned int needed_remove = (class_num_sites <= num_threads) ? 0 : over;
-		unsigned int needed_add    = (num_jolly >= over) ? num_threads - over + ((num_jolly - num_threads + over)/num_threads)*num_threads : 0;
+		int needed_remove = (class_num_sites <= num_threads) ? 0 : over;
+		//int needed_add    = (num_jolly && num_jolly >= over) ? num_threads - over + ((num_jolly - num_threads + over)/num_threads)*num_threads : 0;
+		int needed_add = (over && num_jolly >= (num_threads - over)) ? num_threads - over : 0;
 
 		std::cerr << "Jolly: " << num_jolly << " Over: " << over << " th: " << num_threads << std::endl;
 		std::cerr << k << ' ' << std::setw(2) << class_num_sites << " Remove: " << needed_remove << " Add: " << needed_add << std::endl;
@@ -601,7 +698,7 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 		// There are at least the number needed to add in the jolly list, so add them
 		if(needed_add > 0)
 		{
-			for(unsigned int j=0; j < needed_add; ++j)
+			for(int j=0; j < needed_add; ++j)
 			{
 				std::set<std::pair<unsigned int, unsigned int> >::iterator it = jolly_sites.begin();
 				mDependenciesClassesAndTrees[aHyp][k].push_back(*it);
@@ -620,7 +717,7 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 				if(mTreeRevDependencies[site].empty()) ++num_level_jolly_sites;
 			}
 
-			std::cerr << "Possible jollies: " << num_level_jolly_sites << " Over: " << over << std::endl;
+			std::cerr << "Possible jollies: " << num_level_jolly_sites << std::endl;
 
 			// Sites can be removed from here
 			if(num_level_jolly_sites >= over)
@@ -647,6 +744,7 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 				mDependenciesClassesAndTrees[aHyp][k].swap(new_content);
 			}
 		}
+	std::cerr << std::endl;
 	}
 
 	// If there are still jolly sites, add them to the last class
@@ -721,31 +819,6 @@ void Forest::printDependenciesClassesAndTrees(void)
 }
 
 
-void Forest::checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const
-{
-	// Get the two species list
-	std::vector<std::string> tree_species_list;
-	aTree.getSpecies(tree_species_list);
-	std::vector<std::string> genes_species_list;
-	aGenes.getSpecies(genes_species_list);
-
-	// Should at least have the same number of species
-	if(tree_species_list.size() != genes_species_list.size()) throw FastCodeMLFatal("Different number of species in tree and genes");
-
-	// Create correspondence between species names
-	std::vector<std::string>::const_iterator is1, is2;
-	for(is1=tree_species_list.begin(); is1 != tree_species_list.end(); ++is1)
-	{
-		bool found = false;
-		for(is2=genes_species_list.begin(); is2 != genes_species_list.end(); ++is2)
-		{
-			if(*is1 == *is2) {found = true; break;}
-		}
-		if(!found) throw FastCodeMLFatal("Mismatch between species in tree and genes");
-	}
-}
-
-
 void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode) const
 {
 	if(!aNode) aNode = &mRoots[mNumSites-1];
@@ -795,7 +868,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 #ifdef NEW_LIKELIHOOD
 // Compute likelihood with the new "Long Vector" approach
 //
-void Forest::computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
+void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
 {
 	// Initialize variables
     const unsigned int num_sets = aSet.size();
@@ -967,7 +1040,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 
 
 
-void Forest::computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
+void Forest::computeLikelihoodsNR(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
 	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
@@ -992,7 +1065,7 @@ void Forest::computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedD
 	}
 }
 
-void Forest::computeLikelihoodsWalkerNR(const TransitionMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx)
+void Forest::computeLikelihoodsWalkerNR(const ProbabilityMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx)
 {
 	unsigned int nv = mVisitTree[aSiteIdx].size();
 	for(unsigned int j=0; j < nv; ++j)
@@ -1226,7 +1299,7 @@ void Forest::prepareDependenciesClassesAndTrees(void)
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 
-void Forest::computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
+void Forest::computeLikelihoodsTC(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
 	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
@@ -1252,7 +1325,7 @@ void Forest::computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedD
 }
 
 
-double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx)
+double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
 	bool first = true;
 	double* anode_prob = aNode->mProb[aSetIdx];

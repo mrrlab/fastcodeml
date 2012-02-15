@@ -6,13 +6,8 @@
 #include <vector>
 #include "TreeNode.h"
 #include "ForestNode.h"
-#include "TransitionMatrix.h"
-
-#include <boost/spirit/include/classic_core.hpp>
-#include <boost/spirit/include/classic_parse_tree.hpp>
-
-typedef boost::spirit::classic::tree_match<char const*> ParseTreeMatchType;
-typedef ParseTreeMatchType::tree_iterator ParseTreeIteratorType;
+//#include "TransitionMatrix.h"
+#include "Types.h"
 
 /// Phylogenetic tree public interface.
 ///
@@ -33,7 +28,7 @@ public:
 
 	/// Destructor.
 	///
-	~PhyloTree();
+	virtual ~PhyloTree();
 
 	/// Load a phylo tree definition from a Newick formatted file.
 	///
@@ -41,7 +36,7 @@ public:
 	///
 	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
 	///
-	void loadTreeFile(const char *aFilename);
+	virtual void loadTreeFile(const char *aFilename) =0;
 
 	/// Load a phylo tree definition from a Newick formatted string.
 	///
@@ -49,14 +44,7 @@ public:
 	///
 	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
 	///
-	void loadTreeFromString(const std::string& aTreeAsString);
-
-	/// Show the parsing error point.
-	/// The output is valid only if loadTree() ends in error.
-	///
-	/// @return The text parsed so far without error
-	///
-	std::string loadTreeParseError(void) const {return mParsedPortion;}
+	virtual void loadTreeFromString(const std::string& aTreeAsString) =0;
 
 	/// Clean the object content that afterwards become invalid
 	///
@@ -66,11 +54,12 @@ public:
 	///
 	void printFormattedTree(void) const;
 #endif
-	/// Print the phylogenetic tree completed with all the info loaded in Newick format.
+	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in.
 	///
+	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	///
-	void printNewickTree(TreeNode *aNode=0) const;
+	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=0) const =0;
 
 	/// Load the list of species in the given array.
 	///
@@ -124,22 +113,7 @@ public:
 	///
 	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
-private:
-	/// Parse the parse tree and build the phylo tree structure.
-	///
-	/// @param[in] aTreeIterator Tree iterator
-	/// @param[in,out] aNode Node from which the construction should continue
-	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
-	///
-	void evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNode *aNode);
-
-	/// Print an indented form of the parse tree.
-	///
-	/// @param[in] aTreeIterator Tree iterator
-	/// @param[in] aIndent Indent level (each level increases by two spaces)
-	///
-	void printTree(ParseTreeIteratorType const& aTreeIterator, int aIndent);
+protected:
 
 	/// Fill the list of Species (the leaves of the tree).
 	///
@@ -154,8 +128,7 @@ private:
 	void fillInternalBranches(TreeNode *aNode);
 
 
-private:
-	std::string				mParsedPortion;		///< In case of error part of the string successfully parsed else it is empty.
+protected:
 	TreeNode				mTreeRoot;			///< The root of the phylogenetic tree in memory
 	unsigned int			mVerboseLevel;		///< The verbosity level
 	std::vector<TreeNode *>	mLeavesSpecies;		///< The list of the tree leaves
@@ -163,5 +136,3 @@ private:
 };
 
 #endif
-
-

@@ -1,7 +1,7 @@
 
-#include "TransitionMatrixSet.h"
+#include "ProbabilityMatrixSet.h"
 
-void TransitionMatrixSet::initForH0(unsigned int aFgBranch)
+void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 {
 	mFgBranch = (int)aFgBranch;
 
@@ -15,7 +15,7 @@ void TransitionMatrixSet::initForH0(unsigned int aFgBranch)
 }
 
 
-void TransitionMatrixSet::initForH1(unsigned int aFgBranch)
+void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 {
 	mFgBranch = (int)aFgBranch;
 
@@ -36,7 +36,7 @@ void TransitionMatrixSet::initForH1(unsigned int aFgBranch)
 }
 
 
-void TransitionMatrixSet::computeMatrixSetH0(const  TransitionMatrix& aQw0,
+void ProbabilityMatrixSet::computeMatrixSetH0(const  TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,
 											 double aSbg,
 											 double aSfg,
@@ -62,7 +62,7 @@ void TransitionMatrixSet::computeMatrixSetH0(const  TransitionMatrix& aQw0,
 }
 
 
-void TransitionMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
+void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,
 											 const  TransitionMatrix& aQw2,
 											 double aSbg,

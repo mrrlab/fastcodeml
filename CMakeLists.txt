@@ -6,14 +6,16 @@ set(SRCS
 	fast.cpp
 	CmdLine.cpp
 	Genes.cpp
+	Phylip.cpp
 	PhyloTree.cpp
+	Newick.cpp
 	TreeNode.cpp
 	BayesTest.cpp
 	FillQ.cpp
 	Forest.cpp
 	TransitionMatrix.cpp
 	BranchSiteModel.cpp
-	TransitionMatrixSet.cpp
+	ProbabilityMatrixSet.cpp
 	FatVectorTransform.cpp
 	CodonFrequencies.cpp
 	AlignedAllocator.cpp

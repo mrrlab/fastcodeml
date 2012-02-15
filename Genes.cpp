@@ -1,17 +1,11 @@
 
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <vector>
-#include <algorithm>
-#include <functional>
 #include <iterator>
+#include <algorithm>
 #include "Genes.h"
-#include "MatrixSize.h"
 #include "Exceptions.h"
 
 
@@ -28,169 +22,6 @@ void Genes::clear(void)
 	mSiteMultiplicity.clear();	
 	mMapSiteToDnaGene.clear();	
 	mMapSpecieToDnaGene.clear();
-}
-
-void Genes::loadGenesFile(const char* aFilename)
-{
-	int i;
-	unsigned int j;
-
-	std::ifstream in(aFilename);
-	if(!in)
-	{
-		std::cerr << "Cannot open " << aFilename << std::endl;
-		throw FastCodeMLFatalNoMsg();
-	}
-
-    std::string str;
-	if(!getline(in, str) || str.empty())
-	{
-		in.close();
-		std::cerr << "File " << aFilename << " is empty" << std::endl;
-		throw FastCodeMLFatalNoMsg();
-	}
-
-	long unsigned int nspecies, nbasis;
-	char *endptr;
-	const char *next = str.c_str();
-	nspecies = strtol(next, &endptr, 10);
-	if(endptr == next)
-	{
-		in.close();
-		std::cerr << "File " << aFilename << " is malformed" << std::endl;
-		throw FastCodeMLFatalNoMsg();
-	}
-
-	next = endptr;
-	nbasis = strtol(next, &endptr, 10);
-	if(endptr == next)
-	{
-		in.close();
-		std::cerr << "File " << aFilename << " is malformed" << std::endl;
-		throw FastCodeMLFatalNoMsg();
-	}
-
-	if(mVerboseLevel >= 1)
-	{
-		std::cerr << std::endl;
-		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
-		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
-	}
-
-	// Read and parse the genes
-    while(mDnaSpecies.size() < nspecies && getline(in, str))
-    {
-		// Extract the specie name
-        if(str.empty()) continue;
-		size_t p1 = str.find_first_not_of(" \t\r");
-		if(p1 == std::string::npos) continue;
-		size_t p2 = str.find_first_of(" \t", p1);
-
-		std::string s;
-		s.assign(str, p1, p2-p1);
-		mDnaSpecies.push_back(s);
-
-		// Extract the gene specification
-		s.clear();
-		for(;;)
-		{
-			for(;;)
-			{
-				p1 = str.find_first_not_of(" \t\r", p2);
-				if(p1 == std::string::npos) break;
-
-				p2 = str.find_first_of(" \t\r", p1);
-				if(p2 == std::string::npos) p2 = str.size();
-
-				s.append(str, p1, p2-p1);
-			}
-			if(s.size() >= nbasis) break;
-			getline(in, str);
-			p2 = 0;
-		}
-        mDnaGene.push_back(s);
-	}
-	in.close();
-
-	// Check correct number of species loaded
-	if(nspecies != mDnaSpecies.size())
-	{
-		std::cerr << "File " << aFilename << " has number of species mismatch" << std::endl;
-		throw FastCodeMLFatalNoMsg();
-	}
-
-	// Inizialize codons multiplicity
-	std::vector<unsigned int> codon_multiplicity(nbasis/3, 1);
-
-	// Remove invalid codons
-	for(i=0; i < (int)nspecies; ++i)
-    {
-		const char *p = mDnaGene[i].c_str();
-		for(j=0; j < nbasis/3; ++j)
-		{
-			if(!validCodon(&p[3*j])) codon_multiplicity[j] = 0;
-		}
-	}
-	
-	if(mVerboseLevel >= 1)
-	{
-		int valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
-		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << nbasis/3 << std::endl;
-	}
-
-	// Remove duplicated sites
-	for(i=0; i < (int)nbasis/3-1; ++i)
-	{
-		if(codon_multiplicity[i] == 0) continue;
-		for(j=i+1; j < nbasis/3; ++j)
-		{
-			if(codon_multiplicity[j] == 0) continue;
-
-			unsigned int k;
-			for(k=0; k < nspecies; ++k)
-			{
-				const char *p = mDnaGene[k].c_str();
-				if(p[3*i+0] != p[3*j+0] || p[3*i+1] != p[3*j+1] || p[3*i+2] != p[3*j+2]) break;
-			}
-			if(k == nspecies)
-			{
-				++codon_multiplicity[i];
-				codon_multiplicity[j] = 0;
-			}
-		}
-	}
-
-	// Compute site multiplicity (remove zero multiplicity sites from codon_multiplicity)
-	mSiteMultiplicity = codon_multiplicity;
-	std::vector<unsigned int>::iterator pend = std::remove(mSiteMultiplicity.begin(), mSiteMultiplicity.end(), 0);
-	mSiteMultiplicity.erase(pend, mSiteMultiplicity.end());
-
-	if(mVerboseLevel >= 1)
-	{
-		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << nbasis/3 << std::endl;
-		int multi_codons = std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1));
-		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << nbasis/3 << std::endl;
-	}
-	if(mVerboseLevel >= 3)
-	{
-		std::ostream_iterator<unsigned int> out_it(std::cout, " ");
-		std::copy(codon_multiplicity.begin(), codon_multiplicity.end(), out_it);
-		std::cout << std::endl;
-	}
-
-	// Compute map from site to position on mDnaGene
-	for(unsigned int position_on_gene = 0; position_on_gene < codon_multiplicity.size(); ++position_on_gene)
-	{
-		if(codon_multiplicity[position_on_gene] > 0) mMapSiteToDnaGene.push_back(position_on_gene);
-	}
-
-	// Map from specie name to position in DnaGene
-	unsigned int idx = 0;
-	std::vector<std::string>::const_iterator is=mDnaSpecies.begin();
-	for(; is != mDnaSpecies.end(); ++is, ++idx)
-	{
-		mMapSpecieToDnaGene[*is] = idx;
-	}
 }
 
 
@@ -323,3 +154,111 @@ int Genes::getCodonIdx(std::string aSpecie, unsigned int aSite) const
 	// Return the index for the codon
 	return idxCodon(gene+3*position_on_gene);
 }
+
+
+void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
+{
+	// Should at least have the same number of species
+	if(aNames.size() != mDnaSpecies.size()) throw FastCodeMLFatal("Different number of species in tree and genes");
+
+	// Create correspondence between species names
+	std::vector<std::string>::const_iterator is1, is2;
+	for(is1=aNames.begin(); is1 != aNames.end(); ++is1)
+	{
+		bool found = false;
+		for(is2=mDnaSpecies.begin(); is2 != mDnaSpecies.end(); ++is2)
+		{
+			if(*is1 == *is2) {found = true; break;}
+		}
+		if(!found) throw FastCodeMLFatal("Mismatch between species in tree and genes");
+	}
+}
+
+
+void Genes::postprocessLoadedGenes(void)
+{
+	unsigned int i;
+	unsigned int j;
+
+	// Get the number of basis and species
+	unsigned int nbasis = mDnaGene[0].length();
+	unsigned int nspecies = mDnaSpecies.size();
+
+	// Inizialize codons multiplicity
+	std::vector<unsigned int> codon_multiplicity(nbasis/3, 1);
+
+	// Remove invalid codons
+	for(i=0; i < nspecies; ++i)
+    {
+		const char *p = mDnaGene[i].c_str();
+		for(j=0; j < nbasis/3; ++j)
+		{
+			if(!validCodon(&p[3*j])) codon_multiplicity[j] = 0;
+		}
+	}
+
+	if(mVerboseLevel >= 1)
+	{
+		std::cerr << std::endl;
+		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
+		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
+		int valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
+		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << nbasis/3 << std::endl;
+	}
+
+	// Remove duplicated sites
+	for(i=0; i < nbasis/3-1; ++i)
+	{
+		if(codon_multiplicity[i] == 0) continue;
+		for(j=i+1; j < nbasis/3; ++j)
+		{
+			if(codon_multiplicity[j] == 0) continue;
+
+			unsigned int k;
+			for(k=0; k < nspecies; ++k)
+			{
+				const char *p = mDnaGene[k].c_str();
+				if(p[3*i+0] != p[3*j+0] || p[3*i+1] != p[3*j+1] || p[3*i+2] != p[3*j+2]) break;
+			}
+			if(k == nspecies)
+			{
+				++codon_multiplicity[i];
+				codon_multiplicity[j] = 0;
+			}
+		}
+	}
+
+	// Compute site multiplicity (remove zero multiplicity sites from codon_multiplicity)
+	mSiteMultiplicity = codon_multiplicity;
+	std::vector<unsigned int>::iterator pend = std::remove(mSiteMultiplicity.begin(), mSiteMultiplicity.end(), 0);
+	mSiteMultiplicity.erase(pend, mSiteMultiplicity.end());
+
+	if(mVerboseLevel >= 1)
+	{
+		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << nbasis/3 << std::endl;
+		int multi_codons = std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1));
+		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << nbasis/3 << std::endl;
+	}
+	if(mVerboseLevel >= 3)
+	{
+		std::ostream_iterator<unsigned int> out_it(std::cout, " ");
+		std::copy(codon_multiplicity.begin(), codon_multiplicity.end(), out_it);
+		std::cout << std::endl;
+	}
+
+	// Compute map from site to position on mDnaGene
+	for(unsigned int position_on_gene = 0; position_on_gene < codon_multiplicity.size(); ++position_on_gene)
+	{
+		if(codon_multiplicity[position_on_gene] > 0) mMapSiteToDnaGene.push_back(position_on_gene);
+	}
+
+	// Map from specie name to position in DnaGene
+	unsigned int idx = 0;
+	std::vector<std::string>::const_iterator is=mDnaSpecies.begin();
+	for(; is != mDnaSpecies.end(); ++is, ++idx)
+	{
+		mMapSpecieToDnaGene[*is] = idx;
+	}
+}
+
+

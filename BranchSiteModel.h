@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "TransitionMatrix.h"
-#include "TransitionMatrixSet.h"
+#include "ProbabilityMatrixSet.h"
 #include "Forest.h"
 
 /// Common routines for the Hypothesis test.
@@ -285,7 +285,7 @@ public:
 private:
 	TransitionMatrix 	mQw0;			///< Q matrix for the omega0 case
 	TransitionMatrix 	mQ1;			///< Q matrix for the omega1 == 1 case
-	TransitionMatrixSet mSet;			///< Set of matrices used for the tree visits
+	ProbabilityMatrixSet mSet;			///< Set of matrices used for the tree visits
 	double				mPrevK;			///< Previous k value used to compute matrices
 	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
 	double				mScaleQw0;		///< Scale value for Qw0
@@ -354,7 +354,7 @@ private:
 	TransitionMatrix    mQw0;			///< Q matrix for the omega0 case
 	TransitionMatrix    mQw2;			///< Q matrix for the omega2 case
 	TransitionMatrix    mQ1;  			///< Q matrix for the omega1 == 1 case
-	TransitionMatrixSet mSet;			///< Set of matrices used for the tree visits
+	ProbabilityMatrixSet mSet;			///< Set of matrices used for the tree visits
 	double				mPrevK;			///< Previous k value used to compute matrices
 	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
 	double				mPrevOmega2;	///< Previous w2 value used to compute matrices

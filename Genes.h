@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "MatrixSize.h"
 
 /// The genes of the set of species under analysis.
 ///
@@ -36,7 +35,7 @@ public:
 
 	/// Destructor
 	///
-	~Genes();
+	virtual ~Genes();
 	
 	/// Clean the object content that afterwards become invalid
 	///
@@ -46,7 +45,7 @@ public:
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
 	///
-	void loadGenesFile(const char* aFilename);
+	virtual void loadGenesFile(const char* aFilename) =0;
 
 	/// Return the number of valid sites loaded
 	///
@@ -75,8 +74,18 @@ public:
 	///
 	void getSpecies(std::vector<std::string>& aSpeciesList) const {aSpeciesList = mDnaSpecies;}
 
+	/// Check coherence between tree and genes.
+	///
+	/// @param[in] aNames The phylogenetic tree species names
+	///
+	/// @exception FastCodeMLFatal Throw exception if the species do not match
+	///
+	void checkNameCoherence(const std::vector<std::string>& aNames) const;
 
-private:
+
+protected:
+	void postprocessLoadedGenes(void);
+
 	/// Test if the three letters of the argument represent a valid codon 
 	///
 	/// @param[in] aCodon String of three letters TCAG repesenting the codon (not null terminated)
@@ -91,15 +100,15 @@ private:
 	///
 	int idxCodon(const char* aCodon) const;
 
-private:
-	unsigned int				mVerboseLevel;		///< The verbosity level as set in the constructor
-	std::vector<std::string>	mDnaSpecies;		///< The list of species labels
-	std::vector<std::string>	mDnaGene;			///< The gene DNA basis strings
-	std::vector<unsigned int>	mSiteMultiplicity;	///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
-	std::vector<unsigned int>	mMapSiteToDnaGene;	///< Map the site number to the position in mDnaGene
-	std::map<std::string, unsigned int>
-								mMapSpecieToDnaGene;///< Map specie name to position in the gene list mDnaGene
-	std::map<char, int>			mMapBaseToIdx;		///< Map DNA base letter (TCAG) to number 0 to 3
+
+protected:
+	unsigned int						mVerboseLevel;			///< The verbosity level as set in the constructor
+	std::vector<std::string>			mDnaSpecies;			///< The list of species labels
+	std::vector<std::string>			mDnaGene;				///< The gene DNA basis strings
+	std::vector<unsigned int>			mSiteMultiplicity;		///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
+	std::vector<unsigned int>			mMapSiteToDnaGene;		///< Map the site number to the position in mDnaGene
+	std::map<std::string, unsigned int> mMapSpecieToDnaGene;	///< Map specie name to position in the gene list mDnaGene
+	std::map<char, int>					mMapBaseToIdx;			///< Map DNA base letter (TCAG) to number 0 to 3
 };
 
 #endif

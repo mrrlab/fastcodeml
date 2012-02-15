@@ -9,7 +9,7 @@
 #include "Genes.h"
 #include "ForestNode.h"
 #include "TransitionMatrix.h"
-#include "TransitionMatrixSet.h"
+#include "ProbabilityMatrixSet.h"
 #include "MatrixSize.h"
 #ifdef NEW_LIKELIHOOD
 #include "FatVectorTransform.h"
@@ -108,7 +108,7 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
-	void computeLikelihoodsTC(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	void computeLikelihoodsTC(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -122,7 +122,7 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
-	void computeLikelihoodsNR(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	void computeLikelihoodsNR(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 #endif
 
 #ifdef NEW_LIKELIHOOD
@@ -132,7 +132,7 @@ public:
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	///
-	void computeLikelihoods(const TransitionMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
 #endif
 
 	/// Export the forest as graph file
@@ -273,6 +273,8 @@ private:
 	/// @param[in] aEffort Effort per site
 	///
 	void printEffortByGroup(const std::vector<unsigned int>& aEffort);
+	void printEffortByGroup(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+	unsigned int totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
 
 	/// Reduce the common subtree between two (sub)trees
 	///
@@ -280,15 +282,6 @@ private:
 	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
 	///
 	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
-
-	/// Check coherence between tree and genes.
-	///
-	/// @param[in] aTree The phylogenetic tree
-	/// @param[in] aGenes The corresponding genes
-	///
-	/// @exception FastCodeMLFatal Throw exception if the species do not match
-	///
-	void checkCoherence(const PhyloTree& aTree, const Genes& aGenes) const;
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 	/// Walker for the computation of tree likelihood
@@ -299,7 +292,7 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
-	double* computeLikelihoodsWalkerTC(ForestNode* aNode, const TransitionMatrixSet& aSet, unsigned int aSetIdx);
+	double* computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -323,7 +316,7 @@ private:
 	/// @param[in] aSetIdx Identifier of the set of matrices to be used
 	/// @param[in] aSiteIdx The site under computation
 	///
-	void computeLikelihoodsWalkerNR(const TransitionMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx);
+	void computeLikelihoodsWalkerNR(const ProbabilityMatrixSet& aSet, unsigned int aSetIdx, unsigned int aSiteIdx);
 #endif
 
 	/// Walk the tree to fill the mMapInternalToBranchID map.

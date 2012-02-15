@@ -20,9 +20,9 @@
 #include <ctime>
 #include <climits>
 #include <cfloat>
-#include "PhyloTree.h"
 #include "CmdLine.h"
-#include "Genes.h"
+#include "Newick.h"
+#include "Phylip.h"
 #include "MatrixSize.h"
 #include "BayesTest.h"
 #include "Forest.h"
@@ -163,16 +163,21 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= 1) timer.start();
 
 	// Load the genes
-	Genes g(cmd.mVerboseLevel);
+	Phylip g(cmd.mVerboseLevel);
 	g.loadGenesFile(cmd.mGeneFile);
 
 	// Load the phylogenetic tree
-	PhyloTree t(cmd.mVerboseLevel);
-	t.loadTreeFile(cmd.mTreeFile);
+	Newick tree(cmd.mVerboseLevel);
+	tree.loadTreeFile(cmd.mTreeFile);
+
+	// Check coherence between the two files
+	std::vector<std::string> tree_species_list;
+	tree.getSpecies(tree_species_list);
+	g.checkNameCoherence(tree_species_list);
 
 	// Create and load the forest
 	Forest forest(cmd.mVerboseLevel);
-	forest.loadTreeAndGenes(t, g, cmd.mIgnoreFreq);
+	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq);
 
 #ifdef CHECK_ALGO
 	// Check if forest is in shape
@@ -180,7 +185,7 @@ int main(int ac, char **av)
 #endif
 
 	// Remove the genes and the phylotree objects not used anymore
-	t.clear();
+	tree.clear();
 	g.clear();
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
