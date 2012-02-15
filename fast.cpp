@@ -177,7 +177,7 @@ int main(int ac, char **av)
 
 	// Create and load the forest
 	Forest forest(cmd.mVerboseLevel);
-	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq);
+	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
 
 #ifdef CHECK_ALGO
 	// Check if forest is in shape

@@ -113,7 +113,7 @@ public:
 	///
 	void printFormatted(int aIndent) const;
 
-	/// Print the node in the format of Newick tree.
+	/// Print the node in the format of %Newick tree.
 	///
 	void printNode(void) const;
 

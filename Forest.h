@@ -61,9 +61,11 @@ public:
 	///
 	/// @param[in] aTree The phylogenetic tree
 	/// @param[in] aGenes The corresponding genes
-	/// @param[in] aIgnoreFreq Ignore the codon frequencies from file and set them all to 1/61
+	/// @param[in] aCodonFrequencyModel Model to be used to compute the codon empirical frequencies.
 	///
-	void loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq=false);
+	void loadTreeAndGenes(const PhyloTree& aTree,
+						  const Genes& aGenes,
+						  CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel);
 
 	/// Print the class statistics as: cout << r;
 	///
@@ -108,7 +110,7 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
-	void computeLikelihoodsTC(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -122,7 +124,7 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
 	///
-	void computeLikelihoodsNR(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 #endif
 
 #ifdef NEW_LIKELIHOOD
@@ -131,8 +133,9 @@ public:
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
+	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1) (currently ignored)
 	///
-	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods);
+	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int /*aHyp*/);
 #endif
 
 	/// Export the forest as graph file
@@ -273,7 +276,21 @@ private:
 	/// @param[in] aEffort Effort per site
 	///
 	void printEffortByGroup(const std::vector<unsigned int>& aEffort);
+
+	/// For each group print the total effort per thread. using the new Site/Class structure
+	///
+	/// @param[in] aEffort Effort per site
+	/// @param[in] aHyp The hypothesis to consider (could be 0 or 1)
+	///
 	void printEffortByGroup(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+
+	/// For each group print the total effort per thread.
+	///
+	/// @param[in] aEffort Effort per site
+	/// @param[in] aHyp The hypothesis to consider (could be 0 or 1)
+	///
+	/// @return The sum of all maxima velues per class (a crude approximation of the runtime value)
+	///
 	unsigned int totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
 
 	/// Reduce the common subtree between two (sub)trees

@@ -205,6 +205,18 @@ protected:
 		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
 	};
 
+private:
+	/// Disabled assignment operator to avoid warning on Windows
+	///
+	/// @fn BranchSiteModel& operator=(const BranchSiteModel& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModel& operator=(const BranchSiteModel& /*aObj*/) {return *this;}
+
+
 protected:
 	Forest&						mForest;			///< The forest to be used
 	unsigned int				mNumTimes;			///< Number of branch lengths values
@@ -283,6 +295,17 @@ public:
 	}
 
 private:
+	/// Disabled assignment operator to avoid warning on Windows
+	///
+	/// @fn BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/) {return *this;}
+
+private:
 	TransitionMatrix 	mQw0;			///< Q matrix for the omega0 case
 	TransitionMatrix 	mQ1;			///< Q matrix for the omega1 == 1 case
 	ProbabilityMatrixSet mSet;			///< Set of matrices used for the tree visits
@@ -326,7 +349,6 @@ public:
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
-	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
 	///
@@ -348,6 +370,17 @@ public:
 		std::vector<double> x(aVar, aVar+aVarLen);
 		return computeLikelihood(x, aTrace);
 	}
+
+private:
+	/// Disabled assignment operator to avoid warning on Windows
+	///
+	/// @fn BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/) {return *this;}
 
 
 private:

@@ -31,7 +31,7 @@ public:
 	///
 	~HighLevelCoordinator();
 
-	/// Starts the high level parallelization of the FastCodeMP application
+	/// Starts the high level parallelization of the FastCodeML application
 	///
 	/// @param[in,out] aForest The filled forest
 	/// @param[in] aSeed The random number generator seed 

@@ -30,8 +30,8 @@ public:
 			mLowerBound(aLowerBound),
 			mUpperBound(aUpperBound),
 			mDeltaForGradient(aDeltaForGradient),
-			mNoisy(0),
 			mAlwaysCenter(false),
+			mNoisy(0),
 			mIround(0),
 			mSIZEp(0.) {}
 
@@ -117,6 +117,16 @@ private:
 	/// @return The value of a as in: x = x0 + a*p  a ~(0,limit)
 	///
 	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int n);
+
+	/// Disabled assignment operator to avoid warning on Windows
+	///
+	/// @fn Ming2& operator=(const Ming2& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	Ming2& operator=(const Ming2& /*aObj*/) {return *this;}
 
 
 private:

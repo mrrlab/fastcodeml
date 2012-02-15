@@ -73,14 +73,6 @@ public:
 	///
 	size_t getNumBranches(void) const {return mInternalNodes.size()+mLeavesSpecies.size();}
 
-	/// Get the marker in the Newick file (the one starting with '#') for the given internal branch.
-	///
-	/// @param[in] aInternalBranchIdx Index of the internal branch to access.
-	///
-	/// @return The string of the marker or an empty string.
-	///
-	const std::string getMarkerOnNode(unsigned int aInternalBranchIdx) const {return mInternalNodes[aInternalBranchIdx]->getType();}
-
 	/// Return the index of the first marked branch.
 	///
 	/// @return The index of the marked internal branch or UINT_MAX if none marked

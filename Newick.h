@@ -6,10 +6,19 @@
 #include "TreeNode.h"
 #include "PhyloTree.h"
 
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wlong-long"
+#endif
+
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>
 
-/// Newick specific functionalities.
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
+#endif
+
+/// %Newick format file specific functionalities.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-02-15 (initial version)
@@ -52,10 +61,9 @@ public:
 
 private:
 
-	/// Access to the parse tree
+	/// Access to the Boost::Spirit parse tree
 	///
-	typedef boost::spirit::classic::tree_match<char const*> ParseTreeMatchType;
-	typedef ParseTreeMatchType::tree_iterator ParseTreeIteratorType;
+	typedef boost::spirit::classic::tree_match<char const*>::tree_iterator ParseTreeIteratorType;
 
 	/// Parse the parse tree and build the phylo tree structure.
 	///
@@ -69,13 +77,14 @@ private:
 	/// Print an indented form of the parse tree.
 	///
 	/// @param[in] aTreeIterator Tree iterator
-	/// @param[in] aIndent Indent level (each level increases by two spaces)
+	/// @param[in] aIndent Indent level (each level increases by aIndentIncrement)
+	/// @param[in] aIndentIncrement Indent level increment at each level
 	///
-	void printTree(ParseTreeIteratorType const& aTreeIterator, int aIndent);
+	void printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int aIndent=0, unsigned int aIndentIncrement=2);
 
 
 private:
-	std::string	mParsedPortion;		///< In case of error part of the string successfully parsed else it is empty.
+	std::string	mParsedPortion;	///< In case of error part of the string successfully parsed else it is empty.
 };
 
 #endif

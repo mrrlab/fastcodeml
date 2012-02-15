@@ -44,6 +44,17 @@ private:
 							std::vector< std::pair<int, int> >& aNodeTo,
 							std::vector<double>& aLength) const;
 
+	/// Disabled assignment operator to avoid warning on Windows
+	///
+	/// @fn ForestExport& operator=(const ForestExport& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	ForestExport& operator=(const ForestExport& /*aObj*/) {return *this;}
+
+
 private:
 	const Forest& mForest;	///< The Forest to be exported
 };

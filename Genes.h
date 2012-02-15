@@ -84,6 +84,8 @@ public:
 
 
 protected:
+	/// All the operations to be done in the reader after reading the file and loading mDnaSpecies and mDnaGene
+	///
 	void postprocessLoadedGenes(void);
 
 	/// Test if the three letters of the argument represent a valid codon 

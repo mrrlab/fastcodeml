@@ -21,7 +21,7 @@
 const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
 
-void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool aIgnoreFreq)
+void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel)
 {
 	// Collect global data that refers to the tree and that should not be duplicated on each tree of the forest
 	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, &mMarkedInternalBranch);
@@ -91,7 +91,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, bool 
 
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
-	cf->setCodonFrequencies(codon_count, (aIgnoreFreq) ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+	cf->setCodonFrequencies(codon_count, aCodonFrequencyModel);
 	mCodonFreq = cf->getCodonFrequencies();
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
@@ -408,6 +408,7 @@ unsigned int Forest::totalEffort(const std::vector<unsigned int>& aEffort, unsig
 
 	return total_effort;
 }
+
 
 void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort)
 {
@@ -868,7 +869,7 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 #ifdef NEW_LIKELIHOOD
 // Compute likelihood with the new "Long Vector" approach
 //
-void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods)
+void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int /*aHyp*/)
 {
 	// Initialize variables
     const unsigned int num_sets = aSet.size();
@@ -1040,7 +1041,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 
 
 
-void Forest::computeLikelihoodsNR(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
+void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
 	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
@@ -1299,7 +1300,7 @@ void Forest::prepareDependenciesClassesAndTrees(void)
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 
-void Forest::computeLikelihoodsTC(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
+void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
 	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)

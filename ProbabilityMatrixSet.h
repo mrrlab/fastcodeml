@@ -22,7 +22,6 @@
 ///     @date 2011-04-05 (initial version)
 ///     @version 1.0
 ///
-///
 class ProbabilityMatrixSet
 {
 public:
@@ -32,7 +31,7 @@ public:
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	///
-	ProbabilityMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices), mNumSets(aNumSets)
+	ProbabilityMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices)
 	{
 		mMatrixSpace  = (double *)alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
 		mMatrices     = (double**)alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
@@ -98,6 +97,7 @@ public:
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
+
 #ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
@@ -163,21 +163,13 @@ public:
 	}
 #endif
 
-	/// Return the number of sets contained.
-	///
-	/// @return The number of sets contained
-	///
-	unsigned int size(void) const {return mNumSets;}
-
 private:
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
-	unsigned int	mNumSets;			///< Number of sets
 	int				mFgBranch;			///< Foreground branch number (should be int)
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
 };
-
 
 #endif
 

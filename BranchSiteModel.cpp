@@ -271,15 +271,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
-#ifdef NON_RECURSIVE_VISIT
-	mForest.computeLikelihoodsNR(mSet, mLikelihoods, 0);
-#else
-#ifdef NEW_LIKELIHOOD
-	mForest.computeLikelihoods(mSet, mLikelihoods);
-#else
-	mForest.computeLikelihoodsTC(mSet, mLikelihoods, 0);
-#endif
-#endif
+	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
 
 	// For all (valid) sites. Don't parallelize: time increases and results are errant
 	const size_t num_sites = mForest.getNumSites();
@@ -369,15 +361,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
-#ifdef NON_RECURSIVE_VISIT
-	mForest.computeLikelihoodsNR(mSet, mLikelihoods, 1);
-#else
-#ifdef NEW_LIKELIHOOD
-	mForest.computeLikelihoods(mSet, mLikelihoods);
-#else
-	mForest.computeLikelihoodsTC(mSet, mLikelihoods, 1);
-#endif
-#endif
+	mForest.computeLikelihoods(mSet, mLikelihoods, 1);
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = mForest.getNumSites();
@@ -429,7 +413,6 @@ public:
 	/// Saves the parameters for the routine.
 	///
 	/// @param[in] aModel The model to be evaluated
-	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
 	/// @param[in] aTrace If set the optimization progress is traced
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
 	/// @param[in] aDeltaForGradient The variable increment to compute gradient

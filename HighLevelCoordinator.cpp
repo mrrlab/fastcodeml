@@ -72,10 +72,10 @@ struct HighLevelCoordinator::WorkTable
 					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mResults(aNumInternalBranches*JOBS_PER_BRANCH, 0.0) {}
 
-	unsigned int mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
-	std::vector<int> mJobStatus;		///< Corresponding step status
-	std::vector<int> mWorkList;			///< Who is doing this step
-	std::vector<double> mResults;		///< LnL results from H0 and H1 (here the BEB column contains the number of positive selection sites)
+	unsigned int		mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
+	std::vector<int>	mJobStatus;				///< Corresponding step status
+	std::vector<int>	mWorkList;				///< Who is doing this step
+	std::vector<double> mResults;				///< LnL results from H0 and H1 (here the BEB column contains the number of positive selection sites)
 
 	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
 	///

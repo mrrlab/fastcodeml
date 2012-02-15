@@ -3,14 +3,19 @@
 #include "Newick.h"
 #include "NewickGrammar.h"
 #include "Exceptions.h"
+// Access to the Boost::Spirit parse tree
+//
+//		typedef boost::spirit::classic::tree_match<char const*> ParseTreeMatchType;
+//		typedef ParseTreeMatchType::tree_iterator ParseTreeIteratorType;
+// has been changed into:
+//		typedef boost::spirit::classic::tree_match<char const*>::tree_iterator ParseTreeIteratorType;
 
-
-void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, int aIindent)
+void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int aIndent, unsigned int aIndentIncrement)
 {
-	int k;
+	// Indent the level
+	for(unsigned int k=0; k < aIndent; ++k) std::cout << ' ';
 
-	for(k=0; k < aIindent; ++k) std::cout << " ";
-
+	// Print the node
     if(aTreeIterator->value.id() == NewickGrammar::treeID)           std::cout << "TREE";
     else if(aTreeIterator->value.id() == NewickGrammar::nodelistID)  std::cout << "NODELST";
     else if(aTreeIterator->value.id() == NewickGrammar::subtreeID)   std::cout << "SUBTREE";
@@ -21,17 +26,19 @@ void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, int aIindent)
     else if(aTreeIterator->value.id() == NewickGrammar::cblenID)     std::cout << "CBLEN";
     else															 std::cout << "????";
 
+	// Print the corresponding label if any
 	if(aTreeIterator->value.begin() != aTreeIterator->value.end())
 	{
 		std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
-		std::cout << " " << label_name << std::endl;
+		std::cout << ' ' << label_name << std::endl;
 	}
 	else
 	{
 		std::cout << std::endl;
 	}
 
-	for(ParseTreeIteratorType ic=aTreeIterator->children.begin(); ic != aTreeIterator->children.end(); ++ic) printTree(ic, aIindent+2);
+	// Recurse on the children
+	for(ParseTreeIteratorType ic=aTreeIterator->children.begin(); ic != aTreeIterator->children.end(); ++ic) printTree(ic, aIndent+aIndentIncrement, aIndentIncrement);
 }
 
 
@@ -192,7 +199,7 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 		if(mVerboseLevel >= 3)
 		{
 			std::cerr << "Tree as read in PhyloTree" << std::endl;
-			printTree(info.trees.begin(), 0);
+			printTree(info.trees.begin());
 			mTreeRoot.printFormatted(0);
 			std::vector<TreeNode *>::const_iterator isp;
 			for(isp=mLeavesSpecies.begin(); isp != mLeavesSpecies.end(); ++isp) std::cout << (*isp)->getLabel() << std::endl;
@@ -227,7 +234,7 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 		}
 		aOut << ')';
 		mTreeRoot.printNode();
-		aOut << ";" << std::endl;
+		aOut << ';' << std::endl;
 	}
 	else if(aNode->isLeaf())
 	{

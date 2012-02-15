@@ -201,6 +201,11 @@ private:
 	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
 
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4324) // Padding added due to alignment request
+#endif
+
 private:
 	// Order suggested by icc to improve locality
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
@@ -212,6 +217,10 @@ private:
 	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
+	
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 };
 
 #endif
