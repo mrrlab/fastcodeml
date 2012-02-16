@@ -51,6 +51,7 @@ SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive 
 
 # Search for OpenMP support
 if(USE_OPENMP)
+
 	find_package(OpenMP)
 
 	if(OPENMP_FOUND)
@@ -111,11 +112,8 @@ if(USE_ORIGINAL_PROPORTIONS)
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
 
-# Select on method to compute likelihood
-# if(USE_LIKELIHOOD_METHOD MATCHES "Original")
-	# message(STATUS "USE_LIKELIHOOD_METHOD='${USE_LIKELIHOOD_METHOD}'")
-# endif(USE_LIKELIHOOD_METHOD MATCHES "Original")
 
+# Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
 		add_definitions(-DNON_RECURSIVE_VISIT)
 endif(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
@@ -145,6 +143,7 @@ link_directories(${LINK_DIR_NLOPT})
 include_directories(${INCLUDE_DIR_NLOPT})
 
 
+###########################################################
 # Set options for the various platforms
 if($ENV{HOST} MATCHES "matterhorn")
 
@@ -155,18 +154,25 @@ if($ENV{HOST} MATCHES "matterhorn")
 
 endif($ENV{HOST} MATCHES "matterhorn")
 
+###########################################################
 if($ENV{HOST} MATCHES "julier")
 
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mkl=sequential" CACHE "Release mode linker options" STRING FORCE)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -mkl=sequential -restrict -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Release mode options" STRING FORCE)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING FORCE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl=sequential -restrict" CACHE "Flags used by the compiler during all build types" STRING FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Flags used by the compiler during release build" STRING FORCE)
 
 endif($ENV{HOST} MATCHES "julier")
 
+###########################################################
 if($ENV{HOST} MATCHES "rosa")
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mkl=sequential" CACHE "Release mode linker options" STRING FORCE)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -restrict -mkl=sequential -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Release mode options" STRING FORCE)
+
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING FORCE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl=sequential" CACHE "Flags used by the compiler during all build types" STRING FORCE)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Flags used by the compiler during release build" STRING FORCE)
+
 endif($ENV{HOST} MATCHES "rosa")
 
+###########################################################
 if($ENV{HOST} MATCHES "eiger")
 
 	#Set g++ specific compiler settings
@@ -193,6 +199,7 @@ if($ENV{HOST} MATCHES "eiger")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
 endif($ENV{HOST} MATCHES "eiger")
+###########################################################
 
 
 # Executable
