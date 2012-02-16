@@ -2,6 +2,8 @@
 #ifndef PHYLIP_H
 #define PHYLIP_H
 
+#include <vector>
+#include <string>
 #include "Genes.h"
 
 
@@ -21,11 +23,16 @@ public:
 	///
 	explicit Phylip(unsigned int aVerboseLevel=0) : Genes(aVerboseLevel) {}
 
-	/// Load the gene file. On error throw exceptions.
+private:
+	/// Load the gene file in Phylip format.
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
+	/// @param[out] aSpecies The list of species read
+	/// @param[out] aSequence Array of genes, one per specie
 	///
-	virtual void loadGenesFile(const char* aFilename);
+	/// @exception FastCodeMLFatalNoMsg On various error conditions
+	///
+	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSeqences);
 };
 
 #endif

@@ -1,5 +1,4 @@
 
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -7,8 +6,7 @@
 #include "Phylip.h"
 #include "Exceptions.h"
 
-
-void Phylip::loadGenesFile(const char* aFilename)
+void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSeqences)
 {
 	std::ifstream in(aFilename);
 	if(!in)
@@ -46,7 +44,7 @@ void Phylip::loadGenesFile(const char* aFilename)
 	}
 
 	// Read and parse the genes
-    while(mDnaSpecies.size() < nspecies && getline(in, str))
+    while(aSpecies.size() < nspecies && getline(in, str))
     {
 		// Extract the specie name
         if(str.empty()) continue;
@@ -56,7 +54,7 @@ void Phylip::loadGenesFile(const char* aFilename)
 
 		std::string s;
 		s.assign(str, p1, p2-p1);
-		mDnaSpecies.push_back(s);
+		aSpecies.push_back(s);
 
 		// Extract the gene specification
 		s.clear();
@@ -76,12 +74,12 @@ void Phylip::loadGenesFile(const char* aFilename)
 			getline(in, str);
 			p2 = 0;
 		}
-        mDnaGene.push_back(s);
+        aSeqences.push_back(s);
 	}
 	in.close();
 
 	// Check correct number of species loaded
-	if(nspecies != mDnaSpecies.size())
+	if(nspecies != aSpecies.size())
 	{
 		std::cerr << "File " << aFilename << " has number of species mismatch" << std::endl;
 		throw FastCodeMLFatalNoMsg();
@@ -90,14 +88,12 @@ void Phylip::loadGenesFile(const char* aFilename)
 	// Check the number of nucleotides read
 	for(unsigned int n=0; n < nspecies; ++n)
 	{
-		if(mDnaGene[n].length() != nbasis)
+		if(aSeqences[n].length() != nbasis)
 		{
 			std::cerr << "File " << aFilename << " gene " << n << " has wrong number of nucleotides" << std::endl;
 			throw FastCodeMLFatalNoMsg();
 		}
 	}
-
-	// Finish postprocessing of the read in sequences
-	postprocessLoadedGenes();
 }
+
 

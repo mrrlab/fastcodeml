@@ -175,10 +175,13 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 }
 
 
-void Genes::postprocessLoadedGenes(void)
+void Genes::readFile(const char* aFilename)
 {
-	unsigned int i;
-	unsigned int j;
+	// Read sequences and the corresponding species
+	loadData(aFilename, mDnaSpecies, mDnaGene);
+
+	// Finish postprocessing of the read-in sequences
+	unsigned int i, j;
 
 	// Get the number of basis and species
 	unsigned int nbasis = mDnaGene[0].length();
@@ -260,5 +263,4 @@ void Genes::postprocessLoadedGenes(void)
 		mMapSpecieToDnaGene[*is] = idx;
 	}
 }
-
 

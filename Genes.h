@@ -45,7 +45,9 @@ public:
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
 	///
-	virtual void loadGenesFile(const char* aFilename) =0;
+	/// @exception FastCodeMLFatalNoMsg If cannot open file and other problems
+	///
+	void readFile(const char* aFilename);
 
 	/// Return the number of valid sites loaded
 	///
@@ -84,10 +86,6 @@ public:
 
 
 protected:
-	/// All the operations to be done in the reader after reading the file and loading mDnaSpecies and mDnaGene
-	///
-	void postprocessLoadedGenes(void);
-
 	/// Test if the three letters of the argument represent a valid codon 
 	///
 	/// @param[in] aCodon String of three letters TCAG repesenting the codon (not null terminated)
@@ -102,9 +100,22 @@ protected:
 	///
 	int idxCodon(const char* aCodon) const;
 
+private:
+	/// Load the gene file.
+	/// This routine is redefined in every derived class to load a specific format.
+	///
+	/// @param[in] aFilename The filename containing the genes under analysis
+	/// @param[out] aSpecies The list of species read
+	/// @param[out] aSequence Array of genes, one per specie
+	///
+	/// @exception FastCodeMLFatalNoMsg On various error conditions
+	///
+	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSeqences) =0;
 
 protected:
 	unsigned int						mVerboseLevel;			///< The verbosity level as set in the constructor
+
+private:
 	std::vector<std::string>			mDnaSpecies;			///< The list of species labels
 	std::vector<std::string>			mDnaGene;				///< The gene DNA basis strings
 	std::vector<unsigned int>			mSiteMultiplicity;		///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)

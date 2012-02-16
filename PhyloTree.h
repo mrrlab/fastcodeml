@@ -36,7 +36,7 @@ public:
 	///
 	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
 	///
-	virtual void loadTreeFile(const char *aFilename) =0;
+	virtual void readFile(const char *aFilename) =0;
 
 	/// Load a phylo tree definition from a Newick formatted string.
 	///

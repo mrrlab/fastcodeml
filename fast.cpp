@@ -164,11 +164,11 @@ int main(int ac, char **av)
 
 	// Load the genes
 	Phylip g(cmd.mVerboseLevel);
-	g.loadGenesFile(cmd.mGeneFile);
+	g.readFile(cmd.mGeneFile);
 
 	// Load the phylogenetic tree
 	Newick tree(cmd.mVerboseLevel);
-	tree.loadTreeFile(cmd.mTreeFile);
+	tree.readFile(cmd.mTreeFile);
 
 	// Check coherence between the two files
 	std::vector<std::string> tree_species_list;

@@ -135,7 +135,7 @@ void Newick::evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNo
 }
 
 
-void Newick::loadTreeFile(const char *aFilename)
+void Newick::readFile(const char *aFilename)
 {
     std::ifstream in(aFilename);
 	if(!in)
