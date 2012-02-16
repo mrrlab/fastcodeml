@@ -183,18 +183,19 @@ void Genes::readFile(const char* aFilename)
 	// Finish postprocessing of the read-in sequences
 	unsigned int i, j;
 
-	// Get the number of basis and species
+	// Get the number of basis, codons and species
 	unsigned int nbasis = mDnaGene[0].length();
+	unsigned int ncodons = nbasis/3;
 	unsigned int nspecies = mDnaSpecies.size();
 
 	// Inizialize codons multiplicity
-	std::vector<unsigned int> codon_multiplicity(nbasis/3, 1);
+	std::vector<unsigned int> codon_multiplicity(ncodons, 1);
 
 	// Remove invalid codons
 	for(i=0; i < nspecies; ++i)
     {
 		const char *p = mDnaGene[i].c_str();
-		for(j=0; j < nbasis/3; ++j)
+		for(j=0; j < ncodons; ++j)
 		{
 			if(!validCodon(&p[3*j])) codon_multiplicity[j] = 0;
 		}
@@ -206,14 +207,14 @@ void Genes::readFile(const char* aFilename)
 		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
 		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
 		int valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
-		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << nbasis/3 << std::endl;
+		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
 	}
 
 	// Remove duplicated sites
-	for(i=0; i < nbasis/3-1; ++i)
+	for(i=0; i < ncodons-1; ++i)
 	{
 		if(codon_multiplicity[i] == 0) continue;
-		for(j=i+1; j < nbasis/3; ++j)
+		for(j=i+1; j < ncodons; ++j)
 		{
 			if(codon_multiplicity[j] == 0) continue;
 
@@ -238,9 +239,9 @@ void Genes::readFile(const char* aFilename)
 
 	if(mVerboseLevel >= 1)
 	{
-		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << nbasis/3 << std::endl;
+		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
 		int multi_codons = std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1));
-		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << nbasis/3 << std::endl;
+		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
 	}
 	if(mVerboseLevel >= 3)
 	{

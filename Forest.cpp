@@ -45,6 +45,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Count of tree's leaves
 	size_t num_leaves = 0;
 
+	// Allocate the list of pointers to leaves
+	std::vector<ForestNode*> leaves;
+
 	// Clone tree inside the forest
 	mRoots.resize(mNumSites);
 	for(unsigned int site=0; site < mNumSites; ++site)
@@ -53,7 +56,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		aTree.cloneTree(&mRoots[site], site, mNumSites, mProbs);
 
 		// Create a list of pointers to leaves
-		std::vector<ForestNode*> leaves;
 		leaves.clear();
 		mRoots[site].pushLeaf(leaves);
 		num_leaves = leaves.size();
@@ -410,60 +412,13 @@ unsigned int Forest::totalEffort(const std::vector<unsigned int>& aEffort, unsig
 }
 
 
-void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort)
-{
-	std::vector<unsigned int> core_effort;
-#ifdef _OPENMP
-	unsigned int nthreads = omp_get_max_threads();
-#else
-	unsigned int nthreads = 1;
-#endif
-
-	const unsigned int num_classes = mDependenciesClasses.size();
-	for(unsigned int k=0; k < num_classes; ++k)
-	{
-		const unsigned int class_num_sites = mDependenciesClasses[k].size();
-		core_effort.assign(nthreads, 0);
-
-		unsigned int sites_per_core_base = class_num_sites/nthreads;
-		unsigned int sites_per_core_plus = class_num_sites-sites_per_core_base*nthreads;
-		if(mVerbose >= 1) std::cerr << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
-		for(unsigned int j=0; j < class_num_sites; ++j)
-		{
-			unsigned int site = mDependenciesClasses[k][j];
-			
-			unsigned int idx = 0;
-			if(sites_per_core_plus == 0)
-			{
-				idx = j/sites_per_core_base;
-			}
-			else if(j >= (sites_per_core_base+1)*sites_per_core_plus)
-			{
-				idx = (j-(sites_per_core_base+1)*sites_per_core_plus)/sites_per_core_base+sites_per_core_plus;
-			}
-			else
-			{
-				idx = j/(sites_per_core_base+1);
-			}
-			core_effort[idx] += aEffort[site];
-		}
-		if(mVerbose >= 1)
-		{
-			std::cerr << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
-			for(unsigned int i=0; i < nthreads; ++i) std::cerr << std::setw(4) << core_effort[i];
-			std::cerr << std::endl;
-		}
-	}
-}
-
-
 void Forest::prepareDependencies(bool aForceSerial)
 {
 	// Compute the dependencies: for each class list all sites that should be done at this level
 	groupByDependency(aForceSerial);
 	
 	// Prepare more detailed inter-tree dependencies lists
-	prepareDependenciesClassesAndTrees();
+	//prepareDependenciesClassesAndTrees();
 
 	// Compute effort per site
 	std::vector<unsigned int> effort;
@@ -509,150 +464,97 @@ void Forest::prepareDependencies(bool aForceSerial)
 
 void Forest::groupByDependency(bool aForceSerial)
 {
-	unsigned int i, k;
-
-	// Clear previous groupings
-	mDependenciesClasses.clear();
+	std::vector< std::vector<unsigned int> > class_dependencies;
 
 	// If no dependencies
 	if(aForceSerial)
 	{
 		std::vector<unsigned int> v(mNumSites);
 
-		for(k=0; k < (unsigned int)mNumSites; ++k) v[k] = (unsigned int)mNumSites-k-1; // Remember: prior (could) point to subsequent
+		for(unsigned int k=0; k < (unsigned int)mNumSites; ++k) v[k] = (unsigned int)mNumSites-k-1; // Remember: prior (could) point to subsequent
 
-		mDependenciesClasses.push_back(v);
-
-		return;
+		class_dependencies.push_back(v);
 	}
-
-	// Prepare the search of dependencies
-	std::vector<bool> done(mNumSites, false);	// The sites that has dependencies satisfied in the previous level
-	std::vector<bool> prev;						// Dependencies till the previous level
-	std::vector<unsigned int> v;				// Temporary list of sites
-
-	// Mark trees without dependencies
-	// mTreeDependencies[tj] can be done after: t1 t2 t3
-	for(i=0; i < (unsigned int)mNumSites; ++i)
+	else
 	{
-		if(mTreeDependencies[i].empty())
+		unsigned int i, j;
+
+		// Prepare the search of dependencies
+		std::vector<bool> done(mNumSites, false);	// The sites that has dependencies satisfied in the previous level
+		std::vector<bool> prev;						// Dependencies till the previous level
+		std::vector<unsigned int> v;				// Temporary list of sites
+
+		// Mark trees without dependencies
+		// mTreeDependencies[tj] can be done after: t1 t2 t3
+		for(i=0; i < (unsigned int)mNumSites; ++i)
 		{
-			done[i] = true;
-			v.push_back(i);
-		}
-	}
-
-	// Prepare the dependency list
-	mDependenciesClasses.push_back(v);
-	prev = done;
-
-	// Start to find trees with one, two, ... dependencies
-	for(unsigned int numdep=1;; ++numdep)
-	{
-		v.clear();
-		bool all_done = true;
-		for(i=0; i < mNumSites; ++i)
-		{
-			// If tree i has been already processed skip it
-			if(prev[i]) continue;
-			all_done = false;
-
-			unsigned int nc = mTreeDependencies[i].size();
-			bool all = true;
-			for(unsigned int j=0; j < nc; ++j) if(!prev[mTreeDependencies[i][j]]) {all = false; break;}
-			if(all)
+			if(mTreeDependencies[i].empty())
 			{
-				v.push_back(i);
 				done[i] = true;
+				v.push_back(i);
 			}
 		}
-		if(all_done) break;
-		mDependenciesClasses.push_back(v);
+
+		// Prepare the dependency list
+		class_dependencies.push_back(v);
 		prev = done;
-	}
-}
 
-
-bool Forest::balanceDependencies(bool aForceSerial)
-{
-	// Do nothing if no dependencies
-	if(aForceSerial) return false;
-
-#ifndef _OPENMP
-	return false;
-#else
-	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
-	// This step makes sense only if run multithread and if there are more than one class
-	const unsigned int num_threads = omp_get_max_threads();
-	const unsigned int num_classes = mDependenciesClasses.size();
-	if(num_threads < 2 || num_classes < 2) return false;
-
-	// This set will contain the sites that can be postponed without problem
-	std::set<unsigned int> jolly_sites;
-
-	// Check if can be balanced
-	for(unsigned int k=0; k < num_classes; ++k)
-	{
-		// Can jolly sites be added?
-		// Try to have num sites at this level multiple of number of threads
-		unsigned int num_jolly = jolly_sites.size();
-		const unsigned int class_num_sites = mDependenciesClasses[k].size();
-		unsigned int over = class_num_sites % num_threads;
-		unsigned int needed_small = num_threads - over;
-		unsigned int needed_big   = (num_jolly >= needed_small) ? ((num_jolly - needed_small)/num_threads)*num_threads : 0;
-		unsigned int needed = needed_small + needed_big;
-		if(needed <= num_jolly)
+		// Start to find trees with one, two, ... dependencies
+		for(unsigned int numdep=1;; ++numdep)
 		{
-			for(unsigned int j=0; j < needed; ++j)
+			v.clear();
+			bool all_done = true;
+			for(i=0; i < mNumSites; ++i)
 			{
-				std::set<unsigned int>::iterator it = jolly_sites.begin();
-				unsigned int n = *it;
-				mDependenciesClasses[k].push_back(n);
-				jolly_sites.erase(it);
-			}
-		}
-		else if(class_num_sites > num_threads && over > 0)
-		{
-			// Else, can sites be removed from here?
-			// Count how many sites are jolly at this level
-			unsigned int num_level_jolly_sites = 0;
-			for(unsigned int s=0; s < class_num_sites; ++s)
-			{
-				// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
-				unsigned int site = mDependenciesClasses[k][s];
-				if(mTreeRevDependencies[site].empty()) ++num_level_jolly_sites;
-			}
+				// If tree i has been already processed skip it
+				if(prev[i]) continue;
+				all_done = false;
 
-			// Sites can be removed from here
-			if(num_level_jolly_sites >= over)
-			{
-				std::vector<unsigned int> new_content;
-				for(unsigned int s=0; s < class_num_sites; ++s)
+				unsigned int nc = mTreeDependencies[i].size();
+				bool all = true;
+				for(j=0; j < nc; ++j) if(!prev[mTreeDependencies[i][j]]) {all = false; break;}
+				if(all)
 				{
-					unsigned int site = mDependenciesClasses[k][s];
-					if(over && mTreeRevDependencies[site].empty())
-					{
-						jolly_sites.insert(site);
-						--over;
-					}
-					else
-					{
-						new_content.push_back(site);
-					}
+					v.push_back(i);
+					done[i] = true;
 				}
-				mDependenciesClasses[k].swap(new_content);
 			}
+			if(all_done) break;
+			class_dependencies.push_back(v);
+			prev = done;
 		}
 	}
 
-	// If there are still jolly sites, add them to the last class
-	if(!jolly_sites.empty())
-	{
-		mDependenciesClasses[num_classes-1].insert(mDependenciesClasses[num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
-	}
+	// Number of dependencies classes
+	unsigned int nc = class_dependencies.size();
+	
+	// One dependency classes
+	std::vector<std::pair<unsigned int, unsigned int> > one_class;
 
-	return true;
-#endif
+	// Transform the list in two lists one for each hypothesis and multiply the entries by the number of codon classes
+	for(unsigned int h=0; h <= 1; ++h)
+	{
+		// Prepare the dependency list for H0: 3 codon classes; H1: 4 codon classes
+		unsigned int num_classes = h ? 4 : 3;
+
+		mDependenciesClassesAndTrees[h].clear();
+		for(unsigned int i=0; i < nc; ++i)
+		{
+			// Prepare the dependency classe
+			one_class.clear();
+
+			// Number of trees in the class
+			const unsigned int nt = class_dependencies[i].size();
+			for(unsigned int cl=0; cl < num_classes; ++cl)
+			{
+				for(unsigned int j=0; j < nt; ++j)
+				{
+					one_class.push_back(std::pair<unsigned int, unsigned int>(class_dependencies[i][j], cl));
+				}
+			}
+			mDependenciesClassesAndTrees[h].push_back(one_class);
+		}
+	}
 }
 
 
@@ -757,16 +659,6 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 	std::cerr << std::endl;
 	return true;
 #endif
-}
-
-
-void Forest::printDependencies(void)
-{
-	const unsigned int num_classes = mDependenciesClasses.size();
-	for(unsigned int numdep=0; numdep < num_classes; ++numdep)
-	{
-		std::cerr << "Trees in class " << std::setw(3) << numdep << ": " << std::setw(4) << mDependenciesClasses[numdep].size() << std::endl;
-	}
 }
 
 
@@ -1273,30 +1165,6 @@ void crc(const std::vector<double>& v, unsigned int nsites)
 }
 #endif
 
-void Forest::prepareDependenciesClassesAndTrees(void)
-{
-	for(unsigned int h=0; h <= 1; ++h)
-	{
-		unsigned int num_classes = h ? 4 : 3;
-
-		mDependenciesClassesAndTrees[h].clear();
-		unsigned int nc = mDependenciesClasses.size();
-		for(unsigned int i=0; i < nc; ++i)
-		{
-			std::vector<std::pair<unsigned int, unsigned int> > l;
-
-			for(unsigned int cl=0; cl < num_classes; ++cl)
-			{
-				const unsigned int nt = mDependenciesClasses[i].size();
-				for(unsigned int j=0; j < nt; ++j)
-				{
-					l.push_back(std::pair<unsigned int, unsigned int>(mDependenciesClasses[i][j], cl));
-				}
-			}
-			mDependenciesClassesAndTrees[h].push_back(l);
-		}
-	}
-}
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 

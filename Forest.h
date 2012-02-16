@@ -46,7 +46,6 @@ public:
 		mProbs.clear();
 		mSiteMultiplicity.clear();		
 		mTableInternalToBranchID.clear();
-		mDependenciesClasses.clear();	
 #ifdef NEW_LIKELIHOOD
 		mProbsOut.clear();
 		mNodesByLevel.clear();
@@ -238,7 +237,7 @@ private:
 
 	/// Prepare more detailed dependency lists
 	///
-	void prepareDependenciesClassesAndTrees(void);
+	//void prepareDependenciesClassesAndTrees(void);
 
 	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
 	///
@@ -246,7 +245,7 @@ private:
 	///
 	/// @return True if the grouping changed
 	///
-	bool balanceDependencies(bool aForceSerial);
+	//bool balanceDependencies(bool aForceSerial);
 
 	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
 	///
@@ -256,10 +255,6 @@ private:
 	/// @return True if the grouping changed
 	///
 	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp);
-
-	/// Print the size of each class
-	///
-	void printDependencies(void);
 
 	/// Print the size of each class
 	///
@@ -275,7 +270,7 @@ private:
 	///
 	/// @param[in] aEffort Effort per site
 	///
-	void printEffortByGroup(const std::vector<unsigned int>& aEffort);
+	//void printEffortByGroup(const std::vector<unsigned int>& aEffort);
 
 	/// For each group print the total effort per thread. using the new Site/Class structure
 	///
@@ -354,8 +349,6 @@ private:
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
-	std::vector< std::vector<unsigned int> >
-							mDependenciesClasses;		///< The groups of dependencies between trees
 	typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
 							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
 	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)

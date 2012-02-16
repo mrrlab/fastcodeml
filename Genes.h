@@ -106,11 +106,11 @@ private:
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
 	/// @param[out] aSpecies The list of species read
-	/// @param[out] aSequence Array of genes, one per specie
+	/// @param[out] aSequences Array of genes, one per specie
 	///
 	/// @exception FastCodeMLFatalNoMsg On various error conditions
 	///
-	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSeqences) =0;
+	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences) =0;
 
 protected:
 	unsigned int						mVerboseLevel;			///< The verbosity level as set in the constructor

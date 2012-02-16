@@ -6,7 +6,7 @@
 #include "Phylip.h"
 #include "Exceptions.h"
 
-void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSeqences)
+void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences)
 {
 	std::ifstream in(aFilename);
 	if(!in)
@@ -74,7 +74,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 			getline(in, str);
 			p2 = 0;
 		}
-        aSeqences.push_back(s);
+        aSequences.push_back(s);
 	}
 	in.close();
 
@@ -88,11 +88,18 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	// Check the number of nucleotides read
 	for(unsigned int n=0; n < nspecies; ++n)
 	{
-		if(aSeqences[n].length() != nbasis)
+		if(aSequences[n].length() != nbasis)
 		{
 			std::cerr << "File " << aFilename << " gene " << n << " has wrong number of nucleotides" << std::endl;
 			throw FastCodeMLFatalNoMsg();
 		}
+	}
+	
+	// Other sanity checks
+	if(nbasis % 3)
+	{
+		std::cerr << "File " << aFilename << " number of basis is not multiple of 3" << std::endl;
+		throw FastCodeMLFatalNoMsg();
 	}
 }
 
