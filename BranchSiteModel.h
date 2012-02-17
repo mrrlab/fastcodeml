@@ -98,7 +98,11 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(double* aVar, int aVarLen, bool aTrace) =0;
+	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
+	{
+		std::vector<double> x(aVar, aVar+aVarLen);
+		return computeLikelihood(x, aTrace);
+	}
 
 	/// Get variable values
 	///
@@ -279,21 +283,6 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
-	/// Compute the likelihood for the given forest and the given set of parameters.
-	/// This version is for use inside Ming2 minimizer
-	///
-	/// @param[in] aVar The optimizer variables
-	/// @param[in] aVarLen The optimizer variables array length
-	/// @param[in] aTrace If set visualize the best result so far
-	///
-	/// @return The maximum Likelihood value
-	///
-	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
-	{
-		std::vector<double> x(aVar, aVar+aVarLen);
-		return computeLikelihood(x, aTrace);
-	}
-
 private:
 	/// Disabled assignment operator to avoid warning on Windows
 	///
@@ -355,21 +344,6 @@ public:
 	/// @return The maximum Likelihood value
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
-
-	/// Compute the likelihood for the given forest and the given set of parameters.
-	/// This version is for use inside Ming2 minimizer
-	///
-	/// @param[in] aVar The optimizer variables
-	/// @param[in] aVarLen The optimizer variables array length
-	/// @param[in] aTrace If set visualize the best result so far
-	///
-	/// @return The maximum Likelihood value
-	///
-	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
-	{
-		std::vector<double> x(aVar, aVar+aVarLen);
-		return computeLikelihood(x, aTrace);
-	}
 
 private:
 	/// Disabled assignment operator to avoid warning on Windows
