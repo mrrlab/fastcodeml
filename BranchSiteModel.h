@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <vector>
+#include <cstdlib>
 
 #include "TransitionMatrix.h"
 #include "ProbabilityMatrixSet.h"
@@ -168,6 +169,11 @@ protected:
 #endif
 	}
 
+	/// Initialize variables to be optimized.
+	/// It uses mInitType to know what has been already initialized by initFromTree() or initFromResult()
+	///
+	void initVariables(void);
+
 private:
 	/// Set upper and lower limits for the maximization domain
 	///
@@ -176,11 +182,12 @@ private:
 	///
 	void setLimits(unsigned int aNumTimes, unsigned int aNumVariables);
 
-protected:
-	/// Initialize variables to be optimized.
-	/// It uses mInitType to know what has been already initialized by initFromTree() or initFromResult()
+	/// Generate a double random number between 0 and 1
 	///
-	void initVariables(void);
+	/// @return The random number
+	///
+	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
+
 
 public:
 	/// Initialize the times from the input phylogenetic tree

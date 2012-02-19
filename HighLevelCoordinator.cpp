@@ -243,7 +243,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsign
 		mNumInternalBranches = aForest.getNumInternalBranches();
 
 		// Check if the number of worker is ok
-		if(mSize > (int)(2*mNumInternalBranches+1) && mVerbose >= 1) std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
+		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= 1) std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
 
 		// In the master initialize the work table
 		mWorkTable = new WorkTable(mNumInternalBranches);
@@ -313,7 +313,7 @@ void HighLevelCoordinator::doMaster(void)
 			// Look how to code and visualize the results of BEB
 			int idx = mWorkTable->markJobFinished(worker);
 			if(mVerbose >= 1) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
-			mWorkTable->mResults[idx] = (double)(job_request[1]/2);
+			mWorkTable->mResults[idx] = static_cast<double>(job_request[1]/2);
 			}
 			break;
 		}
@@ -363,7 +363,7 @@ void HighLevelCoordinator::doMaster(void)
 		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
 					 "  Lnl H0: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H0] << 
 					 "  Lnl H1: " << std::setw(12) << std::setprecision(8) << mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_H1];
-		int ns = (int)mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_BEB];
+		int ns = static_cast<int>(mWorkTable->mResults[branch*JOBS_PER_BRANCH+JOB_BEB]);
 		if(ns > 0) 	std::cerr << "  Pos. Sel. Sites: "   << std::setw(3) << ns;
 		std::cerr << std::endl;
 	}
@@ -460,7 +460,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 				for(unsigned int i=0; i < num_sites; ++i)
 				{
 					valuesInteger.push_back(aPositiveSelSites[i]);
-					int v = (int)(aPositiveSelSitesProb[i]*PROB_SCALING+0.5);
+					int v = static_cast<int>(aPositiveSelSitesProb[i]*PROB_SCALING+0.5);
 					valuesInteger.push_back(v);
 				}
 			}

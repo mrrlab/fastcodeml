@@ -157,18 +157,18 @@ endif($ENV{HOST} MATCHES "matterhorn")
 ###########################################################
 if($ENV{HOST} MATCHES "julier")
 
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING FORCE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl=sequential -restrict" CACHE "Flags used by the compiler during all build types" STRING FORCE)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Flags used by the compiler during release build" STRING FORCE)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl=sequential -restrict" CACHE "Flags used by the compiler during all build types" STRING)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
 
 endif($ENV{HOST} MATCHES "julier")
 
 ###########################################################
 if($ENV{HOST} MATCHES "rosa")
 
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING FORCE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl=sequential" CACHE "Flags used by the compiler during all build types" STRING FORCE)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Flags used by the compiler during release build" STRING FORCE)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl=sequential" CACHE "Flags used by the compiler during all build types" STRING)
+	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
 
 endif($ENV{HOST} MATCHES "rosa")
 
@@ -180,7 +180,7 @@ if($ENV{HOST} MATCHES "eiger")
 
 		#slow, but suitable for debugging
 		if(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter" CACHE "Debug mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter" CACHE "Debug mode options" STRING)
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wno-unused-result -Wno-write-strings -g -pg -fcheck-data-deps")
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -pg -fcheck-data-deps" CACHE STRING "Debug mode options")
 		endif(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
@@ -190,11 +190,11 @@ if($ENV{HOST} MATCHES "eiger")
 		# -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -Wno-unused-result -funroll-loops -funsafe-loop-optimizations -Wunsafe-loop-optimizations"
 
 		if(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fstrict-aliasing -Wstrict-aliasing -std=c++98 -Wextra -ffast-math -msse2 -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING FORCE)
+			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fstrict-aliasing -Wstrict-aliasing -std=c++98 -Wextra -ffast-math -msse2 -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING)
 		endif(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
 
 		#if(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
-			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O1" CACHE "Release mode linker options" STRING FORCE)
+			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O1" CACHE "Release mode linker options" STRING)
 		#endif(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 

@@ -33,8 +33,8 @@ public:
 	///
 	ProbabilityMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices)
 	{
-		mMatrixSpace  = (double *)alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN);
-		mMatrices     = (double**)alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN);
+		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
+		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
 		mInvCodonFreq = cf->getInvCodonFrequencies();
 	}

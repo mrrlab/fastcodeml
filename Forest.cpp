@@ -435,8 +435,12 @@ void Forest::prepareDependencies(bool aForceSerial)
 	}
 
 	// Balance the precomputed dependency lists for both hypothesis
-	bool done_ct = balanceDependenciesClassesAndTrees(aForceSerial, 0) &&
-				   balanceDependenciesClassesAndTrees(aForceSerial, 1);
+	bool done_ct = balanceDependenciesClassesAndTrees(aForceSerial, 0, false) &&
+				   balanceDependenciesClassesAndTrees(aForceSerial, 1, false);
+
+	// Equalize max effort inside each class
+	balanceEffort(effort, 0);
+	balanceEffort(effort, 1);
 
 	// Print classes after balancing
 	if(done_ct && mVerbose >= 1)
@@ -558,7 +562,7 @@ void Forest::groupByDependency(bool aForceSerial)
 }
 
 
-bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
+bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, bool aGreedy)
 {
 	// Do nothing if no dependencies or no parallel execution
 	if(aForceSerial) return false;
@@ -572,36 +576,60 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 	const unsigned int num_classes = mDependenciesClassesAndTrees[aHyp].size();
 	if(num_threads < 2 || num_classes < 2) return false;
 
-	// Compute effort per site (hyp.: all codon classes have the same effort)
-	//std::vector<unsigned int> effort(mNumSites);
-
-	// Effort is number of branches plus one to have always non zero values
-	//for(size_t i=0; i < mNumSites; ++i) effort[i] = mRoots[i].countBranches(true)+1;
-
 	// This set will contain the site & class pairs that can be postponed without problem
 	std::set<std::pair<unsigned int, unsigned int> > jolly_sites;
 
 	// Check if the current level can be balanced
 	for(unsigned int k=0; k < num_classes; ++k)
 	{
-		// Can jolly sites be added?
 		// Try to have num sites at this level multiple of number of threads
-		unsigned int num_jolly = jolly_sites.size();
+		const unsigned int num_jolly = jolly_sites.size();
 		const unsigned int class_num_sites = mDependenciesClassesAndTrees[aHyp][k].size();
-		unsigned int over = class_num_sites % num_threads;
+		const unsigned int over = class_num_sites % num_threads;
 
-		// The number of computations that should be removed or added to have a multiple of num_threads
-		int needed_remove = (class_num_sites <= num_threads) ? 0 : over;
-		//int needed_add    = (num_jolly && num_jolly >= over) ? num_threads - over + ((num_jolly - num_threads + over)/num_threads)*num_threads : 0;
-		int needed_add = (over && num_jolly >= (num_threads - over)) ? num_threads - over : 0;
+		// Compute how many sites to add to have a multiple of num threads
+		unsigned int needed_add = 0;
+		unsigned int resid_jolly = num_jolly;
+		if(over)
+		{
+			unsigned int min_add = num_threads - over;
+			if(min_add <= num_jolly)
+			{
+				needed_add = min_add;
+				resid_jolly -= needed_add;
+			}
+		}
+		if(aGreedy)
+		{
+			needed_add += (resid_jolly/num_threads)*num_threads;
+		}
 
-		std::cerr << "Jolly: " << num_jolly << " Over: " << over << " th: " << num_threads << std::endl;
-		std::cerr << k << ' ' << std::setw(2) << class_num_sites << " Remove: " << needed_remove << " Add: " << needed_add << std::endl;
+		// Compute how many sites could became a jolly
+		unsigned int new_possible_jolly_sites = 0;
+		for(unsigned int s=0; s < class_num_sites; ++s)
+		{
+			// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+			if(mTreeRevDependencies[site].empty()) ++new_possible_jolly_sites;
+		}
+
+		// Compute how many sites to remove to have a multiple of num threads
+		unsigned int needed_remove = 0;
+		resid_jolly = new_possible_jolly_sites;
+		if(class_num_sites > num_threads && new_possible_jolly_sites >= over)
+		{
+			needed_remove = over;
+			resid_jolly -= needed_remove;
+		}
+		if(aGreedy && resid_jolly >= 2*num_threads)
+		{
+			needed_remove += ((resid_jolly - num_threads)/num_threads)*num_threads;
+		}
 
 		// There are at least the number needed to add in the jolly list, so add them
 		if(needed_add > 0)
 		{
-			for(int j=0; j < needed_add; ++j)
+			for(unsigned int j=0; j < needed_add; ++j)
 			{
 				std::set<std::pair<unsigned int, unsigned int> >::iterator it = jolly_sites.begin();
 				mDependenciesClassesAndTrees[aHyp][k].push_back(*it);
@@ -610,44 +638,24 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 		}
 		else if(needed_remove > 0)
 		{
-			// Else, can sites be removed from here?
-			// Count how many sites are jolly at this level
-			unsigned int num_level_jolly_sites = 0;
+			// Save what remains at this level
+			std::vector<std::pair<unsigned int, unsigned int> > new_content;
+
 			for(unsigned int s=0; s < class_num_sites; ++s)
 			{
-				// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
 				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
-				if(mTreeRevDependencies[site].empty()) ++num_level_jolly_sites;
-			}
-
-			std::cerr << "Possible jollies: " << num_level_jolly_sites << std::endl;
-
-			// Sites can be removed from here
-			if(num_level_jolly_sites >= over)
-			{
-				// Increase, if possible, the "over" value
-				over += ((num_level_jolly_sites - over)/num_threads)*num_threads;
-
-				// Save what remains at this level
-				std::vector<std::pair<unsigned int, unsigned int> > new_content;
-
-				for(unsigned int s=0; s < class_num_sites; ++s)
+				if(needed_remove && mTreeRevDependencies[site].empty())
 				{
-					unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
-					if(over && mTreeRevDependencies[site].empty())
-					{
-						jolly_sites.insert(mDependenciesClassesAndTrees[aHyp][k][s]);
-						--over;
-					}
-					else
-					{
-						new_content.push_back(mDependenciesClassesAndTrees[aHyp][k][s]);
-					}
+					jolly_sites.insert(mDependenciesClassesAndTrees[aHyp][k][s]);
+					--needed_remove;
 				}
-				mDependenciesClassesAndTrees[aHyp][k].swap(new_content);
+				else
+				{
+					new_content.push_back(mDependenciesClassesAndTrees[aHyp][k][s]);
+				}
 			}
+			mDependenciesClassesAndTrees[aHyp][k].swap(new_content);
 		}
-	std::cerr << std::endl;
 	}
 
 	// If there are still jolly sites, add them to the last class
@@ -656,8 +664,71 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp)
 		mDependenciesClassesAndTrees[aHyp][num_classes-1].insert(mDependenciesClassesAndTrees[aHyp][num_classes-1].end(), jolly_sites.begin(), jolly_sites.end());
 	}
 
-	std::cerr << std::endl;
 	return true;
+#endif
+}
+
+
+void Forest::balanceEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp)
+{
+#ifndef _OPENMP
+	return;
+#else
+	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
+	// This step makes sense only if run multithread and if there are more than one class
+	const unsigned int num_threads = omp_get_max_threads();
+	const unsigned int num_classes = mDependenciesClassesAndTrees[aHyp].size();
+	if(num_threads < 2 || num_classes < 2) return;
+
+	// Balance each level
+	for(unsigned int k=1; k < num_classes; ++k)
+	{
+		const int class_num_sites = static_cast<int>(mDependenciesClassesAndTrees[aHyp][k].size());
+		const unsigned int over   = class_num_sites % num_threads;
+		const unsigned int blocks = class_num_sites / num_threads;
+
+		// Class 0 and classes without full blocks or with only one level (full or partial) cannot be equalized
+		if(blocks == 0) continue;
+		if(blocks == 1 && over == 0) continue;
+		//unsigned int levels = blocks + (over ? 1 : 0);
+
+		// Create helper list of indices per thread
+		std::vector<unsigned int> cnt;
+		std::vector< std::vector< unsigned int> > counts;
+		for(unsigned int j=0; j < num_threads; ++j) counts.push_back(cnt);
+
+#ifdef _MSC_VER
+		#pragma omp parallel for default(none) shared(class_num_sites, counts) schedule(static)
+#else
+		#pragma omp parallel for default(shared) schedule(static)
+#endif
+		for(int i=0; i < class_num_sites; ++i) counts[omp_get_thread_num()].push_back(i);
+
+		unsigned int min_effort = UINT_MAX;
+		unsigned int max_effort = 0;
+		for(unsigned int nt=0; nt < num_threads; ++nt)
+		{
+			unsigned int ns = counts[nt].size();
+			unsigned int total_effort_thread = 0;
+			for(unsigned int j=0; j < ns; ++j)
+			{
+				unsigned int idx = counts[nt][j];
+				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][idx].first;
+				total_effort_thread += aEffort[site];
+			}
+			if(total_effort_thread < min_effort) min_effort = total_effort_thread;
+			if(total_effort_thread > max_effort) max_effort = total_effort_thread;
+		}
+
+		// Print the results for checking
+		std::cerr << "H" << aHyp << " Balancing " << std::setw(3) << k << " Effort range: " << max_effort-min_effort << std::endl;
+		//for(unsigned int nt=0; nt < num_threads; ++nt)
+		//{
+		//	std::cerr << "Thread" << std::setw(3) << nt << ": ";
+		//	for(unsigned int j=0; j < counts[nt].size(); ++j) std::cerr << std::setw(5) << counts[nt][j];
+		//	std::cerr << std::endl;
+		//}
+	}
 #endif
 }
 
@@ -693,8 +764,8 @@ void Forest::printDependenciesClassesAndTrees(void)
 		cnt += aForest.mRoots[i].countBranches();
 		cntAggressive += aForest.mRoots[i].countBranches(true);
 	}
-	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << (double)(cnt*100.)/(double)(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
-	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << (double)(cntAggressive*100.)/(double)(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
+	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << static_cast<double>(cnt*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
+	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << static_cast<double>(cntAggressive*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << std::endl;
 
 	// Print forest
@@ -855,7 +926,7 @@ void Forest::addAggressiveReduction(ForestNode* aNode)
 				ForestNode *other = m->mParent;
 
 				// Add the array on the other side
-				if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = (double*)alignedMalloc(VECTOR_SLOT*Nt*sizeof(double), CACHE_LINE_ALIGN);
+				if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = static_cast<double*>(alignedMalloc(VECTOR_SLOT*Nt*sizeof(double), CACHE_LINE_ALIGN));
 
 				// Add the pointer here
 				aNode->mOtherTreeProb[i] = other->mOtherTreeProb[i];

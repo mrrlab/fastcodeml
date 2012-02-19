@@ -86,9 +86,9 @@ public:
 		//mDelta = (double) end_time.tv_sec - mStartTime.tv_sec;
 		//mDelta += (end_time.tv_usec - mStartTime.tv_usec) * 1e-6;
 
-		mDelta = (double)end_time.tv_sec*1e6+end_time.tv_usec;
-		mDelta -= (double)mStartTime.tv_sec*1e6+mStartTime.tv_usec;
-		mDelta /= 1000;
+		mDelta  = static_cast<double>(end_time.tv_sec)*1e6+end_time.tv_usec;
+		mDelta -= static_cast<double>(mStartTime.tv_sec)*1e6+mStartTime.tv_usec;
+		mDelta /= 1000.;
 
 		return mDelta;
 	}
@@ -103,7 +103,7 @@ public:
 
 private:
 	struct timeval mStartTime;	///< The start time
-	double mDelta;				///< The elapsed time in milliseconds
+	double           mDelta;		///< The elapsed time in milliseconds
 };
 
 #endif

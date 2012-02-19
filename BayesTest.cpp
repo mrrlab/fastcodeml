@@ -1,8 +1,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>
 #include "BayesTest.h"
+
 
 // The minimum value for class 2 sites probability to be a positive selection site.
 static const double MIN_PROB = 0.95;
@@ -18,10 +18,10 @@ void BayesTest::computeBEB(void)
 	// Test
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
-		mSiteClassProb[0*mNumSites+site] = rand()/(double)RAND_MAX;
-		mSiteClassProb[1*mNumSites+site] = rand()/(double)RAND_MAX;
-		mSiteClassProb[2*mNumSites+site] = rand()/(double)RAND_MAX;
-		mSiteClassProb[3*mNumSites+site] = rand()/(double)RAND_MAX;
+		mSiteClassProb[0*mNumSites+site] = randFrom0to1();
+		mSiteClassProb[1*mNumSites+site] = randFrom0to1();
+		mSiteClassProb[2*mNumSites+site] = randFrom0to1();
+		mSiteClassProb[3*mNumSites+site] = randFrom0to1();
 
 		double tot = mSiteClassProb[0*mNumSites+site] +
 					 mSiteClassProb[1*mNumSites+site] +

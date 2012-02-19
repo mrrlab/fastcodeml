@@ -133,7 +133,7 @@ private:
 protected:
 	/// Protected constructor
 	///
-	CodonFrequencies() : mCodonFrequencies(N, 1./(double)N), mCodonFreqSqrt(N, 1./sqrt((double)N)), mCodonFreqInv(N, (double)N), mNumGoodCodons(N)
+	CodonFrequencies() : mCodonFrequencies(N, 1./static_cast<double>(N)), mCodonFreqSqrt(N, 1./sqrt(static_cast<double>(N))), mCodonFreqInv(N, static_cast<double>(N)), mNumGoodCodons(N)
 	{
 		mGoodCodon.set();
 	}

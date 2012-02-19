@@ -2,7 +2,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cfloat>
-#include <cstdlib>
 #include <cmath>
 #include <memory>
 
@@ -31,7 +30,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 	std::vector<double>::const_iterator ix;
 	int k;
 	double v0 = 0;
-	for(ix=aVars.begin(),k = -(int)mNumTimes; ix != aVars.end(); ++ix,++k)
+	for(ix=aVars.begin(),k = -static_cast<int>(mNumTimes); ix != aVars.end(); ++ix,++k)
 	{
 		switch(k)
 		{
@@ -163,27 +162,27 @@ void BranchSiteModel::initVariables(void)
 	// Initialize time
 	if(mInitType == INIT_TYPE_NONE)
 	{
-		for(i=0; i < mNumTimes; ++i) mVar[i] = rand()/(double)RAND_MAX*.1+0.01;	// T
+		for(i=0; i < mNumTimes; ++i) mVar[i] = randFrom0to1()*.1+0.01;	// T
 	}
 
 	// Initialize w0, k, v1, v2
 	if(mInitType == INIT_TYPE_TIMES || mInitType == INIT_TYPE_NONE)
 	{
-		mVar[mNumTimes+0] = rand()/(double)RAND_MAX*0.8 + 0.1;					// w0
-		mVar[mNumTimes+1] = 2.0;												// k
+		mVar[mNumTimes+0] = randFrom0to1()*0.8 + 0.1;					// w0
+		mVar[mNumTimes+1] = 2.0;										// k
 #ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+2] = 1.0 + 0.2 * rand()/(double)RAND_MAX;				// x0 -> p0
-		mVar[mNumTimes+3] = 0.2*rand()/(double)RAND_MAX;						// x1 -> p1
+		mVar[mNumTimes+2] = 1.0 + 0.2 * randFrom0to1();					// x0 -> p0
+		mVar[mNumTimes+3] = 0.2*randFrom0to1();							// x1 -> p1
 #else
-		mVar[mNumTimes+2] = rand()/(double)RAND_MAX;							// p0+p1
-		mVar[mNumTimes+3] = rand()/(double)RAND_MAX;							// p0/(p0+p1)
+		mVar[mNumTimes+2] = randFrom0to1();								// p0+p1
+		mVar[mNumTimes+3] = randFrom0to1();								// p0/(p0+p1)
 #endif
 	}
 
 	// Initialize w2 if needed
 	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
 	{
-		mVar[mNumTimes+4] = 1.001 + 0.149 * rand()/(double)RAND_MAX;			// w2
+		mVar[mNumTimes+4] = 1.001 + 0.149 * randFrom0to1();				// w2
 	}
 
 	// Re-initialize the next time

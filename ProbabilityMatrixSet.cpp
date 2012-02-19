@@ -3,7 +3,7 @@
 
 void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 {
-	mFgBranch = (int)aFgBranch;
+	mFgBranch = static_cast<int>(aFgBranch);
 
 	for(int branch=0; branch < mNumMatrices; ++branch)
 	{
@@ -17,7 +17,7 @@ void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 
 void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 {
-	mFgBranch = (int)aFgBranch;
+	mFgBranch = static_cast<int>(aFgBranch);
 
 	for(int branch=0; branch < mNumMatrices; ++branch)
 	{

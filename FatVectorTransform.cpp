@@ -169,7 +169,7 @@ void FatVectorTransform::compactMatrix(void)
 
 		// Get the compaction moves
 		VectorOfRanges cmds;
-		for(int site_to=end_idx-1; site_to >= (int)begin_idx; --site_to)
+		for(int site_to=end_idx-1; site_to >= static_cast<int>(begin_idx); --site_to)
 		{
 			// Select the first hole (from right)
 			if(mNodeStatus[b*mNumSites+site_to] == FatVectorTransform::SITE_EXISTS) continue;

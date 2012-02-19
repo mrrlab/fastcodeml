@@ -235,26 +235,15 @@ private:
 	///
 	void groupByDependency(bool aForceSerial);
 
-	/// Prepare more detailed dependency lists
-	///
-	//void prepareDependenciesClassesAndTrees(void);
-
-	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
-	///
-	/// @param[in] aForceSerial Don't group so the execution is serial
-	///
-	/// @return True if the grouping changed
-	///
-	//bool balanceDependencies(bool aForceSerial);
-
 	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
+	/// @param[in] aGreedy Try to move as much as possible
 	///
 	/// @return True if the grouping changed
 	///
-	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp);
+	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, bool aGreedy);
 
 	/// Print the size of each class
 	///
@@ -265,12 +254,6 @@ private:
 	/// @param[out] aEffort Effort per site
 	///
 	void measureEffort(std::vector<unsigned int>& aEffort);
-
-	/// For each group print the total effort per thread.
-	///
-	/// @param[in] aEffort Effort per site
-	///
-	//void printEffortByGroup(const std::vector<unsigned int>& aEffort);
 
 	/// For each group print the total effort per thread. using the new Site/Class structure
 	///
@@ -287,6 +270,13 @@ private:
 	/// @return The sum of all maxima velues per class (a crude approximation of the runtime value)
 	///
 	unsigned int totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+
+	/// Balance effort inside each class.
+	///
+	/// @param[in] aEffort Effort per site
+	/// @param[in] aHyp The hypothesis to consider (could be 0 or 1)
+	///
+	void balanceEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
 
 	/// Reduce the common subtree between two (sub)trees
 	///

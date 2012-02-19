@@ -3,6 +3,7 @@
 #define BAYESTEST_H
 
 #include <vector>
+#include <cstdlib>
 
 /// Tests to find the sites under positive selection.
 ///
@@ -18,7 +19,7 @@ public:
 	///
 	/// @param[in] aNumSites Number of sites
 	///
-	BayesTest(size_t aNumSites);
+	explicit BayesTest(size_t aNumSites);
 
 	/// Destructor.
 	///
@@ -42,6 +43,13 @@ public:
 	/// @param[out] aPositiveSelSitesProb Corresponding probabilities
 	///
 	void extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const;
+
+private:
+	/// Generate a double random number between 0 and 1
+	///
+	/// @return The random number
+	///
+	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
 
 private:
 	std::vector<double> mSiteClassProb;		///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).

@@ -55,7 +55,7 @@ int main()
 
     cout << endl;
 	double* p = &l[0];
-	int x = (int)p;
+	int x = reinterpret_cast<int>(p);
 	cout << "Aligned on 16: " << x%16 << endl;
 	cout << "Aligned on 8:  " << x%8 << endl;
 	cout << "Aligned on 4:  " << x%4 << endl;
