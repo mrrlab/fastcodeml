@@ -194,15 +194,10 @@ public:
 	///
 	void initFromTree(void);
 
-	/// Initialize the times from the input phylogenetic tree and set the other values to hardcoded constants.
-	/// This routine could be used in place of initFromTree()
-	///
-	void initFromTreeAndFixed(void);
-
 	/// Initialize the times from the input phylogenetic tree and set the other values to hardcoded constants with P0=1 and P1=0.
 	/// This routine could be used in place of initFromTree()
 	///
-	void initFromTreeAndFixedP0(void);
+	void initFromTreeAndParams(void);
 
 	/// Initialize variables from a previous optimization result
 	///

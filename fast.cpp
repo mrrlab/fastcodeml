@@ -102,10 +102,9 @@ int main(int ac, char **av)
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
 		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
-		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
-		else if(cmd.mInitFromConst)					std::cerr << "Times:         From tree file (rest hardcoded)" << std::endl;
-		else if(cmd.mInitH1fromH0)					std::cerr << "Times:         From H0" << std::endl;
-		else if(cmd.mInitMinimal)					std::cerr << "Times:         From tree file and command line (see below)" << std::endl;
+		if(cmd.mInitH1fromH0)						std::cerr << "Starting val.: From H0" << std::endl;
+		else if(cmd.mInitFromParams)				std::cerr << "Starting val.: Times from tree file and command line (see below)" << std::endl;
+		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.: Times from tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
@@ -155,7 +154,7 @@ int main(int ac, char **av)
 													std::cerr << "USE_MKL_VML";
 #endif
 													std::cerr << std::endl << std::endl;
-													if(cmd.mInitMinimal)
+													if(cmd.mInitFromParams)
 													{
 														ParseParameters* p = ParseParameters::getInstance();
 														std::cerr << "Param initial values:" << std::endl << std::endl << p;
@@ -235,7 +234,7 @@ int main(int ac, char **av)
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= 1) timer.start();
-	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mInitFromConst, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
+	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mInitFromParams, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)
@@ -291,9 +290,8 @@ int main(int ac, char **av)
 		double lnl0 = 0;
 		if(cmd.mComputeHypothesis != 1)
 		{
-			if(cmd.mTimesFromFile)      h0.initFromTree();
-			else if(cmd.mInitFromConst) h0.initFromTreeAndFixed();
-			else if(cmd.mInitMinimal)   h0.initFromTreeAndFixedP0();
+			if(cmd.mInitFromParams)		h0.initFromTreeAndParams();
+			else if(cmd.mTimesFromFile)	h0.initFromTree();
 
 			lnl0 = h0(fg_branch);
 		}
@@ -308,9 +306,8 @@ int main(int ac, char **av)
 				h0.getVariables(starting_values);
 				h1.initFromResult(starting_values);
 			}
-			else if(cmd.mTimesFromFile) h1.initFromTree();
-			else if(cmd.mInitFromConst) h1.initFromTreeAndFixed();
-			else if(cmd.mInitMinimal)   h1.initFromTreeAndFixedP0();
+			else if(cmd.mInitFromParams)	h1.initFromTreeAndParams();
+			else if(cmd.mTimesFromFile)		h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
 		}
@@ -500,8 +497,11 @@ int main(int ac, char **av)
     -sd  --small-diff (required argument)
             Delta used in gradient computation
 
-    -p  --init-minimal (no argument)
-            Minimal initialization for testing (p0=1, rest zero, times from tree)
+    -p  --init-param (required argument)
+            Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
+
+    -ic  --init-default (no argument)
+            Start from default parameter values and times from tree file
 
 @endverbatim
 */

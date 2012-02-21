@@ -93,9 +93,8 @@ CmdLine::CmdLine()
 	mComputeHypothesis		= UINT_MAX;
 	mInitH1fromH0			= false;
 	mOptimizationAlgo		= 0;
-	mInitFromConst			= false;
 	mDeltaValueForGradient	= 0.0; // Zero means use the default value
-	mInitMinimal			= false;
+	mInitFromParams			= false;
 }
 
 
@@ -120,9 +119,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H1_FROM_H0,
 		OPT_OPTIM_ALGO,
-		OPT_INIT_FROM_CONST,
 		OPT_DELTA_VAL,
-		OPT_INIT_MINIMAL
+		OPT_INIT_PARAM,
+		OPT_INIT_DEFAULT
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -163,12 +162,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
 		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
-		{ OPT_INIT_FROM_CONST,	"-ic",					SO_NONE,	"Initial branch lengths from tree file and the rest from hardcoded constants" },
-		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },
 		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
 		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },
-		{ OPT_INIT_MINIMAL,		"-p",					SO_REQ_SEP,	"Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)" },
-		{ OPT_INIT_MINIMAL,		"--init-param",			SO_REQ_SEP,	"" },
+		{ OPT_INIT_PARAM,		"-p",					SO_REQ_SEP,	"Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)" },
+		{ OPT_INIT_PARAM,		"--init-param",			SO_REQ_SEP,	"" },
+		{ OPT_INIT_DEFAULT,		"-ic",					SO_NONE,	"Start from default parameter values and times from tree file" },
+		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -274,17 +273,17 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mOptimizationAlgo = atoi(args.OptionArg());
 			break;
 
-		case OPT_INIT_FROM_CONST:
-			mInitFromConst = true;
-			break;
-
 		case OPT_DELTA_VAL:
 			mDeltaValueForGradient = atof(args.OptionArg());
 			if(mDeltaValueForGradient < 0.0) mDeltaValueForGradient = 0.0;
 
-		case OPT_INIT_MINIMAL:
+		case OPT_INIT_PARAM:
 			ParseParameters::getInstance()->addParameter(args.OptionArg());
-			mInitMinimal = true;
+			mInitFromParams = true;
+			break;
+
+		case OPT_INIT_DEFAULT:
+			mInitFromParams = true;
 			break;
 		}
 	}
@@ -314,8 +313,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
-	if(mInitFromConst) mTimesFromFile = false;
-	if(mInitMinimal) mTimesFromFile = false;
-	if(mInitMinimal) mInitFromConst = false;
+	if(mInitH1fromH0) {mInitFromParams = false; mTimesFromFile = false;}
+	if(mInitFromParams) mTimesFromFile = false;
 }
 

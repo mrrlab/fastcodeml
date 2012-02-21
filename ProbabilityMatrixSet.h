@@ -35,8 +35,7 @@ public:
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
-		CodonFrequencies* cf = CodonFrequencies::getInstance();
-		mInvCodonFreq = cf->getInvCodonFrequencies();
+		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
 	}
 
 	/// Destructor.
@@ -47,7 +46,7 @@ public:
 		alignedFree(mMatrices);
 	}
 
-	/// Return the number of sets contained in this Probability MatrixSet
+	/// Return the number of sets contained in this ProbabilityMatrixSet
 	///
 	/// @return The number of sets
 	///

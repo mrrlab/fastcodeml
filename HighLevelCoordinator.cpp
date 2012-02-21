@@ -411,8 +411,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		case JOB_H0:
 			{
 			// Compute H0
-			if(aTimesFromFile) h0.initFromTree();
-			else if(aInitFromConst) h0.initFromTreeAndFixed();
+			if(aInitFromConst)		h0.initFromTreeAndParams();
+			else if(aTimesFromFile)	h0.initFromTree();
 			double lnl = h0(job[1]);
 
 			// Assemble the results to be passed to the master
@@ -426,8 +426,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		case JOB_H1:
 			{
 			// Compute H1
-			if(aTimesFromFile) h1.initFromTree();
-			else if(aInitFromConst) h1.initFromTreeAndFixed();
+			if(aInitFromConst)		h1.initFromTreeAndParams();
+			else if(aTimesFromFile)	h1.initFromTree();
 			double lnl = h1(job[1]);
 
 			// Assemble the results to be passed to the master

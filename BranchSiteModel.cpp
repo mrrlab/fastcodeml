@@ -100,38 +100,7 @@ void BranchSiteModel::initFromTree(void)
 }
 
 
-void BranchSiteModel::initFromTreeAndFixed(void)
-{
-	// Initialize branch lengths from the phylo tree
-	mForest.setTimesFromLengths(mVar);
-
-	// Initialization as in CodeML (seems)
-	mVar[mNumTimes+0] = 0.235087;											// w0
-	mVar[mNumTimes+1] = 0.4;												// k
-
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mVar[mNumTimes+2] = 1.04885;											// x0 -> p0
-	mVar[mNumTimes+3] = 0.12437;											// x1 -> p1
-#else
-	mVar[mNumTimes+2] = 0.813836;											// p0+p1
-	mVar[mNumTimes+3] = 0.7260434;											// p0/(p0+p1)
-#endif
-	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
-	{
-		mVar[mNumTimes+4] = 1.14833;										// w2
-
-		// Ask for initialization completion
-		mInitType = INIT_TYPE_RES_5;
-	}
-	else
-	{
-		// Ask for initialization completion
-		mInitType = INIT_TYPE_RES_4;
-	}
-}
-
-
-void BranchSiteModel::initFromTreeAndFixedP0(void)
+void BranchSiteModel::initFromTreeAndParams(void)
 {
 	// Initialize branch lengths from the phylo tree
 	mForest.setTimesFromLengths(mVar);
