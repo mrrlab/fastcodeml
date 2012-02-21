@@ -21,8 +21,8 @@ ParseParameters::ParseParameters()
 	mDictionary["w0"] = 0.4;
 	mDictionary["k"]  = 0.2;
 #ifdef USE_ORIGINAL_PROPORTIONS
-	mDictionary["x0"] = 1.0;
-	mDictionary["x1"] = 0.1;
+	mDictionary["p0"] = 1.0;
+	mDictionary["p1"] = 0.1;
 #else
 	mDictionary["p0"] = 1.0;
 	mDictionary["p1"] = 0.0;
@@ -42,7 +42,7 @@ void ParseParameters::addParameter(const char* aParamValuePair)
 
 	// Extract the name part that should be present in the dictionary
 	std::string name(aParamValuePair, i);
-	if(mDictionary.count(name) < 1) throw FastCodeMLFatal("Invalid key added in addParameter");
+	if(mDictionary.count(name) < 1) throw FastCodeMLFatal("Try to add a non-existing key in addParameter");
 
 	// Change the value corresponding to the parameter name
 	mDictionary[name] = atof(p+1);

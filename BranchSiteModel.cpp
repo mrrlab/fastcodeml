@@ -143,12 +143,13 @@ void BranchSiteModel::initFromTreeAndFixedP0(void)
 	mVar[mNumTimes+0] = params->getParameter("w0");							// w0
 	mVar[mNumTimes+1] = params->getParameter("k");							// k
 
-#ifdef USE_ORIGINAL_PROPORTIONS
-	mVar[mNumTimes+2] = params->getParameter("x0");							// x0 -> p0
-	mVar[mNumTimes+3] = params->getParameter("x1");							// x1 -> p1
-#else
 	double p0 = params->getParameter("p0");
 	double p1 = params->getParameter("p1");
+#ifdef USE_ORIGINAL_PROPORTIONS
+	if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
+	mVar[mNumTimes+2] = log(p0);											// x0 -> p0
+	mVar[mNumTimes+3] = log(p1);											// x1 -> p1
+#else
 	if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 	mVar[mNumTimes+2] = p0+p1;												// p0+p1
 	mVar[mNumTimes+3] = p0/(p0+p1);											// p0/(p0+p1)

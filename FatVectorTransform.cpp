@@ -404,8 +404,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 
 			// Reuse values 
 			VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[branch].begin();
-			const VectorOfRangesNoCnt::const_iterator end=mReuseCmds[branch].end();
-			for(; icr != end; ++icr)
+			const VectorOfRangesNoCnt::const_iterator endr=mReuseCmds[branch].end();
+			for(; icr != endr; ++icr)
 			{
 				// Make local copies to increase locality
 				const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icr->from);
