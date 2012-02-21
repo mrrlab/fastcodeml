@@ -5,6 +5,7 @@
 #include "CmdLine.h"
 #include "simpleopt/SimpleOpt.h"
 #include "Exceptions.h"
+#include "ParseParameters.h"
 
 const char *CmdLine::getLastErrorText(CSimpleOpt& aOptParser)
 {
@@ -166,8 +167,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },
 		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
 		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },
-		{ OPT_INIT_MINIMAL,		"-p",					SO_NONE,	"Minimal initialization for testing (p0=1, rest zero, times from tree)" },
-		{ OPT_INIT_MINIMAL,		"--init-minimal",		SO_NONE,	"" },
+		{ OPT_INIT_MINIMAL,		"-p",					SO_REQ_SEP,	"Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)" },
+		{ OPT_INIT_MINIMAL,		"--init-param",			SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -282,6 +283,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			if(mDeltaValueForGradient < 0.0) mDeltaValueForGradient = 0.0;
 
 		case OPT_INIT_MINIMAL:
+			ParseParameters::getInstance()->addParameter(args.OptionArg());
 			mInitMinimal = true;
 			break;
 		}

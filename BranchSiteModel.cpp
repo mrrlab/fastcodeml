@@ -11,6 +11,7 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
+#include "ParseParameters.h"
 
 /// Starting value for the computed maximum likelihood.
 /// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -135,20 +136,26 @@ void BranchSiteModel::initFromTreeAndFixedP0(void)
 	// Initialize branch lengths from the phylo tree
 	mForest.setTimesFromLengths(mVar);
 
+	// Get the parameters
+	ParseParameters* params = ParseParameters::getInstance();
+
 	// Initialization as in CodeML (seems)
-	mVar[mNumTimes+0] = 0.2;												// w0
-	mVar[mNumTimes+1] = 0.4;												// k
+	mVar[mNumTimes+0] = params->getParameter("w0");							// w0
+	mVar[mNumTimes+1] = params->getParameter("k");							// k
 
 #ifdef USE_ORIGINAL_PROPORTIONS
-	mVar[mNumTimes+2] = 0.6931472;											// x0 -> p0
-	mVar[mNumTimes+3] = -98.999;											// x1 -> p1
+	mVar[mNumTimes+2] = params->getParameter("x0");							// x0 -> p0
+	mVar[mNumTimes+3] = params->getParameter("x1");							// x1 -> p1
 #else
-	mVar[mNumTimes+2] = 1.0;												// p0+p1
-	mVar[mNumTimes+3] = 1.0;												// p0/(p0+p1)
+	double p0 = params->getParameter("p0");
+	double p1 = params->getParameter("p1");
+	if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
+	mVar[mNumTimes+2] = p0+p1;												// p0+p1
+	mVar[mNumTimes+3] = p0/(p0+p1);											// p0/(p0+p1)
 #endif
 	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
 	{
-		mVar[mNumTimes+4] = 1.1;											// w2
+		mVar[mNumTimes+4] = params->getParameter("w2");						// w2
 
 		// Ask for initialization completion
 		mInitType = INIT_TYPE_RES_5;

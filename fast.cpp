@@ -29,6 +29,8 @@
 #include "ForestExport.h"
 #include "Exceptions.h"
 #include "BranchSiteModel.h"
+#include "ParseParameters.h"
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -103,7 +105,7 @@ int main(int ac, char **av)
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
 		else if(cmd.mInitFromConst)					std::cerr << "Times:         From tree file (rest hardcoded)" << std::endl;
 		else if(cmd.mInitH1fromH0)					std::cerr << "Times:         From H0" << std::endl;
-		else if(cmd.mInitMinimal)					std::cerr << "Times:         From tree file (rest hardcoded with p0=1)" << std::endl;
+		else if(cmd.mInitMinimal)					std::cerr << "Times:         From tree file and command line (see below)" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
@@ -153,7 +155,13 @@ int main(int ac, char **av)
 													std::cerr << "USE_MKL_VML";
 #endif
 													std::cerr << std::endl << std::endl;
+													if(cmd.mInitMinimal)
+													{
+														ParseParameters* p = ParseParameters::getInstance();
+														std::cerr << "Param initial values:" << std::endl << std::endl << p;
+													}
 	}
+
 
 	// Initialize the random number generator (0 means it is not set on the command line)
 	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));

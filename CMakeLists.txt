@@ -22,6 +22,7 @@ set(SRCS
 	HighLevelCoordinator.cpp
 	CodeMLoptimizer.cpp
 	ForestExport.cpp
+	ParseParameters.cpp
 )
 
 
