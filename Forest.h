@@ -93,10 +93,10 @@ public:
 	///
 	void cleanReductionWorkingData(ForestNode* aNode=0);
 
-	/// Group trees by dependencies.
+	/// Group trees by dependencies try to balance their parallel execution.
 	/// First group contains trees with no dependencies.
-	/// Second group contains trees that depends only on trees of the first group.
-	/// Third group contains trees that depends on first and second groups. And so on.
+	/// Second group contains trees that depend only on trees of the first group.
+	/// Third group contains trees that depend on first and second groups. And so on.
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	///
@@ -228,8 +228,8 @@ public:
 private:
 	/// Group trees by dependencies.
 	/// First group contains trees with no dependencies.
-	/// Second group contains trees that depends only on trees of the first group.
-	/// Third group contains trees that depends on first and second groups. And so on.
+	/// Second group contains trees that depend only on trees of the first group.
+	/// Third group contains trees that depend on first and second groups. And so on.
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	///

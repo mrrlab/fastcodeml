@@ -3,8 +3,8 @@
 /// @section intro_sect Introduction
 /// 
 /// FastCodeML is a rewrite of CodeML based directly on the pseudocode document.
-/// It incorporate various parallelization strategies to be able to exploit modern HPC machines architecture.
-/// For this reason there are various part of the code that can be selected at compile time or run time to experiment with various, possible solutions.
+/// It incorporates various parallelization strategies to be able to exploit modern HPC machines architecture.
+/// For this reason there are various parts of the code that can be selected at compile time or run time to experiment with various, possible solutions.
 ///
 /// @section contacts_sect Contacts
 ///
@@ -392,6 +392,7 @@ int main(int ac, char **av)
 ///
 /// @section cmemb_sect Class methods
 /// Class methods names are CamelCase with the first letter lowercase.
+/// Only very common adn specific names should be all lowercase, like read, clean, size.
 ///
 /// Ex: testFillQ
 ///
@@ -468,9 +469,6 @@ int main(int ac, char **av)
 
     -r  --trace (no argument)
             Trace the maximization run
-
-    -na  --no-aggressive (no argument)
-            Don't apply aggressive forest reduction
 
     -np  --no-parallel (no argument)
             Don't use parallel execution

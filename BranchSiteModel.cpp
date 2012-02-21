@@ -12,8 +12,8 @@
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
 
-// Starting value for the maximum likelihood
-// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
+/// Starting value for the computed maximum likelihood.
+/// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 

@@ -211,7 +211,7 @@ private:
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
-	const double*	mSqrtCodonFreq;	///< Square Root of experimental codon frequencies
+	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
 	double ALIGN64	mQ[N*N];		///< The Q matrix
 	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order

@@ -38,7 +38,7 @@ public:
 
 	/// Compute the codon frequencies from the codon count
 	///
-	/// @param[in] aCodonCount Count of condons of a certain type
+	/// @param[in] aCodonCount Count of codons of a certain type
 	/// @param[in] aModel Codon frequency model to use
 	///
 	void setCodonFrequencies(const std::vector<unsigned int>& aCodonCount, CodonFrequencyModel aModel)
@@ -48,7 +48,7 @@ public:
 		{
 		default:
 		case CODON_FREQ_MODEL_UNIF:
-			mCodonFrequencies.assign(N, 1./(double)N);
+			mCodonFrequencies.assign(N, 1./static_cast<double>(N));
 			break;
 
 		case CODON_FREQ_MODEL_F3X4:
@@ -89,7 +89,7 @@ public:
 	///
 	const double* getSqrtCodonFrequencies(void) const {return &mCodonFreqSqrt[0];}
 
-	/// Return a pointer to the codon inverse of frequencies array
+	/// Return a pointer to the codon array of inverse of frequencies
 	///
 	/// @return Pointer to the codon inverse of frequencies array 
 	///
@@ -110,7 +110,7 @@ public:
 private:
 	/// Set codon frequencies according to the F3x4 model
 	///
-	/// @param[in] aCodonCount The count of each codon occurrencies
+	/// @param[in] aCodonCount The count of each codon occurrences
 	///
 	void setCodonFrequenciesF3x4(const std::vector<unsigned int>& aCodonCount);
 

@@ -4,7 +4,8 @@
 #include "BayesTest.h"
 
 
-// The minimum value for class 2 sites probability to be a positive selection site.
+/// The minimum value for class 2 sites probability to be a positive selection site.
+///
 static const double MIN_PROB = 0.95;
 
 BayesTest::BayesTest(size_t aNumSites) : mNumSites(aNumSites)

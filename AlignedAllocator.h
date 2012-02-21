@@ -10,7 +10,7 @@
 #include "AlignedMalloc.h"
 
 /// Aligned allocator definition.
-/// Will be used to obtain a vector aligned to a given power of 2.
+/// It will be used to obtain a vector aligned to a given power of 2.
 /// Example allocation aligned to 64: std::vector<double, AlignedAllocator<double, 64> > aligned_vector;
 ///
 template <typename T, size_t A> class AlignedAllocator
@@ -77,14 +77,20 @@ public:
         return true;
     }
 
-    /// Default constructor, copy constructor, rebinding constructor, and destructor.
-    /// Empty for stateless allocators.
+    /// Default constructor. It should be empty for stateless allocators.
+	///
     AlignedAllocator() { }
 
+    /// Default copy constructor. It should be empty for stateless allocators.
+	///
     AlignedAllocator(const AlignedAllocator&) { }
 
+    /// Default rebinding constructor. It should be empty for stateless allocators.
+	///
     template <typename U> AlignedAllocator(const AlignedAllocator<U, A>&) { }
 
+    /// Default destructor. It should be empty for stateless allocators.
+	///
     ~AlignedAllocator() { }
 
     // The following will be different for each allocator.
@@ -116,7 +122,7 @@ public:
         void * const pv = alignedMalloc(n * sizeof(T), A);
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
-        if (pv == NULL) {
+        if(pv == NULL) {
             throw std::bad_alloc();
         }
 
@@ -135,6 +141,7 @@ public:
     }
 
     /// The following will be the same for all allocators that ignore hints.
+	///
     template <typename U> T * allocate(const size_t n, const U * /* const hint */) const
 	{
         return allocate(n);

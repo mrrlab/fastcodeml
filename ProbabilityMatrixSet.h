@@ -59,7 +59,7 @@ public:
 	///
 	void initForH1(unsigned int aFgBranch);
 
-	/// Compute the three sets of matrices for the H0 hypothesis
+	/// Compute the three sets of matrices for the H0 hypothesis.
 	/// The sets are (these are the bg and fg matrices): 
 	/// - set 0: w0, w0
 	/// - set 1: w1, w1
@@ -77,7 +77,7 @@ public:
 							double aSfg,
 						    const std::vector<double>& aParams);
 
-	/// Compute the four sets of matrices for the H1 hypothesis
+	/// Compute the four sets of matrices for the H1 hypothesis.
 	/// The sets are (these are the bg and fg matrices): 
 	/// - set 0: w0, w0
 	/// - set 1: w1, w1

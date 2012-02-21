@@ -195,6 +195,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		switch(args.OptionId())
 		{
 		case OPT_VERBOSE:
+			if(mVerboseLevel == 0) break; // Ignore option if quiet is set
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid verbose level");
 			mVerboseLevel = tmpi;
@@ -312,5 +313,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
 	if(mInitFromConst) mTimesFromFile = false;
+	if(mInitMinimal) mTimesFromFile = false;
+	if(mInitMinimal) mInitFromConst = false;
 }
 
