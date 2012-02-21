@@ -24,7 +24,7 @@
 #elif defined(__PGI)
 //  PGI C++
 #define ALIGN64 //__attribute__ ((aligned (64)))
-#define RESTRICT
+#define RESTRICT restrict
 //#define PURE    __attribute__ ((pure))
 
 #elif defined(_CRAYC)

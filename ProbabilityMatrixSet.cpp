@@ -5,7 +5,8 @@ void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 {
 	mFgBranch = static_cast<int>(aFgBranch);
 
-	for(int branch=0; branch < mNumMatrices; ++branch)
+	int num_matrices = mNumMatrices;
+	for(int branch=0; branch < num_matrices; ++branch)
 	{
 		mMatrices[branch+mNumMatrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
 		mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
@@ -19,7 +20,8 @@ void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 {
 	mFgBranch = static_cast<int>(aFgBranch);
 
-	for(int branch=0; branch < mNumMatrices; ++branch)
+	int num_matrices = mNumMatrices;
+	for(int branch=0; branch < num_matrices; ++branch)
 	{
 		mMatrices[branch+mNumMatrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
 		mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
@@ -36,18 +38,19 @@ void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 }
 
 
-void ProbabilityMatrixSet::computeMatrixSetH0(const  TransitionMatrix& aQw0,
+void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,
 											 double aSbg,
 											 double aSfg,
 											 const  std::vector<double>& aParams)
 {
+	int num_matrices = mNumMatrices;
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams) schedule(static)
+	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams, num_matrices) schedule(static)
 #else
 	#pragma omp parallel for default(shared) schedule(static)
 #endif
-	for(int branch=0; branch < mNumMatrices; ++branch)
+	for(int branch=0; branch < num_matrices; ++branch)
 	{
 		const double t = (branch == mFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
 
@@ -62,19 +65,20 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const  TransitionMatrix& aQw0,
 }
 
 
-void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
+void ProbabilityMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,
 											 const  TransitionMatrix& aQw2,
 											 double aSbg,
 											 double aSfg,
 											 const  std::vector<double>& aParams)
 {
+	int num_matrices = mNumMatrices;
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams) schedule(static)
+	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams, num_matrices) schedule(static)
 #else
 	#pragma omp parallel for default(shared) schedule(static)
 #endif
-	for(int branch=0; branch < mNumMatrices; ++branch)
+	for(int branch=0; branch < num_matrices; ++branch)
 	{
 		const double t = (branch == mFgBranch) ? aParams[branch]/aSfg : aParams[branch]/aSbg;
 

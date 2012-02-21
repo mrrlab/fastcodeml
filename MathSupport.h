@@ -84,28 +84,30 @@ inline double dot(const double* aV1, const double* aV2)
 ///
 inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 {
-#ifdef __SSE2__
-	__m128d num1, num2, num3;
-
-    for(int i=0; i < N-1; )
-    {
-        num1 = _mm_load_pd(aVres+i);
-        num2 = _mm_load_pd(aV+i);
-        num3 = _mm_mul_pd(num1, num2);
-        _mm_store_pd(aVres+i, num3);
-		i += 2;
-
-        num1 = _mm_load_pd(aVres+i);
-        num2 = _mm_load_pd(aV+i);
-        num3 = _mm_mul_pd(num1, num2);
-        _mm_store_pd(aVres+i, num3);
-		i += 2;
-    }
-	aVres[N-1] *= aV[N-1];
-#elif defined(USE_MKL_VML)
-	vdMul(N, aVres, aV, aVres);
-#else
+//#ifdef USE_MKL_VML
+//	vdMul(N, aVres, aV, aVres);
+//#elif defined(__SSE2__)
+//	__m128d num1, num2, num3;
+//
+//    for(int i=0; i < N-1; )
+//    {
+//        num1 = _mm_load_pd(aVres+i);
+//        num2 = _mm_load_pd(aV+i);
+//        num3 = _mm_mul_pd(num1, num2);
+//        _mm_store_pd(aVres+i, num3);
+//		i += 2;
+//
+//        num1 = _mm_load_pd(aVres+i);
+//        num2 = _mm_load_pd(aV+i);
+//        num3 = _mm_mul_pd(num1, num2);
+//        _mm_store_pd(aVres+i, num3);
+//		i += 2;
+//    }
+//	aVres[N-1] *= aV[N-1];
+//#else
 	// Manual unrolling gives the best results here
+	for(int i=0; i < 61; ++i) aVres[i] *= aV[i];
+#if 0
 	for(int i=0; i < 60; )
 	{
 		aVres[i] *= aV[i]; ++i;
@@ -117,6 +119,7 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 	}
 	aVres[60] *= aV[60];
 #endif
+//#endif
 }
 
 

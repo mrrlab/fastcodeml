@@ -332,9 +332,11 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         {
             xtoy(H, C, nfree * nfree);
 
-			for(i1=0; i1 < nfree; ++i1)
-				for(i2=0; i2 < nfree; ++i2)
-					H[i1 * (nfree + 1) + i2] = C[i1 * nfree + i2];
+			//for(i1=0; i1 < nfree; ++i1)
+			//	for(i2=0; i2 < nfree; ++i2)
+			//		H[i1 * (nfree + 1) + i2] = C[i1 * nfree + i2];
+			for(i1=0; i1 < nfree; ++i1) memcpy(&H[i1 * (nfree + 1)], &C[i1 * nfree], nfree*sizeof(double));
+
 
 			for(i1=0; i1 < (nfree+1); ++i1) H[i1 * (nfree + 1) + nfree] = H[nfree * (nfree + 1) + i1] = 0;
 
@@ -830,7 +832,8 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[], double spa
         }
         else  		/* forward or backward */
         {
-            for(j=0; j < n; ++j)  x1[j] = x[j];
+            //for(j=0; j < n; ++j)  x1[j] = x[j];
+			memcpy(x1, x, n*sizeof(double));
 
             if(xmark[i])
             {

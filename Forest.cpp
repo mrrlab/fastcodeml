@@ -62,7 +62,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 		// Add codon code to leaves
 		std::vector<ForestNode*>::const_iterator il=leaves.begin();
-		for(; il != leaves.end(); ++il)
+		std::vector<ForestNode*>::const_iterator end=leaves.end();
+		for(; il != end; ++il)
 		{
 			// Node id (adjusted so root is 0)
 			unsigned int node = (*il)->mBranchId+1;
@@ -103,7 +104,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Transform the map into a table (better for performance)
 	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
 	std::map<unsigned int, unsigned int>::const_iterator im=map_internal_to_branchID.begin();
-	for(; im != map_internal_to_branchID.end(); ++im)
+	std::map<unsigned int, unsigned int>::const_iterator end=map_internal_to_branchID.end();
+	for(; im != end; ++im)
 	{
 		mTableInternalToBranchID[im->first] = im->second;
 	}
@@ -129,7 +131,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
         // Put in a list all the children of the current level nodes
         std::vector<ForestNode*>::const_iterator il=curr_level.begin();
-        for(; il != curr_level.end(); ++il)
+        std::vector<ForestNode*>::const_iterator end=curr_level.end();
+        for(; il != end; ++il)
         {
             if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
         }
@@ -169,14 +172,16 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		unsigned int max_len   = 0;
 		unsigned int max_level = 0;
 		unsigned int max_leaf  = 0;
-		std::vector< std::vector<ForestNode*> >::iterator inbl;
 		unsigned int level = 0;
-		for(inbl=mNodesByLevel.begin(),level=0; inbl != mNodesByLevel.end(); ++inbl,++level)
+		std::vector< std::vector<ForestNode*> >::iterator inbl=mNodesByLevel.begin();
+		std::vector< std::vector<ForestNode*> >::iterator end=mNodesByLevel.end();
+		for(level=0; inbl != end; ++inbl,++level)
 		{
 			unsigned int num_leaves = 0;
 			unsigned int leaf = 0, i=0;
-			std::vector<ForestNode*>::const_iterator ifn;
-			for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn,++i)
+			std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
+			std::vector<ForestNode*>::const_iterator end=inbl->end();
+			for(; ifn != end; ++ifn,++i)
 			{
 				if((*ifn)->mChildrenList.empty()) {++num_leaves; leaf = i;}
 			}
@@ -236,10 +241,9 @@ void Forest::reduceSubtrees(void)
 	// (this way a delete does not choke with pointers pointing to freed memory) 
 
 	// Try to merge equal subtrees
-	int i, j;
-	for(i=mNumSites-1; i > 0; --i)
+	for(int i=mNumSites-1; i > 0; --i)
 	{
-		for(j=i-1; j >= 0; --j)
+		for(int j=i-1; j >= 0; --j)
 		{
 			reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
 		}
@@ -1007,7 +1011,8 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
-	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
+	ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
+	for(; ivs != end; ++ivs)
 	{
 		const int len = ivs->size();
 
@@ -1158,7 +1163,8 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 
 		unsigned int idx;
 		std::vector<ForestNode *>::const_iterator icl=aNode->mChildrenList.begin();
-		for(idx=0; icl != aNode->mChildrenList.end(); ++icl,++idx)
+		std::vector<ForestNode *>::const_iterator end=aNode->mChildrenList.end();
+		for(idx=0; icl != end; ++icl,++idx)
 		{
 			if(aNode->isSameTree(idx))
 			{
@@ -1242,7 +1248,8 @@ void crc(const std::vector<double>& v, unsigned int nsites)
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
-	for(; ivs != mDependenciesClassesAndTrees[aHyp].end(); ++ivs)
+	ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
+	for(; ivs != end; ++ivs)
 	{
 		const int len = ivs->size();
 

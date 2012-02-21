@@ -237,13 +237,15 @@ struct ForestNode
 		if(mPreprocessingSupport)
 		{
 			std::vector<int>::const_iterator ig=mPreprocessingSupport->mSubtreeCodonsSignature.begin();
-			for(; ig != mPreprocessingSupport->mSubtreeCodonsSignature.end(); ++ig) aOut << *ig << ' ';
+			std::vector<int>::const_iterator end=mPreprocessingSupport->mSubtreeCodonsSignature.end();
+			for(; ig != end; ++ig) aOut << *ig << ' ';
 			aOut << std::endl;
 		}
 
 		// Print the subtree
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		for(i=0; irn != mChildrenList.end(); ++irn, ++i)
+		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
 			if(isSameTree(i))
@@ -272,7 +274,8 @@ struct ForestNode
 		else
 		{
 			std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-			for(; irn != mChildrenList.end(); ++irn) (*irn)->pushLeaf(aLeafsList);
+			std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+			for(; irn != end; ++irn) (*irn)->pushLeaf(aLeafsList);
 		}
 	}
 
@@ -281,7 +284,8 @@ struct ForestNode
 	void gatherCodons(void)
 	{
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		for(; irn != mChildrenList.end(); ++irn)
+		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		for(; irn != end; ++irn)
 		{
 			(*irn)->gatherCodons();
 			mPreprocessingSupport->mSubtreeCodonsSignature.insert(mPreprocessingSupport->mSubtreeCodonsSignature.end(), (*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.begin(), (*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.end());
@@ -301,7 +305,8 @@ struct ForestNode
 
 		// Visit the subtrees
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		for(i=0; irn != mChildrenList.end(); ++irn, ++i)
+		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
 			if(isSameTree(i))

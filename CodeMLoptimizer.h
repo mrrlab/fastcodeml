@@ -82,7 +82,7 @@ private:
 	/// @param[in] e2 (Unknown)
 	/// @param[in] n Number of variables in x0 and x1
 	///
-	/// @return true for stop, false otherwise.
+	/// @return True for stop, false otherwise.
 	///
 	bool H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n) const;
 

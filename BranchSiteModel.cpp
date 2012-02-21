@@ -27,10 +27,10 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 	if(aLnl < DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
 
 	// Print all the variables
-	std::vector<double>::const_iterator ix;
 	int k;
 	double v0 = 0;
-	for(ix=aVars.begin(),k = -static_cast<int>(mNumTimes); ix != aVars.end(); ++ix,++k)
+	std::vector<double>::const_iterator ix = aVars.begin();
+	for(k = -static_cast<int>(mNumTimes); ix != aVars.end(); ++ix,++k)
 	{
 		switch(k)
 		{
@@ -276,7 +276,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const size_t num_sites = mForest.getNumSites();
 	const double* mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
+	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
 		//double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
@@ -366,7 +366,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	const size_t num_sites = mForest.getNumSites();
 	const double* mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
-	for(unsigned int site=0; site < num_sites; ++site)
+	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
 		//double p = mProportions[0]*mLikelihoods[0*num_sites+site] +

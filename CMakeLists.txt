@@ -180,7 +180,7 @@ if($ENV{HOST} MATCHES "eiger")
 
 		#slow, but suitable for debugging
 		if(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter" CACHE "Debug mode options" STRING)
+			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wno-unused-result -Wno-write-strings -g -pg -fcheck-data-deps")
 			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -pg -fcheck-data-deps" CACHE STRING "Debug mode options")
 		endif(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
@@ -199,6 +199,7 @@ if($ENV{HOST} MATCHES "eiger")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
 endif($ENV{HOST} MATCHES "eiger")
+
 ###########################################################
 
 

@@ -162,11 +162,14 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 	if(aNames.size() != mDnaSpecies.size()) throw FastCodeMLFatal("Different number of species in tree and genes");
 
 	// Create correspondence between species names
-	std::vector<std::string>::const_iterator is1, is2;
-	for(is1=aNames.begin(); is1 != aNames.end(); ++is1)
+	std::vector<std::string>::const_iterator is1=aNames.begin();
+	std::vector<std::string>::const_iterator end1=aNames.end();
+	for(; is1 != end1; ++is1)
 	{
 		bool found = false;
-		for(is2=mDnaSpecies.begin(); is2 != mDnaSpecies.end(); ++is2)
+		std::vector<std::string>::const_iterator is2=mDnaSpecies.begin();
+		std::vector<std::string>::const_iterator end2=mDnaSpecies.end();
+		for(; is2 != end2; ++is2)
 		{
 			if(*is1 == *is2) {found = true; break;}
 		}
@@ -259,9 +262,7 @@ void Genes::readFile(const char* aFilename)
 	// Map from specie name to position in DnaGene
 	unsigned int idx = 0;
 	std::vector<std::string>::const_iterator is=mDnaSpecies.begin();
-	for(; is != mDnaSpecies.end(); ++is, ++idx)
-	{
-		mMapSpecieToDnaGene[*is] = idx;
-	}
+	std::vector<std::string>::const_iterator end=mDnaSpecies.end();
+	for(; is != end; ++is, ++idx) mMapSpecieToDnaGene[*is] = idx;
 }
 

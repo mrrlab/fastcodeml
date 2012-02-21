@@ -19,8 +19,9 @@ void TreeNode::printFormatted(int aIndent) const
 	std::cout << std::endl;
 
 	// Print the children (indented by 3 spaces)
-	std::vector<TreeNode *>::const_iterator in;
-	for(in=mChildrenList.begin(); in != mChildrenList.end(); ++in) (*in)->printFormatted(aIndent+3);
+	std::vector<TreeNode *>::const_iterator in=mChildrenList.begin();
+	std::vector<TreeNode *>::const_iterator end=mChildrenList.end();
+	for(; in != end; ++in) (*in)->printFormatted(aIndent+3);
 }
 
 
@@ -37,9 +38,10 @@ void TreeNode::clearNode(void)
 	// Recursively remove the nodes
 	if(!mChildrenList.empty())
 	{
-		std::vector<TreeNode *>::iterator in;
-		for(in=mChildrenList.begin(); in != mChildrenList.end(); ++in) (*in)->clearNode();
-		for(in=mChildrenList.begin(); in != mChildrenList.end(); ++in) delete (*in);
+		std::vector<TreeNode *>::iterator in = mChildrenList.begin();
+		std::vector<TreeNode *>::iterator end = mChildrenList.end();
+		for(; in != end; ++in) (*in)->clearNode();
+		for(in=mChildrenList.begin(); in != end; ++in) delete (*in);
 	}
 
 	// Special case for the root node
