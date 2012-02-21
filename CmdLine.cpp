@@ -94,6 +94,7 @@ CmdLine::CmdLine()
 	mOptimizationAlgo		= 0;
 	mInitFromConst			= false;
 	mDeltaValueForGradient	= 0.0; // Zero means use the default value
+	mInitMinimal			= false;
 }
 
 
@@ -119,7 +120,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_H1_FROM_H0,
 		OPT_OPTIM_ALGO,
 		OPT_INIT_FROM_CONST,
-		OPT_DELTA_VAL
+		OPT_DELTA_VAL,
+		OPT_INIT_MINIMAL
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -164,6 +166,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_FROM_CONST,	"--init-from-const",	SO_NONE,	"" },
 		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
 		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },
+		{ OPT_INIT_MINIMAL,		"-p",					SO_NONE,	"Minimal initialization for testing (p0=1, rest zero, times from tree)" },
+		{ OPT_INIT_MINIMAL,		"--init-minimal",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -275,6 +279,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_DELTA_VAL:
 			mDeltaValueForGradient = atof(args.OptionArg());
 			if(mDeltaValueForGradient < 0.0) mDeltaValueForGradient = 0.0;
+
+		case OPT_INIT_MINIMAL:
+			mInitMinimal = true;
+			break;
 		}
 	}
 	

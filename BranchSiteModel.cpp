@@ -26,7 +26,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 	// Write the LnL value (if set)
 	if(aLnl < DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
 
-	// Print all the variables
+	// Print all variables formatted to be readable
 	int k;
 	double v0 = 0;
 	std::vector<double>::const_iterator ix = aVars.begin();
@@ -130,6 +130,36 @@ void BranchSiteModel::initFromTreeAndFixed(void)
 }
 
 
+void BranchSiteModel::initFromTreeAndFixedP0(void)
+{
+	// Initialize branch lengths from the phylo tree
+	mForest.setTimesFromLengths(mVar);
+
+	// Initialization as in CodeML (seems)
+	mVar[mNumTimes+0] = 0.2;												// w0
+	mVar[mNumTimes+1] = 0.4;												// k
+
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mVar[mNumTimes+2] = 0.6931472;											// x0 -> p0
+	mVar[mNumTimes+3] = -98.999;											// x1 -> p1
+#else
+	mVar[mNumTimes+2] = 1.0;												// p0+p1
+	mVar[mNumTimes+3] = 1.0;												// p0/(p0+p1)
+#endif
+	if(mNumVariables == 5 && mInitType != INIT_TYPE_RES_5)
+	{
+		mVar[mNumTimes+4] = 1.1;											// w2
+
+		// Ask for initialization completion
+		mInitType = INIT_TYPE_RES_5;
+	}
+	else
+	{
+		// Ask for initialization completion
+		mInitType = INIT_TYPE_RES_4;
+	}
+}
+
 void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen)
 {
 	// Adjust the length to be copied
@@ -188,10 +218,11 @@ void BranchSiteModel::initVariables(void)
 	// Re-initialize the next time
 	mInitType = INIT_TYPE_NONE;
 
-	// Check the initial values are inside the domain
+	// Check the initial values are inside the domain (except proportions)
 	for(i=0; i < mNumTimes+mNumVariables; ++i)
 	{
 		if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
+		if(i == mNumTimes+2 || i == mNumTimes+3) continue;
 		if(mVar[i] >= mUpperBound[i]) mVar[i] = mUpperBound[i]*0.9;
 	}
 }

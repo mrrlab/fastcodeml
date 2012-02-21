@@ -22,8 +22,8 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 	for(inbl=aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl)
 	{
 		std::vector<unsigned int> v;
-		std::vector<ForestNode*>::const_iterator ifn;
-		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+		std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
+		for(; ifn != inbl->end(); ++ifn)
 		{
 			v.push_back((*ifn)->mBranchId);
 			++mNumBranches;
@@ -36,8 +36,8 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
     ForestNode* curr_node = 0;
 	for(inbl=aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl)
     {
-		std::vector<ForestNode*>::const_iterator ifn;
-		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+		std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
+		for(; ifn != inbl->end(); ++ifn)
 		{
 			ForestNode* parent_node = (*ifn)->mParent;
 
@@ -54,8 +54,8 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 	mParentNode.resize(mNumBranches);
 	for(inbl=aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl)
 	{
-		std::vector<ForestNode*>::const_iterator ifn;
-		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
+		std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
+		for(; ifn != inbl->end(); ++ifn)
 		{
 			mParentNode[(*ifn)->mBranchId] = (*ifn)->mParent->mBranchId+1; // The parent node is the node from which the branch originate
 		}
@@ -101,16 +101,13 @@ void FatVectorTransform::printBranchVisitSequence(void) const
 	std::cerr << std::endl << "Branch at level" << std::endl;
 	unsigned int level = 1;
 	std::vector< std::vector<unsigned int> >::const_iterator inbl=mBranchByLevel.begin();
-	std::vector< std::vector<unsigned int> >::const_iterator end=mBranchByLevel.end();
+	const std::vector< std::vector<unsigned int> >::const_iterator end=mBranchByLevel.end();
 	for(; inbl != end; ++inbl, ++level)
 	{
 		std::cerr << level << ": ";
 
-		std::vector<unsigned int>::const_iterator ifn;
-		for(ifn=inbl->begin(); ifn != inbl->end(); ++ifn)
-		{
-			std::cerr << (*ifn) << ' ';
-		}
+		std::vector<unsigned int>::const_iterator ifn=inbl->begin();
+		for(; ifn != inbl->end(); ++ifn) std::cerr << (*ifn) << ' ';
 
 		std::cerr << std::endl;
 	}
@@ -253,8 +250,8 @@ void FatVectorTransform::printCommands(void) const
 		std::cerr << std::endl << "*** Branch " << b << std::endl;
 
 		VectorOfRanges::const_iterator icc=mCopyCmds[b].begin();
-		VectorOfRanges::const_iterator end=mCopyCmds[b].end();
-		for(; icc != end; ++icc)
+		const VectorOfRanges::const_iterator endc=mCopyCmds[b].end();
+		for(; icc != endc; ++icc)
 		{
 			if(icc->cnt == 1)
 				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
@@ -263,8 +260,8 @@ void FatVectorTransform::printCommands(void) const
 		}
 
 		VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[b].begin();
-		VectorOfRangesNoCnt::const_iterator end=mReuseCmds[b].end();
-		for(; icr != end; ++icr)
+		const VectorOfRangesNoCnt::const_iterator endr=mReuseCmds[b].end();
+		for(; icr != endr; ++icr)
 		{
 			std::cerr << "R " << std::setw(4) << icr->from << " - " << std::setw(4) << icr->to << std::endl;
 		}
@@ -307,7 +304,7 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc=mCopyCmds[node-1].begin();
-		VectorOfRanges::const_iterator end=mCopyCmds[node-1].end();
+		const VectorOfRanges::const_iterator end=mCopyCmds[node-1].end();
 		for(; icc != end; ++icc)
 		{
 			if(icc->cnt == 1)
@@ -373,7 +370,7 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 
 			// Reverse all copies (copy back the values copied in the previous step to fill holes)
 			VectorOfRanges::const_iterator icc=mCopyCmds[branch].begin();
-			VectorOfRanges::const_iterator end=mCopyCmds[branch].end();
+			const VectorOfRanges::const_iterator end=mCopyCmds[branch].end();
 			for(; icc != end; ++icc)
 			{
 				// Make local copies to increase locality
@@ -407,7 +404,7 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 
 			// Reuse values 
 			VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[branch].begin();
-			VectorOfRangesNoCnt::const_iterator end=mReuseCmds[branch].end();
+			const VectorOfRangesNoCnt::const_iterator end=mReuseCmds[branch].end();
 			for(; icr != end; ++icr)
 			{
 				// Make local copies to increase locality

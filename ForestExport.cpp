@@ -16,23 +16,23 @@ void ForestExport::exportForest(const char* aFilename, unsigned int aCounter) co
 	 std::vector< double >				branch_length;
 
 	 // Get all forest connections
-	 std::vector<ForestNode>::const_iterator ifn;
-	 for(ifn=mForest.mRoots.begin(); ifn != mForest.mRoots.end(); ++ifn)
+	 std::vector<ForestNode>::const_iterator ifn=mForest.mRoots.begin();
+	 for(; ifn != mForest.mRoots.end(); ++ifn)
 	 {
 		 exportForestWalker(&(*ifn), mForest.mBranchLengths, node_from, node_to, branch_length);
 	 }
 
 	// Remove duplicated nodes
 	std::set< std::pair<int, int> > vertices;
-	std::vector< std::pair<int, int> >::const_iterator ip;
-	for(ip = node_from.begin(); ip != node_from.end(); ++ip) vertices.insert(*ip);
+	std::vector< std::pair<int, int> >::const_iterator ip = node_from.begin();
+	for(; ip != node_from.end(); ++ip) vertices.insert(*ip);
 	for(ip = node_to.begin(); ip != node_to.end(); ++ip) vertices.insert(*ip);
 
 	// Convert to node indices
 	std::map<std::pair<int, int>, int> map;
 	int idx;
-	std::set< std::pair<int, int> >::const_iterator iv;
-	for(iv=vertices.begin(), idx=1; iv != vertices.end(); ++iv, ++idx)
+	std::set< std::pair<int, int> >::const_iterator iv=vertices.begin();
+	for(idx=1; iv != vertices.end(); ++iv, ++idx)
 	{
 		std::pair<int, int> p(iv->first, iv->second);
 		map[p] = idx;

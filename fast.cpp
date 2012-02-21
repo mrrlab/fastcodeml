@@ -103,6 +103,7 @@ int main(int ac, char **av)
 		if(cmd.mTimesFromFile)						std::cerr << "Times:         From tree file" << std::endl;
 		else if(cmd.mInitFromConst)					std::cerr << "Times:         From tree file (rest hardcoded)" << std::endl;
 		else if(cmd.mInitH1fromH0)					std::cerr << "Times:         From H0" << std::endl;
+		else if(cmd.mInitMinimal)					std::cerr << "Times:         From tree file (rest hardcoded with p0=1)" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
@@ -155,7 +156,7 @@ int main(int ac, char **av)
 	}
 
 	// Initialize the random number generator (0 means it is not set on the command line)
-	if(cmd.mSeed == 0) cmd.mSeed = (unsigned int)time(NULL);
+	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));
 	srand(cmd.mSeed);
 
 	// Start a timer (to measure serial part over parallel one)
@@ -282,8 +283,9 @@ int main(int ac, char **av)
 		double lnl0 = 0;
 		if(cmd.mComputeHypothesis != 1)
 		{
-			if(cmd.mTimesFromFile) h0.initFromTree();
+			if(cmd.mTimesFromFile)      h0.initFromTree();
 			else if(cmd.mInitFromConst) h0.initFromTreeAndFixed();
+			else if(cmd.mInitMinimal)   h0.initFromTreeAndFixedP0();
 
 			lnl0 = h0(fg_branch);
 		}
@@ -300,6 +302,7 @@ int main(int ac, char **av)
 			}
 			else if(cmd.mTimesFromFile) h1.initFromTree();
 			else if(cmd.mInitFromConst) h1.initFromTreeAndFixed();
+			else if(cmd.mInitMinimal)   h1.initFromTreeAndFixedP0();
 
 			lnl1 = h1(fg_branch);
 		}
@@ -485,11 +488,14 @@ int main(int ac, char **av)
             Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)
 
     -ic  --init-from-const (no argument)
-           Initial branch lengths from tree file and the rest from
-           hardcoded constants
+            Initial branch lengths from tree file and the rest from
+            hardcoded constants
 
     -sd  --small-diff (required argument)
-           Delta used in gradient computation
+            Delta used in gradient computation
+
+    -p  --init-minimal (no argument)
+            Minimal initialization for testing (p0=1, rest zero, times from tree)
 
 @endverbatim
 */

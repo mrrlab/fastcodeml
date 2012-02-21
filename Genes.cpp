@@ -163,12 +163,12 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 
 	// Create correspondence between species names
 	std::vector<std::string>::const_iterator is1=aNames.begin();
-	std::vector<std::string>::const_iterator end1=aNames.end();
+	const std::vector<std::string>::const_iterator end1=aNames.end();
 	for(; is1 != end1; ++is1)
 	{
 		bool found = false;
 		std::vector<std::string>::const_iterator is2=mDnaSpecies.begin();
-		std::vector<std::string>::const_iterator end2=mDnaSpecies.end();
+		const std::vector<std::string>::const_iterator end2=mDnaSpecies.end();
 		for(; is2 != end2; ++is2)
 		{
 			if(*is1 == *is2) {found = true; break;}
@@ -262,7 +262,7 @@ void Genes::readFile(const char* aFilename)
 	// Map from specie name to position in DnaGene
 	unsigned int idx = 0;
 	std::vector<std::string>::const_iterator is=mDnaSpecies.begin();
-	std::vector<std::string>::const_iterator end=mDnaSpecies.end();
+	const std::vector<std::string>::const_iterator end=mDnaSpecies.end();
 	for(; is != end; ++is, ++idx) mMapSpecieToDnaGene[*is] = idx;
 }
 

@@ -46,6 +46,7 @@ public:
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the Phylo Tree file (it is marked as #1)
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 result
 	bool			mInitFromConst;			///< Initialize times from phylo tree and the other from hardcoded constants
+	bool			mInitMinimal;			///< Initialize times from phylo tree and the other from hardcoded constants with p0=1 and rest 0 (for validation)
 
 private:
 

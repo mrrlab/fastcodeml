@@ -3,6 +3,7 @@
 #include "Newick.h"
 #include "NewickGrammar.h"
 #include "Exceptions.h"
+
 // Access to the Boost::Spirit parse tree
 //
 //		typedef boost::spirit::classic::tree_match<char const*> ParseTreeMatchType;
@@ -202,7 +203,7 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 			printTree(info.trees.begin());
 			mTreeRoot.printFormatted(0);
 			std::vector<TreeNode *>::const_iterator isp=mLeavesSpecies.begin();
-			std::vector<TreeNode *>::const_iterator end=mLeavesSpecies.end();
+			const std::vector<TreeNode *>::const_iterator end=mLeavesSpecies.end();
 			for(; isp != end; ++isp) std::cout << (*isp)->getLabel() << std::endl;
 		}
 	}

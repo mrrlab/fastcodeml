@@ -39,17 +39,9 @@ public:
 	///
 	/// @param[in] aFilename The filename
 	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
+	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file or cannot parse the tree
 	///
 	virtual void readFile(const char *aFilename);
-
-	/// Load a phylo tree definition from a Newick formatted string.
-	///
-	/// @param[in] aTreeAsString The string to be loaded
-	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
-	///
-	virtual void loadTreeFromString(const std::string& aTreeAsString);
 
 	/// Print the phylogenetic tree completed with all the info loaded in Newick format.
 	///
@@ -60,6 +52,13 @@ public:
 
 
 private:
+	/// Load a phylo tree definition from a Newick formatted string.
+	///
+	/// @param[in] aTreeAsString The string to be loaded
+	///
+	/// @exception FastCodeMLFatalNoMsg For parsing errors
+	///
+	void loadTreeFromString(const std::string& aTreeAsString);
 
 	/// Access to the Boost::Spirit parse tree
 	///

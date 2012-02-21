@@ -20,7 +20,7 @@ void TreeNode::printFormatted(int aIndent) const
 
 	// Print the children (indented by 3 spaces)
 	std::vector<TreeNode *>::const_iterator in=mChildrenList.begin();
-	std::vector<TreeNode *>::const_iterator end=mChildrenList.end();
+	const std::vector<TreeNode *>::const_iterator end=mChildrenList.end();
 	for(; in != end; ++in) (*in)->printFormatted(aIndent+3);
 }
 
@@ -39,7 +39,7 @@ void TreeNode::clearNode(void)
 	if(!mChildrenList.empty())
 	{
 		std::vector<TreeNode *>::iterator in = mChildrenList.begin();
-		std::vector<TreeNode *>::iterator end = mChildrenList.end();
+		const std::vector<TreeNode *>::iterator end = mChildrenList.end();
 		for(; in != end; ++in) (*in)->clearNode();
 		for(in=mChildrenList.begin(); in != end; ++in) delete (*in);
 	}

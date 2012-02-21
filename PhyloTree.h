@@ -38,14 +38,6 @@ public:
 	///
 	virtual void readFile(const char *aFilename) =0;
 
-	/// Load a phylo tree definition from a Newick formatted string.
-	///
-	/// @param[in] aTreeAsString The string to be loaded
-	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
-	///
-	virtual void loadTreeFromString(const std::string& aTreeAsString) =0;
-
 	/// Clean the object content that afterwards become invalid
 	///
 	void clear(void);

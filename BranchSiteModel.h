@@ -163,9 +163,9 @@ protected:
 		aProportions[3] = (1. - tot)*aProportions[1]/tot;
 #else
 		aProportions[0] = aV0*aV1;
-		aProportions[1] = aV0*(1-aV1);
-		aProportions[2] = (1-aV0)*aV1;
-		aProportions[3] = (1-aV0)*(1-aV1);
+		aProportions[1] = aV0*(1.-aV1);
+		aProportions[2] = (1.-aV0)*aV1;
+		aProportions[3] = (1.-aV0)*(1.-aV1);
 #endif
 	}
 
@@ -198,6 +198,11 @@ public:
 	/// This routine could be used in place of initFromTree()
 	///
 	void initFromTreeAndFixed(void);
+
+	/// Initialize the times from the input phylogenetic tree and set the other values to hardcoded constants with P0=1 and P1=0.
+	/// This routine could be used in place of initFromTree()
+	///
+	void initFromTreeAndFixedP0(void);
 
 	/// Initialize variables from a previous optimization result
 	///

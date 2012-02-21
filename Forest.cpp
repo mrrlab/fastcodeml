@@ -62,7 +62,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 		// Add codon code to leaves
 		std::vector<ForestNode*>::const_iterator il=leaves.begin();
-		std::vector<ForestNode*>::const_iterator end=leaves.end();
+		const std::vector<ForestNode*>::const_iterator end=leaves.end();
 		for(; il != end; ++il)
 		{
 			// Node id (adjusted so root is 0)
@@ -104,11 +104,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Transform the map into a table (better for performance)
 	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
 	std::map<unsigned int, unsigned int>::const_iterator im=map_internal_to_branchID.begin();
-	std::map<unsigned int, unsigned int>::const_iterator end=map_internal_to_branchID.end();
-	for(; im != end; ++im)
-	{
-		mTableInternalToBranchID[im->first] = im->second;
-	}
+	const std::map<unsigned int, unsigned int>::const_iterator end=map_internal_to_branchID.end();
+	for(; im != end; ++im) mTableInternalToBranchID[im->first] = im->second;
 
 #ifdef NEW_LIKELIHOOD
     // Prepare the list of node id's by level
@@ -131,7 +128,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
         // Put in a list all the children of the current level nodes
         std::vector<ForestNode*>::const_iterator il=curr_level.begin();
-        std::vector<ForestNode*>::const_iterator end=curr_level.end();
+        const std::vector<ForestNode*>::const_iterator end=curr_level.end();
         for(; il != end; ++il)
         {
             if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
@@ -174,13 +171,13 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		unsigned int max_leaf  = 0;
 		unsigned int level = 0;
 		std::vector< std::vector<ForestNode*> >::iterator inbl=mNodesByLevel.begin();
-		std::vector< std::vector<ForestNode*> >::iterator end=mNodesByLevel.end();
+		const std::vector< std::vector<ForestNode*> >::iterator end=mNodesByLevel.end();
 		for(level=0; inbl != end; ++inbl,++level)
 		{
 			unsigned int num_leaves = 0;
 			unsigned int leaf = 0, i=0;
 			std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
-			std::vector<ForestNode*>::const_iterator end=inbl->end();
+			const std::vector<ForestNode*>::const_iterator end=inbl->end();
 			for(; ifn != end; ++ifn,++i)
 			{
 				if((*ifn)->mChildrenList.empty()) {++num_leaves; leaf = i;}
@@ -1011,7 +1008,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
-	ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
+	const ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
 	for(; ivs != end; ++ivs)
 	{
 		const int len = ivs->size();
@@ -1163,7 +1160,7 @@ unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigne
 
 		unsigned int idx;
 		std::vector<ForestNode *>::const_iterator icl=aNode->mChildrenList.begin();
-		std::vector<ForestNode *>::const_iterator end=aNode->mChildrenList.end();
+		const std::vector<ForestNode *>::const_iterator end=aNode->mChildrenList.end();
 		for(idx=0; icl != end; ++icl,++idx)
 		{
 			if(aNode->isSameTree(idx))
@@ -1248,7 +1245,7 @@ void crc(const std::vector<double>& v, unsigned int nsites)
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
-	ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
+	const ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
 	for(; ivs != end; ++ivs)
 	{
 		const int len = ivs->size();
