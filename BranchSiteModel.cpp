@@ -31,7 +31,8 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 	int k;
 	double v0 = 0;
 	std::vector<double>::const_iterator ix = aVars.begin();
-	for(k = -static_cast<int>(mNumTimes); ix != aVars.end(); ++ix,++k)
+	const std::vector<double>::const_iterator end = aVars.end();
+	for(k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
 	{
 		switch(k)
 		{
@@ -196,7 +197,8 @@ void BranchSiteModel::initVariables(void)
 	mInitType = INIT_TYPE_NONE;
 
 	// Check the initial values are inside the domain (except proportions)
-	for(i=0; i < mNumTimes+mNumVariables; ++i)
+	unsigned int nv = mNumTimes+mNumVariables;
+	for(i=0; i < nv; ++i)
 	{
 		if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
 		if(i == mNumTimes+2 || i == mNumTimes+3) continue;
@@ -275,7 +277,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, bg_scale, fg_scale, aVar);
+	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
@@ -365,7 +367,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
 
 	// Fill the Transition Matrix sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, bg_scale, fg_scale, aVar);
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 1);

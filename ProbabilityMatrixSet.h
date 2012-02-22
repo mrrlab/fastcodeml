@@ -36,6 +36,7 @@ public:
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
+		mPrevTime     = new double[mNumMatrices];
 	}
 
 	/// Destructor.
@@ -44,6 +45,7 @@ public:
 	{
 		alignedFree(mMatrixSpace);
 		alignedFree(mMatrices);
+		delete [] mPrevTime;
 	}
 
 	/// Return the number of sets contained in this ProbabilityMatrixSet
@@ -78,6 +80,7 @@ public:
 	///
 	void computeMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
+							bool  aAnyMatrixChanged,
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
@@ -96,9 +99,10 @@ public:
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
-	void computeMatrixSetH1(const TransitionMatrix& aQw0,
-						    const TransitionMatrix& aQ1,
-						    const TransitionMatrix& aQw2,
+	void computeMatrixSetH1(const  TransitionMatrix& aQw0,
+						    const  TransitionMatrix& aQ1,
+						    const  TransitionMatrix& aQw2,
+						    bool   aChangedQw2,
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
@@ -175,6 +179,7 @@ private:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
+	double*			mPrevTime;
 };
 
 #endif

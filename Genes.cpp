@@ -221,8 +221,8 @@ void Genes::readFile(const char* aFilename)
 		{
 			if(codon_multiplicity[j] == 0) continue;
 
-			unsigned int k;
-			for(k=0; k < nspecies; ++k)
+			unsigned int k=0;
+			for(; k < nspecies; ++k)
 			{
 				const char *p = mDnaGene[k].c_str();
 				if(p[3*i+0] != p[3*j+0] || p[3*i+1] != p[3*j+1] || p[3*i+2] != p[3*j+2]) break;

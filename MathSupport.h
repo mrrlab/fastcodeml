@@ -48,7 +48,7 @@ inline double dot(const double* aV1, const double* aV2, int aCnt)
 ///
 /// @return The dot product
 ///
-inline double dot(const double* aV1, const double* aV2)
+inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
 {
 #if 0
 	double result;
@@ -132,7 +132,7 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 ///
 inline bool isDifferent(double aFirst, double aSecond)
 {
-	static const double TOL = 1e-7;
+	static const double TOL = 1e-9;
 	const double diff = aFirst - aSecond;
 	return (diff > TOL || diff < -TOL);
 }

@@ -4,6 +4,8 @@
 #include <cstring>
 #include <vector>
 #include "CodeMLoptimizer.h"
+#include "CompilerHints.h"
+
 #ifdef USE_LAPACK
 #include "blas.h"
 #endif
@@ -47,7 +49,7 @@ static inline double innerp(const double x[], const double y[], int n)
 #endif
 }
 
-static inline double distance(const double x[], const double y[], int n) 
+static inline double distance(const double* RESTRICT x, const double* RESTRICT y, int n) 
 {
 	double t = 0;
 
@@ -117,29 +119,28 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 	xmark = ispace;
     ix    = ispace + n;
 
-    for (i = 0; i < n; i++)
+    for(i = 0; i < n; i++)
     {
         xmark[i] = 0;
         ix[i] = i;
     }
 
-    for (i = 0, nfree = 0; i < n; i++)
+    for(i = 0, nfree = 0; i < n; i++)
     {
-        if (x[i] <= xl[i])
+        if(x[i] <= xl[i])
         {
             x[i] = xl[i];
             xmark[i] = -1;
-            continue;
+            //continue;
         }
-
-        if (x[i] >= xu[i])
+        else if(x[i] >= xu[i])
         {
             x[i] = xu[i];
             xmark[i] = 1;
-            continue;
+           // continue;
         }
-
-        ix[nfree++] = i;
+		else
+			ix[nfree++] = i;
     }
 
     if(mNoisy > 2 && nfree < n && n < 50)
@@ -356,12 +357,12 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             s[i] = x[ix[i]] - x0[ix[i]];
         }
 
-		for(i=0; i < n; ++i)
-        {
-            g0[i] = g[i];
-            x0[i] = x[i];
-        }
-
+		//for(i=0; i < n; ++i)
+  //      {
+  //          g0[i] = g[i];
+  //          x0[i] = x[i];
+  //      }
+		memcpy(g0, g, n*sizeof(double)); memcpy(x0, x, n*sizeof(double));
         /* renewal of H varies with different algorithms   */
 		/* BFGS */
 
