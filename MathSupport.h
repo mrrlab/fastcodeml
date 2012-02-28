@@ -132,7 +132,7 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 ///
 inline bool isDifferent(double aFirst, double aSecond)
 {
-	static const double TOL = 1e-9;
+	static const double TOL = 1e-8;
 	const double diff = aFirst - aSecond;
 	return (diff > TOL || diff < -TOL);
 }

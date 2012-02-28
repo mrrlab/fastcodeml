@@ -368,11 +368,6 @@ int main(int ac, char **av)
 	{
 		return 0;
 	}
-	catch(FastCodeMLFatalNoMsg&)
-	{
-		// Don't print throw messages for which the message has been already printed
-		return 1;
-	}
 	catch(FastCodeMLFatal& e)
 	{
 		std::cerr << std::endl << e.what() << std::endl;

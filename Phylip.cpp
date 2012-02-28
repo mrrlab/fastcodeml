@@ -11,16 +11,18 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	std::ifstream in(aFilename);
 	if(!in)
 	{
-		std::cerr << "Cannot open " << aFilename << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "Cannot open " << aFilename << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
     std::string str;
 	if(!getline(in, str) || str.empty())
 	{
 		in.close();
-		std::cerr << "File " << aFilename << " is empty" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " is empty" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	long unsigned int nspecies, nbasis;
@@ -30,8 +32,9 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(endptr == next)
 	{
 		in.close();
-		std::cerr << "File " << aFilename << " is malformed" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " is malformed" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	next = endptr;
@@ -39,8 +42,9 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(endptr == next)
 	{
 		in.close();
-		std::cerr << "File " << aFilename << " is malformed" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " is malformed" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Read and parse the genes
@@ -81,8 +85,9 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	// Check correct number of species loaded
 	if(nspecies != aSpecies.size())
 	{
-		std::cerr << "File " << aFilename << " has number of species mismatch" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " has number of species mismatch" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Check the number of nucleotides read
@@ -90,16 +95,18 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	{
 		if(aSequences[n].length() != nbasis)
 		{
-			std::cerr << "File " << aFilename << " gene " << n << " has wrong number of nucleotides" << std::endl;
-			throw FastCodeMLFatalNoMsg();
+			std::ostringstream o;
+			o << "File " << aFilename << " gene " << n << " has wrong number of nucleotides" << std::endl;
+			throw FastCodeMLFatal(o);
 		}
 	}
 	
 	// Other sanity checks
 	if(nbasis % 3)
 	{
-		std::cerr << "File " << aFilename << " number of basis is not multiple of 3" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " number of basis is not multiple of 3" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 }
 

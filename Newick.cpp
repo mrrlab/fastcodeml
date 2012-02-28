@@ -130,8 +130,9 @@ void Newick::evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNo
     else
     {
         std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
-        std::cerr << "*** " << label_name << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+        o << "*** " << label_name << std::endl;
+		throw FastCodeMLFatal(o);
     }
 }
 
@@ -141,8 +142,11 @@ void Newick::readFile(const char *aFilename)
     std::ifstream in(aFilename);
 	if(!in)
 	{
-		std::cerr << "Cannot open " << aFilename << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		//std::cerr << "Cannot open " << aFilename << std::endl;
+		//throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "Cannot open " << aFilename << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Cleaning step. Should not be necessary after fixing the grammar...
@@ -157,16 +161,18 @@ void Newick::readFile(const char *aFilename)
 	in.close();
 	if(p1 == std::string::npos)
 	{
-		std::cerr << "File " << aFilename << " is empty" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " is empty" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Find the tree definition end
 	size_t p2 = str.rfind(';');
     if(p2 == std::string::npos)
 	{
-		std::cerr << "File " << aFilename << " is empty" << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "File " << aFilename << " is empty" << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Pass the tree part to the parser
@@ -211,11 +217,12 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 	{
 		mParsedPortion.assign(aTreeAsString.c_str(), info.stop);
 
-		std::cerr << "Parsing failed" << std::endl;
-		std::cerr << "----------------------" << std::endl;
-		std::cerr << mParsedPortion << std::endl;
-		std::cerr << "----------------------" << std::endl << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "Parsing failed\n"
+		  << "----------------------\n"
+		  << mParsedPortion
+		  << "\n----------------------" << std::endl << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 }
 

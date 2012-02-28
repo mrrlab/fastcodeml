@@ -193,7 +193,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 		}
 	}
 	
-	if(any_error) throw FastCodeMLFatalNoMsg();
+	if(any_error) throw FastCodeMLFatal();
 }
 
 

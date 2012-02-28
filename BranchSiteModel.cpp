@@ -546,8 +546,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		}
 		catch(std::exception& e)
 		{
-			std::cerr << "Exception in computation: " << e.what() << std::endl;
-			throw FastCodeMLFatalNoMsg();
+			std::ostringstream o;
+			o << "Exception in computation: " << e.what() << std::endl;
+			throw FastCodeMLFatal(o);
 		}
 	}
 
@@ -605,8 +606,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Exception during inizialization: " << e.what() << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "Exception during inizialization: " << e.what() << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	// Optimize the function
@@ -658,8 +660,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Exception in computation: " << e.what() << std::endl;
-		throw FastCodeMLFatalNoMsg();
+		std::ostringstream o;
+		o << "Exception in computation: " << e.what() << std::endl;
+		throw FastCodeMLFatal(o);
 	}
 
 	return maxl;

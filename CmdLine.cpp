@@ -182,13 +182,15 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	{
 		if(args.LastError() == SO_OPT_INVALID)
 		{
-			std::cerr << "Error: " << getLastErrorText(args) << ": " << args.OptionText() << std::endl;
-			throw FastCodeMLFatalNoMsg();
+			std::ostringstream o;
+			o << "Error: " << getLastErrorText(args) << ": " << args.OptionText() << std::endl;
+			throw FastCodeMLFatal(o);
         }
         if(args.LastError() != SO_SUCCESS)
 		{
-            std::cerr << "Error: " << getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
-			throw FastCodeMLFatalNoMsg();
+			std::ostringstream o;
+            o << "Error: " << getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
+			throw FastCodeMLFatal(o);
         }
 
 		int tmpi;
@@ -300,7 +302,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		std::cerr << "Usage:" << std::endl;
 		std::cerr << "    " << usage_msg << std::endl << std::endl;
 		showHelp(parser_options);
-		throw FastCodeMLFatalNoMsg();
+		throw FastCodeMLFatal();
 
 	default:
 		mTreeFile = args.File(0);
