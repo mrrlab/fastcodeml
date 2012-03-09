@@ -196,13 +196,15 @@ void BranchSiteModel::initVariables(void)
 	// Re-initialize the next time
 	mInitType = INIT_TYPE_NONE;
 
-	// Check the initial values are inside the domain (except proportions)
+	// Check the initial values to be inside the domain (otherwise clamp them to the domain)
 	unsigned int nv = mNumTimes+mNumVariables;
 	for(i=0; i < nv; ++i)
 	{
-		if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
-		if(i == mNumTimes+2 || i == mNumTimes+3) continue;
-		if(mVar[i] >= mUpperBound[i]) mVar[i] = mUpperBound[i]*0.9;
+		//if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
+		//if(i == mNumTimes+2 || i == mNumTimes+3) continue;
+		//if(mVar[i] >= mUpperBound[i]) mVar[i] = mUpperBound[i]*0.9;
+		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
+		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 }
 
@@ -307,9 +309,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		//if(p <= 0)
 		//{
 		//	std::cerr << std::setw(4) << site << ' ';
-		//	std::cerr << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
-		//	std::cerr << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-		//	std::cerr << std::setw(14) << mLikelihoods[2*num_sites+site] << std::endl;
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << std::endl;
 		//}
 	}
 
