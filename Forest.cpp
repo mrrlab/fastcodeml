@@ -426,7 +426,7 @@ void Forest::prepareDependencies(bool aForceSerial)
 	measureEffort(effort);
 
 	// Print count and total effort before balancing
-	if(mVerbose >= 1)
+	if(!aForceSerial && mVerbose >= 1)
 	{
 		std::cerr << std::endl << "Before balancing (Classes&Trees)" << std::endl;
 		printDependenciesClassesAndTrees();
@@ -444,7 +444,7 @@ void Forest::prepareDependencies(bool aForceSerial)
 	balanceEffort(effort, 1);
 
 	// Print classes after balancing
-	if(done_ct && mVerbose >= 1)
+	if(!aForceSerial && done_ct && mVerbose >= 1)
 	{
 		std::cerr << std::endl << "After balancing (Classes&Trees)" << std::endl;
 		printDependenciesClassesAndTrees();
@@ -457,7 +457,7 @@ void Forest::prepareDependencies(bool aForceSerial)
 	//
 	/// @todo Finish the intra class balancing using effort values
 	//
-	if(mVerbose >= 1)
+	if(!aForceSerial && mVerbose >= 1)
 	{
 		std::cerr << std::endl << "Hypothesis H0" << std::endl;
 		printEffortByGroup(effort, 0);
