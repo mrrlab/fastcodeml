@@ -8,14 +8,14 @@ void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 	int num_matrices = mNumMatrices;
 	for(int branch=0; branch < num_matrices; ++branch)
 	{
-		//mMatrices[branch+mNumMatrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
-		//mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
-		//mMatrices[branch+mNumMatrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
+		//mMatrices[branch+num_matrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
+		//mMatrices[branch+num_matrices*1] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
+		//mMatrices[branch+num_matrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
 
-		mMatrices[branch+mNumMatrices*0] = mMatrices[branch+mNumMatrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
-		mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
+		mMatrices[branch+num_matrices*0] = mMatrices[branch+num_matrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
+		mMatrices[branch+num_matrices*1] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
 	}
-	mMatrices[mFgBranch+mNumMatrices*2] = &mMatrixSpace[(mNumMatrices+mFgBranch)*MATRIX_SLOT];
+	mMatrices[mFgBranch+num_matrices*2] = &mMatrixSpace[(num_matrices+mFgBranch)*MATRIX_SLOT];
 }
 
 
@@ -26,22 +26,22 @@ void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 	int num_matrices = mNumMatrices;
 	for(int branch=0; branch < num_matrices; ++branch)
 	{
-		mMatrices[branch+mNumMatrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
-		mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
+		mMatrices[branch+num_matrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
+		mMatrices[branch+num_matrices*1] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
 
 		// These will be overwritten outside the loop, so skip them
 		if(branch != mFgBranch)
 		{
-			mMatrices[branch+mNumMatrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
-			mMatrices[branch+mNumMatrices*3] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
+			mMatrices[branch+num_matrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
+			mMatrices[branch+num_matrices*3] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
 		}
 		else
 		{
-			mMatrices[mFgBranch+mNumMatrices*2] = mMatrices[mFgBranch+mNumMatrices*3] = &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT];
+			mMatrices[mFgBranch+num_matrices*2] = mMatrices[mFgBranch+num_matrices*3] = &mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT];
 		}
 	}
-	//mMatrices[mFgBranch+mNumMatrices*2] = &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT];
-	//mMatrices[mFgBranch+mNumMatrices*3] = &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT];
+	//mMatrices[mFgBranch+num_matrices*2] = &mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT];
+	//mMatrices[mFgBranch+num_matrices*3] = &mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT];
 }
 
 #define PREV_TIME
