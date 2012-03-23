@@ -366,7 +366,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	if(info != 0) throw std::runtime_error("Error sizing workareas");
 
 	//Notice that LAPACK stores an integer value in a double array
-    lwork = (unsigned long)opt_work;
+    lwork = static_cast<unsigned long>(opt_work);
     liwork = opt_iwork;
 
 	if(lwork > lfwork)
@@ -428,6 +428,23 @@ void TransitionMatrix::eigenQREV(void)
 	try {
     if(mNumGoodFreq == N)
     {
+#ifdef USE_S_MATRIX
+		// The S matrix is defined as Q = S*Pi
+		// Due to the fact that each Q row should sum to zero, the S diagonal values are so adjusted.
+		// But also to save multiplications the S diagonal elements are already multiplied by the corresponding codon frequency
+		// Also the eigensolver use only half the matrix. So S is filled only for half.
+        for(i=0; i < N; ++i)
+		{
+			//mU[i*N + i] = mS[i*N + i] * mCodonFreq[i];
+			mU[i*N + i] = mS[i*N + i];
+
+            for(j=0; j < i; ++j)
+			{
+                //mU[i*N + j] = mU[j*N + i] = mS[i*N + j] * mSqrtCodonFreq[i] * mSqrtCodonFreq[j];
+                mU[i*N + j] = mS[i*N + j] * mSqrtCodonFreq[i] * mSqrtCodonFreq[j];
+			}
+		}
+#else
 		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
         for(i=0; i < N; ++i)
 		{
@@ -438,6 +455,13 @@ void TransitionMatrix::eigenQREV(void)
                 mU[i*N + j] = mU[j*N + i] = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
 			}
 		}
+#endif
+//for(i=0; i < 6; ++i)
+//{
+//	for(j=0; j < 6; ++j) printf(" %12.6f", mU[i*N+j]);
+//	printf("\n");
+//}
+//printf("\n");
 
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is N and mV is used as workarea
         eigenRealSymm(mU, N, mD, mV);
@@ -455,6 +479,25 @@ void TransitionMatrix::eigenQREV(void)
     {
 		int inew, jnew;
 
+#ifdef USE_S_MATRIX
+        for(i=0, inew=0; i < N; ++i)
+        {
+            if(mGoodFreq[i])
+            {
+                for(j=0, jnew=0; j < i; ++j)
+				{
+                    if(mGoodFreq[j])
+                    {
+                        mU[inew*mNumGoodFreq + jnew] = mS[i*N + j] * mSqrtCodonFreq[i] * mSqrtCodonFreq[j];
+                        ++jnew;
+                    }
+				}
+
+                mU[inew*mNumGoodFreq + inew] = mS[i*N + i];
+                ++inew;
+            }
+        }
+#else
         for(i=0, inew=0; i < N; ++i)
         {
             if(mGoodFreq[i])
@@ -473,7 +516,7 @@ void TransitionMatrix::eigenQREV(void)
                 ++inew;
             }
         }
-
+#endif
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mNumGoodFreq and mV is used as workarea
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 

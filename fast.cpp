@@ -150,14 +150,19 @@ int main(int ac, char **av)
 #ifdef USE_LAPACK
 													std::cerr << "USE_LAPACK ";
 #endif
+#ifdef USE_S_MATRIX
+													std::cerr << "USE_S_MATRIX ";
+#endif
 #ifdef USE_MKL_VML
 													std::cerr << "USE_MKL_VML";
 #endif
 													std::cerr << std::endl << std::endl;
 													if(cmd.mInitFromParams)
 													{
-														ParseParameters* p = ParseParameters::getInstance();
-														std::cerr << "Param initial values:" << std::endl << std::endl << p;
+														//ParseParameters* p = ParseParameters::getInstance();
+														//std::cerr << "Param initial values:" << std::endl << std::endl << p;
+														std::cerr << "Param initial values:" << std::endl << std::endl
+																  << ParseParameters::getInstance();
 													}
 	}
 

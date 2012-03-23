@@ -11,7 +11,7 @@ set(SRCS
 	Newick.cpp
 	TreeNode.cpp
 	BayesTest.cpp
-	FillQ.cpp
+	FillMatrix.cpp
 	Forest.cpp
 	TransitionMatrix.cpp
 	BranchSiteModel.cpp
@@ -48,6 +48,7 @@ OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
 SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector)
+OPTION(USE_S_MATRIX       "Use S matrix in place of Q matrix" OFF)
 
 
 # Search for OpenMP support
@@ -113,6 +114,9 @@ if(USE_ORIGINAL_PROPORTIONS)
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
 
+if(USE_S_MATRIX AND USE_LAPACK)
+	add_definitions(-DUSE_S_MATRIX)
+endif(USE_S_MATRIX AND USE_LAPACK)
 
 # Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")

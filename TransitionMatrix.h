@@ -32,8 +32,11 @@ public:
 	TransitionMatrix()
 	{
 		// Initialize Q matrix to all zeroes (so only non-zero values are written)
+#ifdef USE_S_MATRIX
+		memset(mS, 0, N*N*sizeof(double));
+#else
 		memset(mQ, 0, N*N*sizeof(double));
-		
+#endif		
 		// Initialize the codons' frequencies
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
 		mCodonFreq = cf->getCodonFrequencies();
@@ -42,22 +45,22 @@ public:
 		cf->cloneGoodCodonIndicators(mGoodFreq);
 	}
 
-	/// Fill the Q matrix and return the matrix scale value.
+	/// Fill the Q (or the S) matrix and return the matrix scale value.
 	///
 	/// @param[in] aOmega The omega value.
 	/// @param[in] aK The k value.
 	///
 	/// @return The Q matrix scale value.
 	///
-	double fillQ(double aOmega, double aK);
+	double fillMatrix(double aOmega, double aK);
 
-	/// Fill the Q matrix and return the matrix scale value. Optimized routine to be used for omega == 1
+	/// Fill the Q (or the S) matrix and return the matrix scale value. Optimized routine to be used for omega == 1
 	///
 	/// @param[in] aK The k value.
 	///
 	/// @return The Q matrix scale value.
 	///
-	double fillQ(double aK);
+	double fillMatrix(double aK);
 
 	/// Compute the eigendecomposition of the Q matrix.
 	/// Depending on the definition of USE_DSYRK use the old or the new method
@@ -213,7 +216,11 @@ private:
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
 	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+#ifndef USE_S_MATRIX
 	double ALIGN64	mQ[N*N];		///< The Q matrix
+#else
+	double ALIGN64	mS[N*N];		///< The S matrix (remember Q = S*Pi)
+#endif
 	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small

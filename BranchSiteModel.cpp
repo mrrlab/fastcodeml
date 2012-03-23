@@ -258,12 +258,12 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
 	if(changed_w0 || changed_k)
 	{
-		mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
 		mQw0.eigenQREV();
 	}
 	if(changed_k)
 	{
-		mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
 		mQ1.eigenQREV();
 	}
 
@@ -276,7 +276,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 							mProportions[2]*mScaleQ1  +
 							mProportions[3]*mScaleQ1;
 
-	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
+	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
@@ -322,6 +322,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		printVar(aVar, lnl);
 	}
 	//std::cerr << lnl << std::endl;
+	//std::cerr << "FG: " << std::scientific << std::setprecision(6) << fg_scale << " BG: " << bg_scale << " LnL: " << lnl << std::endl;
 
 	return lnl;
 }
@@ -343,17 +344,17 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
 	if(changed_w0 || changed_k)
 	{
-		mScaleQw0 = mQw0.fillQ(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
 		mQw0.eigenQREV();
 	}
 	if(changed_w2 || changed_k)
 	{
-		mScaleQw2 = mQw2.fillQ(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+		mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
 		mQw2.eigenQREV();
 	}
 	if(changed_k)
 	{
-		mScaleQ1  = mQ1.fillQ(                    aVar[mNumTimes+1]);
+		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
 		mQ1.eigenQREV();
 	}
 
@@ -366,7 +367,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 							mProportions[2]*mScaleQw2 +
 							mProportions[3]*mScaleQw2;
 
-	const double bg_scale = 1./(mProportions[0]+ mProportions[1])*(mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1);
+	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
 	// Fill the Transition Matrix sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
