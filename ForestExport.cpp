@@ -114,7 +114,6 @@ void ForestExport::exportForest(const char* aFilename, unsigned int aCounter) co
 }
 
 
-
 void ForestExport::exportForestWalker(const ForestNode* aNode,
 								const std::vector<double>& aBranchLengths,
 								std::vector< std::pair<int, int> >& aNodeFrom,

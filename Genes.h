@@ -41,7 +41,7 @@ public:
 	///
 	void clear(void);
 
-	/// Load the gene file. On error throw exceptions.
+	/// Load the gene file.
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
 	///
@@ -59,7 +59,7 @@ public:
 	///
 	/// @return Pointer to the site multiplicity array
 	///
-	const unsigned int* getSiteMultiplicity(void) const {return &mSiteMultiplicity[0];}
+	const std::vector<unsigned int>& getSiteMultiplicity(void) const {return mSiteMultiplicity;}
 
 	/// Return the codon index for the one identified by the specie label and the site.
 	///

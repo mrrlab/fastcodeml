@@ -1,15 +1,9 @@
 // The following headers are required for all allocators.
 #include <stddef.h>  // Required for size_t and ptrdiff_t and NULL
-//#include <new>       // Required for placement new and std::bad_alloc
 #include <stdexcept> // Required for std::length_error
 
 // The following headers contain stuff that AlignedAllocator uses.
 #include <stdlib.h>  // For malloc() and free()
-//#include <iostream>  // For std::cout
-//#include <ostream>   // For std::endl
-
-// The following headers contain stuff that main() uses.
-//#include <vector>      // For std::vector
 
 #include "AlignedMalloc.h"
 #include "AlignedAllocator.h"
@@ -37,6 +31,12 @@ void alignedFree(void* p)
 
 
 #if 0
+
+// The following headers contain stuff that main() uses.
+#include <iostream>  // For std::cout
+#include <ostream>   // For std::endl
+#include <vector>    // For std::vector
+
 int main()
 {
     using namespace std;

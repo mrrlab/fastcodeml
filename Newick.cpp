@@ -142,8 +142,6 @@ void Newick::readFile(const char *aFilename)
     std::ifstream in(aFilename);
 	if(!in)
 	{
-		//std::cerr << "Cannot open " << aFilename << std::endl;
-		//throw FastCodeMLFatalNoMsg();
 		std::ostringstream o;
 		o << "Cannot open " << aFilename << std::endl;
 		throw FastCodeMLFatal(o);

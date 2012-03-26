@@ -8,10 +8,6 @@ void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 	int num_matrices = mNumMatrices;
 	for(int branch=0; branch < num_matrices; ++branch)
 	{
-		//mMatrices[branch+num_matrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
-		//mMatrices[branch+num_matrices*1] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
-		//mMatrices[branch+num_matrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
-
 		mMatrices[branch+num_matrices*0] = mMatrices[branch+num_matrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
 		mMatrices[branch+num_matrices*1] = &mMatrixSpace[(num_matrices+branch)*MATRIX_SLOT];
 	}
@@ -94,11 +90,7 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 		aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 		aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 #endif
-		//mMatrices[branch+mNumMatrices*0] = &mMatrixSpace[branch*MATRIX_SLOT];
-		//mMatrices[branch+mNumMatrices*1] = &mMatrixSpace[(mNumMatrices+branch)*MATRIX_SLOT];
-		//mMatrices[branch+mNumMatrices*2] = &mMatrixSpace[branch*MATRIX_SLOT];
 	}
-	//mMatrices[mFgBranch+mNumMatrices*2] = &mMatrixSpace[(mNumMatrices+mFgBranch)*MATRIX_SLOT];
 }
 
 

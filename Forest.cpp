@@ -18,6 +18,7 @@
 #include <omp.h>
 #endif
 
+// Initialize the mask table so the index corresponds to the bit position
 const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
 
@@ -29,9 +30,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Number of branches of one tree
 	mNumBranches = aTree.getNumBranches();
 
-	// Count the number of unique sites
+	// Count the number of unique sites and get the multiplicity of each of them
 	mNumSites = aGenes.getNumSites();
-	const unsigned int* mult = aGenes.getSiteMultiplicity();
+	const std::vector<unsigned int>& mult = aGenes.getSiteMultiplicity();
 
 	// Initialize the count of codon types
 	std::vector<unsigned int> codon_count(N, 0);
@@ -90,7 +91,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	mNumInternalBranches = mNumBranches - num_leaves;
 
 	// Set the site multeplicity
-	mSiteMultiplicity.assign(mult, mult+mNumSites);
+	mSiteMultiplicity.assign(mult.begin(), mult.end());
 
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
@@ -234,10 +235,9 @@ void Forest::reduceSubtrees(void)
 	mTreeDependencies.resize(mNumSites, empty_vector);
 	mTreeRevDependencies.resize(mNumSites, empty_vector);
 
+	// Try to merge equal subtrees
 	// Trees at the beginning of the forest point to trees ahead
 	// (this way a delete does not choke with pointers pointing to freed memory) 
-
-	// Try to merge equal subtrees
 	for(int i=mNumSites-1; i > 0; --i)
 	{
 		for(int j=i-1; j >= 0; --j)
@@ -418,9 +418,6 @@ void Forest::prepareDependencies(bool aForceSerial)
 	// Compute the dependencies: for each class list all sites that should be done at this level
 	groupByDependency(aForceSerial);
 	
-	// Prepare more detailed inter-tree dependencies lists
-	//prepareDependenciesClassesAndTrees();
-
 	// Compute effort per site
 	std::vector<unsigned int> effort;
 	measureEffort(effort);

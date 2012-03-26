@@ -3,9 +3,9 @@
 #define ALIGNED_ALLOCATOR_H
 
 // The following headers are required for all allocators.
-#include <stddef.h>  // Required for size_t and ptrdiff_t and NULL
-#include <new>       // Required for placement new and std::bad_alloc
-#include <stdexcept> // Required for std::length_error
+//#include <stddef.h>  // Required for size_t and ptrdiff_t and NULL
+//#include <new>       // Required for placement new and std::bad_alloc
+//#include <stdexcept> // Required for std::length_error
 
 #include "AlignedMalloc.h"
 

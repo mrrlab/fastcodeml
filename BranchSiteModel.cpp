@@ -200,9 +200,6 @@ void BranchSiteModel::initVariables(void)
 	unsigned int nv = mNumTimes+mNumVariables;
 	for(i=0; i < nv; ++i)
 	{
-		//if(mVar[i] <= mLowerBound[i]) mVar[i] = mLowerBound[i]*1.1;
-		//if(i == mNumTimes+2 || i == mNumTimes+3) continue;
-		//if(mVar[i] >= mUpperBound[i]) mVar[i] = mUpperBound[i]*0.9;
 		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
 		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
@@ -278,7 +275,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-	// Fill the Transition Matrix sets
+	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
@@ -286,7 +283,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	// For all (valid) sites. Don't parallelize: time increases and results are errant
 	const size_t num_sites = mForest.getNumSites();
-	const double* mult = mForest.getSiteMultiplicity();
+	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(size_t site=0; site < num_sites; ++site)
 	{
@@ -369,7 +366,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-	// Fill the Transition Matrix sets
+	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
@@ -377,7 +374,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = mForest.getNumSites();
-	const double* mult = mForest.getSiteMultiplicity();
+	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	for(size_t site=0; site < num_sites; ++site)
 	{

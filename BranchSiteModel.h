@@ -290,6 +290,7 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
+
 private:
 	/// Disabled assignment operator to avoid warning on Windows
 	///
@@ -352,8 +353,9 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
+
 private:
-	/// Disabled assignment operator to avoid warning on Windows
+	/// Disabled assignment operator to avoid warnings on Windows
 	///
 	/// @fn BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& aObj)
 	///

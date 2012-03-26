@@ -74,6 +74,7 @@ public:
 	///
 	///	@param[in] aQw0 The mQw0 transition matrix
 	///	@param[in] aQ1 The mQ1 transition matrix
+	///	@param[in] aAnyMatrixChanged Set to true if any matrix changed
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
@@ -95,6 +96,7 @@ public:
 	///	@param[in] aQw0 The mQw0 transition matrix
 	///	@param[in] aQ1 The mQ1 transition matrix
 	///	@param[in] aQw2 The mQw2 transition matrix
+	///	@param[in] aChangedQw2 Set to true if Qw2 matrix changed
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
@@ -179,7 +181,7 @@ private:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
-	double*			mPrevTime;
+	double*			mPrevTime;			///< Previous computation times (to check if they are sufficiently different to require a recomputation)
 };
 
 #endif

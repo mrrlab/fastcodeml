@@ -159,8 +159,6 @@ int main(int ac, char **av)
 													std::cerr << std::endl << std::endl;
 													if(cmd.mInitFromParams)
 													{
-														//ParseParameters* p = ParseParameters::getInstance();
-														//std::cerr << "Param initial values:" << std::endl << std::endl << p;
 														std::cerr << "Param initial values:" << std::endl << std::endl
 																  << ParseParameters::getInstance();
 													}
@@ -184,9 +182,7 @@ int main(int ac, char **av)
 	tree.readFile(cmd.mTreeFile);
 
 	// Check coherence between the two files
-	std::vector<std::string> tree_species_list;
-	tree.getSpecies(tree_species_list);
-	g.checkNameCoherence(tree_species_list);
+	g.checkNameCoherence(tree.getSpecies());
 
 	// Create and load the forest
 	Forest forest(cmd.mVerboseLevel);

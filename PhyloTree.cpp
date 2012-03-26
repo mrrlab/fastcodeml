@@ -38,18 +38,21 @@ void PhyloTree::fillSpecies(TreeNode *aNode)
 	}
 }
 
-
-void PhyloTree::getSpecies(std::vector<std::string>& aSpeciesList) const
+const std::vector<std::string>& PhyloTree::getSpecies(void) const
 {
+	static std::vector<std::string> species_list;
+	species_list.clear();
+
 	std::vector<TreeNode *>::const_iterator is = mLeavesSpecies.begin();
 	const std::vector<TreeNode *>::const_iterator end = mLeavesSpecies.end();
 	for(; is != end; ++is)
 	{
 		std::string label = (*is)->getLabel();
-		aSpeciesList.push_back(label);
+		species_list.push_back(label);
 	}
-}
 
+	return species_list;
+}
 
 void PhyloTree::fillInternalBranches(TreeNode *aNode)
 {

@@ -33,8 +33,7 @@ public:
 	/// @param[in] aVerbose The verbosity level
 	///
 	explicit Forest(unsigned int aVerbose=0)
-		: mNumSites(0), mCodonFreq(0), mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX)
-	{}
+							: mNumSites(0), mCodonFreq(0), mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX) {}
 
 	/// Destructor
 	///
@@ -165,11 +164,11 @@ public:
 	///
 	size_t getMarkedInternalBranch(void) const {return mMarkedInternalBranch;}
 
-	/// Get site multeplicity values
+	/// Get site multeplicity values.
 	///
-	/// @return The array of site molteplicities
+	/// @return Reference to the array of site multiplicities
 	///
-	const double* getSiteMultiplicity(void) const {return &mSiteMultiplicity[0];}
+	const std::vector<double>& getSiteMultiplicity(void) const {return mSiteMultiplicity;}
 
 	/// Set the times (i.e. the branch lengths) from the values read from the tree file
 	///

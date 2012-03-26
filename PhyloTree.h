@@ -6,7 +6,6 @@
 #include <vector>
 #include "TreeNode.h"
 #include "ForestNode.h"
-//#include "TransitionMatrix.h"
 #include "Types.h"
 
 /// Phylogenetic tree public interface.
@@ -31,6 +30,7 @@ public:
 	virtual ~PhyloTree();
 
 	/// Load a phylo tree definition from a Newick formatted file.
+	/// This routine should be defined by a derived class.
 	///
 	/// @param[in] aFilename The filename
 	///
@@ -41,11 +41,7 @@ public:
 	/// Clean the object content that afterwards become invalid
 	///
 	void clear(void);
-#ifdef CHECK_ALGO
-	/// Print the phylogenetic tree completed with all the info loaded.
-	///
-	void printFormattedTree(void) const;
-#endif
+
 	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in.
 	///
 	/// @param[in] aOut Output stream
@@ -53,11 +49,11 @@ public:
 	///
 	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=0) const =0;
 
-	/// Load the list of species in the given array.
+	/// Return the list of species.
 	///
-	/// @param[out] aSpeciesList Vector of species names as read at the leaves of the tree
+	/// @return Reference to a vector of species names as read from the leaves of the tree
 	///
-	void getSpecies(std::vector<std::string>& aSpeciesList) const;
+	const std::vector<std::string>& getSpecies(void) const;
 
 	/// Number of tree branches.
 	///
@@ -96,6 +92,13 @@ public:
 	/// @return The node id to the next node
 	///
 	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+
+#ifdef CHECK_ALGO
+	/// Print the phylogenetic tree completed with all the info loaded.
+	///
+	void printFormattedTree(void) const;
+#endif
+
 
 protected:
 
