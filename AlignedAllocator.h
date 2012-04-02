@@ -146,7 +146,7 @@ public:
 	{
         return allocate(n);
     }
- 
+
 
 private:
     /// Allocators are not required to be assignable, so

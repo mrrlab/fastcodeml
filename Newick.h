@@ -7,7 +7,7 @@
 #include "PhyloTree.h"
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic push
+//#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wlong-long"
 #endif
 
@@ -15,7 +15,7 @@
 #include <boost/spirit/include/classic_parse_tree.hpp>
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic pop
 #endif
 
 /// %Newick format file specific functionalities.

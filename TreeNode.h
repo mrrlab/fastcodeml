@@ -32,9 +32,10 @@ public:
 	///
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
-	TreeNode(const TreeNode& aNode)
+	TreeNode(const TreeNode& aNode) : mParent(aNode.getParent()), mBranchLength(aNode.getLen()), mNodeName(aNode.getLabel()), mNodeMark(aNode.getType())
+
 	{
-		mParent = aNode.getParent();
+		//mParent = aNode.getParent();
 
 		for(unsigned int i=0; ; ++i)
 		{
@@ -43,9 +44,9 @@ public:
 			mChildrenList.push_back(n);
 		}
 
-		mNodeName = aNode.getLabel();
-		mNodeMark = aNode.getType();
-		mBranchLength = aNode.getLen();
+		//mNodeName = aNode.getLabel();
+		//mNodeMark = aNode.getType();
+		//mBranchLength = aNode.getLen();
 	}
 
 	/// Assignment operator

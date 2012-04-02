@@ -30,6 +30,7 @@
 #include "Exceptions.h"
 #include "BranchSiteModel.h"
 #include "ParseParameters.h"
+#include "VerbosityLevels.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -86,16 +87,16 @@ int main(int ac, char **av)
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
 	int verbose_level = cmd.mVerboseLevel;
-	if(!hlc.isMaster()) cmd.mVerboseLevel = 0;
+	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
-	if(cmd.mVerboseLevel > 0)
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 													std::cerr << std::endl;
 													std::cerr << "Tree file:     " << cmd.mTreeFile << std::endl;
 													std::cerr << "Gene file:     " << cmd.mGeneFile << std::endl;
-													std::cerr << "Verbose level: " << cmd.mVerboseLevel << std::endl;
+													std::cerr << "Verbose level: " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
 		if(cmd.mSeed)								std::cerr << "Seed:          " << cmd.mSeed << std::endl;
 		if(cmd.mBranchFromFile)						std::cerr << "Branch:        From tree file" << std::endl;
 		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
@@ -103,7 +104,7 @@ int main(int ac, char **av)
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
 		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
 		if(cmd.mInitH1fromH0)						std::cerr << "Starting val.: From H0" << std::endl;
-		else if(cmd.mInitFromParams)				std::cerr << "Starting val.: Times from tree file and command line (see below)" << std::endl;
+		else if(cmd.mInitFromParams)				std::cerr << "Starting val.: Times from tree file and params from const (see below)" << std::endl;
 		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.: Times from tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
@@ -171,7 +172,7 @@ int main(int ac, char **av)
 
 	// Start a timer (to measure serial part over parallel one)
 	Timer timer;
-	if(cmd.mVerboseLevel >= 1) timer.start();
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Load the genes
 	Phylip g(cmd.mVerboseLevel);
@@ -230,17 +231,17 @@ int main(int ac, char **av)
 	forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
 
 	// Get the time needed by data preprocessing
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
-	if(cmd.mVerboseLevel >= 1) timer.start();
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mInitFromParams, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)
 	{
-		if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 		return 0;
 	}
 	else
@@ -273,10 +274,10 @@ int main(int ac, char **av)
 	}
 
 	// Print few statistics
-	if(cmd.mVerboseLevel >= 1) std::cerr << forest;
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << forest;
 
 	// Start timing parallel part
-	if(cmd.mVerboseLevel >= 1) timer.start();
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Initialize the models
 	BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
@@ -285,7 +286,7 @@ int main(int ac, char **av)
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
 	{
-		if(cmd.mVerboseLevel >= 1) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
+		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the null model maximum loglikelihood
 		double lnl0 = 0;
@@ -313,7 +314,7 @@ int main(int ac, char **av)
 			lnl1 = h1(fg_branch);
 		}
 
-		if(cmd.mVerboseLevel >= 1)
+		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
 		{
 			std::cerr << std::endl;
 			if(cmd.mComputeHypothesis != 1)
@@ -355,12 +356,12 @@ int main(int ac, char **av)
 		{
 			BayesTest bt(forest.getNumSites());
 			bt.computeBEB();
-			bt.printPositiveSelSites(fg_branch);
+			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
 		}
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= 1) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions
@@ -389,15 +390,15 @@ int main(int ac, char **av)
 /// @section cnames_sect Class names
 /// Class names are CamelCase with first letter uppercase.
 ///
-/// Ex: PhyloTree
+/// Ex: %PhyloTree
 ///
-/// @section cmemb_sect Class methods
+/// @section cmeth_sect Class methods
 /// Class methods names are CamelCase with the first letter lowercase.
-/// Only very common adn specific names should be all lowercase, like read, clean, size.
+/// Only very common and specific names should be all lowercase, like read, clean, size.
 ///
 /// Ex: testFillQ
 ///
-/// @section cmemb_sect Class data members
+/// @section cdatamemb_sect Class data members
 /// Class member variables names start with 'm' followed by CamelCase name.
 ///
 /// Ex: mFgBranch
@@ -430,74 +431,69 @@ int main(int ac, char **av)
 ///
 /// @verbatim
 /*
-    Usage:
-        FastCodeML [options] tree_file gene_file
 
-    -d  --debug  -v  --verbose (required argument)
-            Verbosity level
+Usage:
+    FastCodeML [options] tree_file gene_file
 
-    -q  --quiet (no argument)
-            No messages except results
+-d  --debug  -v  --verbose (required argument)
+        Verbosity level
 
-    -?  -h  --help (no argument)
-            This help
+-q  --quiet (no argument)
+        No messages except results
 
-    -s  --seed (required argument)
-            Random number generator seed
+-?  -h  --help (no argument)
+        This help
 
-    -b  --branch (required argument)
-            Do only this branch as foreground branch
+-s  --seed (required argument)
+        Random number generator seed (0 < seed < 1000000000)
 
-    -i  --ignore-freq (no argument)
-            Ignore computed codon frequency and set all to 1/61
+-b  --branch (required argument)
+        Do only this branch as foreground branch
 
-    -e  --export (required argument)
-            Export forest in GML format (if %03d or @03d is present,
-            one is created for each fg branch)
+-i  --ignore-freq (no argument)
+        Ignore computed codon frequency and set all to 1/61
 
-    -nr  --no-reduce (no argument)
-            Do not reduce forest by merging common subtrees
+-e  --export (required argument)
+        Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
 
-    -l  --times-from-file (no argument)
-            Initial branch lengths from tree file
+-nr  --no-reduce (no argument)
+        Do not reduce forest by merging common subtrees
 
-    -o  --initial-step (no argument)
-            Only the initial step is performed (no maximization)
+-l  --times-from-file (no argument)
+        Initial branch lengths from tree file
 
-    -c  --export-comp-times (required argument)
-            Export the computed times from H0 if 0, H1 if 1, otherwise
-            the one read in the phylo tree
+-o  --initial-step (no argument)
+        Only the initial step is performed (no maximization)
 
-    -r  --trace (no argument)
-            Trace the maximization run
+-c  --export-comp-times (required argument)
+        Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree
 
-    -np  --no-parallel (no argument)
-            Don't use parallel execution
+-r  --trace (no argument)
+        Trace the maximization run
 
-    -bf  --branch-from-file (no argument)
-            Do only the branch marked in the file as foreground branch
+-np  --no-parallel (no argument)
+        Don't use parallel execution
 
-    -hy  --only-hyp (required argument)
-            Compute only H0 if 0, H1 if 1
+-bf  --branch-from-file (no argument)
+        Do only the branch marked in the file as foreground branch
 
-    -i0  --init-from-h0 (no argument)
-            Start H1 optimization from H0 results
+-hy  --only-hyp (required argument)
+        Compute only H0 if 0, H1 if 1
 
-    -m  --maximizer (required argument)
-            Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)
+-i0  --init-from-h0 (no argument)
+        Start H1 optimization from H0 results
 
-    -ic  --init-from-const (no argument)
-            Initial branch lengths from tree file and the rest from
-            hardcoded constants
+-m  --maximizer (required argument)
+        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)
 
-    -sd  --small-diff (required argument)
-            Delta used in gradient computation
+-sd  --small-diff (required argument)
+        Delta used in gradient computation
 
-    -p  --init-param (required argument)
-            Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
+-p  --init-param (required argument)
+        Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
 
-    -ic  --init-default (no argument)
-            Start from default parameter values and times from tree file
+-ic  --init-default (no argument)
+        Start from default parameter values and times from tree file
 
 @endverbatim
 */

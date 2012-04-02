@@ -6,7 +6,6 @@
 #include <string>
 #include "Genes.h"
 
-
 /// The genes of the set of species under analysis.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)

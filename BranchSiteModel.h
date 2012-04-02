@@ -42,10 +42,12 @@ public:
 					unsigned int aOptAlgo,
 					double aDeltaValueForGradient)
 		: mForest(aForest),
-		  mNumTimes(aNumBranches),
-		  mNumVariables(aNumVariables),
+		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
+		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
+		  mVar(aNumBranches+aNumVariables),
 		  mMaxLnL(-DBL_MAX),
 		  mNumEvaluations(0),
+		  mLikelihoods(Nt*aNumSites),
 		  mOnlyInitialStep(aOnlyInitialStep),
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
@@ -53,8 +55,6 @@ public:
 		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
 		  mSeed(aSeed)
 	{
-		mVar.resize(mNumTimes+mNumVariables);
-		mLikelihoods.resize(Nt*aNumSites);
 		setLimits(mNumTimes, mNumVariables);
 	}
 
@@ -70,8 +70,9 @@ public:
 	///
 	/// @param[in] aVars The variables array to be printed
 	/// @param[in] aLnl The likelihood value to be printed
+	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX) const;
+	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX, std::ostream& aOut=std::cerr) const;
 
 	/// Compute the maximum likelihood for the given forest
 	///

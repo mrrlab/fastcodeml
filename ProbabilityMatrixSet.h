@@ -31,7 +31,7 @@ public:
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	///
-	ProbabilityMatrixSet(unsigned int aNumMatrices, unsigned int aNumSets) : mNumMatrices(aNumMatrices), mNumSets(aNumSets)
+	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets) : mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));

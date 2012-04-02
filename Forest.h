@@ -190,7 +190,7 @@ public:
 	///
 	/// @return The node index corresponding to the foreground branch
 	///
-	unsigned int adjustFgBranchIdx(unsigned int aFgBranch) const {return mTableInternalToBranchID[aFgBranch];}
+	unsigned int adjustFgBranchIdx(size_t aFgBranch) const {return mTableInternalToBranchID[aFgBranch];}
 
 	/// Access the global list of node names.
 	///

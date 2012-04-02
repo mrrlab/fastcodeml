@@ -23,6 +23,7 @@ set(SRCS
 	CodeMLoptimizer.cpp
 	ForestExport.cpp
 	ParseParameters.cpp
+	VerbosityLevels.cpp
 )
 
 

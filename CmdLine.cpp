@@ -73,31 +73,6 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 }
 
 
-CmdLine::CmdLine()
-{
-	// Initialize options values
-	mVerboseLevel			= 1;
-	mGeneFile				= 0;
-	mTreeFile				= 0;
-	mSeed					= 0;
-	mBranch					= UINT_MAX;
-	mGraphFile				= 0;
-	mIgnoreFreq				= false;
-	mDoNotReduceForest		= false;
-	mTimesFromFile			= false;
-	mNoMaximization			= false;
-	mExportComputedTimes	= UINT_MAX;
-	mTrace					= false;
-	mForceSerial			= false;
-	mBranchFromFile			= false;
-	mComputeHypothesis		= UINT_MAX;
-	mInitH1fromH0			= false;
-	mOptimizationAlgo		= 0;
-	mDeltaValueForGradient	= 0.0; // Zero means use the default value
-	mInitFromParams			= false;
-}
-
-
 void CmdLine::parseCmdLine(int aCnt, char **aVal)
 {
 	// Setup the command line parser
@@ -197,14 +172,14 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		switch(args.OptionId())
 		{
 		case OPT_VERBOSE:
-			if(mVerboseLevel == 0) break; // Ignore option if quiet is set
+			if(mVerboseLevel == VERBOSE_NONE) break; // Ignore option if quiet is set
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid verbose level");
 			mVerboseLevel = tmpi;
 			break;
 
 		case OPT_QUIET:
-			mVerboseLevel = 0;
+			mVerboseLevel = VERBOSE_NONE;
 			break;
 
 		case OPT_HELP:
@@ -289,7 +264,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 		}
 	}
-	
+
 	// Parse the file arguments
 	switch(args.FileCount())
 	{
@@ -309,7 +284,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		mGeneFile = args.File(1);
 		break;
 	}
-	
+
 	// Some final checks and settings
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;

@@ -22,6 +22,8 @@ static const int MAX_NUM_CHILDREN = 8;
 ///
 struct ForestNodeSupport
 {
+	ForestNodeSupport() {}
+
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
 };
 
@@ -57,7 +59,7 @@ struct ForestNode
 
 	/// Constructor
 	///
-	ForestNode() : mChildrenCount(0), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
+	ForestNode() : mChildrenSameTreeFlags(0xFFFF), mChildrenCount(0), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
 					, mFirstChild(false), mChildIdx(0)
 #endif
@@ -65,7 +67,7 @@ struct ForestNode
 #ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
 #endif
-		setAllFlagsSameTree();
+		//setAllFlagsSameTree();
 		mChildrenList.reserve(2);
 		mPreprocessingSupport = new ForestNodeSupport;
 	}
@@ -102,27 +104,21 @@ struct ForestNode
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
 	ForestNode(const ForestNode& aNode)
+		: mChildrenSameTreeFlags(aNode.mChildrenSameTreeFlags),
+		  mChildrenCount(aNode.mChildrenCount), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree), mParent(aNode.mParent),
+		  mInternalNodeId(aNode.mInternalNodeId), mChildrenList(aNode.mChildrenList)
+#ifdef NON_RECURSIVE_VISIT
+					, mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
+#endif
+#ifndef NEW_LIKELIHOOD
+		, mOtherTreeProb(aNode.mOtherTreeProb)
+#endif
 	{
-		mChildrenList			= aNode.mChildrenList;
-		mParent					= aNode.mParent;
 #ifndef NEW_LIKELIHOOD
 		memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
-		mInternalNodeId			= aNode.mInternalNodeId;
-		mBranchId				= aNode.mBranchId;
-		mOwnTree				= aNode.mOwnTree;
-#ifndef NEW_LIKELIHOOD
-		mOtherTreeProb			= aNode.mOtherTreeProb;
-#endif
-		mChildrenSameTreeFlags	= aNode.mChildrenSameTreeFlags;
-		mChildrenCount			= aNode.mChildrenCount;
-
 		mPreprocessingSupport = new ForestNodeSupport;
 		mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
-#ifdef NON_RECURSIVE_VISIT
-		mFirstChild				= aNode.mFirstChild;
-		mChildIdx				= aNode.mChildIdx;
-#endif
 	}
 
 	/// Assignment operator

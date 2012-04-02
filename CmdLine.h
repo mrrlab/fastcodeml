@@ -3,6 +3,7 @@
 #define CMDLINE_H
 
 #include "simpleopt/SimpleOpt.h"
+#include "VerbosityLevels.h"
 
 /// Parse the command line flags.
 ///
@@ -16,8 +17,28 @@ class CmdLine
 public:
 	/// Constructor.
 	///
-	CmdLine();
-	
+	CmdLine() : 
+		mDeltaValueForGradient(0.0),
+		mVerboseLevel(VERBOSE_ONLY_RESULTS),
+		mSeed(0),
+		mBranch(UINT_MAX),
+		mExportComputedTimes(UINT_MAX),
+		mComputeHypothesis(UINT_MAX),
+		mOptimizationAlgo(0),
+		mTreeFile(0),
+		mGeneFile(0),
+		mGraphFile(0),
+		mIgnoreFreq(false),
+		mDoNotReduceForest(false),
+		mTimesFromFile(false),
+		mNoMaximization(false),
+		mTrace(false),
+		mForceSerial(false),
+		mBranchFromFile(false),
+		mInitH1fromH0(false),
+		mInitFromParams(false) {}
+
+
 	/// Parse the command line.
 	///
 	/// @param[in] aCnt Number of command line parameters (from main argc)
@@ -30,7 +51,7 @@ public:
 
 
 public:
-	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded value)
+	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded default value)
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)

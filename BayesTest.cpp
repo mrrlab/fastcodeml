@@ -65,7 +65,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			}
 			
 			// Print site number and probability
-			std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(5) << prob << std::endl;
+			std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << std::endl;
 		}
 	}
 }

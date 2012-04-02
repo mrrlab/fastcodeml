@@ -9,7 +9,7 @@
 #include "ForestExport.h"
 #include "Forest.h"
 
-void ForestExport::exportForest(const char* aFilename, unsigned int aCounter) const
+void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 {
 	 std::vector< std::pair<int, int> > node_from;
 	 std::vector< std::pair<int, int> > node_to;

@@ -7,16 +7,16 @@
 void TreeNode::printFormatted(int aIndent) const
 {
 	// Indent the current entry
-	for(int k=0; k < aIndent; ++k) std::cout << ' ';
+	for(int k=0; k < aIndent; ++k) std::cerr << ' ';
 
 	// Print the node info
 	if(mNodeMark.empty())
-		std::cout << '<' << mNodeName << "> " << mBranchLength;
+		std::cerr << '<' << mNodeName << "> " << mBranchLength;
 	else
-		std::cout << '<' << mNodeName << ">#" << mNodeMark << ' ' << mBranchLength;
+		std::cerr << '<' << mNodeName << ">#" << mNodeMark << ' ' << mBranchLength;
 
 	// End line
-	std::cout << std::endl;
+	std::cerr << std::endl;
 
 	// Print the children (indented by 3 spaces)
 	std::vector<TreeNode *>::const_iterator in=mChildrenList.begin();
@@ -28,8 +28,8 @@ void TreeNode::printFormatted(int aIndent) const
 void TreeNode::printNode(void) const
 {
 	// Print the node info
-	std::cout << mNodeName;
-	if(!mNodeMark.empty()) std::cout << '#' << mNodeMark;
+	std::cerr << mNodeName;
+	if(!mNodeMark.empty()) std::cerr << '#' << mNodeMark;
 }
 
 

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "Genes.h"
 #include "Exceptions.h"
-
+#include "VerbosityLevels.h"
 
 
 Genes::~Genes()
@@ -184,12 +184,12 @@ void Genes::readFile(const char* aFilename)
 	loadData(aFilename, mDnaSpecies, mDnaGene);
 
 	// Finish postprocessing of the read-in sequences
-	unsigned int i, j;
+	size_t i, j;
 
 	// Get the number of basis, codons and species
-	unsigned int nbasis = mDnaGene[0].length();
-	unsigned int ncodons = nbasis/3;
-	unsigned int nspecies = mDnaSpecies.size();
+	size_t nbasis = mDnaGene[0].length();
+	size_t ncodons = nbasis/3;
+	size_t nspecies = mDnaSpecies.size();
 
 	// Inizialize codons multiplicity
 	std::vector<unsigned int> codon_multiplicity(ncodons, 1);
@@ -204,12 +204,12 @@ void Genes::readFile(const char* aFilename)
 		}
 	}
 
-	if(mVerboseLevel >= 1)
+	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 		std::cerr << std::endl;
 		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
 		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
-		int valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
+		int valid_codons = static_cast<int>(std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1));
 		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
 	}
 
@@ -240,17 +240,17 @@ void Genes::readFile(const char* aFilename)
 	std::vector<unsigned int>::iterator pend = std::remove(mSiteMultiplicity.begin(), mSiteMultiplicity.end(), 0);
 	mSiteMultiplicity.erase(pend, mSiteMultiplicity.end());
 
-	if(mVerboseLevel >= 1)
+	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
-		int multi_codons = std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1));
+		int multi_codons = static_cast<int>(std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1)));
 		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
 	}
-	if(mVerboseLevel >= 3)
+	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
 	{
-		std::ostream_iterator<unsigned int> out_it(std::cout, " ");
+		std::ostream_iterator<unsigned int> out_it(std::cerr, " ");
 		std::copy(codon_multiplicity.begin(), codon_multiplicity.end(), out_it);
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	}
 
 	// Compute map from site to position on mDnaGene

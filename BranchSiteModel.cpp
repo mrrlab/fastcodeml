@@ -18,14 +18,14 @@
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 
-void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) const
+void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, std::ostream& aOut) const
 {
 	// Write the data with an uniform precision
-	std::streamsize prec = std::cerr.precision(7);
-	std::cerr.setf(std::ios::fixed, std::ios::floatfield);
+	std::streamsize prec = aOut.precision(7);
+	aOut.setf(std::ios::fixed, std::ios::floatfield);
 
 	// Write the LnL value (if set)
-	if(aLnl < DBL_MAX) std::cerr << std::endl << aLnl << std::endl;
+	if(aLnl < DBL_MAX) aOut << std::endl << aLnl << std::endl;
 
 	// Print all variables formatted to be readable
 	int k;
@@ -37,34 +37,34 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl) co
 		switch(k)
 		{
 		case 0:
-			std::cerr << std::endl;
-			std::cerr <<   "w0: " << *ix;
+			aOut << std::endl;
+			aOut <<   "w0: " << *ix;
 			break;
 		case 1:
-			std::cerr <<  "  k: " << *ix;
+			aOut <<  "  k: " << *ix;
 			break;
 		case 2:
-			std::cerr << "  v0: " << *ix;
+			aOut << "  v0: " << *ix;
 			v0 = *ix;
 			break;
 		case 3:
-			std::cerr << "  v1: " << *ix;
+			aOut << "  v1: " << *ix;
 			{
 				double p[4];
 				getProportions(v0, *ix, p);
-				std::cerr << "  [" << p[0] << ", " << p[1] << ", " << p[2] << ", " << p[3] << "]";
+				aOut << "  [" << p[0] << ", " << p[1] << ", " << p[2] << ", " << p[3] << "]";
 			}
 			break;
 		case 4:
-			std::cerr << "  w2: " << *ix;
+			aOut << "  w2: " << *ix;
 			break;
 		default:
-			std::cerr << *ix << ' ';
+			aOut << *ix << ' ';
 			break;
 		}
 	}
-	std::cerr << std::endl;
-	std::cerr.precision(prec);
+	aOut << std::endl;
+	aOut.precision(prec);
 }
 
 
@@ -141,7 +141,7 @@ void BranchSiteModel::initFromTreeAndParams(void)
 void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen)
 {
 	// Adjust the length to be copied
-	if(aValidLen == 0) aValidLen = aPreviousResult.size();
+	if(aValidLen == 0) aValidLen = static_cast<unsigned int>(aPreviousResult.size());
 
 	// Too long, cut. Too short, ignore. 
 	if(aValidLen > mNumTimes+mNumVariables) aValidLen = mNumTimes+mNumVariables;
@@ -459,8 +459,8 @@ public:
 	void gradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		std::vector<double> x = aVars;
-		const unsigned int vs = aVars.size();
-		for(unsigned int i=0; i < vs; ++i)
+		const size_t vs = aVars.size();
+		for(size_t i=0; i < vs; ++i)
 		{
 			const double v = aVars[i];
 

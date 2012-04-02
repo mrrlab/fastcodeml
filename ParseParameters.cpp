@@ -24,8 +24,8 @@ ParseParameters::ParseParameters()
 	mDictionary["p0"] = 1.0;
 	mDictionary["p1"] = 0.1;
 #else
-	mDictionary["p0"] = 1.0;
-	mDictionary["p1"] = 0.0;
+	mDictionary["p0"] = 0.25; // This way all the 4 proportions are equal to 0.25
+	mDictionary["p1"] = 0.25;
 #endif
 	mDictionary["w2"] = 1.1;
 }

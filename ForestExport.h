@@ -27,7 +27,7 @@ public:
 	/// @param[in] aFilename The filename to be written
 	/// @param[in] aCounter Value to substitute \%d or \@d in filename (it is a printf format)
 	///
-	void exportForest(const char* aFilename, unsigned int aCounter=0) const;
+	void exportForest(const char* aFilename, size_t aCounter=0) const;
 
 private:
 	/// Walker for the exporter
