@@ -181,7 +181,7 @@ struct ForestNode
 	{
 		alignedFree(aPtr);
 	}
-
+#ifndef __MTA__
 	/// Placement new required by PGI compiler
 	///
 	/// @fn void* operator new(std::size_t aSize, ForestNode* aHere)
@@ -207,7 +207,33 @@ struct ForestNode
 	{
 		// Do nothing
 	}
+#else
+	/// Placement new required by XMT compiler
+	///
+	/// @fn void* operator new(unsigned long aSize, void* aHere)
+	///
+	/// @param[in] aSize Requested size (ignored)
+	/// @param[in] aHere Where the placement new should go
+	///
+	/// @return The placed memory
+	///
+	void* operator new(unsigned long /* aSize */, void* aHere)
+	{
+		return aHere;
+	}
 
+	/// Placement delete required by XMT compiler
+	///
+	/// @fn void operator delete(void* aPtr, void* aHere)
+	///
+	/// @param[in] aPtr Pointer to the memory area to be released (ignored)
+	/// @param[in] aHere Where the placement new should go (ignored)
+	///
+	void operator delete(void* /* aPtr */, void* /* aHere */)
+	{
+		// Do nothing
+	}
+#endif
 	/// Print from this node down
 	///
 	/// @param[in] aNodeNames The list of node names

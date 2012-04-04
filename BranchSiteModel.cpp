@@ -602,7 +602,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
     	opt->set_ftol_abs(1e-4);
-		nlopt::srand((unsigned long)mSeed);
+		nlopt::srand(static_cast<unsigned long>(mSeed));
 	}
 	catch(std::exception& e)
 	{

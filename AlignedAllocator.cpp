@@ -15,18 +15,18 @@
 // Alignment must be power of 2 (1,2,4,8,16...)
 void* alignedMalloc(size_t size, size_t alignment)
 {
-    uintptr_t r = (uintptr_t)malloc(size + --alignment + sizeof(uintptr_t));
+    uintptr_t r = reinterpret_cast<uintptr_t>(malloc(size + --alignment + sizeof(uintptr_t)));
     uintptr_t t = r + sizeof(uintptr_t);
-    uintptr_t o = (t + alignment) & ~(uintptr_t)alignment;
+    uintptr_t o = (t + alignment) & ~static_cast<uintptr_t>(alignment);
     if(!r) return NULL;
-    ((uintptr_t*)o)[-1] = r;
-    return (void*)o;
+    reinterpret_cast<uintptr_t*>(o)[-1] = r;
+    return reinterpret_cast<void*>(o);
 }
 
 void alignedFree(void* p)
 {
     if(!p) return;
-    free((void*)(((uintptr_t*)p)[-1]));
+    free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(p)[-1]));
 }
 
 

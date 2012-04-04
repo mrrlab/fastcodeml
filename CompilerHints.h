@@ -33,6 +33,12 @@
 #define RESTRICT restrict
 //#define PURE    __attribute__ ((pure))
 
+#elif defined(__MTA__)
+// Cray XMT
+#define ALIGN64
+#define RESTRICT
+//#define PURE
+
 #else
 #warning "Unknown compiler detected"
 #define ALIGN64

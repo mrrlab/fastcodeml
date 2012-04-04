@@ -106,7 +106,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	size_t int_id;
 	const size_t nn = mInternalNodes.size();
 	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
-	aForestNode->mInternalNodeId = (int_id < nn) ? (unsigned int)int_id : UINT_MAX;
+	aForestNode->mInternalNodeId = (int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
 	// Set the pointers.        The sequence is: Branch -> Set -> Site -> 1:N

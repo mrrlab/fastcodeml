@@ -478,7 +478,7 @@ void Forest::groupByDependency(bool aForceSerial)
 	{
 		std::vector<unsigned int> v(mNumSites);
 
-		for(unsigned int k=0; k < (unsigned int)mNumSites; ++k) v[k] = (unsigned int)mNumSites-k-1; // Remember: prior (could) point to subsequent
+		for(size_t k=0; k < mNumSites; ++k) v[k] = static_cast<unsigned int>(mNumSites-k-1); // Remember: prior (could) point to subsequent
 
 		class_dependencies.push_back(v);
 	}
