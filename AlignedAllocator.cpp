@@ -6,7 +6,6 @@
 #include <stdlib.h>  // For malloc() and free()
 
 #include "AlignedMalloc.h"
-#include "AlignedAllocator.h"
 
 #ifndef _MSC_VER
 #include <stdint.h>  // for uintptr_t
@@ -36,6 +35,7 @@ void alignedFree(void* p)
 #include <iostream>  // For std::cerr
 #include <ostream>   // For std::endl
 #include <vector>    // For std::vector
+#include "AlignedAllocator.h"
 
 int main()
 {

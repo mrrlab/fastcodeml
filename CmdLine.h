@@ -2,7 +2,6 @@
 #ifndef CMDLINE_H
 #define CMDLINE_H
 
-#include "simpleopt/SimpleOpt.h"
 #include "VerbosityLevels.h"
 
 /// Parse the command line flags.
@@ -36,8 +35,12 @@ public:
 		mForceSerial(false),
 		mBranchFromFile(false),
 		mInitH1fromH0(false),
-		mInitFromParams(false) {}
+		mInitFromParams(false),
+		mCmdLineImpl(0) {}
 
+	/// Destructor.
+	///
+	~CmdLine();
 
 	/// Parse the command line.
 	///
@@ -73,19 +76,9 @@ public:
 
 
 private:
-	/// Return the text corresponding to an error code.
-	///
-	/// @param[in] aOptParser The command line parser object
-	///
-	/// @return The human readable error message
-	///
-	const char *getLastErrorText(CSimpleOpt& aOptParser);
-
-	/// Print the help about the parameters.
-	///
-	/// @param[in] aParserOptions The table of options definitions
-	///
-	void showHelp(const CSimpleOpt::SOption *aParserOptions);
+	/// Implementation so this structure could be used without other modules be aware of its structure
+	struct CmdLineImpl;
+	CmdLineImpl* mCmdLineImpl;
 };
 
 #endif

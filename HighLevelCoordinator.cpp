@@ -22,9 +22,6 @@
 #include "BayesTest.h"
 #include "VerbosityLevels.h"
 
-/// For each internal branch there are three jobs to be executed: H0, H1 and BEB
-static const int JOBS_PER_BRANCH = 3;
-
 enum JobStatus
 {
 	JOB_WAITING,			///< Not yet assigned
@@ -55,15 +52,19 @@ enum JobRequestType
 	REQ_BEB_RESULT				///< The master gets the results of a BEB job
 };
 
-// Scaling value for transforming probabilities into integers for transmission
+/// Scaling value for transforming probabilities into integers for transmission
 static const double PROB_SCALING = 1e9;
 
+/// For each internal branch there are three jobs to be executed: H0, H1 and BEB
+static const int JOBS_PER_BRANCH = 3;
 
-/// Table of work to be done and intermediate results
+
+/// Table of work to be done and intermediate results.
 ///
 struct HighLevelCoordinator::WorkTable
 {
 	/// Results for one branch
+	///
 	struct ResultSet
 	{
 		double				mLnl[2];				///< Likelihood values for H0 and H1
@@ -76,13 +77,13 @@ struct HighLevelCoordinator::WorkTable
 	///
 	/// @param[in] aNumInternalBranches Number of internal branches that can be marked as foreground branch.
 	///
-	WorkTable(unsigned int aNumInternalBranches) :
+	WorkTable(size_t aNumInternalBranches) :
 					mNumInternalBranches(aNumInternalBranches),
 					mJobStatus(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mResults(aNumInternalBranches) {}
 
-	unsigned int			mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
+	size_t					mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
 	std::vector<int>		mJobStatus;				///< Corresponding step status
 	std::vector<int>		mWorkList;				///< Who is doing this step
 	std::vector<ResultSet>	mResults;				///< Results for each branch
@@ -117,15 +118,15 @@ struct HighLevelCoordinator::WorkTable
 bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 {
 	// Assign all H0 jobs, then all H1 jobs
-	for(unsigned int kind=JOB_H0; kind <= JOB_H1; ++kind)
+	for(int kind=JOB_H0; kind <= JOB_H1; ++kind)
 	{
-		for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
+		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 		{
-			unsigned int idx = branch*JOBS_PER_BRANCH+kind;
+			size_t idx = branch*JOBS_PER_BRANCH+kind;
 			if(mJobStatus[idx] == JOB_WAITING)
 			{
 				aJob[0] = kind;
-				aJob[1] = branch;
+				aJob[1] = static_cast<int>(branch);
 				mJobStatus[idx] = JOB_ASSIGNED;
 				mWorkList[idx]  = aRank;
 				return true;
@@ -134,7 +135,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 	}
 
 	// Assign BEB jobs if possible
-	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		// The BEB job should be pending
 		if(mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] != JOB_WAITING) continue;
@@ -151,10 +152,10 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 
 		// Assign the BEB job
 		aJob[0] = JOB_BEB;
-		aJob[1] = branch;
+		aJob[1] = static_cast<int>(branch);
 
 		// Mark it as assigned
-		unsigned int idx = branch*JOBS_PER_BRANCH+JOB_BEB;
+		size_t idx = branch*JOBS_PER_BRANCH+JOB_BEB;
 		mJobStatus[idx] = JOB_ASSIGNED;
 		mWorkList[idx]  = aRank;
 		return true;
@@ -231,8 +232,7 @@ HighLevelCoordinator::~HighLevelCoordinator()
 }
 
 
-bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsigned int aVerbose, bool aNoMaximization,
-									 bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo, double aDeltaValueForGradient)
+bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine, unsigned int aVerbose)
 {
 	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
 	if(mSize < 3) return false;
@@ -257,7 +257,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, unsigned int aSeed, unsign
 	else
 	{
 		// Start a worker
-		doWorker(aForest, aSeed, aNoMaximization, aTimesFromFile, aInitFromConst, aOptimizationAlgo, aDeltaValueForGradient);
+		doWorker(aForest, aCmdLine);
 	}
 
 	// All done
@@ -271,8 +271,8 @@ void HighLevelCoordinator::doMaster(void)
 	unsigned int num_workers = 0;
 
 	// Prepare variables to hold results from workers
-	std::vector<double> resultsDouble;
-	std::vector<int> resultsInteger;
+	std::vector<double> results_double;
+	std::vector<int>    results_integer;
 
 	for(;;)
 	{
@@ -293,8 +293,8 @@ void HighLevelCoordinator::doMaster(void)
 		case REQ_HX_RESULT:
 			{
 			// Get the variables and last the loglikelihood value
-			resultsDouble.resize(job_request[1]);
-			MPI_Recv((void*)&resultsDouble[0], job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+			results_double.resize(job_request[1]);
+			MPI_Recv((void*)&results_double[0], job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 
 			// Mark the step as done (and compute branch and hypothesis)
 			int idx    = mWorkTable->markJobFinished(worker);
@@ -302,9 +302,9 @@ void HighLevelCoordinator::doMaster(void)
 			int h      = idx % JOBS_PER_BRANCH;
 
 			// Save all results (lnl + all variables)
-			double lnl = resultsDouble[job_request[1]-1];
+			double lnl = results_double[job_request[1]-1];
 			mWorkTable->mResults[branch].mLnl[h] = lnl;
-			mWorkTable->mResults[branch].mHxVariables[h].assign(resultsDouble.begin(), resultsDouble.end()-1);
+			mWorkTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
@@ -316,8 +316,8 @@ void HighLevelCoordinator::doMaster(void)
 			// Get results
 			if(job_request[1] > 0)
 			{
-				resultsInteger.resize(job_request[1]);
-				MPI_Recv((void*)&resultsInteger[0], job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+				results_integer.resize(job_request[1]);
+				MPI_Recv((void*)&results_integer[0], job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 			}
 			
 			// Mark the step as done (and compute branch)
@@ -329,9 +329,9 @@ void HighLevelCoordinator::doMaster(void)
 			mWorkTable->mResults[branch].mPositiveSelProbs.clear();
 			for(int i=0; i < job_request[1]/2; ++i)
 			{
-				int site = resultsInteger[2*i+0];
+				int site = results_integer[2*i+0];
 				mWorkTable->mResults[branch].mPositiveSelSites.push_back(site);
-				double prob = static_cast<double>(resultsInteger[2*i+1])/static_cast<double>(PROB_SCALING);
+				double prob = static_cast<double>(results_integer[2*i+1])/static_cast<double>(PROB_SCALING);
 				mWorkTable->mResults[branch].mPositiveSelProbs.push_back(prob);
 			}
 
@@ -382,7 +382,7 @@ void HighLevelCoordinator::doMaster(void)
 	// Print likelihoods
 	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
 	std::cerr << std::endl;
-	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
 					 "  Lnl H0: " << std::setw(12) << std::setprecision(6) << mWorkTable->mResults[branch].mLnl[0] << 
@@ -391,7 +391,7 @@ void HighLevelCoordinator::doMaster(void)
 
 	// Check if at least one site is under positive selection
 	bool has_positive_selection_sites = false;
-	for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		if(!mWorkTable->mResults[branch].mPositiveSelSites.empty())
 		{
@@ -404,12 +404,12 @@ void HighLevelCoordinator::doMaster(void)
 	if(has_positive_selection_sites)
 	{
 		std::cerr << std::endl << "Positive selection sites" << std::endl;
-		for(unsigned int branch=0; branch < mNumInternalBranches; ++branch)
+		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 		{
 			if(mWorkTable->mResults[branch].mPositiveSelSites.empty()) continue;
 
 			std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
-			for(unsigned int pss=0; pss < mWorkTable->mResults[branch].mPositiveSelSites.size(); ++pss)
+			for(size_t pss=0; pss < mWorkTable->mResults[branch].mPositiveSelSites.size(); ++pss)
 			{
 				std::cerr << std::setw(5) << mWorkTable->mResults[branch].mPositiveSelSites[pss] <<
 							 std::fixed << std::setw(12) << std::setprecision(6) << mWorkTable->mResults[branch].mPositiveSelProbs[pss] << std::endl;
@@ -419,12 +419,11 @@ void HighLevelCoordinator::doMaster(void)
 }
 
 
-void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst,
-									unsigned int aOptimizationAlgo, double aDeltaValueForGradient)
+void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 {
 	// Initialize the two hypothesis
-	BranchSiteModelNullHyp h0(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo, aDeltaValueForGradient);
-	BranchSiteModelAltHyp  h1(aForest, aSeed, aNoMaximization, false, aOptimizationAlgo, aDeltaValueForGradient);
+	BranchSiteModelNullHyp h0(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
+	BranchSiteModelAltHyp  h1(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
 
 	// This value signals that this is the first work request
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
@@ -464,30 +463,30 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 		case JOB_H0:
 			{
 			// Compute H0
-			if(aInitFromConst)		h0.initFromTreeAndParams();
-			else if(aTimesFromFile)	h0.initFromTree();
+			if(aCmdLine.mInitFromParams)		h0.initFromTreeAndParams();
+			else if(aCmdLine.mTimesFromFile)	h0.initFromTree();
 			double lnl = h0(job[1]);
 
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);
 			values_double.push_back(lnl);
 			job_request[0] = REQ_HX_RESULT;
-			job_request[1] = values_double.size();
+			job_request[1] = static_cast<int>(values_double.size());
 			}
 			break;
 
 		case JOB_H1:
 			{
 			// Compute H1
-			if(aInitFromConst)		h1.initFromTreeAndParams();
-			else if(aTimesFromFile)	h1.initFromTree();
+			if(aCmdLine.mInitFromParams)		h1.initFromTreeAndParams();
+			else if(aCmdLine.mTimesFromFile)	h1.initFromTree();
 			double lnl = h1(job[1]);
 
 			// Assemble the results to be passed to the master
 			h1.getVariables(values_double);
 			values_double.push_back(lnl);
 			job_request[0] = REQ_HX_RESULT;
-			job_request[1] = values_double.size();
+			job_request[1] = static_cast<int>(values_double.size());
 			}
 			break;
 
@@ -498,22 +497,22 @@ void HighLevelCoordinator::doWorker(Forest& aForest, unsigned int aSeed, bool aN
 			bt.computeBEB();
 
 			// Extract the results
-			std::vector<unsigned int> aPositiveSelSites;
-			std::vector<double> aPositiveSelSitesProb;
-			bt.extractPositiveSelSites(aPositiveSelSites, aPositiveSelSitesProb);
-			unsigned int num_sites = aPositiveSelSites.size();
+			std::vector<unsigned int> positive_sel_sites;
+			std::vector<double>       positive_sel_sites_prob;
+			bt.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
+			size_t num_sites = positive_sel_sites.size();
 
 			// Assemble the results
 			job_request[0] = REQ_BEB_RESULT;
-			job_request[1] = 2*num_sites;
+			job_request[1] = 2*static_cast<int>(num_sites);
 			if(num_sites)
 			{
 				// Assemble consecutive pairs (site, probability) into an array of integers
 				values_integer.clear();
-				for(unsigned int i=0; i < num_sites; ++i)
+				for(size_t i=0; i < num_sites; ++i)
 				{
-					values_integer.push_back(aPositiveSelSites[i]);
-					int v = static_cast<int>(aPositiveSelSitesProb[i]*PROB_SCALING+0.5);
+					values_integer.push_back(positive_sel_sites[i]);
+					int v = static_cast<int>(positive_sel_sites_prob[i]*PROB_SCALING+0.5);
 					values_integer.push_back(v);
 				}
 			}

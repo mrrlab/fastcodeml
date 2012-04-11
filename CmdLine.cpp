@@ -7,7 +7,26 @@
 #include "Exceptions.h"
 #include "ParseParameters.h"
 
-const char *CmdLine::getLastErrorText(CSimpleOpt& aOptParser)
+/// Implementation of the CmdLine class.
+///
+struct CmdLine::CmdLineImpl
+{
+	/// Return the text corresponding to an error code.
+	///
+	/// @param[in] aOptParser The command line parser object
+	///
+	/// @return The human readable error message
+	///
+	const char *getLastErrorText(CSimpleOpt& aOptParser);
+
+	/// Print the help about the parameters.
+	///
+	/// @param[in] aParserOptions The table of options definitions
+	///
+	void showHelp(const CSimpleOpt::SOption *aParserOptions);
+};
+
+const char *CmdLine::CmdLineImpl::getLastErrorText(CSimpleOpt& aOptParser)
 {
     switch(aOptParser.LastError())
 	{
@@ -23,7 +42,7 @@ const char *CmdLine::getLastErrorText(CSimpleOpt& aOptParser)
 }
 
 
-void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
+void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 {
 	int i, j, cnt;
 
@@ -72,9 +91,19 @@ void CmdLine::showHelp(const CSimpleOpt::SOption *aParserOptions)
 	}
 }
 
+CmdLine::~CmdLine()
+{
+	delete mCmdLineImpl;
+}
 
 void CmdLine::parseCmdLine(int aCnt, char **aVal)
 {
+	// Create the class implementation so it is not visible outside
+	if(!mCmdLineImpl)
+	{
+		mCmdLineImpl = new CmdLine::CmdLineImpl;
+	}
+
 	// Setup the command line parser
 	enum {
 		OPT_VERBOSE,
@@ -158,13 +187,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		if(args.LastError() == SO_OPT_INVALID)
 		{
 			std::ostringstream o;
-			o << "Error: " << getLastErrorText(args) << ": " << args.OptionText() << std::endl;
+			o << "Error: " << mCmdLineImpl->getLastErrorText(args) << ": " << args.OptionText() << std::endl;
 			throw FastCodeMLFatal(o);
         }
         if(args.LastError() != SO_SUCCESS)
 		{
 			std::ostringstream o;
-            o << "Error: " << getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
+            o << "Error: " << mCmdLineImpl->getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
 			throw FastCodeMLFatal(o);
         }
 
@@ -185,7 +214,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_HELP:
 			std::cerr << "Usage:" << std::endl;
 			std::cerr << "    " << usage_msg << std::endl << std::endl;
-			showHelp(parser_options);
+			mCmdLineImpl->showHelp(parser_options);
 			throw FastCodeMLSuccess();
 
 		case OPT_SEED:
@@ -253,6 +282,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_DELTA_VAL:
 			mDeltaValueForGradient = atof(args.OptionArg());
 			if(mDeltaValueForGradient < 0.0) mDeltaValueForGradient = 0.0;
+			break;
 
 		case OPT_INIT_PARAM:
 			ParseParameters::getInstance()->addParameter(args.OptionArg());
@@ -276,7 +306,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		std::cerr << "Missing GENE file" << std::endl << std::endl;
 		std::cerr << "Usage:" << std::endl;
 		std::cerr << "    " << usage_msg << std::endl << std::endl;
-		showHelp(parser_options);
+		mCmdLineImpl->showHelp(parser_options);
 		throw FastCodeMLFatal();
 
 	default:
@@ -290,7 +320,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
-	if(mInitH1fromH0) {mInitFromParams = false; mTimesFromFile = false;}
 	if(mInitFromParams) mTimesFromFile = false;
 }
 

@@ -131,9 +131,9 @@ endif(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 
 # Set paths
 if(USE_MPI)
-	if(MPI_INCLUDE_PATH)
-		include_directories(${MPI_INCLUDE_PATH})
-	endif(MPI_INCLUDE_PATH)
+	if(MPI_C_INCLUDE_PATH)
+		include_directories(${MPI_C_INCLUDE_PATH})
+	endif(MPI_C_INCLUDE_PATH)
 	if(MPI_LIBRARY)
 		link_directories(${MPI_LIBRARY})
 	endif(MPI_LIBRARY)

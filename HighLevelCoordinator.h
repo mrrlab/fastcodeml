@@ -4,6 +4,7 @@
 
 #include <vector>
 #include "Forest.h"
+#include "CmdLine.h"
 
 /// The rank of the master job
 ///
@@ -34,24 +35,12 @@ public:
 	/// Starts the high level parallelization of the FastCodeML application
 	///
 	/// @param[in,out] aForest The filled forest
-	/// @param[in] aSeed The random number generator seed 
+	/// @param[in] aCmdLine The parameters from the command line of the main program
 	/// @param[in] aVerbose The verbose level
-	/// @param[in] aNoMaximization If true non likelihood maximization takes place
-	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
-	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
-	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
-	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
-	bool startWork(Forest& aForest,
-				   unsigned int aSeed,
-				   unsigned int aVerbose=0,
-				   bool aNoMaximization=false,
-				   bool aTimesFromFile=false,
-				   bool aInitFromConst=false,
-				   unsigned int aOptimizationAlgo=0,
-				   double aDeltaValueForGradient=0.0);
+	bool startWork(Forest& aForest, const CmdLine& aCmdLine, unsigned int aVerbose=0);
 
 	/// Is this process the master one?
 	///
@@ -74,21 +63,16 @@ private:
 	/// The worker high level loop
 	///
 	/// @param[in,out] aForest The filled forest
-	/// @param[in] aSeed The random number generator seed 
-	/// @param[in] aNoMaximization If true non likelihood maximization takes place
-	/// @param[in] aTimesFromFile If true the initial branch length values are retrieved from the tree file
-	/// @param[in] aInitFromConst Initialize times from phylo tree and the other from hardcoded constants
-	/// @param[in] aOptimizationAlgo The maximization algorithm to be used
-	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
+	/// @param[in] aCmdLine The parameters from the command line of the main program
 	///
-	void doWorker(Forest& aForest, unsigned int aSeed, bool aNoMaximization, bool aTimesFromFile, bool aInitFromConst, unsigned int aOptimizationAlgo, double aDeltaValueForGradient);
+	void doWorker(Forest& aForest, const CmdLine& aCmdLine);
 
 
 private:
 	unsigned int		mVerbose;				///< The verbose level
 	int					mRank;					///< Rank of the current process (Master as rank == MASTER_JOB)
 	int					mSize;					///< Number of MPI processes
-	unsigned int		mNumInternalBranches;	///< Number of internal branches (i.e. the ones that can be foreground branch)
+	size_t				mNumInternalBranches;	///< Number of internal branches (i.e. the ones that can be foreground branch)
 
 	struct WorkTable;
 	WorkTable*			mWorkTable;				///< Management of the work list

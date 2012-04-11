@@ -118,7 +118,7 @@ public:
             throw std::length_error("AlignedAllocator<T>::allocate() - Integer overflow.");
         }
 
-        // AlignedAllocator wraps malloc().
+        // AlignedAllocator wraps aligned malloc().
         void * const pv = alignedMalloc(n * sizeof(T), A);
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
@@ -136,7 +136,7 @@ public:
         //std::cout << "Deallocating " << n << (n == 1 ? " object" : " objects")
         //    << " of size " << sizeof(T) << "." << std::endl;
 
-        // AlignedAllocator wraps free().
+        // AlignedAllocator wraps aligned free().
         alignedFree(p);
     }
 

@@ -10,8 +10,9 @@
 ///
 /// Contact us if you want more information on the project, want to collaborate or suggest new ideas.
 /// 
-///     - Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
-///     - The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
+/// - Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
+///
+/// - The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
 ///
 
 #include <iostream>
@@ -236,7 +237,7 @@ int main(int ac, char **av)
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
-	bool sts = hlc.startWork(forest, cmd.mSeed, verbose_level, cmd.mNoMaximization, cmd.mTimesFromFile, cmd.mInitFromParams, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
+	bool sts = hlc.startWork(forest, cmd, verbose_level);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)

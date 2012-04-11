@@ -15,6 +15,32 @@
 // If you want to reintroduce the optimal size computation, then uncomment the following line.
 //#define OPTIMAL_WORKAREAS
 
+#include <cstdio>
+#include <cstdlib>
+void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns) //CHHS
+{
+static int cnt=1;
+//CHHS This functions saves a C matrix / vector / scalar to file. It does not open or close files, this should be done before invoking this function. It can be invoked multiple times to store more than one object in the same file.
+    if (FilePointer == NULL)
+    {
+      printf ("Oops, Filepointer is NULL, exiting!\n");
+      exit(1);
+    }
+    fprintf (FilePointer,"# name: %s%02d\n",OctaveVariable, cnt); //CHHS We expect the user to use possible values
+    fprintf (FilePointer,"# type: matrix\n");
+    fprintf (FilePointer,"# rows: %d\n",Rows);
+    fprintf (FilePointer,"# columns: %d\n",Columns);
+    for (int i=0;i<Rows;i++) //rows of the file
+    {
+      for (int j=0;j<Columns;j++) //columns of the file
+        fprintf (FilePointer,"%18.16e ",CVariable[i*Columns+j]);
+    fprintf (FilePointer,"\n");
+    }
+	++cnt;
+    return;
+//CHHS Do not forget to close the file from outside this routine.
+} 
+
 
 #ifndef USE_LAPACK
 
@@ -425,6 +451,10 @@ void TransitionMatrix::eigenQREV(void)
     */
     int i, j;
 
+FILE* fp = fopen("m.oct", "a");
+
+SaveToOctave(mCodonFreq, "PI", fp, 61, 1); //CHHS
+SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
 	try {
     if(mNumGoodFreq == N)
     {
@@ -456,6 +486,7 @@ void TransitionMatrix::eigenQREV(void)
 			}
 		}
 #endif
+SaveToOctave(mU, "A", fp, 61, 61); //CHHS
 //for(i=0; i < 6; ++i)
 //{
 //	for(j=0; j < 6; ++j) printf(" %12.6f", mU[i*N+j]);
@@ -465,6 +496,9 @@ void TransitionMatrix::eigenQREV(void)
 
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is N and mV is used as workarea
         eigenRealSymm(mU, N, mD, mV);
+SaveToOctave(mU, "X", fp, 61, 61); //CHHS
+SaveToOctave(mD, "LAMBDA", fp, 61, 1); //CHHS
+fclose(fp);
 
 		// Construct mV = pi^1/2*mU
 		for(j=0; j < N; ++j)
