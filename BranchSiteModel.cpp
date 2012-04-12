@@ -268,13 +268,19 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
-	const double fg_scale = mProportions[0]*mScaleQw0 +
+	double fg_scale = mProportions[0]*mScaleQw0 +
 							mProportions[1]*mScaleQ1  +
 							mProportions[2]*mScaleQ1  +
 							mProportions[3]*mScaleQ1;
 
-	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+	double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+std::cerr << "Q0 " << mScaleQw0 << std::endl;
+std::cerr << "Q1 " << mScaleQ1 << std::endl;
 
+	//bg_scale = 1./6.7185278743730619;
+	//fg_scale = 3./14.791518378456241;
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
 
@@ -366,6 +372,11 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
+std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+std::cerr << "Q0 " << mScaleQw0 << std::endl;
+std::cerr << "Q1 " << mScaleQ1 << std::endl;
+std::cerr << "Q2 " << mScaleQw2 << std::endl;
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
 
