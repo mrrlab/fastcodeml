@@ -207,8 +207,7 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 	MPI_Init_thread(aRgc, aRgv, requested, &provided);
 	if(provided != requested)
 	{
-		mSize = 0;
-		// Don't support threads, don't execute under MPI
+		mSize = 0;		// Don't support threads, don't execute under MPI
 	}
 	else
 	{

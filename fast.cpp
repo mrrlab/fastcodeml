@@ -10,9 +10,8 @@
 ///
 /// Contact us if you want more information on the project, want to collaborate or suggest new ideas.
 /// 
-/// - Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
-///
-/// - The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
+///- Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
+///- The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
 ///
 
 #include <iostream>
@@ -24,10 +23,8 @@
 #include "CmdLine.h"
 #include "Newick.h"
 #include "Phylip.h"
-#include "MatrixSize.h"
 #include "BayesTest.h"
 #include "Forest.h"
-#include "ForestExport.h"
 #include "Exceptions.h"
 #include "BranchSiteModel.h"
 #include "ParseParameters.h"
