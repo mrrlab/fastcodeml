@@ -5,7 +5,16 @@
 #include <cmath>
 #include <memory>
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4267) // warning C4267: 'argument' : conversion from 'size_t' to 'unsigned int', possible loss of data
+#endif
+
 #include "nlopt.hpp"
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 
 #include "BranchSiteModel.h"
 #include "MathSupport.h"
@@ -268,24 +277,29 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
-	double fg_scale = mProportions[0]*mScaleQw0 +
+	const double fg_scale = mProportions[0]*mScaleQw0 +
 							mProportions[1]*mScaleQ1  +
 							mProportions[2]*mScaleQ1  +
 							mProportions[3]*mScaleQ1;
 
-	double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
-std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
-std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
-std::cerr << "Q0 " << mScaleQw0 << std::endl;
-std::cerr << "Q1 " << mScaleQ1 << std::endl;
+	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-	//bg_scale = 1./6.7185278743730619;
-	//fg_scale = 3./14.791518378456241;
+	std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+	std::cerr << "The following is the value print by CodeML" << std::endl;
+	std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+	std::cerr << "Q0 " << mScaleQw0 << std::endl;
+	std::cerr << "Q1 " << mScaleQ1 << std::endl;
+
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+
+	// Precompute the proportions to be used
+	const double p0 = mProportions[0];
+	const double p1_p2b = mProportions[1]+mProportions[3];
+	const double p2a = mProportions[2];
 
 	// For all (valid) sites. Don't parallelize: time increases and results are errant
 	const size_t num_sites = mForest.getNumSites();
@@ -294,28 +308,29 @@ std::cerr << "Q1 " << mScaleQ1 << std::endl;
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
-		//double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
-		//		   (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site] +
-		//		   mProportions[2]*mLikelihoods[2*num_sites+site];
+		// double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
+		//		     (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site] +
+		//		      mProportions[2]*mLikelihoods[2*num_sites+site];
 		double p = mLikelihoods[0*num_sites+site];
 		if(p < 0) p = 0;
-		else      p *= mProportions[0];
+		else      p *= p0;
 		double x = mLikelihoods[1*num_sites+site];
-		if(x > 0) p += (mProportions[1]+mProportions[3])*x;
+		if(x > 0) p += p1_p2b*x;
 		x = mLikelihoods[2*num_sites+site];
-		if(x > 0) p += mProportions[2]*x;
+		if(x > 0) p += p2a*x;
 
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
 
 		// DBG
 		//if(p <= 0)
-		//{
-		//	std::cerr << std::setw(4) << site << ' ';
-		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
-		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << std::endl;
-		//}
+		{
+			std::cerr << std::setw(4) << site << ' ';
+			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << p << std::endl;
+		}
 	}
 
 	// Output the trace message and update maxima found
@@ -372,16 +387,24 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
-std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
-std::cerr << "Q0 " << mScaleQw0 << std::endl;
-std::cerr << "Q1 " << mScaleQ1 << std::endl;
-std::cerr << "Q2 " << mScaleQw2 << std::endl;
+	std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+	std::cerr << "The following is the value print by CodeML" << std::endl;
+	std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+	std::cerr << "Q0 " << mScaleQw0 << std::endl;
+	std::cerr << "Q1 " << mScaleQ1 << std::endl;
+	std::cerr << "Q2 " << mScaleQw2 << std::endl;
+
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+
+	// Precompute the proportions to be used
+	const double p0  = mProportions[0];
+	const double p1  = mProportions[1];
+	const double p2a = mProportions[2];
+	const double p2b = mProportions[3];
 
 	// For all (valid) sites. Don't parallelize: time increase and the results are errant
 	const size_t num_sites = mForest.getNumSites();
@@ -397,13 +420,13 @@ std::cerr << "Q2 " << mScaleQw2 << std::endl;
 		//
 		double p = mLikelihoods[0*num_sites+site];
 		if(p < 0) p = 0;
-		else      p *= mProportions[0];
+		else      p *= p0;
 		double x = mLikelihoods[1*num_sites+site];
-		if(x > 0) p += mProportions[1]*x;
+		if(x > 0) p += p1*x;
 		x = mLikelihoods[2*num_sites+site];
-		if(x > 0) p += mProportions[2]*x;
+		if(x > 0) p += p2a*x;
 		x = mLikelihoods[3*num_sites+site];
-		if(x > 0) p += mProportions[3]*x;
+		if(x > 0) p += p2b*x;
 
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
