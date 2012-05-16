@@ -17,6 +17,10 @@
 #include "CodonFrequencies.h"
 #include "Types.h"
 #include "ForestExport.h"
+#include "DAGScheduler.h"
+
+/// Global scaling factor
+static const double GLOBAL_SCALING_FACTOR = 1.0e3;
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
@@ -142,7 +146,7 @@ public:
 
 	/// Return the total number of branches
 	///
-	/// @return The totaal number of branches
+	/// @return The total number of branches
 	///
 	size_t getNumBranches(void) const {return mNumBranches;}
 
@@ -209,6 +213,12 @@ public:
 	///
 	void prepareNewReductionNoReuse(void);
 #endif
+
+	/// Load the forest into a DAG
+	///
+	/// @param[in] aDAG The DAG structure to be loaded
+	///
+	void loadForestIntoDAG(DAGScheduler& aDAG) const;
 
 #ifdef CHECK_ALGO
 	/// Check the forest structure for obvious mistakes (useful only during development)
@@ -327,6 +337,12 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
+	/// Walker for the loadForestIntoDAGroutine.
+	///
+	/// @param[in,out] aDAG The DAG to be built.
+	/// @param[in] aNode The current node of the forest to be visited.
+	///
+	void loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode) const;
 
 private:
 	size_t					mNumSites;					///< Number of sites

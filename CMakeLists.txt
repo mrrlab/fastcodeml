@@ -24,6 +24,7 @@ set(SRCS
 	ForestExport.cpp
 	ParseParameters.cpp
 	VerbosityLevels.cpp
+	DAGScheduler.cpp
 )
 
 

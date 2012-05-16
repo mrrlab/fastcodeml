@@ -284,11 +284,11 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-	std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
-	std::cerr << "The following is the value print by CodeML" << std::endl;
-	std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
-	std::cerr << "Q0 " << mScaleQw0 << std::endl;
-	std::cerr << "Q1 " << mScaleQ1 << std::endl;
+	//std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+	//std::cerr << "The following is the value printed by CodeML" << std::endl;
+	//std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+	//std::cerr << "Q0 " << mScaleQw0 << std::endl;
+	//std::cerr << "Q1 " << mScaleQ1 << std::endl;
 
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
@@ -305,6 +305,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+	double scale = 0;
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -319,19 +320,22 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		x = mLikelihoods[2*num_sites+site];
 		if(x > 0) p += p2a*x;
 
+		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
+		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
 
 		// DBG
 		//if(p <= 0)
-		{
-			std::cerr << std::setw(4) << site << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << p << std::endl;
-		}
+		//{
+		//	std::cerr << std::setw(4) << site << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
+		//	std::cerr << std::scientific << std::setw(14) << p << std::endl;
+		//}
 	}
+	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)
@@ -387,12 +391,12 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 
-	std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
-	std::cerr << "The following is the value print by CodeML" << std::endl;
-	std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
-	std::cerr << "Q0 " << mScaleQw0 << std::endl;
-	std::cerr << "Q1 " << mScaleQ1 << std::endl;
-	std::cerr << "Q2 " << mScaleQw2 << std::endl;
+	//std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+	//std::cerr << "The following is the value printed by CodeML" << std::endl;
+	//std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+	//std::cerr << "Q0 " << mScaleQw0 << std::endl;
+	//std::cerr << "Q1 " << mScaleQ1 << std::endl;
+	//std::cerr << "Q2 " << mScaleQw2 << std::endl;
 
 	// Fill the Transition Matrix Sets
 	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
@@ -428,7 +432,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		x = mLikelihoods[3*num_sites+site];
 		if(x > 0) p += p2b*x;
 
-		x = (p > 0) ? log(p) : mMaxLnL-100000;
+		x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
 		lnl += x*mult[site];
 	}
 

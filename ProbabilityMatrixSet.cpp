@@ -42,7 +42,7 @@ void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 	//mMatrices[mFgBranch+num_matrices*3] = &mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT];
 }
 
-#define PREV_TIME
+//#define PREV_TIME
 
 void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,

@@ -29,6 +29,7 @@
 #include "BranchSiteModel.h"
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
+#include "DAGScheduler.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -247,6 +248,10 @@ int main(int ac, char **av)
 		timer.stop();
 	}
 #endif
+
+	// Load the forest into a DAG
+	DAGScheduler dag;
+	forest.loadForestIntoDAG(dag);
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;

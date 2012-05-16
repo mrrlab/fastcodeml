@@ -76,9 +76,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 			// Set leaves probability vector (Nt copies)
 #ifdef NEW_LIKELIHOOD
-			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0; // The rest already zeroed by assign()
+			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0*GLOBAL_SCALING_FACTOR; // The rest already zeroed by assign()
 #else
-			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0; // The rest already zeroed by assign()
+			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0*GLOBAL_SCALING_FACTOR; // The rest already zeroed by assign()
 #endif
 			// Count codons
 			codon_count[codon] += mult[site];
@@ -1323,4 +1323,32 @@ double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityM
 }
 
 #endif
+
+
+void Forest::loadForestIntoDAG(DAGScheduler& aDAG) const
+{
+	// Load all the individual trees
+	for(int i=static_cast<int>(mNumSites)-1; i >= 0; --i)
+	{
+		loadForestIntoDAGWalker(aDAG, &mRoots[i]);
+	}
+	aDAG.endLoadDependencies();
+
+	// For debugging dump the DAG content
+	//aDAG.dumpDAG(std::cerr);
+}
+
+void Forest::loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode) const
+{
+	// For all the node children
+	const unsigned int nc = aNode->mChildrenCount;
+	for(unsigned int i = 0; i < nc; ++i)
+	{
+		// Load a dependency
+		aDAG.loadDependency(reinterpret_cast<const void*>(aNode), reinterpret_cast<const void*>(aNode->mChildrenList[i]));
+
+		// If the dependant is on the same tree, continue recursively
+		if(aNode->isSameTree(i)) loadForestIntoDAGWalker(aDAG, aNode->mChildrenList[i]);
+	}
+}
 
