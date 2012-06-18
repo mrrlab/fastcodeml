@@ -384,8 +384,8 @@ void HighLevelCoordinator::doMaster(void)
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
 		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
-					 "  Lnl H0: " << std::setw(12) << std::setprecision(6) << mWorkTable->mResults[branch].mLnl[0] << 
-					 "  Lnl H1: " << std::setw(12) << std::setprecision(6) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
+					 "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0] << 
+					 "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
 	}
 
 	// Check if at least one site is under positive selection

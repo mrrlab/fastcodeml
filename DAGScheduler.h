@@ -5,6 +5,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <map>
 
 /// The high-performance DAG scheduler. Visits the DAG obeying the dependencies.
 ///
@@ -29,14 +30,16 @@ public:
 
 	/// Add a piece of DAG
 	///
-	/// @param[in] aFirst The object on which aDependant depends
-	/// @param[in] aDependant The object to be computed only when aFirst is ready
+	/// @param[in] aDependsOn The object on which aDependant depends
+	/// @param[in] aDependant The object to be computed only when aDependsOn is ready
 	///
-	void loadDependency(const void* aFirst, const void* aDependant);
+	void loadDependency(const void* aDependsOn, const void* aDependant);
 	
 	/// Signals dependencies load has finished.
 	///
-	void endLoadDependencies(void);
+	/// @param[in] aNumCodonSets Number of DAG copies (one for each codon classes)
+	///
+	void endLoadDependencies(unsigned int aNumCodonSets=1);
 
 	/// Get next item to process.
 	///
@@ -61,6 +64,8 @@ public:
 private:
 	std::set<const void*> mNodes;								///< Load the distinct node addresses
 	std::vector<std::pair<const void*, const void*> > mEdges;	///< Load the edges
+	std::map<const void*, int> mRefCounter;
+	std::map<const void*, int> mRefCounterSave;
 };
 
 #endif

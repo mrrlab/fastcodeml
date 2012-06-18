@@ -454,7 +454,11 @@ void TransitionMatrix::eigenQREV(void)
 FILE* fp = fopen("m.oct", "a");
 
 SaveToOctave(mCodonFreq, "PI", fp, 61, 1); //CHHS
+#ifdef USE_S_MATRIX
+SaveToOctave(mS, "S", fp, 61, 61); //CHHS
+#else
 SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
+#endif
 	try {
     if(mNumGoodFreq == N)
     {

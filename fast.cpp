@@ -323,13 +323,13 @@ int main(int ac, char **av)
 			if(cmd.mComputeHypothesis != 1)
 			{
 				std::cerr << "LnL0: ";
-				std::cerr << std::setprecision(6) << std::fixed << lnl0;
+				std::cerr << std::setprecision(15) << std::fixed << lnl0;
 				std::cerr << " Function calls: " << h0.getNumEvaluations() << "   ";
 			}
 			if(cmd.mComputeHypothesis != 0)
 			{
 				std::cerr << "LnL1: ";
-				std::cerr << std::setprecision(6) << std::fixed << lnl1;
+				std::cerr << std::setprecision(15) << std::fixed << lnl1;
 				std::cerr << " Function calls: " << h1.getNumEvaluations();
 			}
 			std::cerr << std::endl;

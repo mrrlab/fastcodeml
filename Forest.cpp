@@ -1333,9 +1333,6 @@ void Forest::loadForestIntoDAG(DAGScheduler& aDAG) const
 		loadForestIntoDAGWalker(aDAG, &mRoots[i]);
 	}
 	aDAG.endLoadDependencies();
-
-	// For debugging dump the DAG content
-	//aDAG.dumpDAG(std::cerr);
 }
 
 void Forest::loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode) const
@@ -1344,8 +1341,8 @@ void Forest::loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode
 	const unsigned int nc = aNode->mChildrenCount;
 	for(unsigned int i = 0; i < nc; ++i)
 	{
-		// Load a dependency
-		aDAG.loadDependency(reinterpret_cast<const void*>(aNode), reinterpret_cast<const void*>(aNode->mChildrenList[i]));
+		// Load a dependency (children should be computed before parent)
+		aDAG.loadDependency(reinterpret_cast<const void*>(aNode->mChildrenList[i]), reinterpret_cast<const void*>(aNode));
 
 		// If the dependant is on the same tree, continue recursively
 		if(aNode->isSameTree(i)) loadForestIntoDAGWalker(aDAG, aNode->mChildrenList[i]);
