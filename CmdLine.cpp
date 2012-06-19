@@ -125,7 +125,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_OPTIM_ALGO,
 		OPT_DELTA_VAL,
 		OPT_INIT_PARAM,
-		OPT_INIT_DEFAULT
+		OPT_INIT_DEFAULT,
+		OPT_EXTRA_DEBUG
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -172,6 +173,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_PARAM,		"--init-param",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_DEFAULT,		"-ic",					SO_NONE,	"Start from default parameter values and times from tree file" },
 		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
+		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disable it)" },
+		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -291,6 +294,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_INIT_DEFAULT:
 			mInitFromParams = true;
+			break;
+
+		case OPT_EXTRA_DEBUG:
+			mExtraDebug = atoi(args.OptionArg());
 			break;
 		}
 	}

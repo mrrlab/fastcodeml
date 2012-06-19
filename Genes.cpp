@@ -12,11 +12,6 @@
 
 Genes::~Genes()
 {
-	clear();
-}
-
-void Genes::clear(void)
-{
 	mDnaSpecies.clear();		
 	mDnaGene.clear();			
 	mSiteMultiplicity.clear();	

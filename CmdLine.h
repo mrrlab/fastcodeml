@@ -24,6 +24,7 @@ public:
 		mExportComputedTimes(UINT_MAX),
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
+		mExtraDebug(0),
 		mTreeFile(0),
 		mGeneFile(0),
 		mGraphFile(0),
@@ -61,6 +62,7 @@ public:
 	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
+	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
 	const char*		mTreeFile;				///< %Newick tree file name
 	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
@@ -76,7 +78,7 @@ public:
 
 
 private:
-	/// Implementation so this structure could be used without other modules be aware of its structure
+	/// Implementation so this structure could be used without other modules be aware of its internal structure
 	struct CmdLineImpl;
 	CmdLineImpl* mCmdLineImpl;
 };

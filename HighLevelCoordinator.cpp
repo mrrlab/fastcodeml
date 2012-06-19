@@ -421,8 +421,10 @@ void HighLevelCoordinator::doMaster(void)
 void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 {
 	// Initialize the two hypothesis
-	BranchSiteModelNullHyp h0(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
-	BranchSiteModelAltHyp  h1(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
+	//BranchSiteModelNullHyp h0(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
+	//BranchSiteModelAltHyp  h1(aForest, aCmdLine.mSeed, aCmdLine.mNoMaximization, false, aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient);
+	BranchSiteModelNullHyp h0(aForest, aCmdLine);
+	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
 
 	// This value signals that this is the first work request
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};

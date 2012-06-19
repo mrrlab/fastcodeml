@@ -173,6 +173,11 @@ int main(int ac, char **av)
 	Timer timer;
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
+	// Create the forest
+	Forest forest(cmd.mVerboseLevel);
+
+	// Enclose file loading into a block so temporary structures could be deleted when no more needed
+	{
 	// Load the genes
 	Phylip g(cmd.mVerboseLevel);
 	g.readFile(cmd.mGeneFile);
@@ -184,18 +189,14 @@ int main(int ac, char **av)
 	// Check coherence between the two files
 	g.checkNameCoherence(tree.getSpecies());
 
-	// Create and load the forest
-	Forest forest(cmd.mVerboseLevel);
+	// Load the forest
 	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+	}
 
 #ifdef CHECK_ALGO
 	// Check if forest is in shape
 	forest.checkForest(true);
 #endif
-
-	// Remove the genes and the phylotree objects not used anymore
-	tree.clear();
-	g.clear();
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
@@ -283,8 +284,10 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Initialize the models
-	BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
-	BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
+	//BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
+	//BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
+	BranchSiteModelNullHyp h0(forest, cmd);
+	BranchSiteModelAltHyp  h1(forest, cmd);
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
@@ -497,6 +500,9 @@ Usage:
 
 -ic  --init-default (no argument)
         Start from default parameter values and times from tree file
+
+-x  --extra-debug (required argument)
+		Extra debug parameter (zero disable it)
 
 @endverbatim
 */

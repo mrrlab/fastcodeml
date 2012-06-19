@@ -50,7 +50,7 @@ OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
 SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector)
-OPTION(USE_S_MATRIX       "Use S matrix in place of Q matrix" OFF)
+OPTION(USE_S_MATRIX       "Use S matrix in place of Q matrix (only with USE_LAPACK ON)" ON)
 
 
 # Search for OpenMP support

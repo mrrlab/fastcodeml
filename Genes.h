@@ -36,10 +36,6 @@ public:
 	/// Destructor
 	///
 	virtual ~Genes();
-	
-	/// Clean the object content that afterwards become invalid
-	///
-	void clear(void);
 
 	/// Load the gene file.
 	///

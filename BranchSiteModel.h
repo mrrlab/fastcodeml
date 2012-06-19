@@ -9,6 +9,7 @@
 #include "TransitionMatrix.h"
 #include "ProbabilityMatrixSet.h"
 #include "Forest.h"
+#include "CmdLine.h"
 
 /// Common routines for the Hypothesis test.
 ///
@@ -40,7 +41,8 @@ public:
 					bool aOnlyInitialStep,
 					bool aTrace,
 					unsigned int aOptAlgo,
-					double aDeltaValueForGradient)
+					double aDeltaValueForGradient,
+					unsigned int aExtraDebug)
 		: mForest(aForest),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
 		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
@@ -53,6 +55,7 @@ public:
 		  mOptAlgo(aOptAlgo),
 		  mInitType(INIT_TYPE_NONE),
 		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
+		  mExtraDebug(aExtraDebug),
 		  mSeed(aSeed)
 	{
 		setLimits(mNumTimes, mNumVariables);
@@ -245,6 +248,7 @@ protected:
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
 	InitVarStatus				mInitType;			///< From where the variables have been initialized
 	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
+	unsigned int				mExtraDebug;		///< Parameter for extra development testing
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -271,8 +275,14 @@ public:
 	/// @param[in] aOptAlgo The optimization algorithm to use
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
-	BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+	//BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
+	//	: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+
+
+	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
+						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient, aCmdLine.mExtraDebug), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -334,8 +344,13 @@ public:
 	/// @param[in] aOptAlgo The optimization algorithm to use
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	///
-	BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+	//BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
+	//	: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+
+	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
+						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient, aCmdLine.mExtraDebug), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///

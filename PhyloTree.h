@@ -38,10 +38,6 @@ public:
 	///
 	virtual void readFile(const char *aFilename) =0;
 
-	/// Clean the object content that afterwards become invalid
-	///
-	void clear(void);
-
 	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in.
 	///
 	/// @param[in] aOut Output stream

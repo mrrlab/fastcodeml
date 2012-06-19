@@ -15,6 +15,8 @@
 // If you want to reintroduce the optimal size computation, then uncomment the following line.
 //#define OPTIMAL_WORKAREAS
 
+#ifdef SAVE_OCTAVE
+
 #include <cstdio>
 #include <cstdlib>
 void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns) //CHHS
@@ -40,6 +42,7 @@ static int cnt=1;
     return;
 //CHHS Do not forget to close the file from outside this routine.
 } 
+#endif
 
 
 #ifndef USE_LAPACK
@@ -451,6 +454,8 @@ void TransitionMatrix::eigenQREV(void)
     */
     int i, j;
 
+#ifdef SAVE_OCTAVE
+
 FILE* fp = fopen("m.oct", "a");
 
 SaveToOctave(mCodonFreq, "PI", fp, 61, 1); //CHHS
@@ -458,6 +463,7 @@ SaveToOctave(mCodonFreq, "PI", fp, 61, 1); //CHHS
 SaveToOctave(mS, "S", fp, 61, 61); //CHHS
 #else
 SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
+#endif
 #endif
 	try {
     if(mNumGoodFreq == N)
@@ -490,6 +496,9 @@ SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
 			}
 		}
 #endif
+
+#ifdef SAVE_OCTAVE
+
 SaveToOctave(mU, "A", fp, 61, 61); //CHHS
 //for(i=0; i < 6; ++i)
 //{
@@ -497,13 +506,15 @@ SaveToOctave(mU, "A", fp, 61, 61); //CHHS
 //	printf("\n");
 //}
 //printf("\n");
+#endif
 
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is N and mV is used as workarea
         eigenRealSymm(mU, N, mD, mV);
+#ifdef SAVE_OCTAVE
 SaveToOctave(mU, "X", fp, 61, 61); //CHHS
 SaveToOctave(mD, "LAMBDA", fp, 61, 1); //CHHS
 fclose(fp);
-
+#endif
 		// Construct mV = pi^1/2*mU
 		for(j=0; j < N; ++j)
 		{

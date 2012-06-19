@@ -34,7 +34,7 @@ void DAGScheduler::endLoadDependencies(unsigned int aNumCodonSets)
 	mRefCounterSave = mRefCounter;
 
 	// For debugging dump the DAG content
-	dumpDAG(std::cerr);
+	//dumpDAG(std::cerr);
 }
 
 

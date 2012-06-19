@@ -5,12 +5,6 @@
 
 PhyloTree::~PhyloTree()
 {
-	clear();
-}
-
-
-void PhyloTree::clear(void)
-{
 	mTreeRoot.clearNode();
 	mLeavesSpecies.clear();
 	mInternalNodes.clear();

@@ -1,7 +1,9 @@
 
 #include "ProbabilityMatrixSet.h"
+#ifdef SAVE_OCTAVE
 #include <cstdio>
 extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns);
+#endif
 
 void ProbabilityMatrixSet::initForH0(unsigned int aFgBranch)
 {
@@ -68,12 +70,14 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 			aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 			mPrevTime[branch] = t;
 		}
+#ifdef SAVE_OCTAVE
 FILE *fp = fopen("m.oct", "a");
 SaveToOctave(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], "Yw0", fp, 61, 61);
 SaveToOctave(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], "Y1", fp, 61, 61);
 SaveToOctave(&aParams[branch], "T", fp, 1, 1);
 SaveToOctave(&t, "TS", fp, 1, 1);
 fclose(fp);
+#endif
 #if 0
 		if(aChangedQ1)
 		{
