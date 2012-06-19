@@ -32,6 +32,7 @@ public:
 	/// @param[in] aTrace If set print a trace of the maximization process
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
+	/// @param[in] aExtraDebug Extra parameter for testing during development
 	///
 	BranchSiteModel(Forest& aForest,
 					size_t aNumBranches,
@@ -269,16 +270,8 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
-	/// @param[in] aSeed Random number generator seed
-	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
-	/// @param[in] aTrace If set the maximization is traced
-	/// @param[in] aOptAlgo The optimization algorithm to use
-	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
+	/// @param[in] aCmdLine The command line parameters
 	///
-	//BranchSiteModelNullHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
-	//	: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 4, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
-
-
 	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
@@ -338,15 +331,8 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
-	/// @param[in] aSeed Random number generator seed
-	/// @param[in] aOnlyInitialStep If true no optimization is done, only the initial step is run
-	/// @param[in] aTrace If set the maximization is traced
-	/// @param[in] aOptAlgo The optimization algorithm to use
-	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
+	/// @param[in] aCmdLine The command line parameters
 	///
-	//BranchSiteModelAltHyp(Forest& aForest, unsigned int aSeed, bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo=0, double aDeltaValueForGradient=0.0)
-	//	: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(), aSeed, 5, aOnlyInitialStep, aTrace, aOptAlgo, aDeltaValueForGradient), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
-
 	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
