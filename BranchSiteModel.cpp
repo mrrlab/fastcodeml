@@ -345,8 +345,6 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		mMaxLnL = lnl;
 		printVar(aVar, lnl);
 	}
-	//std::cerr << lnl << std::endl;
-	//std::cerr << "FG: " << std::scientific << std::setprecision(6) << fg_scale << " BG: " << bg_scale << " LnL: " << lnl << std::endl;
 
 	return lnl;
 }
@@ -419,6 +417,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+	double scale = 0;
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -437,8 +436,11 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		x = mLikelihoods[3*num_sites+site];
 		if(x > 0) p += p2b*x;
 
-		x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
+		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
+		//lnl += x*mult[site];
+		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
+		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
 
 		if(mExtraDebug > 1)
 		{
@@ -450,6 +452,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 			std::cerr << std::scientific << std::setw(14) << p << std::endl;
 		}
 	}
+	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)

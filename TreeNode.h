@@ -112,7 +112,7 @@ public:
 	///
 	/// @param[in] aIndent The number of spaces to indent the printing (each level increases by 3)
 	///
-	void printFormatted(int aIndent) const;
+	void printFormatted(int aIndent=0) const;
 
 	/// Print the node in the format of %Newick tree.
 	///

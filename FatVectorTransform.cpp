@@ -90,7 +90,7 @@ void FatVectorTransform::printCountGoodElements(void) const
 
 		// Count the good elements
 		unsigned int cnt = 0;
-		for(unsigned int k=begin_idx; k < end_idx; ++k) if(mNodeStatus[b*mNumSites+k] == FatVectorTransform::SITE_EXISTS) ++cnt;
+		for(size_t k=begin_idx; k < end_idx; ++k) if(mNodeStatus[b*mNumSites+k] == FatVectorTransform::SITE_EXISTS) ++cnt;
 
 		std::cerr << std::setw(2) << b << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
 	}
@@ -169,13 +169,13 @@ void FatVectorTransform::compactMatrix(void)
 
 		// Get the compaction moves
 		VectorOfRanges cmds;
-		for(int site_to=end_idx-1; site_to >= static_cast<int>(begin_idx); --site_to)
+		for(int site_to=static_cast<int>(end_idx)-1; site_to >= static_cast<int>(begin_idx); --site_to)
 		{
 			// Select the first hole (from right)
 			if(mNodeStatus[b*mNumSites+site_to] == FatVectorTransform::SITE_EXISTS) continue;
 
 			// From left find the first valid entry
-			unsigned int site_from = begin_idx;
+			unsigned int site_from = static_cast<unsigned int>(begin_idx);
 
 			// Save the move command
 			cmds.push_back(Range(site_from, site_to));
@@ -214,16 +214,16 @@ void FatVectorTransform::compactMatrix(void)
 	// Try to combine contiguous ranges
 	for(b=0; b < mNumBranches; ++b)
 	{
-		const unsigned int nc = mCopyCmds[b].size();
+		const size_t nc = mCopyCmds[b].size();
 		if(nc < 2) continue;
 
 		// Start with two valid
-		for(unsigned int i=0; i < nc-1;)
+		for(size_t i=0; i < nc-1;)
 		{
 			if(mCopyCmds[b][i].from+1 == mCopyCmds[b][i+1].from && mCopyCmds[b][i].to == mCopyCmds[b][i+1].to+1)
 			{
 				// Try to extend the range to other with the same ordering
-				unsigned int j=i+1;
+				size_t j=i+1;
 				for(; j < nc-1; ++j)
 				{
 					if(mCopyCmds[b][j].from+1 != mCopyCmds[b][j+1].from || mCopyCmds[b][j].to != mCopyCmds[b][j+1].to+1) break;
@@ -231,9 +231,9 @@ void FatVectorTransform::compactMatrix(void)
 
 				// Update the command list
 				// Example: (100, 10, 1) (101, 9, 1) --> (100, 9, 2) (101, 9, 0)
-				mCopyCmds[b][i].cnt = j-i+1;
+				mCopyCmds[b][i].cnt = static_cast<unsigned int>(j-i+1);
 				mCopyCmds[b][i].to  = mCopyCmds[b][j].to;
-				for(unsigned int k=i+1; k <= j; ++k) mCopyCmds[b][k].cnt = 0;
+				for(size_t k=i+1; k <= j; ++k) mCopyCmds[b][k].cnt = 0;
 
 				i = j+1;
 			}
@@ -291,7 +291,7 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 	}
 
 	// For all leaves and all sets
-	const int len = leaves.size()*Nt;
+	const int len = static_cast<int>(leaves.size()*Nt);
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(len, leaves, aProbs) schedule(static)
 #else
@@ -302,7 +302,7 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 		const unsigned int node_idx = i / Nt;
 		const unsigned int node     = leaves[node_idx];
 		const unsigned int set_idx  = i-node_idx*Nt; // Was: i % Nt;
-		const unsigned int start    = VECTOR_SLOT*(mNumSites*Nt*node+set_idx*mNumSites);
+		const size_t       start    = VECTOR_SLOT*(mNumSites*Nt*node+set_idx*mNumSites);
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc=mCopyCmds[node-1].begin();
@@ -324,11 +324,11 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 
 void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, CacheAlignedDoubleVector& aProbs, unsigned int aLevel, unsigned int aNumSets)
 {
-	const int nsns = VECTOR_SLOT*mNumSites*aNumSets;
+	const int nsns = static_cast<int>(VECTOR_SLOT*mNumSites*aNumSets);
 	if(mNoTransformations)
 	{
-		const unsigned int num_branch = mBranchByLevel[aLevel].size();
-		for(unsigned int b=0; b < num_branch; ++b)
+		const size_t num_branch = mBranchByLevel[aLevel].size();
+		for(size_t b=0; b < num_branch; ++b)
 		{
 			const unsigned int   my_branch = mBranchByLevel[aLevel][b];
 			const unsigned int parent_node = mParentNode[my_branch];
@@ -363,8 +363,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 	else
 	{
 		// For all the branches just processed
-		const unsigned int num_branch = mBranchByLevel[aLevel].size();
-		for(unsigned int b=0; b < num_branch; ++b)
+		const size_t num_branch = mBranchByLevel[aLevel].size();
+		for(size_t b=0; b < num_branch; ++b)
 		{
 			const unsigned int branch      = mBranchByLevel[aLevel][b];
 			const unsigned int node        = branch + 1;
@@ -380,8 +380,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 
 				if(cnt == 1)
 				{
-					const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
-					const unsigned int to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
+					const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
+					const size_t to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
 
 					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 					{
@@ -392,8 +392,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 				}
 				else if(cnt > 1)
 				{
-					const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
-					const unsigned int to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
+					const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
+					const size_t to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
 
 					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 					{
@@ -410,8 +410,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 			for(; icr != endr; ++icr)
 			{
 				// Make local copies to increase locality
-				const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icr->from);
-				const unsigned int to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icr->to);
+				const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icr->from);
+				const size_t to_idx   = VECTOR_SLOT*(mNumSites*Nt*node+icr->to);
 
 				for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 				{
@@ -455,8 +455,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 
 					if(cnt == 1)
 					{
-						const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
-						const unsigned int to_idx   = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
+						const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
+						const size_t to_idx   = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
 
 						for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 						{
@@ -467,8 +467,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 					}
 					if(cnt > 1)
 					{
-						const unsigned int from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
-						const unsigned int to_idx   = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
+						const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
+						const size_t to_idx   = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
 
 						for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 						{

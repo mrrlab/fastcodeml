@@ -14,7 +14,7 @@ PhyloTree::~PhyloTree()
 #ifdef CHECK_ALGO
 void PhyloTree::printFormattedTree(void) const
 {
-	mTreeRoot.printFormatted(0);
+	mTreeRoot.printFormatted();
 }
 #endif
 

@@ -43,7 +43,7 @@ public:
 	/// @param[in] aNumBranches Number of branches
 	/// @param[in] aNumSites Number of sites
 	///
-	void initNodeStatus(unsigned int aNumBranches, unsigned int aNumSites)
+	void initNodeStatus(size_t aNumBranches, size_t aNumSites)
 	{
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
@@ -59,7 +59,7 @@ public:
 	/// @param[in] aNumBranches Number of branches
 	/// @param[in] aNumSites Number of sites
 	///
-	void initNodeStatusMinimal(unsigned int aNumBranches, unsigned int aNumSites)
+	void initNodeStatusMinimal(size_t aNumBranches, size_t aNumSites)
 	{
 		mNumBranches = aNumBranches;
 		mNumSites = aNumSites;
@@ -116,7 +116,7 @@ public:
 	///
 	/// @return The starting index in the fat vector
 	///
-	unsigned int getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
+	size_t getLowerIndex(unsigned int aBranch) const {return mLimits[aBranch].first;}
 
 	/// Get the number of items to be used for computation
 	///
@@ -124,7 +124,7 @@ public:
 	///
 	/// @return The count of sites to be used
 	///
-	unsigned int getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
+	size_t getCount(unsigned int aBranch) const {return mLimits[aBranch].second;}
 
 	/// Compact the fat vector at the leaves.
 	///
@@ -138,17 +138,17 @@ public:
 
 
 private:
-	unsigned int			mNumSites;				///< The number of valid sites.
-	unsigned int			mNumBranches;			///< The number of branches.
-	std::vector<int>		mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are as in BranchSitePositionStatus enum
+	size_t				mNumSites;				///< The number of valid sites.
+	size_t				mNumBranches;			///< The number of branches.
+	std::vector<int>	mNodeStatus;			///< For each (Branch, Site) (idx = branch*NumSites+site) the values are as in BranchSitePositionStatus enum
 
 	/// The values that mNodePresent array could take
 	///
 	enum BranchSitePositionStatus
 	{
-		SITE_EXISTS     = -2,						///< The position (Branch, Site) in mNodePresent exists
-		SITE_NOT_EXISTS = -1,						///< The position (Branch, Site) in mNodePresent refers to a not existent node
-		SITE_FIRST_NUM  =  0						///< if greater or equal to this value the position contains the index from which the value should be copied
+		SITE_EXISTS     = -2,					///< The position (Branch, Site) in mNodePresent exists
+		SITE_NOT_EXISTS = -1,					///< The position (Branch, Site) in mNodePresent refers to a not existent node
+		SITE_FIRST_NUM  =  0					///< if greater or equal to this value the position contains the index from which the value should be copied
 	};
 
 	/// Representation of a range to be copied and the number of items to be copied
@@ -182,7 +182,7 @@ private:
 	typedef std::vector<VectorOfRanges> VectorOfVectorOfRanges;					///< Vector of vectors of ranges
 	typedef std::vector<RangeNoCnt> VectorOfRangesNoCnt;						///< Vector of single item copy (from position, to position)
 	typedef std::vector<VectorOfRangesNoCnt> VectorOfVectorOfRangesNoCnt;		///< Vector of vectors of single item copies
-	typedef std::vector< std::pair<unsigned int, unsigned int> > VectorOfPairs;	///< Vector of pairs of values
+	typedef std::vector< std::pair<size_t, size_t> > VectorOfPairs;				///< Vector of pairs of values
 
 	VectorOfPairs						mLimits;				///< Lower index and total count for each branch
 	VectorOfVectorOfRanges				mCopyCmds;				///< Ranges to be copied to fill the holes (one list for each branch)

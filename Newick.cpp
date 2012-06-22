@@ -206,7 +206,7 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 		{
 			std::cerr << "Tree as read in PhyloTree" << std::endl;
 			printTree(info.trees.begin());
-			mTreeRoot.printFormatted(0);
+			mTreeRoot.printFormatted();
 			std::vector<TreeNode *>::const_iterator isp=mLeavesSpecies.begin();
 			const std::vector<TreeNode *>::const_iterator end=mLeavesSpecies.end();
 			for(; isp != end; ++isp) std::cerr << (*isp)->getLabel() << std::endl;

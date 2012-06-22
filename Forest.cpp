@@ -110,6 +110,13 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	for(; im != end; ++im) mTableInternalToBranchID[im->first] = im->second;
 
 #ifdef NEW_LIKELIHOOD
+	postLoad();
+#endif
+}
+
+#ifdef NEW_LIKELIHOOD
+void Forest::postLoad(void)
+{
     // Prepare the list of node id's by level
     std::vector<ForestNode*> next_level;
     std::vector<ForestNode*> curr_level;
@@ -168,7 +175,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	for(bool found=true; found;)
 	{
 		// Find the level with the maximum number of leaves
-		unsigned int max_len   = 0;
+		size_t max_len   = 0;
 		unsigned int max_level = 0;
 		unsigned int max_leaf  = 0;
 		unsigned int level = 0;
@@ -186,7 +193,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 			}
 			if(num_leaves == 0) continue;
 
-			unsigned int len = inbl->size();
+			size_t len = inbl->size();
 			if(len > max_len) {max_len = len; max_level = level; max_leaf = leaf;}
 
 		}
@@ -195,7 +202,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		found = false;
 		for(inbl=mNodesByLevel.begin()+max_level+1,level=max_level+1; inbl != mNodesByLevel.end(); ++inbl,++level)
 		{
-			const unsigned int len = inbl->size();
+			const size_t len = inbl->size();
 			if(len < max_len-1)
 			{
 				mNodesByLevel[level].push_back(mNodesByLevel[max_level][max_leaf]);
@@ -224,9 +231,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Record the dependencies between branches
 	mFatVectorTransform.setBranchDependencies(mNodesByLevel);
-
-#endif
 }
+#endif
 
 
 void Forest::reduceSubtrees(void)
@@ -850,7 +856,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
     std::vector< std::vector<ForestNode*> >::reverse_iterator inbl;
     for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl,++level)
     {
-		const int num_sites = inbl->size();
+		const int num_sites = static_cast<int>(inbl->size());
         const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
@@ -864,12 +870,12 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 			const unsigned int set_idx  = i / num_sites;
 			const unsigned int site_idx = i - set_idx * num_sites; // Was: unsigned int set_idx = i % num_sets;
             const unsigned int branch   = ((*inbl)[site_idx])->mBranchId;
-			const unsigned int start    = VECTOR_SLOT*(mNumSites*Nt*(branch+1)+mNumSites*set_idx+mFatVectorTransform.getLowerIndex(branch));
+			const size_t       start    = VECTOR_SLOT*(mNumSites*Nt*(branch+1)+mNumSites*set_idx+mFatVectorTransform.getLowerIndex(branch));
 
 			// For each branch, except the root, compute the transition
             aSet.doTransition(set_idx,
 							  branch,
-							  mFatVectorTransform.getCount(branch),
+							  static_cast<int>(mFatVectorTransform.getCount(branch)),
 							  &mProbs[start],
 							  &mProbsOut[start]);
         }
@@ -879,7 +885,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
     }
 
 	// Compute the final likelyhood
-	const int num_sites = mNumSites;
+	const int num_sites = static_cast<int>(mNumSites);
     const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
@@ -891,7 +897,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
     {
 		const unsigned int set_idx = i / num_sites;
 		const unsigned int site    = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
-		const unsigned int start   = VECTOR_SLOT*(set_idx*mNumSites+site);
+		const size_t       start   = VECTOR_SLOT*(set_idx*mNumSites+site);
 
 		// Take the result from branch 0 (the root)
         aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, &mProbs[start]);
@@ -1109,8 +1115,8 @@ void Forest::prepareNewReduction(ForestNode* aNode)
 		mFatVectorTransform.initNodeStatus(mNumBranches, mNumSites);
 
 		// Visit each site tree
-		unsigned int ns = mNumSites;
-		for(unsigned int i=0; i < ns; ++i) prepareNewReduction(&mRoots[i]);
+		size_t ns = mNumSites;
+		for(size_t i=0; i < ns; ++i) prepareNewReduction(&mRoots[i]);
 
 		// Print few statistics on the transformation
 		//mFatVectorTransform.printCountGoodElements();

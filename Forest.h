@@ -203,6 +203,10 @@ public:
 	const std::vector<std::string>& getNodeNames(void) const {return mNodeNames;}
 
 #ifdef NEW_LIKELIHOOD
+	/// All the preparatory steps needed for the Fat Vector approach.
+	///
+	void postLoad(void);
+
 	/// Analyze the forest to prepare the operation to be done to restore the contiguity to the grouped vector approach.
 	///
 	/// @param[in] aNode The node from which to start. If null then starts from all the trees' roots.
