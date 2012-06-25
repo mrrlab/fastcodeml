@@ -76,9 +76,17 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 			// Set leaves probability vector (Nt copies)
 #ifdef NEW_LIKELIHOOD
-			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0*GLOBAL_SCALING_FACTOR; // The rest already zeroed by assign()
+			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0
+#ifdef USE_GLOBAL_SCALING	
+				*GLOBAL_SCALING_FACTOR
+#endif
+				; // The rest already zeroed by assign()
 #else
-			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0*GLOBAL_SCALING_FACTOR; // The rest already zeroed by assign()
+			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0
+#ifdef USE_GLOBAL_SCALING	
+				*GLOBAL_SCALING_FACTOR
+#endif
+				; // The rest already zeroed by assign()
 #endif
 			// Count codons
 			codon_count[codon] += mult[site];

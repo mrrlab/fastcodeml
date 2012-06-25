@@ -308,7 +308,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+#ifdef USE_GLOBAL_SCALING
 	double scale = 0;
+#endif
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -326,8 +328,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
+#ifdef USE_GLOBAL_SCALING
 		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
-
+#endif
 		if(mExtraDebug > 1)
 		{
 			std::cerr << std::setw(4) << site << ' ';
@@ -337,7 +340,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
+#ifdef USE_GLOBAL_SCALING
 	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
+#endif
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)
@@ -417,7 +422,9 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+#ifdef USE_GLOBAL_SCALING
 	double scale = 0;
+#endif
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -440,8 +447,9 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		//lnl += x*mult[site];
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
+#ifdef USE_GLOBAL_SCALING
 		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
-
+#endif
 		if(mExtraDebug > 1)
 		{
 			std::cerr << std::setw(4) << site << ' ';
@@ -452,7 +460,9 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
+#ifdef USE_GLOBAL_SCALING
 	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
+#endif
 
 	// Output the trace message and update maxima found
 	if(aTrace && lnl > mMaxLnL)
