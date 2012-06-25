@@ -290,7 +290,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
-		std::cerr << "Q1 " << mScaleQ1 << std::endl;
+		std::cerr << "Q1 " << mScaleQ1 << std::endl << std::endl;
 	}
 
 	// Fill the Transition Matrix Sets
@@ -333,8 +333,8 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 			std::cerr << std::setw(4) << site << ' ';
 			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
 			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << p << std::endl;
+			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << " -> ";
+			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
 	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
@@ -398,7 +398,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
 		std::cerr << "Q1 " << mScaleQ1 << std::endl;
-		std::cerr << "Q2 " << mScaleQw2 << std::endl;
+		std::cerr << "Q2 " << mScaleQw2 << std::endl << std::endl;
 	}
 
 	// Fill the Transition Matrix Sets
@@ -448,8 +448,8 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
 			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
 			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[3*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << p << std::endl;
+			std::cerr << std::scientific << std::setw(14) << mLikelihoods[3*num_sites+site] << " -> ";
+			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
 	lnl -= scale*log(GLOBAL_SCALING_FACTOR);

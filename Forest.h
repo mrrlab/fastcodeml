@@ -20,7 +20,7 @@
 #include "DAGScheduler.h"
 
 /// Global scaling factor
-static const double GLOBAL_SCALING_FACTOR = 1.0e3;
+static const double GLOBAL_SCALING_FACTOR = 1.0;
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
