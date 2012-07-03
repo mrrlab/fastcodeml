@@ -68,14 +68,13 @@ double Ming2::minimizeFunction(std::vector<double>& aVars)
 	int np = static_cast<int>(aVars.size());
 	std::vector<double> space(np*(np*2+9+2));
 	std::vector<int> ispace(2*np);
-	const double e = 1e-8;
 
 	bool sy = std::cerr.sync_with_stdio(true);
 	mNoisy = mTrace ? 9 : 0;
 
 	mAlwaysCenter = false;
 	double lnL = 0;
-	int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0], &mUpperBound[0], &space[0], &ispace[0], e, np);
+	int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0], &mUpperBound[0], &space[0], &ispace[0], mRelativeError, np);
 	if(sts < 0) std::cerr << "Check ming2 convergence" << std::endl;
 	std::cerr.sync_with_stdio(sy);
 
@@ -83,7 +82,7 @@ double Ming2::minimizeFunction(std::vector<double>& aVars)
 }
 
 
-int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const double xu[], double space[], int ispace[], double e, int n)
+int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n)
 {
     /* n-variate minimization with bounds using the BFGS algorithm
          g0[n] g[n] p[n] x0[n] y[n] s[n] z[n] H[n*n] C[n*n] tv[2*n]
@@ -218,7 +217,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         h = max2(h, 1e-5);
         h = min2(h, am / 5.0);
         *f = f0;
-        alpha = LineSearch2(f, x0, p, h, am, min2(1e-3, e), tv, n);	/* n or nfree? */
+        alpha = LineSearch2(f, x0, p, h, am, min2(1e-3, rel_error), tv, n);	/* n or nfree? */
 
         if (alpha <= 0)
         {
@@ -251,9 +250,9 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         {
             fail = 0;
             for(i=0; i < n; ++i) x[i] = x0[i] + alpha * p[i];
-            w = min2(2., e * 1000.);
+            w = min2(2., rel_error * 1000.);
 
-            if(e < 1e-4 && e > 1e-6)
+            if(rel_error < 1e-4 && rel_error > 1e-6)
             {
                 w = 0.01;
             }
@@ -267,7 +266,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
                 goodtimes = 0;
             }
 
-            if ((n == 1 || goodtimes >= Ngoodtimes) && mSIZEp < (e > 1e-5 ? 1 : .001) && H_end(x0, x, f0, *f, e, e, n))
+            if ((n == 1 || goodtimes >= Ngoodtimes) && mSIZEp < (rel_error > 1e-5 ? 1 : .001) && H_end(x0, x, f0, *f, rel_error, rel_error, n))
             {
                 break;
             }

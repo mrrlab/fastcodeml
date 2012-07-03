@@ -43,6 +43,7 @@ public:
 					bool aTrace,
 					unsigned int aOptAlgo,
 					double aDeltaValueForGradient,
+					double aRelativeError,
 					unsigned int aExtraDebug)
 		: mForest(aForest),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
@@ -57,7 +58,8 @@ public:
 		  mInitType(INIT_TYPE_NONE),
 		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
 		  mExtraDebug(aExtraDebug),
-		  mSeed(aSeed)
+		  mSeed(aSeed),
+		  mRelativeError(aRelativeError)
 	{
 		setLimits(mNumTimes, mNumVariables);
 	}
@@ -253,6 +255,7 @@ protected:
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
+	double						mRelativeError;		///< Relative error to stop maximization
 };
 
 
@@ -275,7 +278,9 @@ public:
 	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient, aCmdLine.mExtraDebug), mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
+						  mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -307,13 +312,13 @@ private:
 	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/) {return *this;}
 
 private:
-	TransitionMatrix 	mQw0;			///< Q matrix for the omega0 case
-	TransitionMatrix 	mQ1;			///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSet mSet;			///< Set of matrices used for the tree visits
-	double				mPrevK;			///< Previous k value used to compute matrices
-	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
-	double				mScaleQw0;		///< Scale value for Qw0
-	double				mScaleQ1;		///< Scale value for Q1
+	TransitionMatrix 		mQw0;			///< Q matrix for the omega0 case
+	TransitionMatrix 		mQ1;			///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSet	mSet;			///< Set of matrices used for the tree visits
+	double					mPrevK;			///< Previous k value used to compute matrices
+	double					mPrevOmega0;	///< Previous w0 value used to compute matrices
+	double					mScaleQw0;		///< Scale value for Qw0
+	double					mScaleQ1;		///< Scale value for Q1
 };
 
 
@@ -336,7 +341,9 @@ public:
 	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient, aCmdLine.mExtraDebug), mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
+						  mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///
@@ -369,16 +376,16 @@ private:
 
 
 private:
-	TransitionMatrix    mQw0;			///< Q matrix for the omega0 case
-	TransitionMatrix    mQw2;			///< Q matrix for the omega2 case
-	TransitionMatrix    mQ1;  			///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSet mSet;			///< Set of matrices used for the tree visits
-	double				mPrevK;			///< Previous k value used to compute matrices
-	double				mPrevOmega0;	///< Previous w0 value used to compute matrices
-	double				mPrevOmega2;	///< Previous w2 value used to compute matrices
-	double				mScaleQw0;		///< Scale value for Qw0
-	double				mScaleQw2;		///< Scale value for Qw2
-	double				mScaleQ1;		///< Scale value for Q1
+	TransitionMatrix		mQw0;			///< Q matrix for the omega0 case
+	TransitionMatrix		mQw2;			///< Q matrix for the omega2 case
+	TransitionMatrix		mQ1;  			///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSet	mSet;			///< Set of matrices used for the tree visits
+	double					mPrevK;			///< Previous k value used to compute matrices
+	double					mPrevOmega0;	///< Previous w0 value used to compute matrices
+	double					mPrevOmega2;	///< Previous w2 value used to compute matrices
+	double					mScaleQw0;		///< Scale value for Qw0
+	double					mScaleQw2;		///< Scale value for Qw2
+	double					mScaleQ1;		///< Scale value for Q1
 };
 
 

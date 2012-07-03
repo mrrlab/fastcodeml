@@ -504,5 +504,8 @@ Usage:
 -x  --extra-debug (required argument)
 		Extra debug parameter (zero disable it)
 
+-re  --relative-error (required argument)
+        Relative error where to stop maximization
+
 @endverbatim
 */

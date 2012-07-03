@@ -597,7 +597,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		try
 		{
 			// Create the optimizer
-			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient);
+			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient, mRelativeError);
 
 			// Do the maximization
 			double maxl = optim.minimizeFunction(mVar);
@@ -667,7 +667,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	{
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
-    	opt->set_ftol_abs(1e-4);
+    	opt->set_ftol_rel(mRelativeError);
 		nlopt::srand(static_cast<unsigned long>(mSeed));
 	}
 	catch(std::exception& e)

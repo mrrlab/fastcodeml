@@ -126,7 +126,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_DELTA_VAL,
 		OPT_INIT_PARAM,
 		OPT_INIT_DEFAULT,
-		OPT_EXTRA_DEBUG
+		OPT_EXTRA_DEBUG,
+		OPT_REL_ERROR
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -175,6 +176,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
 		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disable it)" },
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
+		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization" },
+		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -298,6 +301,11 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_EXTRA_DEBUG:
 			mExtraDebug = atoi(args.OptionArg());
+			break;
+
+		case OPT_REL_ERROR:
+			mRelativeError = atof(args.OptionArg());
+			if(mRelativeError <= 0.0) mRelativeError = 1e-15;
 			break;
 		}
 	}

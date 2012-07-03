@@ -16,8 +16,11 @@ class CmdLine
 public:
 	/// Constructor.
 	///
+	/// Here are set the default values for the command line settable parameters
+	///
 	CmdLine() : 
 		mDeltaValueForGradient(0.0),
+		mRelativeError(1e-8),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
 		mBranch(UINT_MAX),
@@ -56,6 +59,7 @@ public:
 
 public:
 	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded default value)
+	double			mRelativeError;			///< Relative error to stop maximization
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)

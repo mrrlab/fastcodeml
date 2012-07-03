@@ -22,14 +22,16 @@ public:
 	/// @param[in] aLowerBound			Lower limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aDeltaForGradient	Delta used to compue the gradient
+	/// @param[in] aRelativeError		Relative error to stop computation
 	///
-	Ming2(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient) :
+	Ming2(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError) :
 			mModel(aModel),
 			mTrace(aTrace),
 			mTraceFun(false),
 			mLowerBound(aLowerBound),
 			mUpperBound(aUpperBound),
 			mDeltaForGradient(aDeltaForGradient),
+			mRelativeError(aRelativeError),
 			mAlwaysCenter(false),
 			mNoisy(0),
 			mIround(0),
@@ -54,12 +56,12 @@ private:
 	/// @param[in] xu Upper limits for x
 	/// @param[out] space Working space
 	/// @param[out] ispace Working space (integer)
-	/// @param[in] e Error (?)
+	/// @param[in] rel_error Relative Error (?)
 	/// @param[in] n Number of variables
 	///
 	/// @return Optimization status (-1 check convergence; 0 success; 1 fail)
 	///
-	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double e, int n);
+	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n);
 
 	/// Compute the gradient at point x
 	///
@@ -136,6 +138,7 @@ private:
 	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	double						mDeltaForGradient;	///< This is the original Small_Diff value
+	double						mRelativeError;		///< The relative error at which the computation stops
 	//unsigned int				mFgBranch;			///< The selected foreground branch
 
 private:
