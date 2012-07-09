@@ -83,14 +83,15 @@ void BranchSiteModel::setLimits(unsigned int aNumTimes, unsigned int aNumVariabl
 	mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
 	
 	// Set lower constrains							// Set upper constrains
-	mLowerBound.assign(aNumTimes, 4e-6);			mUpperBound.assign(aNumTimes, 50.0);	// T
+	//mLowerBound.assign(aNumTimes, 4e-6);			mUpperBound.assign(aNumTimes, 50.0);	// T
+	mLowerBound.assign(aNumTimes, 0);				mUpperBound.assign(aNumTimes, 50.0);	// T
 	mLowerBound.push_back(1e-6);					mUpperBound.push_back(1.0);				// w0
 	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
 #ifdef USE_ORIGINAL_PROPORTIONS
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x0 -> p0
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x1 -> p1
 #else
-	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0+p1
+	mLowerBound.push_back(1e-17);					mUpperBound.push_back(1.0);				// p0+p1
 	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0/(p0+p1)
 #endif
 	if(aNumVariables >= 5)

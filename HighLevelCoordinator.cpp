@@ -5,7 +5,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
-#include "mpi.h"
+#include <mpi.h>
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic pop
 #endif

@@ -1332,6 +1332,17 @@ double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityM
 			}
 		}
 	}
+#ifdef CHECK_ALGO
+	for(unsigned int dx=0; dx < nc; ++dx)
+	{
+			ForestNode *m = aNode->mChildrenList[dx];
+			const unsigned int branch_id = m->mBranchId;
+			std::cerr << branch_id << ' ';
+	}
+	std::cerr << '<' << aNode->mBranchId << ' ' << mNodeNames[aNode->mBranchId+1] << "> ";
+	for(int j=0; j<N;++j) std::cerr << anode_prob[j] << ' ';
+	std::cerr << std::endl;
+#endif
 
 	return anode_prob;
 }

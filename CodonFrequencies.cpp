@@ -2,6 +2,10 @@
 #include <cstring>
 #include "CodonFrequencies.h"
 
+#ifdef CHECK_ALGO
+#include <iostream>
+#include <iomanip>
+#endif
 
 CodonFrequencies* CodonFrequencies::mInstance = 0;
 
@@ -80,12 +84,13 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 	for(k=0; k < N; ++k) mCodonFrequencies[k] /= t;
 
 #ifdef CHECK_ALGO
-	for(k=0; k < N; ++k)
+	for(k=0; k < N64; ++k)
 	{
-		std::cerr << std::fixed << std::setprecision(10) << mCodonFrequencies[k] << ' ';
+		int kk = codon64to61(k);
+		double v = (kk < 0) ? 0.0 : mCodonFrequencies[kk];
+		std::cerr << std::fixed << std::setprecision(8) << std::setw(12) << v;
 		if(k % 4 == 3) std::cerr << std::endl;
 	}
-	std::cerr << std::endl;
 #endif
 }
 
