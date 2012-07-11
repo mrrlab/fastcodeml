@@ -30,6 +30,7 @@ public:
 
 	/// Add a piece of DAG
 	///
+	/// @param[in] aCopyId The current copy of the forest in which the dependency should be recorded
 	/// @param[in] aDependsOn The object on which aDependant depends
 	/// @param[in] aDependant The object to be computed only when aDependsOn is ready
 	///

@@ -224,7 +224,8 @@ public:
 #ifdef USE_DAG
 	/// Load the forest into a DAG
 	///
-	/// @param[in] aDAG The DAG structure to be loaded
+	/// @param[in] aMaxCopies Max number of forest copies for the various codon classes
+	/// @param[in] aCopyId The current copy entered
 	/// @param[in] aNode If null starts from the roots. It is used for recursive visit
 	///
 	void loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId=0, const ForestNode* aNode=0);
