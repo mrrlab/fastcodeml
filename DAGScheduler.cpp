@@ -1,4 +1,6 @@
 
+#ifdef USE_DAG
+
 #include <iostream>
 #include <iomanip>
 #include "DAGScheduler.h"
@@ -12,8 +14,11 @@ void DAGScheduler::clear(void)
 }
 
 
-void DAGScheduler::loadDependency(const void* aDependsOn, const void* aDependant)
+void DAGScheduler::loadDependency(unsigned int aCopyId, const void* aDependsOn, const void* aDependant)
 {
+	// for debug load only id == 0
+	if(aCopyId != 0) return;
+
 	// For debug put inside all the nodes
 	mNodes.insert(aDependsOn);
 	mNodes.insert(aDependant);
@@ -85,3 +90,4 @@ void DAGScheduler::dumpDAG(std::ostream& aOut) const
 	}
 }
 
+#endif

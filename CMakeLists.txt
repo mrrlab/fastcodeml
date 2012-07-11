@@ -48,8 +48,8 @@ OPTION(BUILD_NOT_SHARED   "Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
 OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
-SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector")
-SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector)
+SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
+SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_S_MATRIX       "Use S matrix in place of Q matrix (only with USE_LAPACK ON)" ON)
 
 
@@ -129,6 +129,9 @@ if(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 	add_definitions(-DNEW_LIKELIHOOD)
 endif(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 
+if(USE_LIKELIHOOD_METHOD MATCHES "DAG")
+	add_definitions(-DUSE_DAG)
+endif(USE_LIKELIHOOD_METHOD MATCHES "DAG")
 
 # Set paths
 if(USE_MPI)

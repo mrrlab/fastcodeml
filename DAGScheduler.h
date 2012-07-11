@@ -33,7 +33,7 @@ public:
 	/// @param[in] aDependsOn The object on which aDependant depends
 	/// @param[in] aDependant The object to be computed only when aDependsOn is ready
 	///
-	void loadDependency(const void* aDependsOn, const void* aDependant);
+	void loadDependency(unsigned int aCopyId, const void* aDependsOn, const void* aDependant);
 	
 	/// Signals dependencies load has finished.
 	///
@@ -61,6 +61,7 @@ public:
 	///
 	void dumpDAG(std::ostream& aOut) const;
 	
+
 private:
 	std::set<const void*> mNodes;								///< Load the distinct node addresses
 	std::vector<std::pair<const void*, const void*> > mEdges;	///< Load the edges

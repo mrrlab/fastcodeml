@@ -91,7 +91,8 @@ void BranchSiteModel::setLimits(unsigned int aNumTimes, unsigned int aNumVariabl
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x0 -> p0
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x1 -> p1
 #else
-	mLowerBound.push_back(1e-17);					mUpperBound.push_back(1.0);				// p0+p1
+	//mLowerBound.push_back(1e-17);					mUpperBound.push_back(1.0);				// p0+p1
+	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0+p1
 	mLowerBound.push_back(0.0);						mUpperBound.push_back(1.0);				// p0/(p0+p1)
 #endif
 	if(aNumVariables >= 5)
@@ -278,16 +279,30 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
 	const double fg_scale = mProportions[0]*mScaleQw0 +
 							mProportions[1]*mScaleQ1  +
 							mProportions[2]*mScaleQ1  +
 							mProportions[3]*mScaleQ1;
-
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+#else
+	const double fg_scale = mProportions[0]*mScaleQw0 + (1.0-mProportions[0])*mScaleQ1;
+	const double bg_scale = aVar[mNumTimes+3]*mScaleQw0 + (1.0-aVar[mNumTimes+3])*mScaleQ1;
+#endif
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+		const double fg_scale1 = mProportions[0]*mScaleQw0 +
+								mProportions[1]*mScaleQ1  +
+								mProportions[2]*mScaleQ1  +
+								mProportions[3]*mScaleQ1;
+		const double bg_scale1 = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+		double df = fg_scale-fg_scale1; if(df < 0) df = -df;
+		if(df > 1e-10) std::cerr << "@@@@ FG differs!" << std::endl;
+		df = bg_scale-bg_scale1; if(df < 0) df = -df;
+		if(df > 1e-10) std::cerr << "@@@@ BG differs!" << std::endl;
+		std::cerr << "FG:  " << std::setprecision(8) << fg_scale  << " BG:  " << bg_scale << std::endl;
+		std::cerr << "FG1: " << std::setprecision(8) << fg_scale1 << " BG1: " << bg_scale1 << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
@@ -390,16 +405,34 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
 
 	// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
 	const double fg_scale = mProportions[0]*mScaleQw0 +
 							mProportions[1]*mScaleQ1  +
 							mProportions[2]*mScaleQw2 +
 							mProportions[3]*mScaleQw2;
 
 	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+#else
+	const double fg_scale = mProportions[0]*mScaleQw0 +
+							mProportions[1]*mScaleQ1  +
+							(1.0-aVar[mNumTimes+2])*mScaleQw2;
+	const double bg_scale = aVar[mNumTimes+3]*mScaleQw0+(1.0-aVar[mNumTimes+3])*mScaleQ1;
+#endif
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+		const double fg_scale1 = mProportions[0]*mScaleQw0 +
+								mProportions[1]*mScaleQ1  +
+								mProportions[2]*mScaleQw2 +
+								mProportions[3]*mScaleQw2;
+
+		const double bg_scale1 = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+		double df = fg_scale-fg_scale1; if(df < 0) df = -df;
+		if(df > 1e-10) std::cerr << "@@@@ FG differs!" << std::endl;
+		df = bg_scale-bg_scale1; if(df < 0) df = -df;
+		if(df > 1e-10) std::cerr << "@@@@ BG differs!" << std::endl;
+		std::cerr << "FG:  " << std::setprecision(8) << fg_scale  << " BG:  " << bg_scale << std::endl;
+		std::cerr << "FG1: " << std::setprecision(8) << fg_scale1 << " BG1: " << bg_scale1 << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;

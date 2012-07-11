@@ -221,11 +221,14 @@ public:
 	void prepareNewReductionNoReuse(void);
 #endif
 
+#ifdef USE_DAG
 	/// Load the forest into a DAG
 	///
 	/// @param[in] aDAG The DAG structure to be loaded
+	/// @param[in] aNode If null starts from the roots. It is used for recursive visit
 	///
-	void loadForestIntoDAG(DAGScheduler& aDAG) const;
+	void loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId=0, const ForestNode* aNode=0);
+#endif
 
 #ifdef CHECK_ALGO
 	/// Check the forest structure for obvious mistakes (useful only during development)
@@ -344,13 +347,6 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
-	/// Walker for the loadForestIntoDAGroutine.
-	///
-	/// @param[in,out] aDAG The DAG to be built.
-	/// @param[in] aNode The current node of the forest to be visited.
-	///
-	void loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode) const;
-
 private:
 	size_t					mNumSites;					///< Number of sites
 	const double*			mCodonFreq;					///< Experimental codon frequencies
@@ -399,6 +395,11 @@ private:
 	std::vector< std::vector<ForestNode*> >		mVisitTree;				///< List of pointers to tree nodes (a list per site) in the non-recursive visit order
 	std::vector< std::vector<ForestNode*> >		mVisitTreeParents;		///< List of parent pointers for the corresponding nodes in the mVisitTree
 #endif
+
+#ifdef USE_DAG
+	DAGScheduler mDAG;		///< DAG Scheduler
+#endif
+
 };
 
 #endif

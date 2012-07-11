@@ -1349,28 +1349,38 @@ double* Forest::computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityM
 
 #endif
 
+#ifdef USE_DAG
 
-void Forest::loadForestIntoDAG(DAGScheduler& aDAG) const
+void Forest::loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId, const ForestNode* aNode)
 {
-	// Load all the individual trees
-	for(int i=static_cast<int>(mNumSites)-1; i >= 0; --i)
+	if(aNode)
 	{
-		loadForestIntoDAGWalker(aDAG, &mRoots[i]);
-	}
-	aDAG.endLoadDependencies();
-}
+		// For all the node children
+		const unsigned int nc = aNode->mChildrenCount;
+		for(unsigned int i = 0; i < nc; ++i)
+		{
+			// Load a dependency (children should be computed before parent)
+			mDAG.loadDependency(aCopyId, reinterpret_cast<const void*>(aNode->mChildrenList[i]), reinterpret_cast<const void*>(aNode));
 
-void Forest::loadForestIntoDAGWalker(DAGScheduler& aDAG, const ForestNode* aNode) const
-{
-	// For all the node children
-	const unsigned int nc = aNode->mChildrenCount;
-	for(unsigned int i = 0; i < nc; ++i)
+			// If the dependant is on the same tree, continue recursively
+			if(aNode->isSameTree(i)) loadForestIntoDAG(aMaxCopies, aCopyId, aNode->mChildrenList[i]);
+		}
+	}
+	else
 	{
-		// Load a dependency (children should be computed before parent)
-		aDAG.loadDependency(reinterpret_cast<const void*>(aNode->mChildrenList[i]), reinterpret_cast<const void*>(aNode));
+		// Load all the copies requested
+		for(unsigned int cp=0; cp < aMaxCopies; ++cp)
+		{
+			// Load all the individual trees
+			for(int i=static_cast<int>(mNumSites)-1; i >= 0; --i)
+			{
+				loadForestIntoDAG(aMaxCopies, cp, &mRoots[i]);
+			}
+		}
 
-		// If the dependant is on the same tree, continue recursively
-		if(aNode->isSameTree(i)) loadForestIntoDAGWalker(aDAG, aNode->mChildrenList[i]);
+		// Finalize the loading
+		mDAG.endLoadDependencies();
 	}
 }
+#endif
 

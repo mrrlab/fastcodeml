@@ -29,7 +29,6 @@
 #include "BranchSiteModel.h"
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
-#include "DAGScheduler.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -144,6 +143,9 @@ int main(int ac, char **av)
 #ifdef NON_RECURSIVE_VISIT
 													std::cerr << "NON_RECURSIVE_VISIT ";
 #endif
+#ifdef USE_DAG
+													std::cerr << "USE_DAG ";
+#endif
 #ifdef USE_ORIGINAL_PROPORTIONS
 													std::cerr << "USE_ORIGINAL_PROPORTIONS ";
 #endif
@@ -230,6 +232,11 @@ int main(int ac, char **av)
 	// Subdivide the trees in groups based on dependencies
 	forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
 
+#ifdef USE_DAG
+	// Load the forest into a DAG
+	forest.loadForestIntoDAG(Nt);
+#endif
+
 	// Get the time needed by data preprocessing
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
@@ -250,9 +257,6 @@ int main(int ac, char **av)
 	}
 #endif
 
-	// Load the forest into a DAG
-	DAGScheduler dag;
-	forest.loadForestIntoDAG(dag);
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;
@@ -284,8 +288,6 @@ int main(int ac, char **av)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Initialize the models
-	//BranchSiteModelNullHyp h0(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
-	//BranchSiteModelAltHyp  h1(forest, cmd.mSeed, cmd.mNoMaximization, cmd.mTrace, cmd.mOptimizationAlgo, cmd.mDeltaValueForGradient);
 	BranchSiteModelNullHyp h0(forest, cmd);
 	BranchSiteModelAltHyp  h1(forest, cmd);
 
