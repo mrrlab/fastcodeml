@@ -262,7 +262,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const bool changed_k  = isDifferent(aVar[mNumTimes+1], mPrevK);
 	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
-
+#if 0
 	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
 	if(changed_w0 || changed_k)
 	{
@@ -274,6 +274,33 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
 		mQ1.eigenQREV();
 	}
+#else
+	if(changed_k)
+	{
+#ifdef _MSC_VER
+		#pragma omp parallel sections default(none) shared(aVar)
+#else
+		#pragma omp parallel sections default(shared)
+#endif
+		{
+		   #pragma omp section
+		   {
+				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mQw0.eigenQREV();
+		   } 
+		   #pragma omp section
+		   {
+				mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
+				mQ1.eigenQREV();
+		   }
+		}
+	}
+	else if(changed_w0)
+	{
+		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mQw0.eigenQREV();
+	}
+#endif
 
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
@@ -292,17 +319,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	if(mExtraDebug > 0)
 	{
-		const double fg_scale1 = mProportions[0]*mScaleQw0 +
-								mProportions[1]*mScaleQ1  +
-								mProportions[2]*mScaleQ1  +
-								mProportions[3]*mScaleQ1;
-		const double bg_scale1 = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
-		double df = fg_scale-fg_scale1; if(df < 0) df = -df;
-		if(df > 1e-10) std::cerr << "@@@@ FG differs!" << std::endl;
-		df = bg_scale-bg_scale1; if(df < 0) df = -df;
-		if(df > 1e-10) std::cerr << "@@@@ BG differs!" << std::endl;
-		std::cerr << "FG:  " << std::setprecision(8) << fg_scale  << " BG:  " << bg_scale << std::endl;
-		std::cerr << "FG1: " << std::setprecision(8) << fg_scale1 << " BG1: " << bg_scale1 << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
@@ -385,6 +402,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
 
 	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
+#if 0
 	if(changed_w0 || changed_k)
 	{
 		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
@@ -400,6 +418,66 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
 		mQ1.eigenQREV();
 	}
+#else
+	if(changed_k)
+	{
+#ifdef _MSC_VER
+		#pragma omp parallel sections default(none) shared(aVar)
+#else
+		#pragma omp parallel sections default(shared)
+#endif
+		{
+			#pragma omp section
+			{
+				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mQw0.eigenQREV();
+			} 
+			#pragma omp section
+			{
+				mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
+				mQ1.eigenQREV();
+			}
+			#pragma omp section
+			{
+				mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+				mQw2.eigenQREV();
+			}
+		}
+	}
+	else if(changed_w0 && changed_w2)
+	{
+#ifdef _MSC_VER
+		#pragma omp parallel sections default(none) shared(aVar)
+#else
+		#pragma omp parallel sections default(shared)
+#endif
+		{
+			#pragma omp section
+			{
+				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mQw0.eigenQREV();
+			} 
+			#pragma omp section
+			{
+				mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+				mQw2.eigenQREV();
+			}
+		}
+	}
+	else
+	{
+		if(changed_w0)
+		{
+			mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+			mQw0.eigenQREV();
+		}
+		if(changed_w2)
+		{
+			mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+			mQw2.eigenQREV();
+		}
+	}
+#endif
 
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
@@ -421,18 +499,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	if(mExtraDebug > 0)
 	{
-		const double fg_scale1 = mProportions[0]*mScaleQw0 +
-								mProportions[1]*mScaleQ1  +
-								mProportions[2]*mScaleQw2 +
-								mProportions[3]*mScaleQw2;
-
-		const double bg_scale1 = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
-		double df = fg_scale-fg_scale1; if(df < 0) df = -df;
-		if(df > 1e-10) std::cerr << "@@@@ FG differs!" << std::endl;
-		df = bg_scale-bg_scale1; if(df < 0) df = -df;
-		if(df > 1e-10) std::cerr << "@@@@ BG differs!" << std::endl;
-		std::cerr << "FG:  " << std::setprecision(8) << fg_scale  << " BG:  " << bg_scale << std::endl;
-		std::cerr << "FG1: " << std::setprecision(8) << fg_scale1 << " BG1: " << bg_scale1 << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
 		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;

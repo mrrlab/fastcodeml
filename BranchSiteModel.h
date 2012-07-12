@@ -32,6 +32,7 @@ public:
 	/// @param[in] aTrace If set print a trace of the maximization process
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
+	/// @param[in] aRelativeError Relative error for convergence
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	///
 	BranchSiteModel(Forest& aForest,

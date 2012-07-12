@@ -2,6 +2,8 @@
 #ifndef TRANSITION_MATRIX_H
 #define TRANSITION_MATRIX_H
 
+#include <iostream>
+
 #include <cstring>
 #include <cmath>
 #include <vector>
@@ -112,6 +114,7 @@ public:
 	///
 	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
+std::cerr << "(*)P" << std::endl;
 #ifdef USE_LAPACK
 
 		double ALIGN64 tmp[N*N64]; // The rows are padded to 64 to increase performance

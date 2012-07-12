@@ -30,8 +30,10 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 
+#ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
+#endif
 #endif
 #ifdef USE_MKL_VML
 #include <mkl_vml.h>
@@ -511,3 +513,31 @@ Usage:
 
 @endverbatim
 */
+/// @page vampir_page Using Vampir for profiling
+/// On Linux we used VampirTrace to collect profile data and Vampir to display the results (http://www.vampir.eu/).
+///
+/// Before invoking CMAKE define CXX=vtCC
+///
+/// Define CMAKE_BUILD_TYPE as: RelWithDebInfo
+///
+/// Run CMAKE and configure.
+///
+/// Then define CMAKE_CXX_FLAGS as: -vt:mt -vt:preprocess -DVTRACE
+///
+/// Then proceed as usual to build the executable.
+///
+/// To run the executable define before the following environment varables:
+///
+///     export VT_BUFFER_SIZE=256M
+///     export VT_VERBOSE=2
+///     export VT_MAX_FLUSHES=0
+///     #export VT_MAX_FLUSHES=128
+///     #export VT_MODE=STAT
+///     export VT_UNIFY=no
+///
+/// Due to a VampirTrace bug, kill the execution when the line "Executing [...]/vtunify" appears.
+/// Then rerun only the command that appears after "Executing".
+///
+/// Now you can analyze the results by running vampir on the *.otf file generated.
+///
+

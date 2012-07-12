@@ -19,7 +19,7 @@
 #include "ForestExport.h"
 #include "DAGScheduler.h"
 
-/// Global scaling factor (uncomment the define only if the scaling factor is different from one)
+// Global scaling factor (uncomment the define only if the scaling factor is different from one)
 //#define USE_GLOBAL_SCALING
 #ifdef USE_GLOBAL_SCALING
 static const double GLOBAL_SCALING_FACTOR = 1.0;
@@ -358,8 +358,10 @@ private:
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
-	typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
-							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
+	//typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
+	//						ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
+	typedef std::vector< std::vector<unsigned int> >
+							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*10+site_class 
 	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)
 
 	/// Here are global data that will be removed from the various (site) trees

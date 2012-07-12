@@ -119,6 +119,7 @@ public:
 	///
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
+std::cerr << "(*)CPV" << std::endl;
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 

@@ -12,8 +12,10 @@
 
 #include <iostream>
 #include <iomanip>
+#ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
+#endif
 #endif
 
 #include "HighLevelCoordinator.h"
@@ -202,7 +204,11 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 
 HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(MASTER_JOB), mSize(0), mNumInternalBranches(0), mWorkTable(0)
 {
+#ifdef _OPENMP
 	const int requested = MPI_THREAD_SERIALIZED;
+#else
+    const int requested = MPI_THREAD_SINGLE;
+#endif
 	int provided;
 	MPI_Init_thread(aRgc, aRgv, requested, &provided);
 	if(provided != requested)

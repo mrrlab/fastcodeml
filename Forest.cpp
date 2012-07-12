@@ -7,7 +7,6 @@
 #include <fstream>
 #include <cstring>
 #include <cstdio>
-#include <algorithm>
 #include "Forest.h"
 #include "ForestNode.h"
 #include "Exceptions.h"
@@ -15,8 +14,10 @@
 #include "MatrixSize.h"
 #include "CompilerHints.h"
 #include "VerbosityLevels.h"
+#ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
+#endif
 #endif
 
 // Initialize the mask table so the index corresponds to the bit position
@@ -354,7 +355,8 @@ void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort, unsign
 		if(mVerbose >= VERBOSE_INFO_OUTPUT) std::cerr << nthreads << std::setw(4) << sites_per_core_base << std::setw(4) << sites_per_core_plus << ' ';
 		for(size_t j=0; j < class_num_sites; ++j)
 		{
-			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			//unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j]/10;
 			
 			size_t idx = 0;
 			if(sites_per_core_plus == 0)
@@ -402,7 +404,8 @@ unsigned int Forest::totalEffort(const std::vector<unsigned int>& aEffort, unsig
 
 		for(size_t j=0; j < class_num_sites; ++j)
 		{
-			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			//unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j].first;
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][j]/10;
 			
 			size_t idx = 0;
 			if(sites_per_core_plus == 0)
@@ -550,7 +553,8 @@ void Forest::groupByDependency(bool aForceSerial)
 	size_t nc = class_dependencies.size();
 	
 	// One dependency classes
-	std::vector<std::pair<unsigned int, unsigned int> > one_class;
+	//std::vector<std::pair<unsigned int, unsigned int> > one_class;
+	std::vector<unsigned int> one_class;
 
 	// Transform the list in two lists one for each hypothesis and multiply the entries by the number of codon classes
 	for(unsigned int h=0; h <= 1; ++h)
@@ -570,7 +574,8 @@ void Forest::groupByDependency(bool aForceSerial)
 			{
 				for(size_t j=0; j < nt; ++j)
 				{
-					one_class.push_back(std::pair<unsigned int, unsigned int>(class_dependencies[i][j], cl));
+					//one_class.push_back(std::pair<unsigned int, unsigned int>(class_dependencies[i][j], cl));
+					one_class.push_back(class_dependencies[i][j]*10+cl);
 				}
 			}
 			mDependenciesClassesAndTrees[h].push_back(one_class);
@@ -594,7 +599,7 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, boo
 	if(num_threads < 2 || num_classes < 2) return false;
 
 	// This set will contain the site & class pairs that can be postponed without problem
-	std::set<std::pair<unsigned int, unsigned int> > jolly_sites;
+	std::set<unsigned int> jolly_sites;
 
 	// Check if the current level can be balanced
 	for(size_t k=0; k < num_classes; ++k)
@@ -626,7 +631,8 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, boo
 		for(unsigned int s=0; s < class_num_sites; ++s)
 		{
 			// mTreeRevDependencies[tj] should be ready before: t1 t2 t3
-			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+			//unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+			unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s]/10;
 			if(mTreeRevDependencies[site].empty()) ++new_possible_jolly_sites;
 		}
 
@@ -648,7 +654,7 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, boo
 		{
 			for(unsigned int j=0; j < needed_add; ++j)
 			{
-				std::set<std::pair<unsigned int, unsigned int> >::iterator it = jolly_sites.begin();
+				std::set<unsigned int>::iterator it = jolly_sites.begin();
 				mDependenciesClassesAndTrees[aHyp][k].push_back(*it);
 				jolly_sites.erase(it);
 			}
@@ -656,11 +662,11 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, boo
 		else if(needed_remove > 0)
 		{
 			// Save what remains at this level
-			std::vector<std::pair<unsigned int, unsigned int> > new_content;
+			std::vector<unsigned int> new_content;
 
 			for(unsigned int s=0; s < class_num_sites; ++s)
 			{
-				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s].first;
+				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][s]/10;
 				if(needed_remove && mTreeRevDependencies[site].empty())
 				{
 					jolly_sites.insert(mDependenciesClassesAndTrees[aHyp][k][s]);
@@ -730,7 +736,7 @@ void Forest::balanceEffort(const std::vector<unsigned int>& aEffort, unsigned in
 			for(size_t j=0; j < ns; ++j)
 			{
 				unsigned int idx = counts[nt][j];
-				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][idx].first;
+				unsigned int site = mDependenciesClassesAndTrees[aHyp][k][idx]/10;
 				total_effort_thread += aEffort[site];
 			}
 			if(total_effort_thread < min_effort) min_effort = total_effort_thread;
@@ -1030,18 +1036,24 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	const ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
 	for(; ivs != end; ++ivs)
 	{
-		const int len = ivs->size();
+		// Things that do not change in the parallel loop
+		const int len = static_cast<int>(ivs->size());
+		const std::vector<unsigned int>& tmp_ivs = *ivs;
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, ivs, aLikelihoods) schedule(static)
+		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, aLikelihoods) schedule(static)
 #else
 		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int site    = (*ivs)[i].first;
-			const unsigned int set_idx = (*ivs)[i].second;
+			//const unsigned int site    = (*ivs)[i].first;
+			//const unsigned int set_idx = (*ivs)[i].second;
+			//const unsigned int tmp     = (*ivs)[i];
+			const unsigned int tmp     = tmp_ivs[i];
+			const unsigned int site    = tmp/10;
+			const unsigned int set_idx = tmp-site*10;
 
 			computeLikelihoodsWalkerNR(aSet, set_idx, site);
 
@@ -1267,18 +1279,24 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	const ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
 	for(; ivs != end; ++ivs)
 	{
+		// Things that do not change in the parallel loop
 		const int len = static_cast<int>(ivs->size());
+		const std::vector<unsigned int>& tmp_ivs = *ivs;
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, ivs, aLikelihoods) schedule(static)
+		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, aLikelihoods) schedule(static)
 #else
 		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int site    = (*ivs)[i].first;
-			const unsigned int set_idx = (*ivs)[i].second;
+			//const unsigned int site    = (*ivs)[i].first;
+			//const unsigned int set_idx = (*ivs)[i].second;
+			//const unsigned int tmp     = (*ivs)[i];
+			const unsigned int tmp     = tmp_ivs[i];
+			const unsigned int site    = tmp/10;
+			const unsigned int set_idx = tmp-site*10;
 
 			double* g = computeLikelihoodsWalkerTC(&mRoots[site], aSet, set_idx);
 
