@@ -440,7 +440,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 
 void TransitionMatrix::eigenQREV(void)
 {
-std::cerr << "(*)EIGEN" << std::endl;
+//std::cerr << "(*)EIGEN" << std::endl;
 	  /*
        This finds the eigen solution of the rate matrix Q for a time-reversible
        Markov process, using the algorithm for a real symmetric matrix.
@@ -611,7 +611,7 @@ fclose(fp);
 
 void TransitionMatrix::eigenQREV(void)
 {
-std::cerr << "(*)EIGEN" << std::endl;
+//std::cerr << "(*)EIGEN" << std::endl;
 	/*
        This finds the eigen solution of the rate matrix Q for a time-reversible
        Markov process, using the algorithm for a real symmetric matrix.

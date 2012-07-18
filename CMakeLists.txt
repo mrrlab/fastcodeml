@@ -51,6 +51,7 @@ OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" 
 SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_S_MATRIX       "Use S matrix in place of Q matrix (only with USE_LAPACK ON)" ON)
+OPTION(USE_IDENTITY_MATRIX "Force identity matrix when time equal zero" OFF)
 
 
 # Search for OpenMP support
@@ -119,6 +120,11 @@ endif(USE_ORIGINAL_PROPORTIONS)
 if(USE_S_MATRIX AND USE_LAPACK)
 	add_definitions(-DUSE_S_MATRIX)
 endif(USE_S_MATRIX AND USE_LAPACK)
+
+if(USE_IDENTITY_MATRIX)
+	add_definitions(-DFORCE_IDENTITY_MATRIX)
+endif(USE_IDENTITY_MATRIX)
+
 
 # Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")

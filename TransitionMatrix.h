@@ -46,7 +46,7 @@ public:
 		mSqrtCodonFreq = cf->getSqrtCodonFrequencies();
 		cf->cloneGoodCodonIndicators(mGoodFreq);
 
-#ifndef USE_LAPACK
+#ifdef FORCE_IDENTITY_MATRIX
 		// Fill the identity matrix (to be used when time is zero)
 		memset(mIdentity, 0, N*N*sizeof(double));
 		for(int i=0; i < N; ++i) mIdentity[i*(1+N)] = 1.0;
@@ -114,7 +114,15 @@ public:
 	///
 	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
-std::cerr << "(*)P" << std::endl;
+#ifdef FORCE_IDENTITY_MATRIX
+		// if time is zero or almost zero, the transition matrix become an identity matrix
+		if(aT < 1e-100)
+		{
+			memcpy(aOut, mIdentity, N*N*sizeof(double));
+			return;
+		}
+#endif
+//std::cerr << "(*)P" << std::endl;
 #ifdef USE_LAPACK
 
 		double ALIGN64 tmp[N*N64]; // The rows are padded to 64 to increase performance
@@ -169,13 +177,6 @@ std::cerr << "(*)P" << std::endl;
 		//dsyrk_("U", "T", &N, &N, &D1, tmp, &N, &D0, aOut, &N);
 
 #else
-		// if time is zero or almost zero, the transition matrix become an identity matrix
-		if(aT < 1e-100)
-		{
-			memcpy(aOut, mIdentity, N*N*sizeof(double));
-			return;
-		}
-
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
 		double expt = exp(aT * mD[N-1]); // Remember, the eigenvalues are stored in reverse order
@@ -230,7 +231,7 @@ private:
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
-#ifndef USE_LAPACK
+#ifdef FORCE_IDENTITY_MATRIX 
 	double ALIGN64	mIdentity[N*N];	///< Pre-filled identify matix
 #endif
 	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies

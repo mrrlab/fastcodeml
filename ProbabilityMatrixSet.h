@@ -15,6 +15,10 @@
 #ifdef USE_MKL_VML
 #include <mkl_vml_functions.h>
 #endif
+#ifdef SAVE_OCTAVE
+extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns); //CHHS
+static int x = 1;
+#endif
 
 /// Set of probability matrices for all branches of a tree.
 ///
@@ -119,7 +123,6 @@ public:
 	///
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
-std::cerr << "(*)CPV" << std::endl;
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
@@ -133,6 +136,45 @@ std::cerr << "(*)CPV" << std::endl;
 		}
 #endif
 	}
+
+	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
+	///
+	/// @param[in] aSetIdx Which set to use (starts from zero)
+	/// @param[in] aBranch Which branch
+	/// @param[in] aCodon The leaf codon id (will supplant aGin)
+	/// @param[out] aGout The resulting vector
+	///
+	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout) const
+	{
+
+#ifdef SAVE_OCTAVE
+		if(x) {
+			FILE* fp = fopen("sasa.oct", "w");
+			SaveToOctave(mMatrices[aSetIdx*mNumMatrices+aBranch], "M", fp, N, N); //CHHS
+			fclose(fp);
+			x = 0;
+			int i;
+			int k = 5;
+			for(i=0; i < k; ++i) printf("%10.7lf\n", mMatrices[aSetIdx*mNumMatrices+aBranch][k*N+i]);
+			for(i=k; i < N; ++i) printf("%10.7lf\n", mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+k]);
+		}
+#endif
+
+#ifdef USE_LAPACK
+		int i = 0;
+		for(; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
+		for(; i < N; ++i)      aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+		//dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
+
+		elementWiseMult(aGout, mInvCodonFreq);
+#else
+		for(int r=0; r < N; ++r)
+		{
+			aGout[r] = mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+aCodon];
+		}
+#endif
+	}
+
 #else
 
 	///	Multiply the aMin fat-vector by the precomputed exp(Q*t) matrix

@@ -295,7 +295,7 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(len, leaves, aProbs) schedule(static)
 #else
-	#pragma omp parallel for default(shared) schedule(static)
+	#pragma omp parallel for default(shared) schedule(runtime)
 #endif
 	for(int i=0; i < len; ++i)
 	{
@@ -350,7 +350,7 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 #ifdef _MSC_VER
 				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults, nsns) schedule(static)
 #else
-				#pragma omp parallel for default(shared) schedule(static)
+				#pragma omp parallel for default(shared) schedule(runtime)
 #endif
                 for(int i=0; i < nsns; ++i)
                 {
@@ -435,7 +435,7 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 #ifdef _MSC_VER
 				#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults, nsns) schedule(static)
 #else
-				#pragma omp parallel for default(shared) schedule(static)
+				#pragma omp parallel for default(shared) schedule(runtime)
 #endif
                 for(int i=0; i < nsns; ++i)
                 {

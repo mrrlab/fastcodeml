@@ -54,10 +54,11 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const  std::vector<double>& aParams)
 {
 	int num_matrices = mNumMatrices;
+
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams, num_matrices, aAnyMatrixChanged) schedule(static)
 #else
-	#pragma omp parallel for default(shared) schedule(static)
+	#pragma omp parallel for default(shared) schedule(runtime)
 #endif
 	for(int branch=0; branch < num_matrices; ++branch)
 	{
@@ -100,7 +101,7 @@ fclose(fp);
 #endif
 #else
 		aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-		aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
+		aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 #endif
 	}
 }
@@ -118,7 +119,7 @@ void ProbabilityMatrixSet::computeMatrixSetH1(const TransitionMatrix& aQw0,
 #ifdef _MSC_VER
 	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, aParams, num_matrices) schedule(static)
 #else
-	#pragma omp parallel for default(shared) schedule(static)
+	#pragma omp parallel for default(shared) schedule(runtime)
 #endif
 	for(int branch=0; branch < num_matrices; ++branch)
 	{

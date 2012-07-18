@@ -205,7 +205,11 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(MASTER_JOB), mSize(0), mNumInternalBranches(0), mWorkTable(0)
 {
 #ifdef _OPENMP
+#ifdef VTRACE
+    const int requested = MPI_THREAD_SINGLE;
+#else
 	const int requested = MPI_THREAD_SERIALIZED;
+#endif
 #else
     const int requested = MPI_THREAD_SINGLE;
 #endif

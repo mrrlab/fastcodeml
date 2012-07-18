@@ -42,6 +42,7 @@ struct ForestNode
 	unsigned short				mChildrenCount;				///< Number of children of this node
 	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
+	int							mLeafCodon;					///< On a leaf set to the corresponding codon number, otherwise -1
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD
 	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
@@ -59,7 +60,7 @@ struct ForestNode
 
 	/// Constructor
 	///
-	ForestNode() : mChildrenSameTreeFlags(0xFFFF), mChildrenCount(0), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
+	ForestNode() : mChildrenSameTreeFlags(0xFFFF), mChildrenCount(0), mBranchId(0), mOwnTree(0), mLeafCodon(-1), mParent(0), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
 					, mFirstChild(false), mChildIdx(0)
 #endif
@@ -105,7 +106,8 @@ struct ForestNode
 	///
 	ForestNode(const ForestNode& aNode)
 		: mChildrenSameTreeFlags(aNode.mChildrenSameTreeFlags),
-		  mChildrenCount(aNode.mChildrenCount), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree), mParent(aNode.mParent),
+		  mChildrenCount(aNode.mChildrenCount), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree),
+		  mLeafCodon(aNode.mLeafCodon), mParent(aNode.mParent),
 		  mInternalNodeId(aNode.mInternalNodeId), mChildrenList(aNode.mChildrenList)
 #ifdef NON_RECURSIVE_VISIT
 					, mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
@@ -134,6 +136,7 @@ struct ForestNode
 		{
 			mChildrenList			= aNode.mChildrenList;
 			mParent					= aNode.mParent;
+			mLeafCodon				= aNode.mLeafCodon;
 #ifndef NEW_LIKELIHOOD
 			memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
 #endif
@@ -252,8 +255,8 @@ struct ForestNode
 		aOut << '<' << ((mBranchId  != UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
 	
 		// Print the ID
-		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << ") ";
-		else                            aOut << '('                    << '|' << mBranchId << ") ";
+		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << '|' << mLeafCodon << ") ";
+		else                            aOut << '('                    << '|' << mBranchId << '|' << mLeafCodon << ") ";
 
 		// Print the indexes of the codons accumulated till this node
 		if(mPreprocessingSupport)

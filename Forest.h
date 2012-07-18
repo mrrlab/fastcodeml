@@ -314,7 +314,7 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
-	double* computeLikelihoodsWalkerTC(ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
+	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -348,6 +348,11 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
+inline static unsigned int getSiteNum(unsigned int aPair) {return aPair >> 2;}
+inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
+inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
+
+
 private:
 	size_t					mNumSites;					///< Number of sites
 	const double*			mCodonFreq;					///< Experimental codon frequencies
@@ -361,7 +366,7 @@ private:
 	//typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
 	//						ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
 	typedef std::vector< std::vector<unsigned int> >
-							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*10+site_class 
+							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*4+site_class 
 	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)
 
 	/// Here are global data that will be removed from the various (site) trees
