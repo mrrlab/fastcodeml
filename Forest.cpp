@@ -1286,7 +1286,8 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 {
 	// To speedup the inner OpenMP parallel loop, this is precomputed
 	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
-	ForestNode* tmp_roots = &mRoots[0];
+	const ForestNode* tmp_roots = &mRoots[0];
+	double* likelihoods = &aLikelihoods[0];
 
 	ListDependencies::iterator ivs=mDependenciesClassesAndTrees[aHyp].begin();
 	const ListDependencies::iterator end=mDependenciesClassesAndTrees[aHyp].end();
@@ -1297,7 +1298,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		const unsigned int* tmp_ivs = &(*ivs)[0];
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, aLikelihoods) schedule(static)
+		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
 #else
 		#pragma omp parallel for default(shared) schedule(runtime)
 #endif
@@ -1310,7 +1311,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 
 			const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
 
-			aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+			likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
 		}
 	}
 }

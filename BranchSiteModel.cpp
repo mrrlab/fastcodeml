@@ -257,50 +257,42 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	// One more function invocation
 	++mNumEvaluations;
 
+	// Save the values to local variables to speedup access
+	const double omega0 = aVar[mNumTimes+0];
+	const double kappa  = aVar[mNumTimes+1];
+
 	// Check if steps can be skipped
-	const bool changed_w0 = isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	const bool changed_k  = isDifferent(aVar[mNumTimes+1], mPrevK);
-	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
-	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
-#if 0
-	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
-	if(changed_w0 || changed_k)
-	{
-		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
-		mQw0.eigenQREV();
-	}
-	if(changed_k)
-	{
-		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
-		mQ1.eigenQREV();
-	}
-#else
+	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+	const bool changed_k  = isDifferent(kappa, mPrevK);
+	if(changed_w0) mPrevOmega0 = omega0;
+	if(changed_k)  mPrevK      = kappa;
+
+	// Fill the matrices and compute their eigen decomposition.
 	if(changed_k)
 	{
 #ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(aVar)
+		#pragma omp parallel sections default(none) shared(omega0, kappa)
 #else
 		#pragma omp parallel sections default(shared)
 #endif
 		{
 		   #pragma omp section
 		   {
-				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
 				mQw0.eigenQREV();
 		   } 
 		   #pragma omp section
 		   {
-				mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
+				mScaleQ1  = mQ1.fillMatrix(kappa);
 				mQ1.eigenQREV();
 		   }
 		}
 	}
 	else if(changed_w0)
 	{
-		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+		mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
 		mQw0.eigenQREV();
 	}
-#endif
 
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
@@ -393,53 +385,41 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	// One more function invocation
 	++mNumEvaluations;
 
-	// Check if steps can be skipped
-	const bool changed_w0 = isDifferent(aVar[mNumTimes+0], mPrevOmega0);
-	const bool changed_w2 = isDifferent(aVar[mNumTimes+4], mPrevOmega2);
-	const bool changed_k  = isDifferent(aVar[mNumTimes+1], mPrevK);
-	if(changed_w0) mPrevOmega0 = aVar[mNumTimes+0];
-	if(changed_w2) mPrevOmega2 = aVar[mNumTimes+4];
-	if(changed_k)  mPrevK      = aVar[mNumTimes+1];
+	// Save the values to local variables to speedup access
+	const double omega0 = aVar[mNumTimes+0];
+	const double omega2 = aVar[mNumTimes+4];
+	const double kappa  = aVar[mNumTimes+1];
 
-	// Fill the matrices and compute their eigen decomposition. Not worth the effort to parallelize this section.
-#if 0
-	if(changed_w0 || changed_k)
-	{
-		mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
-		mQw0.eigenQREV();
-	}
-	if(changed_w2 || changed_k)
-	{
-		mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
-		mQw2.eigenQREV();
-	}
-	if(changed_k)
-	{
-		mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
-		mQ1.eigenQREV();
-	}
-#else
+	// Check if steps can be skipped
+	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+	const bool changed_w2 = isDifferent(omega2, mPrevOmega2);
+	const bool changed_k  = isDifferent(kappa, mPrevK);
+	if(changed_w0) mPrevOmega0 = omega0;
+	if(changed_w2) mPrevOmega2 = omega2;
+	if(changed_k)  mPrevK      = kappa;
+
+	// Fill the matrices and compute their eigen decomposition.
 	if(changed_k)
 	{
 #ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(aVar)
+		#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
 #else
 		#pragma omp parallel sections default(shared)
 #endif
 		{
 			#pragma omp section
 			{
-				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
 				mQw0.eigenQREV();
 			} 
 			#pragma omp section
 			{
-				mScaleQ1  = mQ1.fillMatrix(                    aVar[mNumTimes+1]);
+				mScaleQ1  = mQ1.fillMatrix(kappa);
 				mQ1.eigenQREV();
 			}
 			#pragma omp section
 			{
-				mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+				mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
 				mQw2.eigenQREV();
 			}
 		}
@@ -447,19 +427,19 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	else if(changed_w0 && changed_w2)
 	{
 #ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(aVar)
+		#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
 #else
 		#pragma omp parallel sections default(shared)
 #endif
 		{
 			#pragma omp section
 			{
-				mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
 				mQw0.eigenQREV();
 			} 
 			#pragma omp section
 			{
-				mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+				mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
 				mQw2.eigenQREV();
 			}
 		}
@@ -468,16 +448,15 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	{
 		if(changed_w0)
 		{
-			mScaleQw0 = mQw0.fillMatrix(aVar[mNumTimes+0], aVar[mNumTimes+1]);
+			mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
 			mQw0.eigenQREV();
 		}
 		if(changed_w2)
 		{
-			mScaleQw2 = mQw2.fillMatrix(aVar[mNumTimes+4], aVar[mNumTimes+1]);
+			mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
 			mQw2.eigenQREV();
 		}
 	}
-#endif
 
 	// Compute all proportions
 	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);

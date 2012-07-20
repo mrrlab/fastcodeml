@@ -67,8 +67,8 @@ struct ForestNode
 	{
 #ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
+		mOtherTreeProb.reserve(2);
 #endif
-		//setAllFlagsSameTree();
 		mChildrenList.reserve(2);
 		mPreprocessingSupport = new ForestNodeSupport;
 	}
