@@ -94,4 +94,3 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 #endif
 }
 
-

@@ -40,7 +40,8 @@ public:
 	/// @param[in] aVerbose The verbosity level
 	///
 	explicit Forest(unsigned int aVerbose=0)
-							: mNumSites(0), mCodonFreq(0), mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX) {}
+							: mNumSites(0), mCodonFreq(0), mInvCodonFreq(0), mInv2CodonFreq(0),
+							  mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX) {}
 
 	/// Destructor
 	///
@@ -356,6 +357,8 @@ inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {retu
 private:
 	size_t					mNumSites;					///< Number of sites
 	const double*			mCodonFreq;					///< Experimental codon frequencies
+	const double*			mInvCodonFreq;
+	const double*			mInv2CodonFreq;
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
 	std::vector<double>		mSiteMultiplicity;			///< Multiplicity of the valid sites

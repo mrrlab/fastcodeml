@@ -15,6 +15,7 @@
 #include "MatrixSize.h"
 #include "CompilerHints.h"
 #include "VerbosityLevels.h"
+#include "Timer.h"
 #ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
@@ -111,6 +112,10 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
 	cf->setCodonFrequencies(codon_count, aCodonFrequencyModel);
 	mCodonFreq = cf->getCodonFrequencies();
+#ifdef BUNDLE_ELEMENT_WISE_MULT
+	mInvCodonFreq  = cf->getInvCodonFrequencies();
+	mInv2CodonFreq = cf->getCodonFreqInv2();
+#endif
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
 	std::map<unsigned int, unsigned int> map_internal_to_branchID;
@@ -324,17 +329,68 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	}
 }
 
+
+#ifdef USE_LAPACK
+#include "blas.h"
+#endif
+
 void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 {
 	// Initialize effort array
 	aEffort.clear();
 	aEffort.reserve(mNumSites);
 
-	// Effort is number of branches plus one to have always non zero values
+	// Measure the relative effort of doTransitionAtLeaf and doTransition
+#ifdef USE_LAPACK
+	// Number of measurement iterations
+	static const int NR = 10000;
+
+	// Prepare dummy data
+	double dummy[N];
+	double m[N*N];
+	double cf[N];
+	for(int i=0; i < N*N; ++i) m[i] = 0.1;
+	for(int i=0; i < N; ++i) cf[i] = 61.;
+	Timer timer;
+
+	// Measure doTransitionAtLeaf()
+	timer.start();
+	for(int k=0; k < NR; ++k)
+		for(int c=0; c < N; ++c)
+		{
+			int i = 0;
+			for(; i < c; ++i) dummy[i] = m[c*N+i];
+			for(; i < N; ++i) dummy[i] = m[i*N+c];
+
+#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+			elementWiseMult(dummy, cf);
+#endif
+		}
+	double time_leaf = timer.stop();
+
+	// Measure doTransition()
+	timer.start();
+	for(int i=0; i < NR; ++i)
+		for(int c=0; c < N; ++c)
+		{
+			dsymv_("U", &N, &D1, m, &N, dummy, &I1, &D0, dummy, &I1);
+
+#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+			elementWiseMult(dummy, cf);
+#endif
+		}
+	double time_non_leaf = timer.stop();
+	unsigned int effort_ratio = (unsigned int)(time_non_leaf/time_leaf+0.5);
+#else
+	unsigned int effort_ratio = 16;
+#endif
+	std::cerr << std::endl << "Effort ratio: " << effort_ratio << std::endl;
+
+	// Get the total cost per site
 	for(size_t i=0; i < mNumSites; ++i)
 	{
-		unsigned int cnt_aggressive = mRoots[i].countBranches(true)+1;
-		aEffort.push_back(cnt_aggressive);
+		unsigned int total_cost = mRoots[i].getCost(10, 10*effort_ratio, 1);
+		aEffort.push_back(total_cost);
 	}
 }
 
@@ -379,7 +435,7 @@ void Forest::printEffortByGroup(const std::vector<unsigned int>& aEffort, unsign
 		if(mVerbose >= VERBOSE_INFO_OUTPUT)
 		{
 			std::cerr << "Trees in class " << std::setw(3) << k << ": " << std::setw(4) << class_num_sites << " |";
-			for(unsigned int i=0; i < nthreads; ++i) std::cerr << std::setw(5) << core_effort[i];
+			for(unsigned int i=0; i < nthreads; ++i) std::cerr << std::setw(7) << core_effort[i];
 			std::cerr << std::endl;
 		}
 	}
@@ -695,51 +751,95 @@ bool Forest::balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, boo
 #endif
 }
 
-
 void Forest::balanceEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp)
 {
 #ifndef _OPENMP
 	return;
 #else
-	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
 	// This step makes sense only if run multithread and if there are more than one class
 	const unsigned int num_threads = omp_get_max_threads();
-	const size_t num_classes = mDependenciesClassesAndTrees[aHyp].size();
+	const size_t       num_classes = mDependenciesClassesAndTrees[aHyp].size();
 	if(num_threads < 2 || num_classes < 2) return;
 
-	// Balance each level
+	// Balance each level (except the first, that has all site the same effort)
 	for(size_t k=1; k < num_classes; ++k)
 	{
+		// Extract the number of sites for this class
 		const int class_num_sites = static_cast<int>(mDependenciesClassesAndTrees[aHyp][k].size());
-		const unsigned int over   = class_num_sites % num_threads;
-		const unsigned int blocks = class_num_sites / num_threads;
 
-		// Class 0 and classes without full blocks or with only one level (full or partial) cannot be equalized
-		if(blocks == 0) continue;
-		if(blocks == 1 && over == 0) continue;
-		//unsigned int levels = blocks + (over ? 1 : 0);
+		// Classes without full blocks or with only one level (full or partial) cannot be equalized
+		if(static_cast<unsigned int>(class_num_sites) <= num_threads) continue;
 
 		// Create helper list of indices per thread
-		std::vector<unsigned int> cnt;
-		std::vector< std::vector< unsigned int> > counts;
-		for(unsigned int j=0; j < num_threads; ++j) counts.push_back(cnt);
+		std::vector<unsigned int> idx;
+		std::vector< std::vector< unsigned int> > idx_per_thread;
+		for(unsigned int j=0; j < num_threads; ++j) idx_per_thread.push_back(idx);
 
 #ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(class_num_sites, counts) schedule(static)
+		#pragma omp parallel for default(none) shared(class_num_sites, idx_per_thread) schedule(static)
 #else
-		#pragma omp parallel for default(shared) schedule(runtime)
+		#pragma omp parallel for default(shared) schedule(static)
 #endif
-		for(int i=0; i < class_num_sites; ++i) counts[omp_get_thread_num()].push_back(i);
+		for(int i=0; i < class_num_sites; ++i) idx_per_thread[omp_get_thread_num()].push_back(i);
 
+		// LPT scheduling method
+		std::vector<unsigned int> effort_per_thread(num_threads, 0);
+
+		// Sort the efforts
+		std::vector<std::pair<unsigned int, int> > efforts;
+		for(int i=0; i < class_num_sites; ++i)
+		{
+			unsigned int site = getSiteNum(mDependenciesClassesAndTrees[aHyp][k][i]);
+			unsigned int effort = aEffort[site];
+
+			efforts.push_back(std::make_pair(effort, i));
+		}
+		std::sort(efforts.begin(), efforts.end());
+
+		// Assign to the least occupied
+		std::vector<unsigned int> new_dependencies_classes_and_trees(class_num_sites);
+		std::vector<unsigned int> next_position(num_threads, 0);
+		for(int i=class_num_sites-1; i >= 0; --i)
+		{
+			// Find the thread less occupied
+			unsigned int min_effort = UINT_MAX;
+			unsigned int min_effort_idx = 0;
+			for(unsigned int j=0; j < num_threads; ++j)
+			{
+				if(effort_per_thread[j] < min_effort)
+				{
+					min_effort = effort_per_thread[j];
+					min_effort_idx = j;
+				}
+			}
+
+			effort_per_thread[min_effort_idx] += efforts[i].first;
+
+			// Do something with the index
+			unsigned int pos = next_position[min_effort_idx];
+			++next_position[min_effort_idx];
+		}
+
+		// Print the results for checking
+		if(mVerbose >= VERBOSE_INFO_OUTPUT)
+		{
+			std::cerr << "H" << aHyp << " Balancing " << std::setw(3) << k << std::endl;
+			for(unsigned int j=0; j < num_threads; ++j)
+			{
+				std::cerr << std::setw(3) << j << std::setw(6) << effort_per_thread[j] << std::setw(4) << next_position[j] << std::endl;
+			}
+		}
+
+#if 0
 		unsigned int min_effort = UINT_MAX;
 		unsigned int max_effort = 0;
 		for(unsigned int nt=0; nt < num_threads; ++nt)
 		{
-			const size_t ns = counts[nt].size();
+			const size_t ns = idx_per_thread[nt].size();
 			unsigned int total_effort_thread = 0;
 			for(size_t j=0; j < ns; ++j)
 			{
-				unsigned int idx = counts[nt][j];
+				unsigned int idx = idx_per_thread[nt][j];
 				unsigned int site = getSiteNum(mDependenciesClassesAndTrees[aHyp][k][idx]);
 				total_effort_thread += aEffort[site];
 			}
@@ -758,6 +858,7 @@ void Forest::balanceEffort(const std::vector<unsigned int>& aEffort, unsigned in
 			//	std::cerr << std::endl;
 			//}
 		}
+#endif
 	}
 #endif
 }
@@ -1381,6 +1482,15 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 			}
 		}
 	}
+#if defined(BUNDLE_ELEMENT_WISE_MULT) && defined(USE_LAPACK)
+	if(nc == 2)
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+	else if(nc == 1)
+		elementWiseMult(anode_prob, mInvCodonFreq);
+	else
+		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
+#endif
+
 #ifdef CHECK_ALGO
 	for(unsigned int dx=0; dx < nc; ++dx)
 	{

@@ -20,6 +20,9 @@ extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *Fi
 static int x = 1;
 #endif
 
+// Uncomment to move the element wise multiplication up one level
+#define BUNDLE_ELEMENT_WISE_MULT
+
 //extern int num_matvect;
 /// Set of probability matrices for all branches of a tree.
 ///
@@ -128,7 +131,9 @@ public:
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
-		elementWiseMult(aGout, mInvCodonFreq);
+#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+	elementWiseMult(aGout, mInvCodonFreq);
+#endif
 #else
 		for(int r=0; r < N; ++r)
 		{
@@ -163,12 +168,15 @@ public:
 #endif
 
 #ifdef USE_LAPACK
+		// Simply copy the symmetric matrix column
+		// instead of: dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		int i = 0;
 		for(; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
 		for(; i < N; ++i)      aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
-		//dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
+#if !defined(BUNDLE_ELEMENT_WISE_MULT)
 		elementWiseMult(aGout, mInvCodonFreq);
+#endif
 #else
 		for(int r=0; r < N; ++r)
 		{

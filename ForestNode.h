@@ -347,6 +347,45 @@ struct ForestNode
 		return cnt;
 	}
 
+
+	/// Get the computation cost from the node to the leaves
+	///
+	/// @param[in] aAggressiveStrategy If true use the aggressive simplification strategy
+	///
+	/// @return The total number of branches of the forest
+	///
+	unsigned int getCost(unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const
+	{
+		unsigned int cost = 0;
+		unsigned int i;
+
+		// Visit the subtrees
+		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
+		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		for(i=0; irn != end; ++irn, ++i)
+		{
+			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
+			if(isSameTree(i))
+			{
+
+				if((*irn)->mLeafCodon >= 0)
+				{
+					cost += aCostAtLeaf;
+				}
+				else
+				{
+					cost += (*irn)->getCost(aCostAtLeaf, aCostIntern, aCostPtr)+aCostIntern;
+				}
+			}
+			else
+			{
+				cost += aCostPtr;
+			}
+		}
+	
+		return cost;
+	}
+
 	/// Bitmask for the mChildrenSameTreeFlags bitset
 	///
 	static const unsigned short mMaskTable[MAX_NUM_CHILDREN];

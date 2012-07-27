@@ -67,12 +67,14 @@ public:
 			{
 				mGoodCodon.set(k);
 				++mNumGoodCodons;
-				mCodonFreqInv[k] = 1./mCodonFrequencies[k];
+				mCodonFreqInv[k]  = 1./mCodonFrequencies[k];
+				mCodonFreqInv2[k] = mCodonFreqInv[k]*mCodonFreqInv[k];
 			}
 			else
 			{
 				mGoodCodon.reset(k);
-				mCodonFreqInv[k] = DBL_MAX;
+				mCodonFreqInv[k]  = DBL_MAX;
+				mCodonFreqInv2[k] = DBL_MAX;
 			}
 		}
 	}
@@ -107,6 +109,12 @@ public:
 	///
 	void cloneGoodCodonIndicators(std::bitset<N>& aGoodCodon) const {aGoodCodon = mGoodCodon;}
 
+	/// Return a pointer to the codon array of inverse frequencies at the n power
+	///
+	/// @return Pointer to the codon inverse of frequencies at the n power array 
+	///
+	const double* getCodonFreqInv2(void) const {return &mCodonFreqInv2[0];}
+
 private:
 	/// Set codon frequencies according to the F3x4 model
 	///
@@ -127,13 +135,14 @@ private:
 	SSEAlignedDoubleVector		mCodonFrequencies;			///< Experimental codon frequencies
 	SSEAlignedDoubleVector		mCodonFreqSqrt;				///< Square root of experimental codon frequencies
 	SSEAlignedDoubleVector		mCodonFreqInv;				///< Inverse of experimental codon frequencies (must be aligned for SSE instructions)
+	SSEAlignedDoubleVector		mCodonFreqInv2;				///< Experimental codon frequencies^-2
 	std::bitset<N>				mGoodCodon;					///< True if the corresponding codon frequency is not small
 	unsigned int				mNumGoodCodons;				///< Number of codons whose frequency is not zero
 
 protected:
 	/// Protected constructor
 	///
-	CodonFrequencies() : mCodonFrequencies(N, 1./static_cast<double>(N)), mCodonFreqSqrt(N, 1./sqrt(static_cast<double>(N))), mCodonFreqInv(N, static_cast<double>(N)), mNumGoodCodons(N)
+	CodonFrequencies() : mCodonFrequencies(N, 1./static_cast<double>(N)), mCodonFreqSqrt(N, 1./sqrt(static_cast<double>(N))), mCodonFreqInv(N, static_cast<double>(N)), mCodonFreqInv2(N, static_cast<double>(N*N)), mNumGoodCodons(N)
 	{
 		mGoodCodon.set();
 	}
