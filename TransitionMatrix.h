@@ -20,6 +20,8 @@
 #include "blas.h"
 #endif
 
+//extern int num_matmat;
+
 /// The transition matrix plus its eigen decomposition.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -114,6 +116,7 @@ public:
 	///
 	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
+		//num_matmat++;
 #ifdef FORCE_IDENTITY_MATRIX
 		// if time is zero or almost zero, the transition matrix become an identity matrix
 		if(aT < 1e-100)

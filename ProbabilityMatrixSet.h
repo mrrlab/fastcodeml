@@ -20,6 +20,7 @@ extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *Fi
 static int x = 1;
 #endif
 
+//extern int num_matvect;
 /// Set of probability matrices for all branches of a tree.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -123,6 +124,7 @@ public:
 	///
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
+		//num_matvect++;
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 

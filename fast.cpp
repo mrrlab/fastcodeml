@@ -43,6 +43,10 @@
 #include "HighLevelCoordinator.h"
 #endif
 
+//int num_eigenqrev = 0;
+//int num_matmat = 0;
+//int num_matvect = 0;
+
 /// Main program for FastCodeML.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -377,6 +381,9 @@ int main(int ac, char **av)
 	// Get the time needed by the parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
+	//std::cerr << "Num. eigenQREV: " << num_eigenqrev << std::endl;
+	//std::cerr << "Num. Matrix matrix: " << num_matmat << std::endl;
+	//std::cerr << "Num. Matrix vector: " << num_matvect << std::endl;
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions
 	}
