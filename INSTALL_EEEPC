@@ -1,5 +1,5 @@
 *) Create NLOpt in ~/lib
-./configure --prefix=/home/mac/lib/nlopt
+./configure --prefix=/home/eeepc/lib/nlopt
 make
 make install
 
@@ -8,10 +8,10 @@ cp libblas.a ~/lib
 cp liblapack.a ~/lib
 
 *) Setting environment variables
-export BLAS_LIB_DIR="/home/mac/lib" #we want to flexible here, hence we do not specify /usr/lib
-export LAPACK_LIB_DIR="/home/mac/lib" #we want to flexible here, hence we do not specify /usr/lib
-export NLOPT_LIB_DIR="/home/mac/lib/nlopt/lib"
-export NLOPT_INCLUDE_DIR="/home/mac/lib/nlopt/include"
+export BLAS_LIB_DIR="/home/eeepc/lib" #we want to flexible here, hence we do not specify /usr/lib
+export LAPACK_LIB_DIR="/home/eeepc/lib" #we want to flexible here, hence we do not specify /usr/lib
+export NLOPT_LIB_DIR="/home/eeepc/lib/nlopt/lib"
+export NLOPT_INCLUDE_DIR="/home/eeepc/lib/nlopt/include"
 export MATH_LIB_NAMES="blas;lapack;lapack;blas;gfortranbegin;gfortran"
 #export MPI_INCLUDE_PATH="/usr/include" #might not be necessary if CXX set correctly
 #export MPI_LIBRARY="/usr/lib" #might not be necessary if CXX set correctly
