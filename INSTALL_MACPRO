@@ -4,8 +4,8 @@ make
 make install
 
 *) Copy BLAS and LAPACK to ~/lib
-cp /usr/lib/libblas.a ~/lib 
-cp /usr/lib/liblapack.a ~/lib
+cp libblas.a ~/lib 
+cp liblapack.a ~/lib
 
 *) Setting environment variables
 export BLAS_LIB_DIR="/home/mac/lib" #we want to flexible here, hence we do not specify /usr/lib
