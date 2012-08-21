@@ -127,7 +127,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_PARAM,
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
-		OPT_REL_ERROR
+		OPT_REL_ERROR,
+		OPT_MAX_MKL_THREADS
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -178,6 +179,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
 		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization" },
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
+		{ OPT_MAX_MKL_THREADS,	"-mk",					SO_REQ_SEP,	"Maximum number of threads to use for the MKL parallel library (zero: no limits)" },
+		{ OPT_MAX_MKL_THREADS,	"--max-mkl-threads",	SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -307,6 +310,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mRelativeError = atof(args.OptionArg());
 			if(mRelativeError <= 0.0) mRelativeError = 1e-15;
 			break;
+
+		case OPT_MAX_MKL_THREADS:
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid MKL number of branches");
+			mMKLThreads = tmpi;
+			break;
 		}
 	}
 
@@ -335,6 +344,5 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
-	if(mInitFromParams) mTimesFromFile = false;
 }
 

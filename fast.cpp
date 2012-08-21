@@ -36,7 +36,8 @@
 #endif
 #endif
 #ifdef USE_MKL_VML
-#include <mkl_vml.h>
+//#include <mkl_vml.h>
+#include <mkl.h>
 #endif
 #include "Timer.h"
 #ifdef USE_MPI
@@ -60,8 +61,8 @@ int main(int ac, char **av)
 {
 	try
 	{
-	// If used, intitialize the MKL VML library
 #ifdef USE_MKL_VML
+	// If used, intitialize the MKL VML library
 	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
 #endif
 
@@ -83,6 +84,10 @@ int main(int ac, char **av)
 		num_threads = 1;
 		omp_set_num_threads(1);
 	}
+#ifdef USE_MKL_VML
+	// Set the optimum number of threads to be used for MKL library
+	if(cmd.mMKLThreads > 0 && num_threads > cmd.mMKLThreads) mkl_set_num_threads(cmd.mMKLThreads);
+#endif
 #ifndef _MSC_VER
 	// Experiment with scheduling options
 	omp_set_schedule(omp_sched_guided, 1);
@@ -200,6 +205,9 @@ int main(int ac, char **av)
 
 	// Check coherence between the two files
 	g.checkNameCoherence(tree.getSpecies());
+
+	// If times from file then check for null branch lengths for any leaf
+	if(cmd.mTimesFromFile) tree.checkNullBranchLengths();
 
 	// Load the forest
 	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
@@ -521,6 +529,9 @@ Usage:
 
 -re  --relative-error (required argument)
         Relative error where to stop maximization
+
+-mk  --max-mkl-threads
+        Maximum number of threads to use for the MKL parallel library (zero: no limits)
 
 @endverbatim
 */

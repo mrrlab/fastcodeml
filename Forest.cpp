@@ -1153,7 +1153,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 #ifdef _MSC_VER
 		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, aLikelihoods) schedule(static)
 #else
-		#pragma omp parallel for default(shared) schedule(runtime)
+		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{
@@ -1401,7 +1401,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 #ifdef _MSC_VER
 		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
 #else
-		#pragma omp parallel for default(shared) schedule(runtime)
+		#pragma omp parallel for default(shared) schedule(static)
 #endif
 		for(int i=0; i < len; ++i)
 		{

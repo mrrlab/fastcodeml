@@ -1,4 +1,6 @@
-
+//#ifdef USE_MKL_VML
+//#include <mkl.h>
+//#endif
 #include "ProbabilityMatrixSet.h"
 #ifdef SAVE_OCTAVE
 #include <cstdio>
@@ -53,6 +55,7 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 double aSfg,
 											 const  std::vector<double>& aParams)
 {
+    //mkl_set_num_threads(mkl_get_max_threads());
 	const int num_matrices = mNumMatrices;
 	const double* params = &aParams[0];
 
@@ -105,6 +108,7 @@ fclose(fp);
 		aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 #endif
 	}
+    //mkl_set_num_threads(1);
 }
 
 
@@ -116,6 +120,8 @@ void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
 											  double aSfg,
 											  const  std::vector<double>& aParams)
 {
+    //mkl_set_num_threads(mkl_get_max_threads());
+
 	// To speedup access to variables
 	const int num_matrices = mNumMatrices;
 	const double* params = &aParams[0];
@@ -150,5 +156,6 @@ void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
 #endif
 	//mMatrices[mFgBranch+mNumMatrices*2] = &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT];
 	//mMatrices[mFgBranch+mNumMatrices*3] = &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT];
+    //mkl_set_num_threads(1);
 }
 

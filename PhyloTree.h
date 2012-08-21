@@ -89,12 +89,19 @@ public:
 	///
 	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
+	///	Check if any leaf has an associated branch length equal zero.
+	///
+	/// @param[in] aTreeNode The node from which to start checking the tree. If not present starts from the root.
+	///
+	/// @exception FastCodeMLFatal If any leaf has null branch length associated
+	///
+	void checkNullBranchLengths(const TreeNode* aTreeNode=0) const;
+
 #ifdef CHECK_ALGO
 	/// Print the phylogenetic tree completed with all the info loaded.
 	///
 	void printFormattedTree(void) const;
 #endif
-
 
 protected:
 

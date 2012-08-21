@@ -153,9 +153,15 @@ public:
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
 	///
-	/// @param[in] aV0 The first optimization variables
-	/// @param[in] aV1 The second optimization variables
-	/// @param[out] aProportions The four proportions output
+	/// Meaning of the various classes:
+	/// - class 0: purifying evolution
+	/// - class 1: neutral evolution
+	/// - class 2a: positive selection on foreground branch and purifying on background
+	/// - class 2b: positive selection on foreground branch and neutral on background
+	///
+	/// @param[in] aV0 The first optimization variable
+	/// @param[in] aV1 The second optimization variable
+	/// @param[out] aProportions The four proportions (p0, p1, p2a, p2b) computed from aV0 and aV1
 	///
 	void getProportions(double aV0, double aV1, double* aProportions) const
 	{

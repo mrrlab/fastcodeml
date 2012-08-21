@@ -161,3 +161,28 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 }
 
 
+void PhyloTree::checkNullBranchLengths(const TreeNode* aTreeNode) const
+{
+	// Start with the tree root (don't check its branch length that is invalid)
+	if(aTreeNode == 0)
+	{
+		aTreeNode = &mTreeRoot;
+	}
+	else
+	{
+		// Check branch length. It should not be null for leaves
+		if(aTreeNode->isLeaf() && aTreeNode->getLen() < 1e-14)
+		{
+			std::ostringstream o;
+			o << "Null or missing branch length in tree file for leaf: " << aTreeNode->getLabel() << std::endl;
+			throw FastCodeMLFatal(o);
+		}
+	}
+
+	// Recurse
+	TreeNode *m;
+	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
+	{
+		checkNullBranchLengths(m);
+	}
+}
