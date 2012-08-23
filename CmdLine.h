@@ -28,7 +28,6 @@ public:
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
 		mExtraDebug(0),
-		mMKLThreads(5), // Optimum value from testing
 		mTreeFile(0),
 		mGeneFile(0),
 		mGraphFile(0),
@@ -41,7 +40,6 @@ public:
 		mBranchFromFile(false),
 		mInitH1fromH0(false),
 		mInitFromParams(false),
-		mMKLNested(false),
 		mCmdLineImpl(0) {}
 
 	/// Destructor.
@@ -69,7 +67,6 @@ public:
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
-	unsigned int	mMKLThreads;			///< Max number of threads to use for parallel MKL
 	const char*		mTreeFile;				///< %Newick tree file name
 	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
@@ -82,7 +79,6 @@ public:
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line 
-	bool			mMKLNested;				///< Use fake nesting for parallel MKL
 
 private:
 	/// Implementation so this structure could be used without other modules be aware of its internal structure

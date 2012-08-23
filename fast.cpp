@@ -84,21 +84,6 @@ int main(int ac, char **av)
 		num_threads = 1;
 		omp_set_num_threads(1);
 	}
-#ifdef USE_MKL_VML
-	// Simulate OMP_NESTED for Parallel MKL
-	if(cmd.mMKLNested)
-	{
-		omp_set_num_threads(num_threads + cmd.mMKLThreads);
-		// Assure parallel region not optimized out. Issue innocuous NOOP
-		#pragma omp parallel
-		if(omp_get_thread_num() == -9999) std::cerr << "Impossible" << std::endl;
-		omp_set_num_threads(num_threads);
-		mkl_set_dynamic(0);
-	}
-
-	// Set the optimum number of threads to be used for MKL library
-	if(cmd.mMKLThreads > 0 && num_threads > cmd.mMKLThreads) mkl_set_num_threads(cmd.mMKLThreads);
-#endif
 #ifndef _MSC_VER
 	// Experiment with scheduling options
 	omp_set_schedule(omp_sched_guided, 1);
