@@ -545,15 +545,16 @@ double Ming2::LineSearch2(double *f, const double x0[], const double p[], double
 
             if(step >= limit)
             {
-                if (mNoisy > 2) //CMV added correct #if
+                if(mNoisy > 2) //CMV added correct #if
+				{
                     for (; nsymb < 5; nsymb++)
                     {
                         printf(" ");
                     }
 
-                if (mNoisy > 2)
                     printf(" %12.6f%3c %6.4f", *f = f3, 'm', a3);
                     //printf(" %12.6f%3c %6.4f %5d", *f = f3, 'm', a3, mNumFunCall);
+				}
 
                 *f = f3;
                 return a3;

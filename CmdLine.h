@@ -41,6 +41,7 @@ public:
 		mBranchFromFile(false),
 		mInitH1fromH0(false),
 		mInitFromParams(false),
+		mMKLNested(false),
 		mCmdLineImpl(0) {}
 
 	/// Destructor.
@@ -81,7 +82,7 @@ public:
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line 
-
+	bool			mMKLNested;				///< Use fake nesting for parallel MKL
 
 private:
 	/// Implementation so this structure could be used without other modules be aware of its internal structure

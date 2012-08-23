@@ -128,7 +128,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
 		OPT_REL_ERROR,
-		OPT_MAX_MKL_THREADS
+		OPT_MAX_MKL_THREADS,
+		OPT_MKL_NESTED
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -181,6 +182,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
 		{ OPT_MAX_MKL_THREADS,	"-mk",					SO_REQ_SEP,	"Maximum number of threads to use for the MKL parallel library (zero: no limits)" },
 		{ OPT_MAX_MKL_THREADS,	"--max-mkl-threads",	SO_REQ_SEP,	"" },
+		{ OPT_MKL_NESTED,		"-mn",					SO_NONE,	"Enable nested MKL parallel execution" },
+		{ OPT_MKL_NESTED,		"--mkl-nested",			SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -315,6 +318,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid MKL number of branches");
 			mMKLThreads = tmpi;
+			break;
+
+		case OPT_MKL_NESTED:
+			mMKLNested = true;
 			break;
 		}
 	}

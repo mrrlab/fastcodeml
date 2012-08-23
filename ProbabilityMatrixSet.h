@@ -44,7 +44,7 @@ public:
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
-		mPrevTime     = new double[mNumMatrices];
+		mPrevTime     = new double[aNumMatrices];
 	}
 
 	/// Destructor.

@@ -892,8 +892,11 @@ void Forest::printDependenciesClassesAndTrees(void)
 	unsigned int cntAggressive = 0;
 	for(i=0; i < aForest.mNumSites; ++i)
 	{
-		cnt += aForest.mRoots[i].countBranches();
-		cntAggressive += aForest.mRoots[i].countBranches(true);
+		const ForestNode& n = aForest.mRoots[i];
+		cnt += n.countBranches();
+		cntAggressive += n.countBranches(true);
+		//cnt += aForest.mRoots[i].countBranches();
+		//cntAggressive += aForest.mRoots[i].countBranches(true);
 	}
 	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << static_cast<double>(cnt*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << static_cast<double>(cntAggressive*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;

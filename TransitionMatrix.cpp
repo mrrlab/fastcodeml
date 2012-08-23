@@ -360,8 +360,9 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* a
 #include "blas.h"
 #include "lapack.h"
 
+#if 1
 //
-//  Using LAPACK DSYEVR driver routine compute the eigenvalues and eigenvector of the symmetric input matrix aU[n*n]
+//  Using LAPACK DSYEVR driver routine to compute the eigenvalues and eigenvector of the symmetric input matrix aU[n*n]
 //  Reorders the output values so they are ordered as the ones computed by the original eigenRealSym() routine.
 //
 void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /* aIgnored */)
@@ -392,7 +393,6 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	// Compute the optimal size of the workareas
 	double opt_work;
 	int opt_iwork;
-    //dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
     dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
 	if(info != 0) throw std::runtime_error("Error sizing workareas");
 
@@ -413,7 +413,6 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	}
 #endif
     // Compute eigenvalues and eigenvectors for the full symmetric matrix
-    //dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &aDim, isuppz, work, &lwork, iwork, &liwork, &info);
     dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, work, &lwork, iwork, &liwork, &info);
 
 #ifdef OPTIMAL_WORKAREAS
@@ -436,6 +435,84 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
         }
     }
 }
+#else
+
+//#define OPTIMAL_WORKAREAS
+//
+//  Using LAPACK DSYEVD driver routine to compute all eigenvalues and eigenvectors of the symmetric input matrix aU[n*n]
+//	using a divide and conquer algorithm.
+//  Reorders the output values so they are ordered as the ones computed by the original eigenRealSym() routine.
+//
+void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /* aIgnored */)
+{
+    int info;
+    double ALIGN64 tmp_u[N*N64];
+
+#ifndef OPTIMAL_WORKAREAS
+	// Allocate fixed workareas
+    static const int lwork = 1+6*N+2*N*N;
+    double work[lwork];
+    static const int liwork = 3+5*N;
+    int iwork[liwork];
+#else
+	// Allocate fixed workareas
+    static const int lfwork = 1+6*N+2*N*N;
+    double fwork[lfwork];
+    static const int lfiwork = 3+5*N;
+    int fiwork[lfiwork];
+
+	// Prepare for getting the optimal sizes
+    int lwork=-1, liwork=-1;
+    double *work = fwork;
+    int *iwork = fiwork;
+
+	// Compute the optimal size of the workareas
+	double opt_work;
+	int opt_iwork;
+    dsyevd_("V", "U", &aDim, aU, &aDim, aR, &opt_work, &lwork, &opt_iwork, &liwork, &info);
+	if(info != 0) throw std::runtime_error("Error sizing workareas");
+
+	//Notice that LAPACK stores an integer value in a double array
+    lwork = static_cast<unsigned long>(opt_work);
+    liwork = opt_iwork;
+
+	if(lwork > lfwork)
+	{
+		work = new double[lwork];
+		std::cerr << "Optimal work:  " << lwork << " (" << lfwork << ")" << std::endl;
+		
+	}
+    if(liwork > lfiwork)
+	{
+		iwork = new int[liwork];
+		std::cerr << "Optimal iwork: " << liwork << " (" << lfiwork << ")" << std::endl;
+	}
+#endif
+    // Compute eigenvalues and eigenvectors for the full symmetric matrix
+    dsyevd_("V", "U", &aDim, aU, &aDim, aR, work, &lwork, iwork, &liwork, &info);
+
+#ifdef OPTIMAL_WORKAREAS
+	// Release workareas, if allocated
+	if(lwork > lfwork)   delete [] work;
+	if(liwork > lfiwork) delete [] iwork;
+#endif
+
+	// Check convergence
+	if(info > 0) throw std::range_error("No convergence in dsyevd");
+	//if(info < 0) throw std::invalid_argument("Invalid parameter to dsyevd");
+
+	// Reorder eigenvectors (instead the eigenvalues are stored in reverse order)
+	memcpy(tmp_u, aU, aDim*aDim*sizeof(double));
+    for(int c=0; c < aDim; ++c)
+    {
+        for(int r=0; r < aDim; ++r)
+        {
+            aU[r*aDim+c] = tmp_u[(aDim-1-c)*aDim+r];
+        }
+    }
+}
+#endif
+
 #endif
 
 #ifdef USE_LAPACK
