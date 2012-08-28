@@ -21,6 +21,9 @@ public:
 	CmdLine() : 
 		mDeltaValueForGradient(0.0),
 		mRelativeError(1e-8),
+		mTreeFile(0),
+		mGeneFile(0),
+		mGraphFile(0),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
 		mBranch(UINT_MAX),
@@ -28,9 +31,6 @@ public:
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
 		mExtraDebug(0),
-		mTreeFile(0),
-		mGeneFile(0),
-		mGraphFile(0),
 		mIgnoreFreq(false),
 		mDoNotReduceForest(false),
 		mTimesFromFile(false),
@@ -60,6 +60,9 @@ public:
 public:
 	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded default value)
 	double			mRelativeError;			///< Relative error to stop maximization
+	const char*		mTreeFile;				///< %Newick tree file name
+	const char*		mGeneFile;				///< %Genes file name
+	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)
@@ -67,9 +70,6 @@ public:
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
-	const char*		mTreeFile;				///< %Newick tree file name
-	const char*		mGeneFile;				///< %Genes file name
-	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
 	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
 	bool			mTimesFromFile;			///< The initial value of the branch lengths is taken from the phylo tree file

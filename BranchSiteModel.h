@@ -244,21 +244,21 @@ private:
 
 protected:
 	Forest&						mForest;			///< The forest to be used
-	unsigned int				mNumTimes;			///< Number of branch lengths values
-	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
 	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
 	std::vector<double>			mUpperBound;		///< Upper limits for the variables to be optimized
 	double						mProportions[4];	///< The four proportions
 	double						mMaxLnL;			///< Maximum value of LnL found during optimization
-	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
+	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
 	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
 	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
 	bool						mTrace;				///< Enable maximization tracing
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
 	InitVarStatus				mInitType;			///< From where the variables have been initialized
-	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
+	unsigned int				mNumTimes;			///< Number of branch lengths values
+	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing
+	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer

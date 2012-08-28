@@ -497,7 +497,10 @@ void Forest::prepareDependencies(bool aForceSerial)
 	
 	// Compute effort per site
 	std::vector<unsigned int> effort;
-	measureEffort(effort);
+	if(!aForceSerial)
+	{
+		measureEffort(effort);
+	}
 
 	// Print count and total effort before balancing
 	if(!aForceSerial && mVerbose >= VERBOSE_INFO_OUTPUT)
@@ -1502,7 +1505,7 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 			std::cerr << branch_id << ' ';
 	}
 	std::cerr << '<' << aNode->mBranchId << ' ' << mNodeNames[aNode->mBranchId+1] << "> ";
-	for(int j=0; j<N;++j) std::cerr << anode_prob[j] << ' ';
+	for(int j=0; j<N; ++j) std::cerr << anode_prob[j] << ' ';
 	std::cerr << std::endl;
 #endif
 

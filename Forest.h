@@ -362,7 +362,6 @@ private:
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
 	std::vector<double>		mSiteMultiplicity;			///< Multiplicity of the valid sites
-	unsigned int			mVerbose;					///< If greather than zero prints more info
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
@@ -410,6 +409,7 @@ private:
 #ifdef USE_DAG
 	DAGScheduler mDAG;		///< DAG Scheduler
 #endif
+	unsigned int			mVerbose;					///< If greather than zero prints more info
 
 };
 

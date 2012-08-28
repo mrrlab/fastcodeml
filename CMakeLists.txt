@@ -225,9 +225,9 @@ add_executable(fast ${SRCS})
 
 # Link libraries
 target_link_libraries(fast nlopt)
-if(MATH_LIB_NAMES)
+if(MATH_LIB_NAMES AND USE_LAPACK)
 	target_link_libraries(fast ${MATH_LIB_NAMES})
-endif(MATH_LIB_NAMES)
+endif(MATH_LIB_NAMES AND USE_LAPACK)
 
 if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})

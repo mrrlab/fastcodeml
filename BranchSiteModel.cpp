@@ -211,8 +211,8 @@ void BranchSiteModel::initVariables(void)
 	unsigned int nv = mNumTimes+mNumVariables;
 	for(i=0; i < nv; ++i)
 	{
-		if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i];
-		if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
+		if(mVar[i] < mLowerBound[i])      mVar[i] = mLowerBound[i];
+		else if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
 	}
 }
 

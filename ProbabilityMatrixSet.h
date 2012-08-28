@@ -228,13 +228,13 @@ public:
 #endif
 
 private:
-	int				mNumMatrices;		///< Number of matrices in each set (should be int)
-	unsigned int	mNumSets;			///< Number of sets
-	int				mFgBranch;			///< Foreground branch number (should be int)
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
 	double*			mPrevTime;			///< Previous computation times (to check if they are sufficiently different to require a recomputation)
+	int				mNumMatrices;		///< Number of matrices in each set (should be int)
+	unsigned int	mNumSets;			///< Number of sets
+	int				mFgBranch;			///< Foreground branch number (should be int)
 };
 
 #endif
