@@ -23,7 +23,7 @@
 #endif
 
 // Initialize the mask table so the index corresponds to the bit position
-const unsigned short ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
+const unsigned char ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
 
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel)
@@ -348,9 +348,11 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 	// Prepare dummy data
 	double dummy[N];
 	double m[N*N];
+#if !defined(BUNDLE_ELEMENT_WISE_MULT)
 	double cf[N];
-	for(int i=0; i < N*N; ++i) m[i] = 0.1;
 	for(int i=0; i < N; ++i) cf[i] = 61.;
+#endif
+	for(int i=0; i < N*N; ++i) m[i] = 0.1;
 	Timer timer;
 
 	// Measure doTransitionAtLeaf()
@@ -819,7 +821,7 @@ void Forest::balanceEffort(const std::vector<unsigned int>& aEffort, unsigned in
 			effort_per_thread[min_effort_idx] += efforts[i].first;
 
 			// Do something with the index
-			unsigned int pos = next_position[min_effort_idx];
+			//unsigned int pos = next_position[min_effort_idx];
 			++next_position[min_effort_idx];
 		}
 
@@ -1426,10 +1428,13 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
-	bool first = true;
-	double* anode_prob = aNode->mProb[aSetIdx];
-
+	double* anode_prob    = aNode->mProb[aSetIdx];
 	const unsigned int nc = aNode->mChildrenCount;
+
+	// Shortcut
+	if(nc == 0) return anode_prob;
+
+	bool first = true;
 	for(unsigned int idx=0; idx < nc; ++idx)
 	{
 		// Copy to local var to avoid aliasing
@@ -1489,12 +1494,26 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 		}
 	}
 #if defined(BUNDLE_ELEMENT_WISE_MULT) && defined(USE_LAPACK)
-	if(nc == 2)
-		elementWiseMult(anode_prob, mInv2CodonFreq);
-	else if(nc == 1)
+	switch(nc)
+	{
+	case 1:
 		elementWiseMult(anode_prob, mInvCodonFreq);
-	else
+		break;
+	case 2:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		break;
+	case 3:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		elementWiseMult(anode_prob, mInvCodonFreq);
+		break;
+	case 4:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		break;
+	default:
 		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
+		break;
+	}
 #endif
 
 #ifdef CHECK_ALGO

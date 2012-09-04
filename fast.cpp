@@ -16,10 +16,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>
-#include <ctime>
-#include <climits>
-#include <cfloat>
 #include "CmdLine.h"
 #include "Newick.h"
 #include "Phylip.h"
@@ -36,8 +32,7 @@
 #endif
 #endif
 #ifdef USE_MKL_VML
-//#include <mkl_vml.h>
-#include <mkl.h>
+#include <mkl_vml.h>
 #endif
 #include "Timer.h"
 #ifdef USE_MPI

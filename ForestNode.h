@@ -12,6 +12,7 @@
 
 /// Max number of children for a given node (in reality they are only 2)
 static const int MAX_NUM_CHILDREN = 8;
+static const unsigned char ALL_CHILDREN_SAME_TREE = 0xFF;
 
 /// Support data needed only during forest preprocessing phase. It is deleted before the computation phase.
 ///
@@ -38,11 +39,11 @@ struct ForestNode
 {
 	// Field order suggested by icc
 	//'mChildrenSameTreeFlags, mBranchId, mOwnTree, mChildrenCount, mParent, mProb, mInternalNodeId, mChildrenList, mOtherTreeProb'
-	unsigned short				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
-	unsigned short				mChildrenCount;				///< Number of children of this node
+	unsigned char				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
+	unsigned char				mChildrenCount;				///< Number of children of this node
+	short						mLeafCodon;					///< On a leaf set to the corresponding codon number, otherwise -1
 	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
-	int							mLeafCodon;					///< On a leaf set to the corresponding codon number, otherwise -1
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD
 	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
@@ -60,10 +61,10 @@ struct ForestNode
 
 	/// Constructor
 	///
-	ForestNode() : mChildrenSameTreeFlags(0xFFFF), mChildrenCount(0), mBranchId(0), mOwnTree(0), mLeafCodon(-1), mParent(0), mInternalNodeId(0)
+	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
-					, mFirstChild(false), mChildIdx(0)
-#endif
+				   , mFirstChild(false), mChildIdx(0),
+#endif		  
 	{
 #ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
@@ -106,11 +107,10 @@ struct ForestNode
 	///
 	ForestNode(const ForestNode& aNode)
 		: mChildrenSameTreeFlags(aNode.mChildrenSameTreeFlags),
-		  mChildrenCount(aNode.mChildrenCount), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree),
-		  mLeafCodon(aNode.mLeafCodon), mParent(aNode.mParent),
-		  mInternalNodeId(aNode.mInternalNodeId), mChildrenList(aNode.mChildrenList)
+		  mChildrenCount(aNode.mChildrenCount), mLeafCodon(aNode.mLeafCodon), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree),
+		  mParent(aNode.mParent), mInternalNodeId(aNode.mInternalNodeId), mChildrenList(aNode.mChildrenList)
 #ifdef NON_RECURSIVE_VISIT
-					, mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
+		  , mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
 #endif
 #ifndef NEW_LIKELIHOOD
 		, mOtherTreeProb(aNode.mOtherTreeProb)
@@ -184,6 +184,7 @@ struct ForestNode
 	{
 		alignedFree(aPtr);
 	}
+
 #ifndef __MTA__
 	/// Placement new required by PGI compiler
 	///
@@ -237,6 +238,7 @@ struct ForestNode
 		// Do nothing
 	}
 #endif
+
 	/// Print from this node down
 	///
 	/// @param[in] aNodeNames The list of node names
@@ -388,7 +390,7 @@ struct ForestNode
 
 	/// Bitmask for the mChildrenSameTreeFlags bitset
 	///
-	static const unsigned short mMaskTable[MAX_NUM_CHILDREN];
+	static const unsigned char mMaskTable[MAX_NUM_CHILDREN];
 
 	/// Mark child aChildIndex as not in the same tree (Reset the given flag to false)
 	///
@@ -414,7 +416,7 @@ struct ForestNode
 	///
 	void setAllFlagsSameTree(void)
 	{
-		mChildrenSameTreeFlags = 0xFFFF;
+		mChildrenSameTreeFlags = ALL_CHILDREN_SAME_TREE;
 	}
 };
 

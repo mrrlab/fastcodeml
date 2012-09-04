@@ -2,6 +2,7 @@
 #ifndef CMDLINE_H
 #define CMDLINE_H
 
+#include <climits>
 #include "VerbosityLevels.h"
 
 /// Parse the command line flags.

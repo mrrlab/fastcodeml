@@ -41,7 +41,7 @@ public:
 	///
 	explicit Forest(unsigned int aVerbose=0)
 							: mNumSites(0), mCodonFreq(0), mInvCodonFreq(0), mInv2CodonFreq(0),
-							  mNumBranches(0), mVerbose(aVerbose), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX) {}
+							  mNumBranches(0), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX), mVerbose(aVerbose) {}
 
 	/// Destructor
 	///

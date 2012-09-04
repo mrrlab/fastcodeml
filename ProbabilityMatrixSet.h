@@ -94,6 +94,14 @@ public:
 							double aSfg,
 						    const std::vector<double>& aParams);
 
+	void computePartialMatrixSetH0(const TransitionMatrix& aQw0,
+						    const TransitionMatrix& aQ1,
+							double aSbg,
+							double aSfg,
+						    const std::vector<double>& aParams,
+							unsigned int aBranch);
+	void restoreSavedMatrixH0(unsigned int aBranch);
+
 	/// Compute the four sets of matrices for the H1 hypothesis.
 	/// The sets are (these are the bg and fg matrices): 
 	/// - set 0: w0, w0
@@ -235,6 +243,9 @@ private:
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets
 	int				mFgBranch;			///< Foreground branch number (should be int)
+	double			mSave1[N*N];
+	double			mSave2[N*N];
+	double			mSave3[N*N];
 };
 
 #endif

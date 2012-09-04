@@ -2,7 +2,6 @@
 #ifndef BRANCHSITEMODEL_H
 #define BRANCHSITEMODEL_H
 
-#include <cstring>
 #include <vector>
 #include <cstdlib>
 
@@ -47,18 +46,20 @@ public:
 					double aRelativeError,
 					unsigned int aExtraDebug)
 		: mForest(aForest),
-		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
-		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
 		  mVar(aNumBranches+aNumVariables),
+		  mFgScale(0.0),
+		  mBgScale(0.0),
 		  mMaxLnL(-DBL_MAX),
-		  mNumEvaluations(0),
+		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
 		  mLikelihoods(Nt*aNumSites),
 		  mOnlyInitialStep(aOnlyInitialStep),
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
 		  mInitType(INIT_TYPE_NONE),
-		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
+		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
+		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
 		  mExtraDebug(aExtraDebug),
+		  mNumEvaluations(0),
 		  mSeed(aSeed),
 		  mRelativeError(aRelativeError)
 	{
@@ -93,10 +94,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -248,6 +250,8 @@ protected:
 	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
 	std::vector<double>			mUpperBound;		///< Upper limits for the variables to be optimized
 	double						mProportions[4];	///< The four proportions
+	double						mFgScale;			///< The computed foreground branch scale
+	double						mBgScale;			///< The computed background branches scale
 	double						mMaxLnL;			///< Maximum value of LnL found during optimization
 	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
 	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
@@ -301,10 +305,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX);
 
 
 private:
@@ -364,10 +369,11 @@ public:
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX);
 
 
 private:

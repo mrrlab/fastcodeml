@@ -252,14 +252,15 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 }
 
 
-double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar)
 {
 	// One more function invocation
 	++mNumEvaluations;
 
 	// Save the values to local variables to speedup access
-	const double omega0 = aVar[mNumTimes+0];
-	const double kappa  = aVar[mNumTimes+1];
+	const double* params = &aVar[mNumTimes];
+	const double omega0 = params[0];
+	const double kappa  = params[1];
 
 	// Check if steps can be skipped
 	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
@@ -294,32 +295,36 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		mQw0.eigenQREV();
 	}
 
-	// Compute all proportions
-	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
+	// Compute the following values for gradient only if anything different from branch length has changed
+	if(aGradientVar >= mNumTimes)
+	{
+		// Compute all proportions
+		getProportions(params[2], params[3], mProportions);
 
-	// Compute the scale values
+		// Compute the scale values
 #ifdef USE_ORIGINAL_PROPORTIONS
-	const double fg_scale = mProportions[0]*mScaleQw0 +
-							mProportions[1]*mScaleQ1  +
-							mProportions[2]*mScaleQ1  +
-							mProportions[3]*mScaleQ1;
-	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+		mFgScale = mProportions[0]*mScaleQw0 +
+				   mProportions[1]*mScaleQ1  +
+				   mProportions[2]*mScaleQ1  +
+				   mProportions[3]*mScaleQ1;
+		mBgScale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 #else
-	const double fg_scale = mProportions[0]*mScaleQw0 + (1.0-mProportions[0])*mScaleQ1;
-	const double bg_scale = aVar[mNumTimes+3]*mScaleQw0 + (1.0-aVar[mNumTimes+3])*mScaleQ1;
+		mFgScale = mProportions[0]*mScaleQw0 + (1.0-mProportions[0])*mScaleQ1;
+		mBgScale = params[3]*mScaleQw0 + (1.0-params[3])*mScaleQ1;
 #endif
+	}
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
 		std::cerr << "Q1 " << mScaleQ1 << std::endl << std::endl;
 	}
 
-	// Fill the Transition Matrix Sets
-	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, bg_scale, fg_scale, aVar);
+	// Fill the set of Probability Matrices
+	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, mBgScale, mFgScale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
@@ -333,6 +338,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+	double* likelihoods = &mLikelihoods[0];
 #ifdef USE_GLOBAL_SCALING
 	double scale = 0;
 #endif
@@ -342,12 +348,12 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		// double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
 		//		     (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site] +
 		//		      mProportions[2]*mLikelihoods[2*num_sites+site];
-		double p = mLikelihoods[0*num_sites+site];
+		double p = likelihoods[0*num_sites+site];
 		if(p < 0) p = 0;
 		else      p *= p0;
-		double x = mLikelihoods[1*num_sites+site];
+		double x = likelihoods[1*num_sites+site];
 		if(x > 0) p += p1_p2b*x;
-		x = mLikelihoods[2*num_sites+site];
+		x = likelihoods[2*num_sites+site];
 		if(x > 0) p += p2a*x;
 
 		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
@@ -359,9 +365,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		if(mExtraDebug > 1)
 		{
 			std::cerr << std::setw(4) << site << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << " -> ";
+			std::cerr << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << " -> ";
 			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
@@ -380,15 +386,16 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 }
 
 	
-double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace)
+double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar)
 {
 	// One more function invocation
 	++mNumEvaluations;
 
 	// Save the values to local variables to speedup access
-	const double omega0 = aVar[mNumTimes+0];
-	const double omega2 = aVar[mNumTimes+4];
-	const double kappa  = aVar[mNumTimes+1];
+	const double* params = &aVar[mNumTimes];
+	const double omega0 = params[0];
+	const double omega2 = params[4];
+	const double kappa  = params[1];
 
 	// Check if steps can be skipped
 	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
@@ -458,36 +465,37 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		}
 	}
 
-	// Compute all proportions
-	getProportions(aVar[mNumTimes+2], aVar[mNumTimes+3], mProportions);
+	// Compute the following values for gradient only if anything different from branch length has changed
+	if(aGradientVar >= mNumTimes)
+	{
+		// Compute all proportions
+		getProportions(params[2], params[3], mProportions);
 
-	// Compute the scale values
+		// Compute the scale values
 #ifdef USE_ORIGINAL_PROPORTIONS
-	const double fg_scale = mProportions[0]*mScaleQw0 +
-							mProportions[1]*mScaleQ1  +
-							mProportions[2]*mScaleQw2 +
-							mProportions[3]*mScaleQw2;
-
-	const double bg_scale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+		mFgScale = mProportions[0]*mScaleQw0 +
+				   mProportions[1]*mScaleQ1  +
+				   mProportions[2]*mScaleQw2 +
+				   mProportions[3]*mScaleQw2;
+		mBgScale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 #else
-	const double fg_scale = mProportions[0]*mScaleQw0 +
-							mProportions[1]*mScaleQ1  +
-							(1.0-aVar[mNumTimes+2])*mScaleQw2;
-	const double bg_scale = aVar[mNumTimes+3]*mScaleQw0+(1.0-aVar[mNumTimes+3])*mScaleQ1;
+		mFgScale = mProportions[0]*mScaleQw0 + mProportions[1]*mScaleQ1 + (1.0-params[2])*mScaleQw2;
+		mBgScale = params[3]*mScaleQw0+(1.0-params[3])*mScaleQ1;
 #endif
+	}
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << fg_scale << " BG: " << bg_scale << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
 		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./fg_scale << " BG: " << 1./bg_scale << std::endl;
+		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
 		std::cerr << "Q1 " << mScaleQ1 << std::endl;
 		std::cerr << "Q2 " << mScaleQw2 << std::endl << std::endl;
 	}
 
-	// Fill the Transition Matrix Sets
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, bg_scale, fg_scale, aVar);
+	// Fill the set of Probability Matrices
+	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, mBgScale, mFgScale, aVar);
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, 1);
@@ -502,6 +510,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	const size_t num_sites = mForest.getNumSites();
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
+	double* likelihoods = &mLikelihoods[0];
 #ifdef USE_GLOBAL_SCALING
 	double scale = 0;
 #endif
@@ -513,14 +522,14 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		//		     mProportions[2]*mLikelihoods[2*num_sites+site] +
 		//		     mProportions[3]*mLikelihoods[3*num_sites+site];
 		//
-		double p = mLikelihoods[0*num_sites+site];
+		double p = likelihoods[0*num_sites+site];
 		if(p < 0) p = 0;
 		else      p *= p0;
-		double x = mLikelihoods[1*num_sites+site];
+		double x = likelihoods[1*num_sites+site];
 		if(x > 0) p += p1*x;
-		x = mLikelihoods[2*num_sites+site];
+		x = likelihoods[2*num_sites+site];
 		if(x > 0) p += p2a*x;
-		x = mLikelihoods[3*num_sites+site];
+		x = likelihoods[3*num_sites+site];
 		if(x > 0) p += p2b*x;
 
 		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
@@ -533,10 +542,10 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		if(mExtraDebug > 1)
 		{
 			std::cerr << std::setw(4) << site << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[0*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[2*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << mLikelihoods[3*num_sites+site] << " -> ";
+			std::cerr << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << ' ';
+			std::cerr << std::scientific << std::setw(14) << likelihoods[3*num_sites+site] << " -> ";
 			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
@@ -576,7 +585,8 @@ public:
 					  bool aTrace,
 					  const std::vector<double>& aUpper,
 					  double aDeltaForGradient)
-					: mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient) {}
+					  : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
+					    mVarsForGradient(aUpper.size()), mTotalNumVariables(aUpper.size()) {}
 
 	/// Functor.
 	/// It computes the function and the gradient if needed.
@@ -604,11 +614,10 @@ public:
 	///
 	void gradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		std::vector<double> x = aVars;
-		const size_t vs = aVars.size();
-		for(size_t i=0; i < vs; ++i)
+		mVarsForGradient = aVars;
+		for(size_t i=0; i < mTotalNumVariables; ++i)
 		{
-			const double v = aVars[i];
+			const double v = mVarsForGradient[i];
 
 #ifdef USE_ORIGINAL_PROPORTIONS
 			double eh = mDeltaForGradient * (fabs(v)+1.);
@@ -616,14 +625,14 @@ public:
 			double eh = mDeltaForGradient * (v+1.);
 #endif
 
-			x[i] += eh;
-			if(x[i] >= mUpper[i]) {x[i] -= 2*eh; eh = -eh;}
+			mVarsForGradient[i] += eh;
+			if(mVarsForGradient[i] >= mUpper[i]) {mVarsForGradient[i] -= 2*eh; eh = -eh;}
 
-			const double f1 = mModel->computeLikelihood(x, false);
+			const double f1 = mModel->computeLikelihood(mVarsForGradient, false, i);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 
-			x[i] = v;
+			mVarsForGradient[i] = v;
 		}
 	}
 
@@ -641,10 +650,12 @@ public:
 	}
 
 private:
-	BranchSiteModel*	mModel;				///< Pointer to the model to be evaluated
-	bool				mTrace;				///< If set traces the optimization progresses
-	std::vector<double>	mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
-	double				mDeltaForGradient;	///< The variable increment to compute gradient
+	BranchSiteModel*			mModel;				///< Pointer to the model to be evaluated
+	bool						mTrace;				///< If set traces the optimization progresses
+	std::vector<double>			mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
+	double						mDeltaForGradient;	///< The variable increment to compute gradient
+	mutable std::vector<double>	mVarsForGradient;	///< Temporary array that holds aVars during gradient computation
+	size_t						mTotalNumVariables;	///< Total number of variables to be used to compute gradient
 };
 
 

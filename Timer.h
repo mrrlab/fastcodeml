@@ -17,7 +17,7 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : mDelta(0.) {}
+	Timer() : mDelta(0.) {start();}
 
 	/// Start the timer
 	///
@@ -27,6 +27,7 @@ public:
 	}
 
 	/// Stop the timer
+	///
 	/// @return The elapsed time in milliseconds
 	///
 	double stop(void)
@@ -39,6 +40,7 @@ public:
 	}
 
 	/// Return the elapsed time (after a start/stop cycle)
+	///
 	/// @return The elapsed time in milliseconds
 	///
 	double get(void) const
@@ -76,15 +78,13 @@ public:
 	}
 
 	/// Stop the timer
+	///
 	/// @return The elapsed time in milliseconds
 	///
 	double stop(void)
 	{
 		struct timeval end_time;
 		gettimeofday(&end_time, NULL);
-
-		//mDelta = (double) end_time.tv_sec - mStartTime.tv_sec;
-		//mDelta += (end_time.tv_usec - mStartTime.tv_usec) * 1e-6;
 
 		mDelta  = static_cast<double>(end_time.tv_sec)*1e6+end_time.tv_usec;
 		mDelta -= static_cast<double>(mStartTime.tv_sec)*1e6+mStartTime.tv_usec;
@@ -94,6 +94,7 @@ public:
 	}
 
 	/// Return the elapsed time (after a start/stop cycle)
+	///
 	/// @return The elapsed time in milliseconds
 	///
 	double get(void) const
@@ -103,7 +104,7 @@ public:
 
 private:
 	struct timeval mStartTime;	///< The start time
-	double           mDelta;		///< The elapsed time in milliseconds
+	double         mDelta;		///< The elapsed time in milliseconds
 };
 
 #endif
