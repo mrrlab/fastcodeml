@@ -82,25 +82,42 @@ public:
 	///
 	///	@param[in] aQw0 The mQw0 transition matrix
 	///	@param[in] aQ1 The mQ1 transition matrix
-	///	@param[in] aAnyMatrixChanged Set to true if any matrix changed
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
 	///
 	void computeMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
-							bool  aAnyMatrixChanged,
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
 
+
+	/// Compute the matrix for the three sets for the H0 hypothesis for a given branch.
+	/// The sets are (these are the bg and fg matrices): 
+	/// - set 0: w0, w0
+	/// - set 1: w1, w1
+	/// - set 2: w0, w1
+	///
+	///	@param[in] aQw0 The mQw0 transition matrix
+	///	@param[in] aQ1 The mQ1 transition matrix
+	/// @param[in] aSbg Background Q matrix scale
+	/// @param[in] aSfg Foreground Q matrix scale
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aBranch Branch for which the matrices should be computed
+	///
 	void computePartialMatrixSetH0(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams,
-							unsigned int aBranch);
-	void restoreSavedMatrixH0(unsigned int aBranch);
+							size_t aBranch);
+
+	/// Restore the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be computed
+	///
+	void restoreSavedMatrixH0(size_t aBranch);
 
 	/// Compute the four sets of matrices for the H1 hypothesis.
 	/// The sets are (these are the bg and fg matrices): 
@@ -120,10 +137,38 @@ public:
 	void computeMatrixSetH1(const  TransitionMatrix& aQw0,
 						    const  TransitionMatrix& aQ1,
 						    const  TransitionMatrix& aQw2,
-						    bool   aChangedQw2,
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
+	
+	/// Compute the matrix for the three sets for the H1 hypothesis for a given branch.
+	/// The sets are (these are the bg and fg matrices): 
+	/// - set 0: w0, w0
+	/// - set 1: w1, w1
+	/// - set 2: w0, w2
+	/// - set 3: w1, w2
+	///
+	///	@param[in] aQw0 The mQw0 transition matrix
+	///	@param[in] aQ1 The mQ1 transition matrix
+	///	@param[in] aQw2 The mQw2 transition matrix
+	/// @param[in] aSbg Background Q matrix scale
+	/// @param[in] aSfg Foreground Q matrix scale
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aBranch Branch for which the matrices should be computed
+	///
+	void computePartialMatrixSetH1(const  TransitionMatrix& aQw0,
+								   const  TransitionMatrix& aQ1,
+								   const  TransitionMatrix& aQw2,
+								   double aSbg,
+								   double aSfg,
+								   const std::vector<double>& aParams,
+								   size_t aBranch);
+
+	/// Restore the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be computed
+	///
+	void restoreSavedMatrixH1(size_t aBranch);
 
 #ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
@@ -243,9 +288,9 @@ private:
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets
 	int				mFgBranch;			///< Foreground branch number (should be int)
-	double			mSave1[N*N];
-	double			mSave2[N*N];
-	double			mSave3[N*N];
+	double			mSaveQw0[N*N];		///< Save the previous value for the Qw0 matrix
+	double			mSaveQ1[N*N];		///< Save the previous value for the Q1 matrix
+	double			mSaveQw2[N*N];		///< Save the previous value for the Qw2 matrix
 };
 
 #endif

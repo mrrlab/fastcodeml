@@ -45,7 +45,6 @@ void ProbabilityMatrixSet::initForH1(unsigned int aFgBranch)
 
 void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 											 const  TransitionMatrix& aQ1,
-											 bool   aAnyMatrixChanged,
 											 double aSbg,
 											 double aSfg,
 											 const  std::vector<double>& aParams)
@@ -54,7 +53,7 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 	const double* params = &aParams[0];
 
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, params, num_matrices, aAnyMatrixChanged) schedule(static)
+	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, params, num_matrices) schedule(static)
 #else
 	#pragma omp parallel for default(shared) schedule(runtime)
 #endif
@@ -62,78 +61,52 @@ void ProbabilityMatrixSet::computeMatrixSetH0(const TransitionMatrix& aQw0,
 	{
 		const double t = (branch == mFgBranch) ? params[branch]/aSfg : params[branch]/aSbg;
 
-#ifdef PREV_TIME
-		if(aAnyMatrixChanged || isDifferent(t, mPrevTime[branch]))
-		{
-			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			mPrevTime[branch] = t;
-		}
-#ifdef SAVE_OCTAVE
-FILE *fp = fopen("m.oct", "a");
-SaveToOctave(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], "Yw0", fp, 61, 61);
-SaveToOctave(&mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], "Y1", fp, 61, 61);
-SaveToOctave(&aParams[branch], "T", fp, 1, 1);
-SaveToOctave(&t, "TS", fp, 1, 1);
-fclose(fp);
-#endif
-#if 0
-		if(aChangedQ1)
-		{
-			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			mPrevTime[branch] = t;
-		}
-		else if(aChangedQw0)
-		{
-			if(isDifferent(t, mPrevTime[branch])) aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			mPrevTime[branch] = t;
-		}
-		else if(isDifferent(t, mPrevTime[branch]))
-		{
-			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			aQ1.computeFullTransitionMatrix(&mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-			mPrevTime[branch] = t;
-		}
-#endif
-#else
 		aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 		aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
-#endif
 	}
 }
 
 void ProbabilityMatrixSet::computePartialMatrixSetH0(const TransitionMatrix& aQw0,
-						    const TransitionMatrix& aQ1,
-							double aSbg,
-							double aSfg,
-						    const std::vector<double>& aParams,
-							unsigned int aBranch)
+													 const TransitionMatrix& aQ1,
+													 double aSbg,
+													 double aSfg,
+													 const std::vector<double>& aParams,
+													 size_t aBranch)
 {
-	// Save the value
-	memcpy(mSave1, &mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
-	memcpy(mSave2, &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
-
 	// Compute the two matrices at the new t value
-	const double* params = &aParams[0];
+	const double t = (static_cast<int>(aBranch) == mFgBranch) ? aParams[aBranch]/aSfg : aParams[aBranch]/aSbg;
 
-	const double t = (static_cast<int>(aBranch) == mFgBranch) ? params[aBranch]/aSfg : params[aBranch]/aSbg;
-
-	aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
-	aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
+#ifdef _MSC_VER
+	#pragma omp parallel sections default(none) shared(aBranch, aQw0, aQ1)
+#else
+	#pragma omp parallel sections default(shared)
+#endif
+	{
+		#pragma omp section
+		{
+			// Save the value and compute the value for the new branch length
+			memcpy(mSaveQw0, &mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
+		}
+		#pragma omp section
+		{
+			// Save the value and compute the value for the new branch length
+			memcpy(mSaveQ1, &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+			aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
+		}
+	}
 }
 
-void ProbabilityMatrixSet::restoreSavedMatrixH0(unsigned int aBranch)
+void ProbabilityMatrixSet::restoreSavedMatrixH0(size_t aBranch)
 {
-	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSave1, N*N*sizeof(double));
-	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSave2, N*N*sizeof(double));
+	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQw0, N*N*sizeof(double));
+	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,  N*N*sizeof(double));
 }
+
 
 void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
 											  const  TransitionMatrix& aQ1,
 											  const  TransitionMatrix& aQw2,
-											  bool   aChangedQw2,
 											  double aSbg,
 											  double aSfg,
 											  const  std::vector<double>& aParams)
@@ -155,15 +128,57 @@ void ProbabilityMatrixSet::computeMatrixSetH1(const  TransitionMatrix& aQw0,
 		aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*num_matrices*MATRIX_SLOT+branch*MATRIX_SLOT], t);
 	}
 
-#ifdef PREV_TIME
-	const double t = aParams[mFgBranch]/aSfg;
-	if(aChangedQw2 || isDifferent(t, mPrevTime[mFgBranch]))
-	{
-		aQw2.computeFullTransitionMatrix(&mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT], t);
-		mPrevTime[mFgBranch] = t;
-	}
-#else
 	aQw2.computeFullTransitionMatrix(&mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT], params[mFgBranch]/aSfg);
+}
+
+void ProbabilityMatrixSet::computePartialMatrixSetH1(const  TransitionMatrix& aQw0,
+													 const  TransitionMatrix& aQ1,
+													 const  TransitionMatrix& aQw2,
+													 double aSbg,
+													 double aSfg,
+													 const std::vector<double>& aParams,
+													 size_t aBranch)
+{
+	// Compute the two matrices at the new t value
+	const double t = (static_cast<int>(aBranch) == mFgBranch) ? aParams[aBranch]/aSfg : aParams[aBranch]/aSbg;
+
+#ifdef _MSC_VER
+	#pragma omp parallel sections default(none) shared(aBranch, aQw0, aQ1, aQw2)
+#else
+	#pragma omp parallel sections default(shared)
 #endif
+	{
+		#pragma omp section
+		{
+			// Save the value and compute the value for the new branch length
+			memcpy(mSaveQw0, &mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+			aQw0.computeFullTransitionMatrix(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
+		}
+		#pragma omp section
+		{
+			// Save the value and compute the value for the new branch length
+			memcpy(mSaveQ1,  &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+			aQ1.computeFullTransitionMatrix( &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], t);
+		}
+		#pragma omp section
+		{
+			if(static_cast<int>(aBranch) == mFgBranch)
+			{
+				memcpy(mSaveQw2, &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], N*N*sizeof(double));
+				aQw2.computeFullTransitionMatrix(&mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], t);
+			}
+		}
+	}
+}
+
+
+void ProbabilityMatrixSet::restoreSavedMatrixH1(size_t aBranch)
+{
+	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQw0, N*N*sizeof(double));
+	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,  N*N*sizeof(double));
+	if(static_cast<int>(aBranch) == mFgBranch)
+	{
+		memcpy(&mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], mSaveQw2, N*N*sizeof(double));
+	}
 }
 

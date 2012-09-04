@@ -257,61 +257,78 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	// One more function invocation
 	++mNumEvaluations;
 
-	// Save the values to local variables to speedup access
-	const double* params = &aVar[mNumTimes];
-	const double omega0 = params[0];
-	const double kappa  = params[1];
-
-	// Check if steps can be skipped
-	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
-	const bool changed_k  = isDifferent(kappa, mPrevK);
-	if(changed_w0) mPrevOmega0 = omega0;
-	if(changed_k)  mPrevK      = kappa;
-
-	// Fill the matrices and compute their eigen decomposition.
-	if(changed_k)
-	{
-#ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(omega0, kappa)
-#else
-		#pragma omp parallel sections default(shared)
-#endif
-		{
-		   #pragma omp section
-		   {
-				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
-				mQw0.eigenQREV();
-		   } 
-		   #pragma omp section
-		   {
-				mScaleQ1  = mQ1.fillMatrix(kappa);
-				mQ1.eigenQREV();
-		   }
-		}
-	}
-	else if(changed_w0)
-	{
-		mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
-		mQw0.eigenQREV();
-	}
-
 	// Compute the following values for gradient only if anything different from branch length has changed
 	if(aGradientVar >= mNumTimes)
 	{
+		// Save the values to local variables to speedup access
+		const double* params = &aVar[mNumTimes];
+		const double omega0 = params[0];
+		const double kappa  = params[1];
+
+		// Check if steps can be skipped
+		const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+		const bool changed_k  = isDifferent(kappa, mPrevK);
+		if(changed_w0) mPrevOmega0 = omega0;
+		if(changed_k)  mPrevK      = kappa;
+
+		// Fill the matrices and compute their eigen decomposition.
+		if(changed_k)
+		{
+#ifdef _MSC_VER
+			#pragma omp parallel sections default(none) shared(omega0, kappa)
+#else
+			#pragma omp parallel sections default(shared)
+#endif
+			{
+			   #pragma omp section
+			   {
+					mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+					mQw0.eigenQREV();
+			   } 
+			   #pragma omp section
+			   {
+					mScaleQ1  = mQ1.fillMatrix(kappa);
+					mQ1.eigenQREV();
+			   }
+			}
+		}
+		else if(changed_w0)
+		{
+			mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+			mQw0.eigenQREV();
+		}
+
 		// Compute all proportions
 		getProportions(params[2], params[3], mProportions);
 
 		// Compute the scale values
 #ifdef USE_ORIGINAL_PROPORTIONS
 		mFgScale = mProportions[0]*mScaleQw0 +
-				   mProportions[1]*mScaleQ1  +
-				   mProportions[2]*mScaleQ1  +
-				   mProportions[3]*mScaleQ1;
+					mProportions[1]*mScaleQ1  +
+					mProportions[2]*mScaleQ1  +
+					mProportions[3]*mScaleQ1;
 		mBgScale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 #else
 		mFgScale = mProportions[0]*mScaleQw0 + (1.0-mProportions[0])*mScaleQ1;
 		mBgScale = params[3]*mScaleQw0 + (1.0-params[3])*mScaleQ1;
 #endif
+
+		// Fill the set of Probability Matrices
+		mSet.computeMatrixSetH0(mQw0, mQ1, mBgScale, mFgScale, aVar);
+
+		// Compute likelihoods
+		mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+	}
+	else
+	{
+		// Compute only the changed Probability matrices
+		mSet.computePartialMatrixSetH0(mQw0, mQ1, mBgScale, mFgScale, aVar, aGradientVar);
+
+		// Compute likelihoods
+		mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+
+		// Restore the previous value of the matrices
+		mSet.restoreSavedMatrixH0(aGradientVar);
 	}
 
 	if(mExtraDebug > 0)
@@ -322,12 +339,6 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 		std::cerr << "Q0 " << mScaleQw0 << std::endl;
 		std::cerr << "Q1 " << mScaleQ1 << std::endl << std::endl;
 	}
-
-	// Fill the set of Probability Matrices
-	mSet.computeMatrixSetH0(mQw0, mQ1, changed_w0 || changed_k, mBgScale, mFgScale, aVar);
-
-	// Compute likelihoods
-	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
 
 	// Precompute the proportions to be used
 	const double p0 = mProportions[0];
@@ -391,83 +402,83 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	// One more function invocation
 	++mNumEvaluations;
 
-	// Save the values to local variables to speedup access
-	const double* params = &aVar[mNumTimes];
-	const double omega0 = params[0];
-	const double omega2 = params[4];
-	const double kappa  = params[1];
-
-	// Check if steps can be skipped
-	const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
-	const bool changed_w2 = isDifferent(omega2, mPrevOmega2);
-	const bool changed_k  = isDifferent(kappa, mPrevK);
-	if(changed_w0) mPrevOmega0 = omega0;
-	if(changed_w2) mPrevOmega2 = omega2;
-	if(changed_k)  mPrevK      = kappa;
-
-	// Fill the matrices and compute their eigen decomposition.
-	if(changed_k)
-	{
-#ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
-#else
-		#pragma omp parallel sections default(shared)
-#endif
-		{
-			#pragma omp section
-			{
-				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
-				mQw0.eigenQREV();
-			} 
-			#pragma omp section
-			{
-				mScaleQ1  = mQ1.fillMatrix(kappa);
-				mQ1.eigenQREV();
-			}
-			#pragma omp section
-			{
-				mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
-				mQw2.eigenQREV();
-			}
-		}
-	}
-	else if(changed_w0 && changed_w2)
-	{
-#ifdef _MSC_VER
-		#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
-#else
-		#pragma omp parallel sections default(shared)
-#endif
-		{
-			#pragma omp section
-			{
-				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
-				mQw0.eigenQREV();
-			} 
-			#pragma omp section
-			{
-				mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
-				mQw2.eigenQREV();
-			}
-		}
-	}
-	else
-	{
-		if(changed_w0)
-		{
-			mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
-			mQw0.eigenQREV();
-		}
-		if(changed_w2)
-		{
-			mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
-			mQw2.eigenQREV();
-		}
-	}
-
 	// Compute the following values for gradient only if anything different from branch length has changed
 	if(aGradientVar >= mNumTimes)
 	{
+		// Save the values to local variables to speedup access
+		const double* params = &aVar[mNumTimes];
+		const double omega0 = params[0];
+		const double omega2 = params[4];
+		const double kappa  = params[1];
+
+		// Check if steps can be skipped
+		const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+		const bool changed_w2 = isDifferent(omega2, mPrevOmega2);
+		const bool changed_k  = isDifferent(kappa, mPrevK);
+		if(changed_w0) mPrevOmega0 = omega0;
+		if(changed_w2) mPrevOmega2 = omega2;
+		if(changed_k)  mPrevK      = kappa;
+
+		// Fill the matrices and compute their eigen decomposition.
+		if(changed_k)
+		{
+#ifdef _MSC_VER
+			#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+			#pragma omp parallel sections default(shared)
+#endif
+			{
+				#pragma omp section
+				{
+					mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+					mQw0.eigenQREV();
+				} 
+				#pragma omp section
+				{
+					mScaleQ1  = mQ1.fillMatrix(kappa);
+					mQ1.eigenQREV();
+				}
+				#pragma omp section
+				{
+					mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+					mQw2.eigenQREV();
+				}
+			}
+		}
+		else if(changed_w0 && changed_w2)
+		{
+#ifdef _MSC_VER
+			#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+			#pragma omp parallel sections default(shared)
+#endif
+			{
+				#pragma omp section
+				{
+					mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+					mQw0.eigenQREV();
+				} 
+				#pragma omp section
+				{
+					mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+					mQw2.eigenQREV();
+				}
+			}
+		}
+		else
+		{
+			if(changed_w0)
+			{
+				mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+				mQw0.eigenQREV();
+			}
+			if(changed_w2)
+			{
+				mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+				mQw2.eigenQREV();
+			}
+		}
+
 		// Compute all proportions
 		getProportions(params[2], params[3], mProportions);
 
@@ -482,6 +493,22 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		mFgScale = mProportions[0]*mScaleQw0 + mProportions[1]*mScaleQ1 + (1.0-params[2])*mScaleQw2;
 		mBgScale = params[3]*mScaleQw0+(1.0-params[3])*mScaleQ1;
 #endif
+		// Fill the set of Probability Matrices
+		mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
+
+		// Compute likelihoods
+		mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+	}
+	else
+	{
+		// Compute only the changed Probability matrices
+		mSet.computePartialMatrixSetH1(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar, aGradientVar);
+
+		// Compute likelihoods
+		mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+
+		// Restore the previous value of the matrices
+		mSet.restoreSavedMatrixH1(aGradientVar);
 	}
 
 	if(mExtraDebug > 0)
@@ -493,12 +520,6 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 		std::cerr << "Q1 " << mScaleQ1 << std::endl;
 		std::cerr << "Q2 " << mScaleQw2 << std::endl << std::endl;
 	}
-
-	// Fill the set of Probability Matrices
-	mSet.computeMatrixSetH1(mQw0, mQ1, mQw2, changed_w2 || changed_k, mBgScale, mFgScale, aVar);
-
-	// Compute likelihoods
-	mForest.computeLikelihoods(mSet, mLikelihoods, 1);
 
 	// Precompute the proportions to be used
 	const double p0  = mProportions[0];
@@ -581,12 +602,8 @@ public:
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
 	/// @param[in] aDeltaForGradient The variable increment to compute gradient
 	///
-	MaximizerFunction(BranchSiteModel* aModel,
-					  bool aTrace,
-					  const std::vector<double>& aUpper,
-					  double aDeltaForGradient)
-					  : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
-					    mVarsForGradient(aUpper.size()), mTotalNumVariables(aUpper.size()) {}
+	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient)
+		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient), mTotalNumVariables(aUpper.size()) {}
 
 	/// Functor.
 	/// It computes the function and the gradient if needed.
@@ -597,12 +614,12 @@ public:
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
+		// Compute the function at the requested point
 		double f0 = mModel->computeLikelihood(aVars, mTrace);
 
-		if(!aGrad.empty())
-		{
-			gradient(f0, aVars, aGrad);
-		}
+		// Compute gradient if requested
+		if(!aGrad.empty()) gradient(f0, aVars, aGrad);
+
 		return f0;
 	}
 
@@ -614,10 +631,13 @@ public:
 	///
 	void gradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		mVarsForGradient = aVars;
+		// Make the variables writable
+		std::vector<double>& vars_ref = const_cast<std::vector<double>&>(aVars);
+
+		// Modify each variable in turn
 		for(size_t i=0; i < mTotalNumVariables; ++i)
 		{
-			const double v = mVarsForGradient[i];
+			const double v = vars_ref[i];
 
 #ifdef USE_ORIGINAL_PROPORTIONS
 			double eh = mDeltaForGradient * (fabs(v)+1.);
@@ -625,14 +645,14 @@ public:
 			double eh = mDeltaForGradient * (v+1.);
 #endif
 
-			mVarsForGradient[i] += eh;
-			if(mVarsForGradient[i] >= mUpper[i]) {mVarsForGradient[i] -= 2*eh; eh = -eh;}
+			vars_ref[i] += eh;
+			if(vars_ref[i] >= mUpper[i]) {vars_ref[i] -= 2*eh; eh = -eh;}
 
-			const double f1 = mModel->computeLikelihood(mVarsForGradient, false, i);
+			const double f1 = mModel->computeLikelihood(vars_ref, false, i);
 
 			aGrad[i] = (f1-aPointValue)/eh;
 
-			mVarsForGradient[i] = v;
+			vars_ref[i] = v;
 		}
 	}
 
@@ -654,7 +674,6 @@ private:
 	bool						mTrace;				///< If set traces the optimization progresses
 	std::vector<double>			mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
 	double						mDeltaForGradient;	///< The variable increment to compute gradient
-	mutable std::vector<double>	mVarsForGradient;	///< Temporary array that holds aVars during gradient computation
 	size_t						mTotalNumVariables;	///< Total number of variables to be used to compute gradient
 };
 
