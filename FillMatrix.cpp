@@ -2,7 +2,7 @@
 
 #include "TransitionMatrix.h"
 
-#ifndef USE_S_MATRIX
+#ifndef USE_LAPACK
 
 double TransitionMatrix::fillMatrix(double aOmega, double aK)
 {

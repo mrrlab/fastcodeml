@@ -32,9 +32,8 @@ static int x = 1;
 ///
 class ProbabilityMatrixSet
 {
-public:
-
-	/// Create matrix set
+protected:
+	/// Create matrix set. This is called only by subclasses.
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
@@ -44,16 +43,15 @@ public:
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
-		mPrevTime     = new double[aNumMatrices];
 	}
 
+public:
 	/// Destructor.
 	///
 	~ProbabilityMatrixSet()
 	{
 		alignedFree(mMatrixSpace);
 		alignedFree(mMatrices);
-		delete [] mPrevTime;
 	}
 
 	/// Return the number of sets contained in this ProbabilityMatrixSet
@@ -62,113 +60,12 @@ public:
 	///
 	unsigned int size(void) const {return mNumSets;}
 
-	/// Initialize the set for a given foreground branch number for H0
+	/// Initialize only the foreground branch value.
+	/// It leaves the mMatrix array of pointers uninitialized. This is OK if the set is used nly to store the matrices for later usage.
 	///
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	///
-	void initForH0(unsigned int aFgBranch);
-
-	/// Initialize the set for a given foreground branch number for H1
-	///
-	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
-	///
-	void initForH1(unsigned int aFgBranch);
-
-	/// Compute the three sets of matrices for the H0 hypothesis.
-	/// The sets are (these are the bg and fg matrices): 
-	/// - set 0: w0, w0
-	/// - set 1: w1, w1
-	/// - set 2: w0, w1
-	///
-	///	@param[in] aQw0 The mQw0 transition matrix
-	///	@param[in] aQ1 The mQ1 transition matrix
-	/// @param[in] aSbg Background Q matrix scale
-	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	///
-	void computeMatrixSetH0(const TransitionMatrix& aQw0,
-						    const TransitionMatrix& aQ1,
-							double aSbg,
-							double aSfg,
-						    const std::vector<double>& aParams);
-
-
-	/// Compute the matrix for the three sets for the H0 hypothesis for a given branch.
-	/// The sets are (these are the bg and fg matrices): 
-	/// - set 0: w0, w0
-	/// - set 1: w1, w1
-	/// - set 2: w0, w1
-	///
-	///	@param[in] aQw0 The mQw0 transition matrix
-	///	@param[in] aQ1 The mQ1 transition matrix
-	/// @param[in] aSbg Background Q matrix scale
-	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	/// @param[in] aBranch Branch for which the matrices should be computed
-	///
-	void computePartialMatrixSetH0(const TransitionMatrix& aQw0,
-						    const TransitionMatrix& aQ1,
-							double aSbg,
-							double aSfg,
-						    const std::vector<double>& aParams,
-							size_t aBranch);
-
-	/// Restore the previous value for the aBranch matrices.
-	///
-	/// @param[in] aBranch Branch for which the matrices should be computed
-	///
-	void restoreSavedMatrixH0(size_t aBranch);
-
-	/// Compute the four sets of matrices for the H1 hypothesis.
-	/// The sets are (these are the bg and fg matrices): 
-	/// - set 0: w0, w0
-	/// - set 1: w1, w1
-	/// - set 2: w0, w2
-	/// - set 3: w1, w2
-	///
-	///	@param[in] aQw0 The mQw0 transition matrix
-	///	@param[in] aQ1 The mQ1 transition matrix
-	///	@param[in] aQw2 The mQw2 transition matrix
-	///	@param[in] aChangedQw2 Set to true if Qw2 matrix changed
-	/// @param[in] aSbg Background Q matrix scale
-	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	///
-	void computeMatrixSetH1(const  TransitionMatrix& aQw0,
-						    const  TransitionMatrix& aQ1,
-						    const  TransitionMatrix& aQw2,
-							double aSbg,
-							double aSfg,
-						    const std::vector<double>& aParams);
-	
-	/// Compute the matrix for the three sets for the H1 hypothesis for a given branch.
-	/// The sets are (these are the bg and fg matrices): 
-	/// - set 0: w0, w0
-	/// - set 1: w1, w1
-	/// - set 2: w0, w2
-	/// - set 3: w1, w2
-	///
-	///	@param[in] aQw0 The mQw0 transition matrix
-	///	@param[in] aQ1 The mQ1 transition matrix
-	///	@param[in] aQw2 The mQw2 transition matrix
-	/// @param[in] aSbg Background Q matrix scale
-	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
-	/// @param[in] aBranch Branch for which the matrices should be computed
-	///
-	void computePartialMatrixSetH1(const  TransitionMatrix& aQw0,
-								   const  TransitionMatrix& aQ1,
-								   const  TransitionMatrix& aQw2,
-								   double aSbg,
-								   double aSfg,
-								   const std::vector<double>& aParams,
-								   size_t aBranch);
-
-	/// Restore the previous value for the aBranch matrices.
-	///
-	/// @param[in] aBranch Branch for which the matrices should be computed
-	///
-	void restoreSavedMatrixH1(size_t aBranch);
+	void initializeFgBranch(unsigned int aFgBranch) {mFgBranch = static_cast<int>(aFgBranch);} 
 
 #ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
@@ -281,13 +178,165 @@ public:
 #endif
 
 private:
+	/// Private default constructor to forbid base class usage except by its derived classes.
+	///
+	ProbabilityMatrixSet();
+
+protected:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
-	double**		mMatrices;			///< Access to the matrix set
+	double**		mMatrices;			///< Access to the matrix set (contains pointers to mMatrixSpaces matrices)
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
-	double*			mPrevTime;			///< Previous computation times (to check if they are sufficiently different to require a recomputation)
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets
 	int				mFgBranch;			///< Foreground branch number (should be int)
+};
+
+
+/// Set of probability matrices for all branches of a tree for the null hypothesis.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.0
+///
+class ProbabilityMatrixSetH0 : public ProbabilityMatrixSet
+{
+public:
+	/// Create matrix set. It allocates 3 sets.
+	///
+	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	///
+	ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3) {}
+
+	/// Initialize the set for a given foreground branch number for H0
+	///
+	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
+	///
+	void initializeSet(unsigned int aFgBranch);
+
+
+	/// Compute the three sets of matrices for the H0 hypothesis.
+	/// The sets are (these are the bg and fg matrices): 
+	/// - set 0: w0, w0
+	/// - set 1: w1, w1
+	/// - set 2: w0, w1
+	///
+	///	@param[in] aQw0 The mQw0 transition matrix
+	///	@param[in] aQ1 The mQ1 transition matrix
+	/// @param[in] aSbg Background Q matrix scale
+	/// @param[in] aSfg Foreground Q matrix scale
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	///
+	void fillMatrixSet(const TransitionMatrix& aQw0,
+						    const TransitionMatrix& aQ1,
+							double aSbg,
+							double aSfg,
+						    const std::vector<double>& aParams);
+
+	/// Restore the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be restored
+	///
+	void restoreSavedMatrix(size_t aBranch);
+
+	/// Save the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be saved
+	///
+	void saveMatrix(size_t aBranch);
+
+	/// Access the matrices corresponding to the given branch.
+	///
+	/// @param[in] aBranch The branch for which the matrices are to be accessed
+	///
+	/// @return Pointer to an array of two pointers to the matrices to be accessed
+	///
+	const double** getChangedMatrices(size_t aBranch);
+
+	/// Set the matrices for branch aBranch from the return value of a getChangedMatrices routine
+	///
+	/// @param[in] aBranch The branch for which the matrices are to be accessed
+	/// @param[in] aMatricesPtr array of pointers as returned by the etChangedMatrices routine
+	///
+	void setMatrices(size_t aBranch, const double** aMatricesPtr);
+
+private:
+	const double*	mMatricesPtr[2];	///< Pointers to the changed matrices to be restored
+	double			mSaveQw0[N*N];		///< Save the previous value for the Qw0 matrix
+	double			mSaveQ1[N*N];		///< Save the previous value for the Q1 matrix
+};
+
+
+/// Set of probability matrices for all branches of a tree for the alternate hypothesis.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.0
+///
+class ProbabilityMatrixSetH1 : public ProbabilityMatrixSet
+{
+public:
+	/// Create matrix set
+	///
+	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	///
+	ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4) {}
+
+	/// Initialize the set for a given foreground branch number for H1
+	///
+	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
+	///
+	void initializeSet(unsigned int aFgBranch);
+
+	/// Compute the four sets of matrices for the H1 hypothesis.
+	/// The sets are (these are the bg and fg matrices): 
+	/// - set 0: w0, w0
+	/// - set 1: w1, w1
+	/// - set 2: w0, w2
+	/// - set 3: w1, w2
+	///
+	///	@param[in] aQw0 The mQw0 transition matrix
+	///	@param[in] aQ1 The mQ1 transition matrix
+	///	@param[in] aQw2 The mQw2 transition matrix
+	/// @param[in] aSbg Background Q matrix scale
+	/// @param[in] aSfg Foreground Q matrix scale
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	///
+	void fillMatrixSet(const  TransitionMatrix& aQw0,
+						    const  TransitionMatrix& aQ1,
+						    const  TransitionMatrix& aQw2,
+							double aSbg,
+							double aSfg,
+						    const std::vector<double>& aParams);
+	
+	/// Restore the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be restored
+	///
+	void restoreSavedMatrix(size_t aBranch);
+
+	/// Save the previous value for the aBranch matrices.
+	///
+	/// @param[in] aBranch Branch for which the matrices should be saved
+	///
+	void saveMatrix(size_t aBranch);
+
+	/// Access the matrices corresponding to the given branch.
+	///
+	/// @param[in] aBranch The branch for which the matrices are to be accessed
+	///
+	/// @return Pointer to an array of three pointers to the matrices to be accessed
+	///
+	const double** getChangedMatrices(size_t aBranch);
+
+	/// Set the matrices for branch aBranch from the return value of a getChangedMatrices routine
+	///
+	/// @param[in] aBranch The branch for which the matrices are to be accessed
+	/// @param[in] aMatricesPtr array of pointers as returned by gthe etChangedMatrices routine
+	///
+	void setMatrices(size_t aBranch, const double** aMatricesPtr);
+
+private:
+	const double*	mMatricesPtr[3];	///< Pointers to the changed matrices to be restored
 	double			mSaveQw0[N*N];		///< Save the previous value for the Qw0 matrix
 	double			mSaveQ1[N*N];		///< Save the previous value for the Q1 matrix
 	double			mSaveQw2[N*N];		///< Save the previous value for the Qw2 matrix

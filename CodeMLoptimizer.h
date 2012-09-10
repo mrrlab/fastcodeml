@@ -139,7 +139,6 @@ private:
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	double						mDeltaForGradient;	///< This is the original Small_Diff value
 	double						mRelativeError;		///< The relative error at which the computation stops
-	//unsigned int				mFgBranch;			///< The selected foreground branch
 
 private:
 	/// The following variables are from the original code

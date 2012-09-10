@@ -158,9 +158,6 @@ int main(int ac, char **av)
 #ifdef USE_LAPACK
 													std::cerr << "USE_LAPACK ";
 #endif
-#ifdef USE_S_MATRIX
-													std::cerr << "USE_S_MATRIX ";
-#endif
 #ifdef USE_MKL_VML
 													std::cerr << "USE_MKL_VML";
 #endif
@@ -516,7 +513,7 @@ Usage:
         Start from default parameter values and times from tree file
 
 -x  --extra-debug (required argument)
-		Extra debug parameter (zero disable it)
+        Extra debug parameter (zero disable it)
 
 -re  --relative-error (required argument)
         Relative error where to stop maximization
@@ -527,7 +524,7 @@ Usage:
 @endverbatim
 */
 /// @page vampir_page Using Vampir for profiling
-/// On Linux we used VampirTrace to collect profile data and Vampir to display the results (http://www.vampir.eu/).
+/// On Linux we use VampirTrace to collect profile data and Vampir to display the results (http://www.vampir.eu/).
 ///
 /// Before invoking CMAKE define CXX=vtCC
 ///
@@ -535,21 +532,20 @@ Usage:
 ///
 /// Run CMAKE and configure.
 ///
-/// Then define CMAKE_CXX_FLAGS as: -vt:mt -vt:preprocess -DVTRACE
+/// Then define CMAKE_CXX_FLAGS as: -vt:mt -vt:noopari
+/// If you want to trace also the OpenMP calls then channge it to: -vt:mt -vt:preprocess -DVTRACE
 ///
 /// Then proceed as usual to build the executable.
 ///
-/// To run the executable define before the following environment varables:
+/// Before running the executable, define the following environment variables:
 ///
-///     export VT_BUFFER_SIZE=256M
-///     export VT_VERBOSE=2
+///     export VT_BUFFER_SIZE=512M
 ///     export VT_MAX_FLUSHES=0
-///     #export VT_MAX_FLUSHES=128
-///     #export VT_MODE=STAT
+///     export VT_SYNCH_FLUSH=yes
+///     export VT_GPUTRACE=no
 ///     export VT_UNIFY=no
 ///
-/// Due to a VampirTrace bug, kill the execution when the line "Executing [...]/vtunify" appears.
-/// Then rerun only the command that appears after "Executing".
+/// Due to a VampirTrace bug, at the end of the execution, run the vtunify executable by itself.
 ///
 /// Now you can analyze the results by running vampir on the *.otf file generated.
 ///

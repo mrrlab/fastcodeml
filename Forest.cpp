@@ -568,8 +568,6 @@ void Forest::groupByDependency(bool aForceSerial)
 		size_t i, j;
 
 		// Prepare the search of dependencies
-		//std::vector<bool> done(mNumSites, false);	// The sites that has dependencies satisfied in the previous level
-		//std::vector<bool> prev;					// Dependencies till the previous level
 		boost::dynamic_bitset<> done(mNumSites);	// The sites that has dependencies satisfied in the previous level
 		boost::dynamic_bitset<> prev;				// Dependencies till the previous level
 		std::vector<unsigned int> v;				// Temporary list of sites
@@ -580,7 +578,6 @@ void Forest::groupByDependency(bool aForceSerial)
 		{
 			if(mTreeDependencies[i].empty())
 			{
-				//done[i] = true;
 				done.set(i);
 				v.push_back(static_cast<unsigned int>(i));
 			}
@@ -607,7 +604,6 @@ void Forest::groupByDependency(bool aForceSerial)
 				if(all)
 				{
 					v.push_back(static_cast<unsigned int>(i));
-					//done[i] = true;
 					done.set(i);
 				}
 			}
@@ -900,8 +896,6 @@ void Forest::printDependenciesClassesAndTrees(void)
 		const ForestNode& n = aForest.mRoots[i];
 		cnt += n.countBranches();
 		cntAggressive += n.countBranches(true);
-		//cnt += aForest.mRoots[i].countBranches();
-		//cntAggressive += aForest.mRoots[i].countBranches(true);
 	}
 	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << static_cast<double>(cnt*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << static_cast<double>(cntAggressive*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
@@ -1155,7 +1149,6 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	{
 		// Things that do not change in the parallel loop
 		const int len = static_cast<int>(ivs->size());
-		//const std::vector<unsigned int>& tmp_ivs = *ivs;
 		const unsigned int* tmp_ivs = &(*ivs)[0];
 
 #ifdef _MSC_VER
@@ -1166,9 +1159,6 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			//const unsigned int site    = (*ivs)[i].first;
-			//const unsigned int set_idx = (*ivs)[i].second;
-			//const unsigned int tmp     = (*ivs)[i];
 			const unsigned int tmp     = tmp_ivs[i];
 			const unsigned int site    = getSiteNum(tmp);
 			const unsigned int set_idx = getSetNum(tmp);
@@ -1431,7 +1421,7 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 	double* anode_prob    = aNode->mProb[aSetIdx];
 	const unsigned int nc = aNode->mChildrenCount;
 
-	// Shortcut
+	// Shortcut (on the leaves return immediately the probability vector)
 	if(nc == 0) return anode_prob;
 
 	bool first = true;

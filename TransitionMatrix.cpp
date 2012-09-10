@@ -539,16 +539,11 @@ void TransitionMatrix::eigenQREV(void)
 FILE* fp = fopen("m.oct", "a");
 
 SaveToOctave(mCodonFreq, "PI", fp, 61, 1); //CHHS
-#ifdef USE_S_MATRIX
 SaveToOctave(mS, "S", fp, 61, 61); //CHHS
-#else
-SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
-#endif
 #endif
 	try {
     if(mNumGoodFreq == N)
     {
-#ifdef USE_S_MATRIX
 		// The S matrix is defined as Q = S*Pi
 		// Due to the fact that each Q row should sum to zero, the S diagonal values are so adjusted.
 		// But also to save multiplications the S diagonal elements are already multiplied by the corresponding codon frequency
@@ -564,18 +559,6 @@ SaveToOctave(mQ, "Q", fp, 61, 61); //CHHS
                 mU[i*N + j] = mS[i*N + j] * mSqrtCodonFreq[i] * mSqrtCodonFreq[j];
 			}
 		}
-#else
-		// Store in U the symmetrical matrix S = sqrt(D) * Q * sqrt(-D)
-        for(i=0; i < N; ++i)
-		{
-			mU[i*N + i] = mQ[i*N + i];
-
-            for(j=0; j < i; ++j)
-			{
-                mU[i*N + j] = mU[j*N + i] = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
-			}
-		}
-#endif
 
 #ifdef SAVE_OCTAVE
 
@@ -608,7 +591,6 @@ fclose(fp);
     {
 		int inew, jnew;
 
-#ifdef USE_S_MATRIX
         for(i=0, inew=0; i < N; ++i)
         {
             if(mGoodFreq[i])
@@ -626,26 +608,7 @@ fclose(fp);
                 ++inew;
             }
         }
-#else
-        for(i=0, inew=0; i < N; ++i)
-        {
-            if(mGoodFreq[i])
-            {
-                for(j=0, jnew=0; j < i; ++j)
-				{
-                    if(mGoodFreq[j])
-                    {
-                        mU[inew*mNumGoodFreq + jnew] = mU[jnew*mNumGoodFreq + inew]
-                                               = mQ[i*N + j] * mSqrtCodonFreq[i] / mSqrtCodonFreq[j];
-                        ++jnew;
-                    }
-				}
 
-                mU[inew*mNumGoodFreq + inew] = mQ[i*N + i];
-                ++inew;
-            }
-        }
-#endif
 		// Eigendecomposition of mU into mD (eigenvalues) and mU (eigenvectors), size is mNumGoodFreq and mV is used as workarea
 		eigenRealSymm(mU, mNumGoodFreq, mD, mV);
 
@@ -1188,3 +1151,34 @@ void TransitionMatrix::printDecomposed(unsigned int aMaxRow, unsigned int aMaxCo
 }
 
 #endif
+
+
+
+void CheckpointableTransitionMatrix::saveCheckpoint(double aScale)
+{
+	mSavedScale = aScale;
+	memcpy(mSavedV, mV, N*N*sizeof(double));
+	memcpy(mSavedU, mU, N*N*sizeof(double));
+#ifndef USE_LAPACK
+	memcpy(mSavedQ, mQ, N*N*sizeof(double));
+#else
+	memcpy(mSavedS, mS, N*N*sizeof(double));
+#endif
+	memcpy(mSavedD, mD,   N*sizeof(double));
+}
+
+
+double CheckpointableTransitionMatrix::restoreCheckpoint(void)
+{
+	memcpy(mV, mSavedV, N*N*sizeof(double));
+	memcpy(mU, mSavedU, N*N*sizeof(double));
+#ifndef USE_LAPACK
+	memcpy(mQ, mSavedQ, N*N*sizeof(double));
+#else
+	memcpy(mS, mSavedS, N*N*sizeof(double));
+#endif
+	memcpy(mD, mSavedD,   N*sizeof(double));
+
+	return mSavedScale;
+}
+

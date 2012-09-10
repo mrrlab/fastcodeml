@@ -352,9 +352,11 @@ struct ForestNode
 
 	/// Get the computation cost from the node to the leaves
 	///
-	/// @param[in] aAggressiveStrategy If true use the aggressive simplification strategy
+	/// @param[in] aCostAtLeaf The cost associated to a leaf
+	/// @param[in] aCostIntern The cost associated to an internal node
+	/// @param[in] aCostPtr The cost associated to a pointer to another node
 	///
-	/// @return The total number of branches of the forest
+	/// @return The total cost of the tree starting from the given node
 	///
 	unsigned int getCost(unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const
 	{

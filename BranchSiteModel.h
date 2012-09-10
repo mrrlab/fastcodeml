@@ -19,7 +19,7 @@
 ///
 class BranchSiteModel
 {
-public:
+protected:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
@@ -66,6 +66,7 @@ public:
 		setLimits(mNumTimes, mNumVariables);
 	}
 
+public:
 	/// Destructor.
 	///
 	virtual ~BranchSiteModel() {}
@@ -90,15 +91,24 @@ public:
 	///
 	double maximizeLikelihood(size_t aFgBranch);
 
+	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations.
+	///
+	/// @return The maximum Likelihood value
+	///
+	virtual double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar) =0;
+
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
-	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX) =0;
+	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -291,7 +301,8 @@ public:
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
-						  mSet(aForest.getNumBranches(), 3), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -301,15 +312,24 @@ public:
 	///
 	double operator()(size_t aFgBranch);
 
+	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations.
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
-	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX);
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -323,14 +343,21 @@ private:
 	///
 	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/) {return *this;}
 
+	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
+	///
+	/// @return The tree log-likelihood value
+	///
+	double combineSiteLikelihoods(void);
+
 private:
-	TransitionMatrix 		mQw0;			///< Q matrix for the omega0 case
-	TransitionMatrix 		mQ1;			///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSet	mSet;			///< Set of matrices used for the tree visits
-	double					mPrevK;			///< Previous k value used to compute matrices
-	double					mPrevOmega0;	///< Previous w0 value used to compute matrices
-	double					mScaleQw0;		///< Scale value for Qw0
-	double					mScaleQ1;		///< Scale value for Q1
+	TransitionMatrix 		mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix 		mQ1;				///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSetH0	mSet;				///< Set of matrices used for the tree visits
+	ProbabilityMatrixSetH0	mSetForGradient;	///< Set of matrices used for the tree visits
+	double					mPrevK;				///< Previous k value used to compute matrices
+	double					mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double					mScaleQw0;			///< Scale value for Qw0
+	double					mScaleQ1;			///< Scale value for Q1
 };
 
 
@@ -355,7 +382,8 @@ public:
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
-						  mSet(aForest.getNumBranches(), 4), mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///
@@ -365,7 +393,7 @@ public:
 	///
 	double operator()(size_t aFgBranch);
 
-	/// Compute the likelihood for the given forest and the given set of parameters.
+	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
 	/// @param[in] aVar The optimizer variables
 	/// @param[in] aTrace If set visualize the best result so far
@@ -373,7 +401,16 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar=UINT_MAX);
+	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+
+	/// Compute the likelihood for the given forest and the given set of parameters.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
 
 private:
@@ -387,18 +424,25 @@ private:
 	///
 	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/) {return *this;}
 
+	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
+	///
+	/// @return The tree log-likelihood value
+	///
+	double combineSiteLikelihoods(void);
+
 
 private:
-	TransitionMatrix		mQw0;			///< Q matrix for the omega0 case
-	TransitionMatrix		mQw2;			///< Q matrix for the omega2 case
-	TransitionMatrix		mQ1;  			///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSet	mSet;			///< Set of matrices used for the tree visits
-	double					mPrevK;			///< Previous k value used to compute matrices
-	double					mPrevOmega0;	///< Previous w0 value used to compute matrices
-	double					mPrevOmega2;	///< Previous w2 value used to compute matrices
-	double					mScaleQw0;		///< Scale value for Qw0
-	double					mScaleQw2;		///< Scale value for Qw2
-	double					mScaleQ1;		///< Scale value for Q1
+	CheckpointableTransitionMatrix	mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix				mQw2;				///< Q matrix for the omega2 case
+	CheckpointableTransitionMatrix	mQ1;  				///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSetH1			mSet;				///< Set of matrices used for the tree visits
+	ProbabilityMatrixSetH1			mSetForGradient;	///< Set of matrices used for the tree visits
+	double							mPrevK;				///< Previous k value used to compute matrices
+	double							mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double							mPrevOmega2;		///< Previous w2 value used to compute matrices
+	double							mScaleQw0;			///< Scale value for Qw0
+	double							mScaleQw2;			///< Scale value for Qw2
+	double							mScaleQ1;			///< Scale value for Q1
 };
 
 

@@ -36,7 +36,7 @@ public:
 	TransitionMatrix()
 	{
 		// Initialize Q matrix to all zeroes (so only non-zero values are written)
-#ifdef USE_S_MATRIX
+#ifdef USE_LAPACK
 		memset(mS, 0, N*N*sizeof(double));
 #else
 		memset(mQ, 0, N*N*sizeof(double));
@@ -73,7 +73,6 @@ public:
 	double fillMatrix(double aK);
 
 	/// Compute the eigendecomposition of the Q matrix.
-	/// Depending on the definition of USE_DSYRK use the old or the new method
 	/// The used codon frequencies should be already loaded using setCodonFrequencies()
 	/// The results are stored internally
 	///
@@ -229,7 +228,7 @@ private:
     #pragma warning(disable: 4324) // Padding added due to alignment request
 #endif
 
-private:
+protected:
 	// Order suggested by icc to improve locality
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
@@ -239,7 +238,7 @@ private:
 #endif
 	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
 	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
-#ifndef USE_S_MATRIX
+#ifndef USE_LAPACK
 	double ALIGN64	mQ[N*N];		///< The Q matrix
 #else
 	double ALIGN64	mS[N*N];		///< The S matrix (remember Q = S*Pi)
@@ -252,6 +251,51 @@ private:
     #pragma warning(pop)
 #endif
 };
+
+
+/// The transition matrix that can be saved ad restored afterwards.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.0
+///
+class CheckpointableTransitionMatrix : public TransitionMatrix
+{
+public:
+	/// Save a checkpoint of the matrices
+	///
+	/// @param[in] aScale The matrix scale to be saved
+	///
+	void saveCheckpoint(double aScale);
+
+	/// Restore the status at the last checkpoint
+	/// Note: no check if the saved status is valid
+	///
+	/// @return The original matrix scale
+	///
+	double restoreCheckpoint(void);
+
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4324) // Padding added due to alignment request
+#endif
+
+private:
+	double			mSavedScale;		///< Saved matrix scale value
+	double ALIGN64	mSavedV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
+	double ALIGN64	mSavedU[N*N];		///< The left adjusted eigenvectors matrix
+#ifndef USE_LAPACK
+	double ALIGN64	mSavedQ[N*N];		///< The Q matrix
+#else
+	double ALIGN64	mSavedS[N*N];		///< The S matrix (remember Q = S*Pi)
+#endif
+	double ALIGN64	mSavedD[N];			///< The matrix eigenvalues stored in reverse order
+	
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+};
+
 
 #endif
 
