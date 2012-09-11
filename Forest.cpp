@@ -981,9 +981,9 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
         const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
-        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(static)
+        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(guided)
 #else
-        #pragma omp parallel for default(shared) schedule(runtime)
+        #pragma omp parallel for default(shared) schedule(guided)
 #endif
         for(int i=0; i < len; ++i)
         {
@@ -1010,9 +1010,9 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
     const int len       = num_sites*num_sets;
 
 #ifdef _MSC_VER
-    #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods) schedule(static)
+    #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods) schedule(guided)
 #else
-    #pragma omp parallel for default(shared) schedule(runtime)
+    #pragma omp parallel for default(shared) schedule(guided)
 #endif
     for(int i=0; i < len; ++i)
     {
@@ -1399,18 +1399,25 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 #ifdef _MSC_VER
 		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
 #else
-		#pragma omp parallel for default(shared) schedule(static)
+//#pragma omp parallel
+//#pragma omp single
+		#pragma omp parallel for default(shared)
 #endif
 		for(int i=0; i < len; ++i)
 		{
-			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int tmp     = tmp_ivs[i];
-			const unsigned int site    = getSiteNum(tmp);
-			const unsigned int set_idx = getSetNum(tmp);
+#ifndef _MSC_VER
+			#pragma omp task untied
+#endif
+			{
+				// Compute likelihood array at the root of one tree (the access order is the fastest)
+				const unsigned int tmp     = tmp_ivs[i];
+				const unsigned int site    = getSiteNum(tmp);
+				const unsigned int set_idx = getSetNum(tmp);
 
-			const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
 
-			likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+			}
 		}
 	}
 }

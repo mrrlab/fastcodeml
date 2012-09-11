@@ -120,9 +120,17 @@ public:
 #ifdef USE_LAPACK
 		// Simply copy the symmetric matrix column
 		// instead of: dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
-		int i = 0;
-		for(; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
-		for(; i < N; ++i)      aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+		if(aCodon > 20)
+		{
+			memcpy(aGout, mMatrices[aSetIdx*mNumMatrices+aBranch]+aCodon*N, aCodon*sizeof(double));
+			for(int i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+		}
+		else
+		{
+			int i = 0;
+			for(; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
+			for(; i < N; ++i)      aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+		}
 
 #if !defined(BUNDLE_ELEMENT_WISE_MULT)
 		elementWiseMult(aGout, mInvCodonFreq);

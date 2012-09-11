@@ -79,10 +79,6 @@ int main(int ac, char **av)
 		num_threads = 1;
 		omp_set_num_threads(1);
 	}
-#ifndef _MSC_VER
-	// Experiment with scheduling options
-	omp_set_schedule(omp_sched_guided, 1);
-#endif
 #else
 	cmd.mForceSerial = true;
 	unsigned int num_threads = 1;
