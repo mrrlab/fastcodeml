@@ -120,16 +120,23 @@ public:
 #ifdef USE_LAPACK
 		// Simply copy the symmetric matrix column
 		// instead of: dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
-		if(aCodon > 20)
-		{
+		// The method is:
+	    //	for(i=0; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
+		//	for(i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+		// The special cases below are to speedup the routine
+		switch(aCodon)
+        {
+        case 0:
+            for(int i=0; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N];
+            break;
+		case 1:
+            aGout[0] = mMatrices[aSetIdx*mNumMatrices+aBranch][N];
+            for(int i=1; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+1];
+            break;
+		default:
 			memcpy(aGout, mMatrices[aSetIdx*mNumMatrices+aBranch]+aCodon*N, aCodon*sizeof(double));
 			for(int i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
-		}
-		else
-		{
-			int i = 0;
-			for(; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
-			for(; i < N; ++i)      aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
+			break;
 		}
 
 #if !defined(BUNDLE_ELEMENT_WISE_MULT)
