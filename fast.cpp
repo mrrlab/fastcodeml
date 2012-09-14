@@ -514,8 +514,8 @@ Usage:
 -re  --relative-error (required argument)
         Relative error where to stop maximization
 
--mk  --max-mkl-threads
-        Maximum number of threads to use for the MKL parallel library (zero: no limits)
+-rb  --reduction-blocks (required argument)
+        Divide reduce subtrees into these blocks (zero disable it)
 
 @endverbatim
 */
