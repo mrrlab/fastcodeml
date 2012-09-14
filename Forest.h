@@ -85,6 +85,16 @@ public:
 	/// Reduce common subtrees on the whole forest
 	///
 	void reduceSubtrees(void);
+
+	/// Reduce common subtrees on the whole forestadopting a divide-and-conquer approach
+	/// If aBlocks is 1, then the routine works as the old one, reducing all the sites together.
+	/// If aBlocks is 0, no reduction is performed and a false is returned.
+	/// If aBlocks is between 2 and num_sites/2 the sites are divided in this number of independent blocks before reducing.
+	///
+	/// @param[in] aBlocks Number of blocks in which to split sites before reduction
+	///
+	/// @return True if the reduction has taken place.
+	///
 	bool reduceSubtrees(unsigned int aBlocks);
 
 #ifndef NEW_LIKELIHOOD
