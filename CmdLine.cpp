@@ -127,7 +127,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_PARAM,
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
-		OPT_REL_ERROR
+		OPT_REL_ERROR,
+		OPT_NUM_RBLOCKS
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -178,6 +179,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
 		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization" },
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
+		{ OPT_NUM_RBLOCKS,		"-rb",					SO_REQ_SEP,	"Divide reduce subtrees into these blocks (zero disable it)" },
+		{ OPT_NUM_RBLOCKS,		"--reduction-blocks",	SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -306,6 +309,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_REL_ERROR:
 			mRelativeError = atof(args.OptionArg());
 			if(mRelativeError <= 0.0) mRelativeError = 1e-15;
+			break;
+
+		case OPT_NUM_RBLOCKS:
+			mNumReductionBlocks = atoi(args.OptionArg());
 			break;
 		}
 	}

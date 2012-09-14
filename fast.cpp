@@ -205,10 +205,10 @@ int main(int ac, char **av)
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
-		forest.reduceSubtrees();
+		bool sts = forest.reduceSubtrees(cmd.mNumReductionBlocks);
 
 #ifndef NEW_LIKELIHOOD
-		forest.addAggressiveReduction();
+		if(sts) forest.addAggressiveReduction();
 #endif
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD

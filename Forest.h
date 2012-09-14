@@ -85,6 +85,7 @@ public:
 	/// Reduce common subtrees on the whole forest
 	///
 	void reduceSubtrees(void);
+	bool reduceSubtrees(unsigned int aBlocks);
 
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction

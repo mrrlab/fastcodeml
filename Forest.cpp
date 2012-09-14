@@ -273,6 +273,60 @@ void Forest::reduceSubtrees(void)
 	}
 }
 
+bool Forest::reduceSubtrees(unsigned int aBlocks)
+{
+	// Setup dependency vectors
+	std::vector<unsigned int> empty_vector;
+	mTreeDependencies.resize(mNumSites, empty_vector);
+	mTreeRevDependencies.resize(mNumSites, empty_vector);
+
+	// Make integer the number of sites and the number of blocks (otherwise the countdown does not work)
+	const int ns = static_cast<int>(mNumSites);
+	const int num_blocks = static_cast<int>(aBlocks);
+
+	if(num_blocks < 1 || num_blocks >= ns/2)
+	{
+		// No reduction at all
+		return false;
+	}
+	if(num_blocks == 1)
+	{
+		// Try to merge equal subtrees (this is the usual global check and reduction)
+		// Trees at the beginning of the forest point to trees ahead
+		// (this way a delete does not choke with pointers pointing to freed memory)
+		for(int i=ns-1; i > 0; --i)
+		{
+			for(int j=i-1; j >= 0; --j)
+			{
+				reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
+			}
+		}
+	}
+	else
+	{
+		const int bsize = ns / num_blocks;
+		int start = -1;
+		int end   =  0;
+
+		for(int block=0; block < num_blocks; ++block)
+		{
+			end = start+1;
+			start += bsize;
+			if((ns-1-start) < bsize) start = ns-1;
+
+			for(int i=start; i > end; --i)
+			{
+				for(int j=i-1; j >= end; --j)
+				{
+					reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 
 void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
 {
@@ -1399,8 +1453,6 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 #ifdef _MSC_VER
 		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
 #else
-//#pragma omp parallel
-//#pragma omp single
 		#pragma omp parallel for default(shared)
 #endif
 		for(int i=0; i < len; ++i)
