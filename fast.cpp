@@ -129,7 +129,7 @@ int main(int ac, char **av)
 		                                                      << "Num. cores:    1"  << std::endl;
 #endif
 #ifdef USE_MPI
-		if(hlc.numJobs() > 1)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
+		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
 		else										std::cerr << "Num. MPI proc: Insufficient, single task execution" << std::endl;
 #endif
 													std::cerr << "Compiled with: ";
@@ -361,11 +361,11 @@ int main(int ac, char **av)
 			fe.exportForest(cmd.mGraphFile, fg_branch);
 		}
 
-		// If the run passes the LRT, then compute the BEB
+		// If the two hypothesis are computed and the run passes the LRT, then compute the BEB
 		if(cmd.mComputeHypothesis > 1 && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
-			BayesTest bt(forest.getNumSites());
-			bt.computeBEB();
+			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
+			bt.computeBEB(h1);
 			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
 		}
 	}

@@ -25,6 +25,8 @@ set(SRCS
 	ParseParameters.cpp
 	VerbosityLevels.cpp
 	DAGScheduler.cpp
+	TreeAndSetsDependencies.cpp
+	WriteResults.cpp
 )
 
 

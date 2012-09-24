@@ -842,6 +842,62 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 	return lnl;
 }
 
+void BranchSiteModelAltHyp::computeLikelihoodForBEB(CodonClass aCodonClass, double aOmegaFg, double aOmegaBg, double* aLikelihoods)
+{
+	// Save the values to local variables to speedup access
+	const double* params = &mVar[mNumTimes];
+	const double  kappa  = params[3];
+
+	TransitionMatrix q_fg;				///< Q matrix for the omega2 case
+	TransitionMatrix q_bg;				///< Q matrix for the omega2 case
+	double scale_q_fg;
+	double scale_q_bg;
+
+	// Fill the matrices and compute their eigen decomposition.
+#ifdef _MSC_VER
+	#pragma omp parallel sections default(none) shared(aOmegaFg, aOmegaBg, kappa, scale_q_fg, scale_q_bg, q_fg, q_bg)
+#else
+	#pragma omp parallel sections default(shared)
+#endif
+	{
+		#pragma omp section
+		{
+			scale_q_fg = q_fg.fillMatrix(aOmegaFg, kappa);
+			q_fg.eigenQREV();
+		} 
+		#pragma omp section
+		{
+			scale_q_bg = q_bg.fillMatrix(aOmegaBg, kappa);
+			q_bg.eigenQREV();
+		}
+	}
+
+	// Compute all proportions
+	getProportions(params[0], params[1], mProportions);
+
+	// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+	mFgScale = mProportions[0]*mScaleQw0 +
+			   mProportions[1]*mScaleQ1  +
+			   mProportions[2]*mScaleQw2 +
+			   mProportions[3]*mScaleQw2;
+	mBgScale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
+#else
+	mFgScale = mProportions[0]*mScaleQw0 + mProportions[1]*mScaleQ1 + (1.0-params[0])*mScaleQw2;
+	mBgScale = params[1]*mScaleQw0+(1.0-params[1])*mScaleQ1;
+#endif
+
+	ProbabilityMatrixSetBEB beb_set(mForest.getNumBranches());
+
+	// Fill the set of Probability Matrices
+	beb_set.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mVar);
+
+	// Compute likelihoods
+	mForest.computeLikelihoods(beb_set, mLikelihoods, 1);
+
+	memcpy(aLikelihoods, &mLikelihoods[0], mForest.getNumSites()*sizeof(double));
+}
+
 
 /// Adapter class to pass the routine to the optimizer.
 ///

@@ -128,7 +128,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
 		OPT_REL_ERROR,
-		OPT_NUM_RBLOCKS
+		OPT_NUM_RBLOCKS,
+		OPT_OUT_RESULTS
 	};
 
 	CSimpleOpt::SOption parser_options[] = {
@@ -181,6 +182,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
 		{ OPT_NUM_RBLOCKS,		"-rb",					SO_REQ_SEP,	"Divide reduce subtrees into these blocks (zero disable it)" },
 		{ OPT_NUM_RBLOCKS,		"--reduction-blocks",	SO_REQ_SEP,	"" },
+		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted on this file" },
+		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -313,6 +316,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_NUM_RBLOCKS:
 			mNumReductionBlocks = atoi(args.OptionArg());
+			break;
+
+		case OPT_OUT_RESULTS:
+			mResultsFile = args.OptionArg();
 			break;
 		}
 	}

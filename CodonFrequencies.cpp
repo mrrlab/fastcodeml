@@ -39,7 +39,9 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 		else       std::cerr << std::setw(5) << aCodonCount[id];
 		if(k % 4 == 3) std::cerr << std::endl;
 	}
+	std::cerr << std::endl;
 #endif
+
 	// Compute the 3x4 table
 	double fb3x4sg[12];
 
@@ -65,7 +67,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 #ifdef CHECK_ALGO
 	for(k=0; k < 12; ++k)
 	{
-		std::cerr << std::fixed << std::setprecision(6) << fb3x4sg[k];
+		std::cerr << std::fixed << std::setprecision(8) << std::setw(12) << fb3x4sg[k];
 		if(k % 4 == 3) std::cerr << std::endl;
 	}
 	std::cerr << std::endl;

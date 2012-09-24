@@ -162,6 +162,13 @@ public:
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
 
+	
+	/// Get site multeplicity values.
+	///
+	/// @return Reference to the array of site multiplicities
+	///
+	const std::vector<double>& getSiteMultiplicity(void) const {return mForest.getSiteMultiplicity();}
+
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
 	///
@@ -412,6 +419,16 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
+	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
+	enum CodonClass
+	{
+		CODON_CLASS_0,			///< Codon class 0
+		CODON_CLASS_1,			///< Codon class 1
+		CODON_CLASS_2a,			///< Codon class 2a
+		CODON_CLASS_2b			///< Codon class 2b
+	};
+
+	void computeLikelihoodForBEB(CodonClass aCodonClass, double aOmegaFg, double aOmegaBg, double* aLikelihoods);
 
 private:
 	/// Disabled assignment operator to avoid warnings on Windows

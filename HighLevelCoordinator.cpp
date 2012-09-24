@@ -24,6 +24,8 @@
 #include "BayesTest.h"
 #include "VerbosityLevels.h"
 
+static const int INVALID_RANK = -1;
+
 enum JobStatus
 {
 	JOB_WAITING,			///< Not yet assigned
@@ -202,7 +204,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 }
 
 
-HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(MASTER_JOB), mSize(0), mNumInternalBranches(0), mWorkTable(0)
+HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(INVALID_RANK), mSize(0), mNumInternalBranches(0), mWorkTable(0)
 {
 #ifdef _OPENMP
 #ifdef VTRACE
@@ -213,11 +215,21 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 #else
     const int requested = MPI_THREAD_SINGLE;
 #endif
-	int provided;
-	MPI_Init_thread(aRgc, aRgv, requested, &provided);
+	int provided = MPI_THREAD_SINGLE;
+	int mpi_status = MPI_Init_thread(aRgc, aRgv, requested, &provided);
 	if(provided != requested)
 	{
-		mSize = 0;		// Don't support threads, don't execute under MPI
+		mSize = 1;		// Don't support threads, don't execute under MPI
+		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
+		if(mRank != MASTER_JOB)
+		{
+			MPI_Finalize();
+			throw FastCodeMLSuccess();
+		}
+	}
+	else if(mpi_status != MPI_SUCCESS)
+	{
+		throw FastCodeMLFatal("MPI Failed to initalize");
 	}
 	else
 	{
@@ -502,8 +514,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_BEB:
 			{
 			// Compute the BEB
-			BayesTest bt(aForest.getNumSites());
-			bt.computeBEB();
+			BayesTest bt(aForest.getNumSites(), 0);
+			bt.computeBEB(h1);
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;

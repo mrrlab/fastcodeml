@@ -4,6 +4,12 @@
 
 #include <vector>
 #include <cstdlib>
+#include "BranchSiteModel.h"
+
+/// Few constants
+const static int BEB_N1D = 10;	///< Number of categories for w0 and w2
+const static int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
+const static int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
 
 /// Tests to find the sites under positive selection.
 ///
@@ -18,8 +24,9 @@ public:
 	/// Constructor.
 	///
 	/// @param[in] aNumSites Number of sites
+	/// @param[in] aVerbose The verbosity level
 	///
-	explicit BayesTest(size_t aNumSites);
+	explicit BayesTest(size_t aNumSites, unsigned int aVerbose=0);
 
 	/// Destructor.
 	///
@@ -29,7 +36,7 @@ public:
 	///
 	/// @todo Missing computeBEB routine. The values that are output are simulated.
 	///
-	void computeBEB(void);
+	void computeBEB(BranchSiteModelAltHyp& aModel);
 	
 	/// Print the sites under positive selection.
 	///
@@ -51,9 +58,27 @@ private:
 	///
 	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
 
+	/// This sets up the grid (mPara[][]) according to the priors.  
+	/// It calculates the probability of data at each site given w: f(f_h|w).  
+	/// This is calculated using the branch model (NSsites = 0 model = 2), with 
+	/// BayesEB=2 used to force the use of the correct scale factors in GetPMatBranch().
+	///
+	/// Order of site classes for iw or f(x_h|w):
+	///                     fore   back     #sets
+	/// Branchsite A (121 sets)
+	///   site class 0:      w0     w0        10
+	///   site class 1:      w1=1   w1=1       1
+	///   site class 2a:     w0     w2       100
+	///   site class 2b:     w1=1   w2        10
+	///
+	double getGridParams(BranchSiteModelAltHyp& aModel);
+
 private:
 	std::vector<double> mSiteClassProb;		///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
 	size_t				mNumSites;			///< Number of sites.
+	double				mPara[BEB_DIMS][BEB_N1D];
+	unsigned int		mVerbose;					///< If greather than zero prints more info
+	std::vector<double>	mPriors;	///< Computed priors (each points to a list, one for each site)
 };
 
 #endif

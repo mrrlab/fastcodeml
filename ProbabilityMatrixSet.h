@@ -42,7 +42,9 @@ protected:
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
+#if !defined(BUNDLE_ELEMENT_WISE_MULT) || defined(NEW_LIKELIHOOD)
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
+#endif
 	}
 
 public:
@@ -200,7 +202,9 @@ private:
 protected:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set (contains pointers to mMatrixSpaces matrices)
+#if !defined(BUNDLE_ELEMENT_WISE_MULT) || defined(NEW_LIKELIHOOD)
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
+#endif
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets
 	int				mFgBranch;			///< Foreground branch number (should be int)
@@ -355,6 +359,48 @@ private:
 	double			mSaveQw0[N*N];		///< Save the previous value for the Qw0 matrix
 	double			mSaveQ1[N*N];		///< Save the previous value for the Q1 matrix
 	double			mSaveQw2[N*N];		///< Save the previous value for the Qw2 matrix
+};
+
+
+/// Set of probability matrices for all branches of a tree for the BEB computation.
+///
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-20 (initial version)
+///     @version 1.0
+///
+class ProbabilityMatrixSetBEB : public ProbabilityMatrixSet
+{
+public:
+	/// Create matrix set
+	///
+	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	///
+	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1) {}
+
+	/// Initialize the set for a given foreground branch number for H1
+	///
+	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
+	///
+	void initializeSet(unsigned int aFgBranch);
+
+	/// Compute the sets of matrices for the BEB computation.
+	/// The sets are (these are the bg and fg matrices): 
+	/// - set 0: w0, w0
+	/// - set 1: w1, w1
+	/// - set 2: w0, w2
+	/// - set 3: w1, w2
+	///
+	///	@param[in] aQfg The transition matrix for the fg branch
+	///	@param[in] aQbg The transition matrix for the bg branch
+	/// @param[in] aSbg Background Q matrix scale
+	/// @param[in] aSfg Foreground Q matrix scale
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	///
+	void fillMatrixSet(const  TransitionMatrix& aQfg,
+					   const  TransitionMatrix& aQbg,
+					   double aSbg,
+					   double aSfg,
+					   const std::vector<double>& aParams);
 };
 
 #endif

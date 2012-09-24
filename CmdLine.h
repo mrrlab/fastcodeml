@@ -25,6 +25,7 @@ public:
 		mTreeFile(0),
 		mGeneFile(0),
 		mGraphFile(0),
+		mResultsFile(0),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
 		mBranch(UINT_MAX),
@@ -65,6 +66,7 @@ public:
 	const char*		mTreeFile;				///< %Newick tree file name
 	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
+	const char*		mResultsFile;			///< File to which the results should be written
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
 	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)

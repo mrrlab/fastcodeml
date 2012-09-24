@@ -170,3 +170,42 @@ void ProbabilityMatrixSetH1::setMatrices(size_t aBranch, const double** aMatrice
 		memcpy(&mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], aMatricesPtr[2], N*N*sizeof(double));
 	}
 }
+
+void ProbabilityMatrixSetBEB::initializeSet(unsigned int aFgBranch)
+{
+	mFgBranch = static_cast<int>(aFgBranch);
+
+	int num_matrices = mNumMatrices;
+	for(int branch=0; branch < num_matrices; ++branch)
+	{
+		mMatrices[branch] = &mMatrixSpace[branch*MATRIX_SLOT];
+	}
+}
+
+void ProbabilityMatrixSetBEB::fillMatrixSet(const TransitionMatrix& aQfg, const TransitionMatrix& aQbg, double aSbg, double aSfg, const std::vector<double>& aParams)
+{
+	const int num_matrices = mNumMatrices;
+	const double* params = &aParams[0];
+
+#ifdef _MSC_VER
+	#pragma omp parallel for default(none) shared(aQfg, aQbg, aSbg, aSfg, params, num_matrices) schedule(guided)
+#else
+	#pragma omp parallel for default(shared)
+#endif
+	for(int branch=0; branch < num_matrices; ++branch)
+	{
+#ifndef _MSC_VER
+		#pragma omp task untied
+#endif
+		{
+			if(branch == mFgBranch)
+			{
+				aQfg.computeFullTransitionMatrix(&mMatrixSpace[branch*MATRIX_SLOT], params[branch]/aSfg);
+			}
+			else
+			{
+				aQbg.computeFullTransitionMatrix(&mMatrixSpace[branch*MATRIX_SLOT], params[branch]/aSbg);
+			}
+		}
+	}
+}
