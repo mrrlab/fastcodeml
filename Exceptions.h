@@ -7,7 +7,7 @@
 #include <sstream>
 
 /// Fatal error in FastCodeML.
-/// The message explains the reason
+/// The message explains the reason.
 ///
 class FastCodeMLFatal : public std::runtime_error
 {
@@ -19,6 +19,7 @@ public:
 	{}
 
 	/// Constructor.
+	/// Print a message before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination
 	///
@@ -26,6 +27,7 @@ public:
 	{}
 
 	/// Constructor.
+	/// Print a message (previously built into a std::ostringstream) before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination (has been formatted printing into a std::ostringstream).
 	///

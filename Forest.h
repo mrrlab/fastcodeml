@@ -28,9 +28,9 @@ static const double GLOBAL_SCALING_FACTOR = 1.0;
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-02-23 (initial version)
-///     @version 1.0
+///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///  @date 2011-02-23 (initial version)
+///  @version 1.0
 ///
 class Forest
 {
@@ -63,7 +63,7 @@ public:
 #endif
 	}
 	
-	/// Build the forest and reduces the subtrees
+	/// Build the forest and reduces the subtrees.
 	///
 	/// @param[in] aTree The phylogenetic tree
 	/// @param[in] aGenes The corresponding genes
@@ -73,7 +73,7 @@ public:
 						  const Genes& aGenes,
 						  CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel);
 
-	/// Print the class statistics as: cout << r;
+	/// Print the class statistics as: cout << r;.
 	///
 	/// @param[in] aOut Output stream
 	/// @param[in] aForest The forest to be printed
@@ -86,7 +86,7 @@ public:
 	///
 	void reduceSubtrees(void);
 
-	/// Reduce common subtrees on the whole forestadopting a divide-and-conquer approach
+	/// Reduce common subtrees on the whole forestadopting a divide-and-conquer approach.
 	/// If aBlocks is 1, then the routine works as the old one, reducing all the sites together.
 	/// If aBlocks is 0, no reduction is performed and a false is returned.
 	/// If aBlocks is between 2 and num_sites/2 the sites are divided in this number of independent blocks before reducing.
@@ -98,14 +98,14 @@ public:
 	bool reduceSubtrees(unsigned int aBlocks);
 
 #ifndef NEW_LIKELIHOOD
-	/// Add more aggressive subtree reduction
+	/// Add more aggressive subtree reduction.
 	///
 	/// @param[in] aNode The tree node from which the walker should start (no argument starts from the root)
 	///
 	void addAggressiveReduction(ForestNode* aNode=0);
 #endif
 
-	/// Remove all work data used for reduction
+	/// Remove all work data used for reduction.
 	///
 	/// @param[in] aNode The node from which to start. Pass zero to start from the root of all the trees in the forest.
 	///
@@ -165,7 +165,7 @@ public:
 	///
 	size_t getNumBranches(void) const {return mNumBranches;}
 
-	/// Return the number of internal branches (i.e. the ones that do not connect to leaves)
+	/// Return the number of internal branches (i.e.\ the ones that do not connect to leaves)
 	///
 	/// @return The number of internal branches
 	///
@@ -189,14 +189,14 @@ public:
 	///
 	const std::vector<double>& getSiteMultiplicity(void) const {return mSiteMultiplicity;}
 
-	/// Set the times (i.e. the branch lengths) from the values read from the tree file
+	/// Set the times (i.e.\ the branch lengths) from the values read from the tree file
 	///
 	/// @param[out] aTimes The array with all the tree times
 	/// @param[in] aNode The node from which to start (if zero starts from the root)
 	///
 	void setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode=0) const;
 
-	/// Set the times (i.e. the branch lengths) on the tree from the values read from the times array
+	/// Set the times (i.e.\ the branch lengths) on the tree from the values read from the times array
 	///
 	/// @param[in] aTimes The array with all the tree times
 	/// @param[out] aNode The node from which to start (if zero starts from the root)
@@ -312,8 +312,8 @@ private:
 
 	/// Reduce the common subtree between two (sub)trees
 	///
-	/// @param[in] aNode The subtree to be tested (i.e. if it exists in both trees)
-	/// @param[in] aNodeDependent The dependent tree (i.e. it could point to subtrees of aNode)
+	/// @param[in] aNode The subtree to be tested (i.e.\ if it exists in both trees)
+	/// @param[in] aNodeDependent The dependent tree (i.e.\ it could point to subtrees of aNode)
 	///
 	void reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent);
 
@@ -360,24 +360,43 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
-inline static unsigned int getSiteNum(unsigned int aPair) {return aPair >> 2;}
-inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
-inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
+	/// Given the combined entry in the dependency list, extract the site number.
+	///
+	/// @param[in] aPair The combined entry
+	///
+	/// @return The site number
+	///
+	inline static unsigned int getSiteNum(unsigned int aPair) {return aPair >> 2;}
+
+	/// Given the combined entry in the dependency list, extract the set number.
+	///
+	/// @param[in] aPair The combined entry
+	///
+	/// @return The set number
+	///
+	inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
+
+	/// Create the combined entry in the dependency list from site and set numbers.
+	///
+	/// @param[in] aSite The site number
+	/// @param[in] aSet The set number
+	///
+	/// @return The combined entry
+	///
+	inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
 
 
 private:
 	size_t					mNumSites;					///< Number of sites
 	const double*			mCodonFreq;					///< Experimental codon frequencies
-	const double*			mInvCodonFreq;
-	const double*			mInv2CodonFreq;
+	const double*			mInvCodonFreq;				///< Inverse of the codon frequencies
+	const double*			mInv2CodonFreq;				///< Squared inverse of the codon frequencies
 	size_t					mNumBranches;				///< Total number of branches of the original tree
 	std::vector<ForestNode>	mRoots;						///< The roots of the forest's trees. Its length is the number of valid sites
 	std::vector<double>		mSiteMultiplicity;			///< Multiplicity of the valid sites
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
-	//typedef std::vector< std::vector<std::pair<unsigned int, unsigned int> > >
-	//						ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class)
 	typedef std::vector< std::vector<unsigned int> >
 							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*4+site_class 
 	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)

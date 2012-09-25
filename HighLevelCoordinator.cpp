@@ -211,15 +211,21 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
     const int requested = MPI_THREAD_SINGLE;
 #else
 	const int requested = MPI_THREAD_SERIALIZED;
+	//const int requested = MPI_THREAD_FUNNELED;
 #endif
 #else
     const int requested = MPI_THREAD_SINGLE;
 #endif
 	int provided = MPI_THREAD_SINGLE;
 	int mpi_status = MPI_Init_thread(aRgc, aRgv, requested, &provided);
-	if(provided != requested)
+	if(mpi_status != MPI_SUCCESS)
 	{
-		mSize = 1;		// Don't support threads, don't execute under MPI
+		throw FastCodeMLFatal("MPI Failed to initalize");
+	}
+	else if(provided != requested)
+	{
+		// Don't support threads, don't execute under MPI
+		mSize = 1;		
 		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
 		if(mRank != MASTER_JOB)
 		{
@@ -227,21 +233,17 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 			throw FastCodeMLSuccess();
 		}
 	}
-	else if(mpi_status != MPI_SUCCESS)
-	{
-		throw FastCodeMLFatal("MPI Failed to initalize");
-	}
 	else
 	{
 		MPI_Comm_size(MPI_COMM_WORLD, &mSize);
 		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
-	}
 
-	// If there are too few MPI processes, terminate the unused workers
-	if(mSize < 3 && mRank  != MASTER_JOB)
-	{
-		MPI_Finalize();
-		throw FastCodeMLSuccess();
+		// If there are too few MPI processes, terminate the unusable workers
+		if(mSize < 3 && mRank != MASTER_JOB)
+		{
+			MPI_Finalize();
+			throw FastCodeMLSuccess();
+		}
 	}
 }
 
@@ -253,7 +255,7 @@ HighLevelCoordinator::~HighLevelCoordinator()
 }
 
 
-bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine, unsigned int aVerbose)
+bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 {
 	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
 	if(mSize < 3) return false;
@@ -262,7 +264,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine, u
 	if(mRank == MASTER_JOB)
 	{
 		// Initialize structures
-		mVerbose = aVerbose;
+		mVerbose = aCmdLine.mVerboseLevel;
 		mNumInternalBranches = aForest.getNumInternalBranches();
 
 		// Check if the number of worker is ok
@@ -272,8 +274,11 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine, u
 		delete mWorkTable;
 		mWorkTable = new WorkTable(mNumInternalBranches);
 
+		// Prepare the results file output
+		WriteResults output_results(aCmdLine.mResultsFile);
+
 		// In the master process initialize the master
-		doMaster();
+		doMaster(output_results);
 	}
 	else
 	{
@@ -286,7 +291,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine, u
 }
 
 
-void HighLevelCoordinator::doMaster(void)
+void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 {
 	// Push work to free workers
 	unsigned int num_workers = 0;
@@ -300,7 +305,7 @@ void HighLevelCoordinator::doMaster(void)
 		// Wait for a request of work packet
 		int job_request[2];
 		MPI_Status status;
-		MPI_Recv((void*)&job_request, 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
+		MPI_Recv((void*)job_request, 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
 		int worker = status.MPI_SOURCE;
 
 		// Act on the request (job_request[0] values are from the JobRequestType enum, [1] is the response length)
@@ -326,6 +331,9 @@ void HighLevelCoordinator::doMaster(void)
 			double lnl = results_double[job_request[1]-1];
 			mWorkTable->mResults[branch].mLnl[h] = lnl;
 			mWorkTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
+
+			// Save for the results file
+			aOutputResults.saveLnL(branch, lnl, h);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
@@ -354,6 +362,18 @@ void HighLevelCoordinator::doMaster(void)
 				mWorkTable->mResults[branch].mPositiveSelSites.push_back(site);
 				double prob = static_cast<double>(results_integer[2*i+1])/static_cast<double>(PROB_SCALING);
 				mWorkTable->mResults[branch].mPositiveSelProbs.push_back(prob);
+			}
+
+			// If there are sites under positive selection, save them for the results file
+			if(job_request[1] > 0)
+			{
+				std::vector<unsigned int> sites;
+				for(int i=0; i < job_request[1]/2; ++i)
+				{
+					unsigned int u = static_cast<unsigned int>(results_integer[2*i+0]);
+					sites.push_back(u);
+				}
+				aOutputResults.savePositiveSelSites(branch, sites, mWorkTable->mResults[branch].mPositiveSelProbs);
 			}
 
 			// Output a status message
@@ -399,6 +419,9 @@ void HighLevelCoordinator::doMaster(void)
 
 	// Verify all jobs have been done
 	mWorkTable->checkAllJobsDone();
+
+	// Save results in the results file for later processing
+	aOutputResults.outputResults();
 
 	// Print likelihoods
 	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
@@ -456,9 +479,9 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 	for(;;)
 	{
-		// Signal I'm ready for work
+		// Signal that I'm ready for work
 		MPI_Request request;
-		MPI_Isend((void*)&job_request, 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
+		MPI_Isend((void*)job_request, 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
 
 		// If needed (i.e. it is not a worker announcement), send step results
 		switch(job_request[0])

@@ -16,13 +16,15 @@ static const unsigned char ALL_CHILDREN_SAME_TREE = 0xFF;
 
 /// Support data needed only during forest preprocessing phase. It is deleted before the computation phase.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-11-08 (initial version)
-///     @version 1.0
-///
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2011-11-08 (initial version)
+///   @version 1.0
 ///
 struct ForestNodeSupport
 {
+	/// Constructor.
+	/// Do nothing.
+	///
 	ForestNodeSupport() {}
 
 	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
@@ -30,10 +32,9 @@ struct ForestNodeSupport
 
 /// One node of each tree in the forest.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-02-23 (initial version)
-///     @version 1.0
-///
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2011-02-23 (initial version)
+///   @version 1.0
 ///
 struct ForestNode
 {
@@ -59,7 +60,7 @@ struct ForestNode
 	unsigned int				mChildIdx;					///< Mark the child position in the parent node
 #endif
 
-	/// Constructor
+	/// Constructor.
 	///
 	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
@@ -74,7 +75,7 @@ struct ForestNode
 		mPreprocessingSupport = new ForestNodeSupport;
 	}
 
-	/// Destructor
+	/// Destructor.
 	///
 	~ForestNode()
 	{
@@ -101,7 +102,7 @@ struct ForestNode
 		delete mPreprocessingSupport;
 	}
 
-	/// Copy constructor
+	/// Copy constructor.
 	///
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
@@ -123,7 +124,7 @@ struct ForestNode
 		mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
 	}
 
-	/// Assignment operator
+	/// Assignment operator.
 	///
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
@@ -161,7 +162,7 @@ struct ForestNode
 		return *this;
 	}
 
-	/// Build a node aligned to a 64 bits boundary (cache line size)
+	/// Build a node aligned to a 64 bits boundary (cache line size).
 	///
 	/// @param[in] aSize The size to be allocated
 	///
@@ -349,8 +350,7 @@ struct ForestNode
 		return cnt;
 	}
 
-
-	/// Get the computation cost from the node to the leaves
+	/// Get the computation cost from the node to the leaves.
 	///
 	/// @param[in] aCostAtLeaf The cost associated to a leaf
 	/// @param[in] aCostIntern The cost associated to an internal node
@@ -403,7 +403,7 @@ struct ForestNode
 		mChildrenSameTreeFlags &= ~mMaskTable[aChildIndex];
 	}
 
-	/// Test the given flag
+	/// Test if child aChildIndex is in the same tree.
 	///
 	/// @param[in] aChildIndex The index of the flag to be tested
 	///
@@ -414,7 +414,7 @@ struct ForestNode
 		return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) != 0;
 	}
 
-	/// Set all flags to true
+	/// Set all flags to true (i.e.\ all children of the node are in the same tree)
 	///
 	void setAllFlagsSameTree(void)
 	{

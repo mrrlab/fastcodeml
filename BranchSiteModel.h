@@ -10,12 +10,11 @@
 #include "Forest.h"
 #include "CmdLine.h"
 
-/// Common routines for the Hypothesis test.
+/// Common routines for testing the two hypothesis (H0 and H1).
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-23 (initial version)
 ///     @version 1.0
-///
 ///
 class BranchSiteModel
 {

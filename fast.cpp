@@ -25,6 +25,7 @@
 #include "BranchSiteModel.h"
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
+#include "WriteResults.h"
 
 #ifndef VTRACE
 #ifdef _OPENMP
@@ -86,7 +87,6 @@ int main(int ac, char **av)
 
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
-	int verbose_level = cmd.mVerboseLevel;
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
@@ -112,6 +112,7 @@ int main(int ac, char **av)
 		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
 													std::cerr << "Optimizer:     " << cmd.mOptimizationAlgo << std::endl;
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cerr << "Delta value:   " << cmd.mDeltaValueForGradient << std::endl;
+		if(cmd.mResultsFile)						std::cerr << "Results file:  " << cmd.mResultsFile << std::endl;
 
 #ifdef _OPENMP
 		if(num_threads > 1)
@@ -245,7 +246,7 @@ int main(int ac, char **av)
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
-	bool sts = hlc.startWork(forest, cmd, verbose_level);
+	bool sts = hlc.startWork(forest, cmd);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(sts)
@@ -259,6 +260,8 @@ int main(int ac, char **av)
 	}
 #endif
 
+	// Initialize the output results file (if the argument is null, no file is created)
+	WriteResults output_results(cmd.mResultsFile);
 
 	// Compute the range of branches to compute
 	size_t branch_start, branch_end;
@@ -306,6 +309,9 @@ int main(int ac, char **av)
 			else if(cmd.mTimesFromFile)	h0.initFromTree();
 
 			lnl0 = h0(fg_branch);
+
+			// Save the value for formatted output
+			output_results.saveLnL(fg_branch, lnl0, 0);
 		}
 
 		// Compute the alternate model maximum loglikelihood
@@ -322,6 +328,9 @@ int main(int ac, char **av)
 			else if(cmd.mTimesFromFile)		h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
+
+			// Save the value for formatted output
+			output_results.saveLnL(fg_branch, lnl1, 1);
 		}
 
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
@@ -367,11 +376,20 @@ int main(int ac, char **av)
 			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
 			bt.computeBEB(h1);
 			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
+
+			// Get the sites under positive selection for printing in the results file
+			std::vector<unsigned int> positive_sel_sites;
+			std::vector<double> positive_sel_sites_prob;
+			bt.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
+			output_results.savePositiveSelSites(fg_branch, positive_sel_sites, positive_sel_sites_prob);
 		}
 	}
 
 	// Get the time needed by the parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+
+	// Output the results
+	output_results.outputResults();
 
 	//std::cerr << "Num. eigenQREV: " << num_eigenqrev << std::endl;
 	//std::cerr << "Num. Matrix matrix: " << num_matmat << std::endl;
@@ -516,6 +534,9 @@ Usage:
 
 -rb  --reduction-blocks (required argument)
         Divide reduce subtrees into these blocks (zero disable it)
+
+-ou  --output (required argument)
+        Write results formatted on this file
 
 @endverbatim
 */

@@ -86,9 +86,8 @@ public:
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line 
 
 private:
-	/// Implementation so this structure could be used without other modules be aware of its internal structure
 	struct CmdLineImpl;
-	CmdLineImpl* mCmdLineImpl;
+	CmdLineImpl* mCmdLineImpl;				///< Implementation so this structure could be used without other modules be aware of its internals
 };
 
 #endif

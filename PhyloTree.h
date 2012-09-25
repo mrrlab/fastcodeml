@@ -10,9 +10,9 @@
 
 /// Phylogenetic tree public interface.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-08-30 (initial version)
-///     @version 1.0
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2010-08-30 (initial version)
+///   @version 1.0
 ///
 class PhyloTree
 {
@@ -89,7 +89,7 @@ public:
 	///
 	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
 
-	///	Check if any leaf has an associated branch length equal zero.
+	///	Check if any leaf has an associated branch length equal to zero.
 	///
 	/// @param[in] aTreeNode The node from which to start checking the tree. If not present starts from the root.
 	///
@@ -113,7 +113,7 @@ protected:
 
 	/// Fill the list of internal nodes.
 	///
-	/// @param[in,out] aNode The tree  node (recursively called function starting from the tree root)
+	/// @param[in,out] aNode The tree node (recursively called function starting from the tree root)
 	///
 	void fillInternalBranches(TreeNode *aNode);
 
