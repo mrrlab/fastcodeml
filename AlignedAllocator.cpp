@@ -23,8 +23,8 @@ void* alignedMalloc(size_t aSize, size_t aAlignment)
     reinterpret_cast<uintptr_t*>(o)[-1] = r;
     return reinterpret_cast<void*>(o);
 #else
-	void* ptr;
-	if(posix_memalign(&ptr, aAlignment, aSize)) return NULL;
+	void* ptr = 0;
+	if(posix_memalign(&ptr, aAlignment, aSize) || !ptr) return NULL;
 	return ptr;
 #endif
 }
