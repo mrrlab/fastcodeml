@@ -12,20 +12,31 @@
 #endif
 
 // Alignment must be power of 2 (1,2,4,8,16...)
-void* alignedMalloc(size_t size, size_t alignment)
+void* alignedMalloc(size_t aSize, size_t aAlignment)
 {
-    uintptr_t r = reinterpret_cast<uintptr_t>(malloc(size + --alignment + sizeof(uintptr_t)));
-    uintptr_t t = r + sizeof(uintptr_t);
-    uintptr_t o = (t + alignment) & ~static_cast<uintptr_t>(alignment);
+#if _MSC_VER
+	--aAlignment;
+    uintptr_t r = reinterpret_cast<uintptr_t>(malloc(aSize + aAlignment + sizeof(uintptr_t)));
     if(!r) return NULL;
+    uintptr_t t = r + sizeof(uintptr_t);
+    uintptr_t o = (t + aAlignment) & ~static_cast<uintptr_t>(aAlignment);
     reinterpret_cast<uintptr_t*>(o)[-1] = r;
     return reinterpret_cast<void*>(o);
+#else
+	void* ptr;
+	if(posix_memalign(&ptr, aAlignment, aSize)) return NULL;
+	return ptr;
+#endif
 }
 
-void alignedFree(void* p)
+void alignedFree(void* aPtr)
 {
-    if(!p) return;
-    free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(p)[-1]));
+    if(!aPtr) return;
+#if _MSC_VER
+    free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(aPtr)[-1]));
+#else
+    free(aPtr);
+#endif
 }
 
 

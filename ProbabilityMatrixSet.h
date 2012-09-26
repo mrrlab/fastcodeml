@@ -37,10 +37,11 @@ protected:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
+	/// @param[in] aNumMatSets How many sets of matrices to allocate
 	///
-	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets) : mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
+	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets, unsigned int aNumMatSets) : mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
 	{
-		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
+		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumMatSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 #if !defined(BUNDLE_ELEMENT_WISE_MULT) || defined(NEW_LIKELIHOOD)
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
@@ -224,7 +225,7 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3) {}
+	ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3, 2) {}
 
 	/// Initialize the set for a given foreground branch number for H0
 	///
@@ -298,7 +299,7 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4) {}
+	ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4, 3) {}
 
 	/// Initialize the set for a given foreground branch number for H1
 	///
@@ -375,7 +376,7 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1) {}
+	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1, 1) {}
 
 	/// Initialize the set for a given foreground branch number for H1
 	///

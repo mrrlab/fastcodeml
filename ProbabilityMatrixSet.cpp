@@ -126,7 +126,7 @@ void ProbabilityMatrixSetH1::fillMatrixSet(const  TransitionMatrix& aQw0,
 		}
 	}
 
-	aQw2.computeFullTransitionMatrix(&mMatrixSpace[(2*num_matrices+mFgBranch)*MATRIX_SLOT], params[mFgBranch]/aSfg);
+	aQw2.computeFullTransitionMatrix(&mMatrixSpace[2*num_matrices*MATRIX_SLOT+mFgBranch*MATRIX_SLOT], params[mFgBranch]/aSfg);
 }
 
 
