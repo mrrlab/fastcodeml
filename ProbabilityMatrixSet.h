@@ -126,7 +126,7 @@ public:
 		// The method is:
 	    //	for(i=0; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
 		//	for(i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
-		// The special cases below are to speedup the routine
+		// The special cases below are for accellerate the routine
 		switch(aCodon)
         {
         case 0:

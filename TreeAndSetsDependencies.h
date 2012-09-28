@@ -2,6 +2,7 @@
 #ifndef TREEANDSETSDEPENDENCIES_H
 #define TREEANDSETSDEPENDENCIES_H
 
+#include "Forest.h"
 
 /// Create the lists of trees and sets that can be computed concurrently
 ///
@@ -23,9 +24,14 @@ public:
 	///
 	~TreeAndSetsDependencies() {}
 
-	
-private:
+			// Prepare the dependency list for H0: 3 codon classes; H1: 4 codon classes
 
+	void computeDependencies(const Forest& aForest, unsigned int aNumSets, unsigned int aNumThreads);
+
+private:
+	typedef std::vector< std::vector<unsigned int> >
+							ListDependencies;		///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*4+site_class 
+	ListDependencies mDependenciesClassesAndTrees;	///< The groups of dependencies between trees
 };
 
 

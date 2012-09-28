@@ -82,11 +82,13 @@ public:
 	///
 	friend std::ostream& operator<< (std::ostream& aOut, const Forest& aForest);
 
-	/// Reduce common subtrees on the whole forest
+#if 0
+	/// Reduce common subtrees on the whole forest.
 	///
 	void reduceSubtrees(void);
+#endif
 
-	/// Reduce common subtrees on the whole forestadopting a divide-and-conquer approach.
+	/// Reduce common subtrees on the whole forest adopting a divide-and-conquer approach.
 	/// If aBlocks is 1, then the routine works as the old one, reducing all the sites together.
 	/// If aBlocks is 0, no reduction is performed and a false is returned.
 	/// If aBlocks is between 2 and num_sites/2 the sites are divided in this number of independent blocks before reducing.
@@ -256,6 +258,7 @@ public:
 	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
 #endif
 
+	const std::vector< std::vector<unsigned int> >& getTreeDependencies(void) const {return mTreeDependencies;}	
 
 private:
 	/// Group trees by dependencies.
@@ -376,6 +379,7 @@ private:
 	///
 	inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
 
+public:
 	/// Create the combined entry in the dependency list from site and set numbers.
 	///
 	/// @param[in] aSite The site number

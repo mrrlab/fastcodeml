@@ -10,7 +10,7 @@ ParseParameters* ParseParameters::mInstance = 0;
 
 ParseParameters* ParseParameters::getInstance(void)
 {
-	if(!mInstance) mInstance = new ParseParameters();
+	if(!mInstance) mInstance = new ParseParameters;
 	return mInstance;
 }
 

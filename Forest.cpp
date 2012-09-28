@@ -75,6 +75,12 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 			// Get the codon index and add it to the node signature
 			int codon = aGenes.getCodonIdx(mNodeNames[node], site);
+			if(codon < 0)
+			{
+				std::ostringstream o;
+				o << "Invalid codon at site " << site << " node: " << node << " " << mNodeNames[node] << std::endl;
+				throw FastCodeMLFatal(o);
+			}
 			(*il)->mPreprocessingSupport->mSubtreeCodonsSignature.push_back(codon);
 
 			// Record the codon number on the leaf node (to use a simpler transition for leaves)
@@ -252,7 +258,7 @@ void Forest::postLoad(void)
 }
 #endif
 
-
+#if 0
 void Forest::reduceSubtrees(void)
 {
 	// Setup dependency vectors
@@ -272,6 +278,7 @@ void Forest::reduceSubtrees(void)
 		}
 	}
 }
+#endif
 
 bool Forest::reduceSubtrees(unsigned int aBlocks)
 {

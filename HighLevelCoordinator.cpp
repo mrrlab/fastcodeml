@@ -210,8 +210,7 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 #ifdef VTRACE
     const int requested = MPI_THREAD_SINGLE;
 #else
-	const int requested = MPI_THREAD_SERIALIZED;
-	//const int requested = MPI_THREAD_FUNNELED;
+	const int requested = (omp_get_max_threads() <= 1) ? MPI_THREAD_SINGLE : MPI_THREAD_FUNNELED; // Change to MPI_THREAD_SERIALIZED if master process do more
 #endif
 #else
     const int requested = MPI_THREAD_SINGLE;
@@ -222,28 +221,23 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 	{
 		throw FastCodeMLFatal("MPI Failed to initalize");
 	}
-	else if(provided != requested)
+	else if(requested > MPI_THREAD_SINGLE && provided < MPI_THREAD_FUNNELED)
 	{
-		// Don't support threads, don't execute under MPI
-		mSize = 1;		
-		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
-		if(mRank != MASTER_JOB)
-		{
-			MPI_Finalize();
-			throw FastCodeMLSuccess();
-		}
+		// Don't support threads. Disable them
+#ifdef _OPENMP
+		omp_set_num_threads(1);
+#endif
 	}
-	else
-	{
-		MPI_Comm_size(MPI_COMM_WORLD, &mSize);
-		MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
 
-		// If there are too few MPI processes, terminate the unusable workers
-		if(mSize < 3 && mRank != MASTER_JOB)
-		{
-			MPI_Finalize();
-			throw FastCodeMLSuccess();
-		}
+	// Get num of MPI processes and own rank
+	MPI_Comm_size(MPI_COMM_WORLD, &mSize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
+
+	// If there are too few MPI processes, terminate the unusable workers
+	if(mSize < 3 && mRank != MASTER_JOB)
+	{
+		MPI_Finalize();
+		throw FastCodeMLSuccess();
 	}
 }
 

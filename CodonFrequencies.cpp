@@ -11,7 +11,7 @@ CodonFrequencies* CodonFrequencies::mInstance = 0;
 
 CodonFrequencies* CodonFrequencies::getInstance(void)
 {
-	if(!mInstance) mInstance = new CodonFrequencies();
+	if(!mInstance) mInstance = new CodonFrequencies;
 	return mInstance;
 }
 

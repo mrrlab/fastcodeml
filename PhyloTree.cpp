@@ -97,9 +97,9 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	aForestNode->mOwnTree = aTreeId;
 
 	// Set the internal branch identifier
-	size_t int_id;
 	const size_t nn = mInternalNodes.size();
-	for(int_id=0; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
+	size_t int_id = 0;
+	for(; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
 	aForestNode->mInternalNodeId = (int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
@@ -113,7 +113,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 #endif
 
 	// Recurse
-	TreeNode *m;
+	TreeNode *m = 0;
 	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
 	{
 		ForestNode* rn = new ForestNode;

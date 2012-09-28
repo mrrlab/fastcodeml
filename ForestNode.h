@@ -6,7 +6,7 @@
 #include <climits>
 #include <cstring>
 #include <string>
-#include <new>
+//#include <new>
 #include "MatrixSize.h"
 #include "AlignedMalloc.h"
 
@@ -170,7 +170,7 @@ struct ForestNode
 	///
 	/// @exception std::bad_alloc If no memory available
 	///
-	void* operator new(std::size_t aSize)
+	void* operator new(size_t aSize)
 	{
 		void *m = alignedMalloc(aSize, CACHE_LINE_ALIGN);
 		if(!m) throw std::bad_alloc();
