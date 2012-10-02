@@ -104,7 +104,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		mCmdLineImpl = new CmdLine::CmdLineImpl;
 	}
 
-	// Setup the command line parser
+	// Setup the command line parser. First the identifiers for the various options
 	enum {
 		OPT_VERBOSE,
 		OPT_QUIET,
@@ -132,6 +132,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_OUT_RESULTS
 	};
 
+	// Then the definitions of each command line option
 	CSimpleOpt::SOption parser_options[] = {
 		{ OPT_VERBOSE,			"-d",					SO_REQ_SEP, "Verbosity level" },
 		{ OPT_VERBOSE,			"--debug",				SO_REQ_SEP, "" },
@@ -196,6 +197,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
     // While there are arguments left to process
     while(args.Next())
 	{
+		// Signal error if option invalid
 		if(args.LastError() == SO_OPT_INVALID)
 		{
 			std::ostringstream o;
@@ -209,6 +211,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			throw FastCodeMLFatal(o);
         }
 
+		// Get the various options
 		int tmpi;
 		switch(args.OptionId())
 		{

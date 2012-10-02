@@ -18,6 +18,7 @@
 #include "Types.h"
 #include "ForestExport.h"
 #include "DAGScheduler.h"
+#include "TreeAndSetsDependencies.h"
 
 // Global scaling factor (uncomment the define only if the scaling factor is different from one)
 //#define USE_GLOBAL_SCALING
@@ -120,16 +121,17 @@ public:
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	///
-	void prepareDependencies(bool aForceSerial);
+	//void prepareDependencies(bool aForceSerial);
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 	/// Compute likelihood visiting the trees in a non-recursive way
 	///
 	/// @param[in] aSet Set of exp(Q*t) matrices
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
-	/// @param[in] aHyp The hypothesis to be computed (H0: 0; H1: 1)
+	/// @param[in] aDependencies The dependency list between sets of trees
 	///
-	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	//void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
+	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -258,8 +260,29 @@ public:
 	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
 #endif
 
-	const std::vector< std::vector<unsigned int> >& getTreeDependencies(void) const {return mTreeDependencies;}	
+	/// Access the dependency list.
+	/// result[tj] = [t1 t2 t3] means: tj can be done after: t1 t2 t3.
+	///
+	/// @return List of lists of dependencies
+	///
+	const std::vector< std::vector<unsigned int> >& getTreeDependencies(void) const {return mTreeDependencies;}
 
+	/// Access the reverse dependency list.
+	/// result[tj] = [t1 t2 t3] means: tj should be ready before: t1 t2 t3
+	///
+	/// @return List of lists of reverse dependencies
+	///
+	const std::vector< std::vector<unsigned int> >& getTreeRevDependencies(void) const {return mTreeRevDependencies;}
+
+	/// Get the computation cost for all sites from the root to the leaves.
+	///
+	/// @param[out] aEfforts The cost for each site
+	/// @param[in] aCostAtLeaf The cost associated to a leaf
+	/// @param[in] aCostIntern The cost associated to an internal node
+	/// @param[in] aCostPtr The cost associated to a pointer to another node
+	///
+	void getEffortPerSite(std::vector<unsigned int>& aEfforts, unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const;
+#if 0
 private:
 	/// Group trees by dependencies.
 	/// First group contains trees with no dependencies.
@@ -268,7 +291,7 @@ private:
 	///
 	/// @param[in] aForceSerial Don't group so the execution is serial
 	///
-	void groupByDependency(bool aForceSerial);
+	//void groupByDependency(bool aForceSerial);
 
 	/// Balance the groups so they have a number of elemnent multiple of the number of available threads.
 	///
@@ -278,24 +301,24 @@ private:
 	///
 	/// @return True if the grouping changed
 	///
-	bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, bool aGreedy);
+	//bool balanceDependenciesClassesAndTrees(bool aForceSerial, int aHyp, bool aGreedy);
 
 	/// Print the size of each class
 	///
-	void printDependenciesClassesAndTrees(void);
+	//void printDependenciesClassesAndTrees(void);
 
 	/// Measure the number of branches to be computed at each site
 	///
 	/// @param[out] aEffort Effort per site
 	///
-	void measureEffort(std::vector<unsigned int>& aEffort);
+	//void measureEffort(std::vector<unsigned int>& aEffort);
 
 	/// For each group print the total effort per thread. using the new Site/Class structure
 	///
 	/// @param[in] aEffort Effort per site
 	/// @param[in] aHyp The hypothesis to consider (could be 0 or 1)
 	///
-	void printEffortByGroup(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+	//void printEffortByGroup(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
 
 	/// For each group print the total effort per thread.
 	///
@@ -304,15 +327,15 @@ private:
 	///
 	/// @return The sum of all maxima velues per class (a crude approximation of the runtime value)
 	///
-	unsigned int totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+	//unsigned int totalEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
 
 	/// Balance effort inside each class.
 	///
 	/// @param[in] aEffort Effort per site
 	/// @param[in] aHyp The hypothesis to consider (could be 0 or 1)
 	///
-	void balanceEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
-
+	//void balanceEffort(const std::vector<unsigned int>& aEffort, unsigned int aHyp);
+#endif
 	/// Reduce the common subtree between two (sub)trees
 	///
 	/// @param[in] aNode The subtree to be tested (i.e.\ if it exists in both trees)
@@ -363,13 +386,14 @@ private:
 	///
 	void mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsigned int, unsigned int>& aMapInternalToBranchID);
 
+public:
 	/// Given the combined entry in the dependency list, extract the site number.
 	///
 	/// @param[in] aPair The combined entry
 	///
 	/// @return The site number
 	///
-	inline static unsigned int getSiteNum(unsigned int aPair) {return aPair >> 2;}
+	//inline static unsigned int getSiteNum(unsigned int aPair) {return aPair >> 2;}
 
 	/// Given the combined entry in the dependency list, extract the set number.
 	///
@@ -377,9 +401,8 @@ private:
 	///
 	/// @return The set number
 	///
-	inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
+	//inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
 
-public:
 	/// Create the combined entry in the dependency list from site and set numbers.
 	///
 	/// @param[in] aSite The site number
@@ -387,7 +410,7 @@ public:
 	///
 	/// @return The combined entry
 	///
-	inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
+	//inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
 
 
 private:
@@ -401,9 +424,9 @@ private:
 	size_t					mNumInternalBranches;		///< Total number of branches of the original tree
 	std::vector<unsigned int>
 							mTableInternalToBranchID;	///< Map from internal branch number to branch number
-	typedef std::vector< std::vector<unsigned int> >
-							ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*4+site_class 
-	ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)
+	//typedef std::vector< std::vector<unsigned int> >
+	//						ListDependencies;			///< List (each list depends on the previous) of list (sites to be executed in parallel) of pairs (site, site class) stored as site*4+site_class 
+	//ListDependencies mDependenciesClassesAndTrees[2];	///< The groups of dependencies between trees (The two entries are for the two hypothesis)
 
 	/// Here are global data that will be removed from the various (site) trees
 	std::vector<std::string>

@@ -7,9 +7,9 @@
 #include "BranchSiteModel.h"
 
 /// Few constants
-const static int BEB_N1D = 10;	///< Number of categories for w0 and w2
-const static int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
-const static int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
+const static unsigned int BEB_N1D = 10;	///< Number of categories for w0 and w2
+const static unsigned int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
+const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
 
 /// Tests to find the sites under positive selection.
 ///

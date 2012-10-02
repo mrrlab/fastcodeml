@@ -9,12 +9,14 @@
 
 #ifndef _MSC_VER
 #include <stdint.h>  // for uintptr_t
+#include <malloc.h>
 #endif
 
 // Alignment must be power of 2 (1,2,4,8,16...)
 void* alignedMalloc(size_t aSize, size_t aAlignment)
 {
 #ifdef _MSC_VER
+#if 0
 	--aAlignment;
     uintptr_t r = reinterpret_cast<uintptr_t>(malloc(aSize + aAlignment + sizeof(uintptr_t)));
     if(!r) return NULL;
@@ -22,9 +24,11 @@ void* alignedMalloc(size_t aSize, size_t aAlignment)
     uintptr_t o = (t + aAlignment) & ~static_cast<uintptr_t>(aAlignment);
     reinterpret_cast<uintptr_t*>(o)[-1] = r;
     return reinterpret_cast<void*>(o);
+#endif
+	return _aligned_malloc(aSize, aAlignment);
 #else
 	void* ptr = 0;
-	if(posix_memalign(&ptr, aAlignment, aSize)) return NULL;
+	if(posix_memalign(&ptr, aAlignment, aSize)) return 0;
 	return ptr;
 #endif
 }
@@ -33,7 +37,10 @@ void alignedFree(void* aPtr)
 {
     if(!aPtr) return;
 #ifdef _MSC_VER
+#if 0
     free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(aPtr)[-1]));
+#endif
+	_aligned_free(aPtr);
 #else
     free(aPtr);
 #endif

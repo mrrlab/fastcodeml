@@ -8,6 +8,7 @@
 
 void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences)
 {
+	// Open the file and verify it has at least one line
 	std::ifstream in(aFilename);
 	if(!in)
 	{
@@ -25,6 +26,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 		throw FastCodeMLFatal(o);
 	}
 
+	// From the first line extract number of species and nmber of basis
 	long unsigned int nspecies, nbasis;
 	char *endptr;
 	const char *next = str.c_str();
@@ -109,5 +111,4 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 		throw FastCodeMLFatal(o);
 	}
 }
-
 

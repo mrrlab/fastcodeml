@@ -128,7 +128,7 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	Ming2& operator=(const Ming2& /*aObj*/) {return *this;}
+	Ming2& operator=(const Ming2& /*aObj*/);
 
 
 private:

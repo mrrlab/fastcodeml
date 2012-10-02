@@ -18,15 +18,13 @@ class WriteResults
 public:
 	/// Constructor
 	///
-	/// @param[in] aFilename The filename to which the output should go
+	/// @param[in] aFilename The filename to which the output should go. If null no printing will happen
 	///
 	explicit WriteResults(const char* aFilename) : mFilename(aFilename) {}
 
-	/// Output the results to the file given or to the stdout
+	/// Output the results to the file given
 	///
-	/// @param[in] aOutputToStdout If true the output is not written to the file but redirect to the screen
-	///
-	void outputResults(bool aOutputToStdout=false);
+	void outputResults(void);
 
 	/// Save the likelihood for later printing.
 	///
@@ -46,7 +44,7 @@ public:
 
 
 private:
-	const char*					mFilename;			///< The file to which the output should be redirect. If null, no printing appear
+	const char*					mFilename;			///< The file to which the results should be written. If null, no printing appear
 	std::map<size_t, double>	mLnL[2];			///< The log-likelihood for the given fg branch and for the two hypothesis
 	std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double> > >
 								mPositiveSelSites;	///< The sites under positive selection and the corresponding probabilities for a given fg branch

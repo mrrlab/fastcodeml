@@ -15,8 +15,7 @@
 ///
 class Genes
 {
-public:
-
+protected:
 	/// Constructor
 	///
 	/// @param[in] aVerboseLevel The verbosity level
@@ -37,6 +36,7 @@ public:
 	///
 	virtual ~Genes();
 
+public:
 	/// Load the gene file.
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis

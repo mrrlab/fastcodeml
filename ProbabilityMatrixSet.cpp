@@ -109,9 +109,16 @@ void ProbabilityMatrixSetH1::fillMatrixSet(const  TransitionMatrix& aQw0,
 	const double* params = &aParams[0];
 
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, params, num_matrices) schedule(guided)
+	#pragma omp parallel default(none) shared(aQw0, aQ1, aQw2, aSbg, aSfg, params, num_matrices)
 #else
-	#pragma omp parallel for default(shared)
+	#pragma omp parallel default(shared)
+#endif
+	{
+#ifdef _MSC_VER
+	//#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, params, num_matrices) schedule(guided)
+	#pragma omp for schedule(guided) nowait
+#else
+	#pragma omp for nowait
 #endif
 	for(int branch=0; branch < num_matrices; ++branch)
 	{
@@ -126,7 +133,14 @@ void ProbabilityMatrixSetH1::fillMatrixSet(const  TransitionMatrix& aQw0,
 		}
 	}
 
-	aQw2.computeFullTransitionMatrix(&mMatrixSpace[2*num_matrices*MATRIX_SLOT+mFgBranch*MATRIX_SLOT], params[mFgBranch]/aSfg);
+#pragma omp single
+	{
+#ifndef _MSC_VER
+		#pragma omp task untied
+#endif
+		aQw2.computeFullTransitionMatrix(&mMatrixSpace[2*num_matrices*MATRIX_SLOT+mFgBranch*MATRIX_SLOT], params[mFgBranch]/aSfg);
+	}
+	}
 }
 
 

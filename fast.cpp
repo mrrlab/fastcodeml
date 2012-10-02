@@ -233,7 +233,7 @@ int main(int ac, char **av)
 #endif
 
 	// Subdivide the trees in groups based on dependencies
-	forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
+	//forest.prepareDependencies(cmd.mForceSerial || cmd.mDoNotReduceForest);
 
 #ifdef USE_DAG
 	// Load the forest into a DAG

@@ -77,6 +77,11 @@ struct HighLevelCoordinator::WorkTable
 		std::vector<double>	mPositiveSelProbs;		///< Corresponding probabilities
 	};
 
+	size_t					mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
+	std::vector<int>		mJobStatus;				///< Corresponding step status
+	std::vector<int>		mWorkList;				///< Who is doing this step
+	std::vector<ResultSet>	mResults;				///< Results for each branchh
+
 	/// Constructor
 	///
 	/// @param[in] aNumInternalBranches Number of internal branches that can be marked as foreground branch.
@@ -86,11 +91,6 @@ struct HighLevelCoordinator::WorkTable
 					mJobStatus(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mResults(aNumInternalBranches) {}
-
-	size_t					mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
-	std::vector<int>		mJobStatus;				///< Corresponding step status
-	std::vector<int>		mWorkList;				///< Who is doing this step
-	std::vector<ResultSet>	mResults;				///< Results for each branch
 
 	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
 	///
@@ -327,7 +327,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			mWorkTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
 
 			// Save for the results file
-			aOutputResults.saveLnL(branch, lnl, h);
+			aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
@@ -367,7 +367,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 					unsigned int u = static_cast<unsigned int>(results_integer[2*i+0]);
 					sites.push_back(u);
 				}
-				aOutputResults.savePositiveSelSites(branch, sites, mWorkTable->mResults[branch].mPositiveSelProbs);
+				aOutputResults.savePositiveSelSites(static_cast<size_t>(branch), sites, mWorkTable->mResults[branch].mPositiveSelProbs);
 			}
 
 			// Output a status message
@@ -380,6 +380,8 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		int job[2];
 		mWorkTable->getNextJob(job, worker);
 		MPI_Send((void*)job, 2, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+
+		// Trace the messages
 		if(mVerbose >= VERBOSE_MORE_DEBUG)
 		{
 			switch(job[0])

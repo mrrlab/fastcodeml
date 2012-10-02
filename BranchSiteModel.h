@@ -9,6 +9,7 @@
 #include "ProbabilityMatrixSet.h"
 #include "Forest.h"
 #include "CmdLine.h"
+#include "TreeAndSetsDependencies.h"
 
 /// Common routines for testing the two hypothesis (H0 and H1).
 ///
@@ -31,6 +32,7 @@ protected:
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	/// @param[in] aRelativeError Relative error for convergence
+	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	///
 	BranchSiteModel(Forest& aForest,
@@ -43,6 +45,8 @@ protected:
 					unsigned int aOptAlgo,
 					double aDeltaValueForGradient,
 					double aRelativeError,
+					bool	aNoParallel,
+					unsigned int aVerbose,
 					unsigned int aExtraDebug)
 		: mForest(aForest),
 		  mVar(aNumBranches+aNumVariables),
@@ -58,18 +62,21 @@ protected:
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
 		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
 		  mExtraDebug(aExtraDebug),
+		  mVerbose(aVerbose),
 		  mNumEvaluations(0),
+		  mDependencies(aForest, aVerbose),
+		  mNoParallel(aNoParallel),
 		  mSeed(aSeed),
 		  mRelativeError(aRelativeError)
 	{
 		setLimits(mNumTimes, mNumVariables);
 	}
 
-public:
 	/// Destructor.
 	///
 	virtual ~BranchSiteModel() {}
 
+public:
 	/// Set the times on the tree from the variables
 	///
 	void saveComputedTimes(void) const {mForest.setLengthsFromTimes(mVar);}
@@ -145,22 +152,6 @@ public:
 	///	@return True if the test is passed
 	///
 	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > 1.92072941;}
-
-	/// Valid values (on the command line) for the optimization algorithm
-	enum OptimAlgoIdentifier
-	{
-		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
-		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
-		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
-		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
-
-		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
-
-		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
-
-		OPTIM_MLSL_LDS		= 99	///< A global optimizer
-	};
-
 	
 	/// Get site multeplicity values.
 	///
@@ -220,6 +211,31 @@ private:
 	///
 	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
 
+	/// Valid values (on the command line) for the optimization algorithm
+	///
+	enum OptimAlgoIdentifier
+	{
+		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
+		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
+		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
+		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
+
+		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
+
+		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
+
+		OPTIM_MLSL_LDS		= 99	///< A global optimizer
+	};
+
+	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
+	///
+	enum InitVarStatus
+	{
+		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
+		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
+		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
+		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
+	};
 
 public:
 	/// Initialize the times from the input phylogenetic tree
@@ -238,15 +254,6 @@ public:
 	///
 	void initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen=0);
 
-protected:
-	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
-	enum InitVarStatus
-	{
-		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
-		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
-		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
-		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
-	};
 
 private:
 	/// Disabled assignment operator to avoid warning on Windows
@@ -257,7 +264,7 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	BranchSiteModel& operator=(const BranchSiteModel& /*aObj*/) {return *this;}
+	BranchSiteModel& operator=(const BranchSiteModel& /*aObj*/);
 
 
 protected:
@@ -278,7 +285,10 @@ protected:
 	unsigned int				mNumTimes;			///< Number of branch lengths values
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing
+	unsigned int				mVerbose;			///< Parameter for extra development testing
 	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
+	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
+	bool						mNoParallel;
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -306,9 +316,16 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest, aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX) {}
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
+	{
+		// Initialize the dependency set
+		mDependencies.computeDependencies(3, mNoParallel);
+		mDependencies.print("TEST FOR H0 (before optimization)");
+		mDependencies.optimizeDependencies();
+		mDependencies.print("TEST FOR H0");
+	}
 
 	/// Compute the null hypothesis log likelihood.
 	///
@@ -347,7 +364,7 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/) {return *this;}
+	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///
@@ -387,9 +404,16 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mExtraDebug),
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest, aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {}
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
+	{
+		// Initialize the dependency set
+		mDependencies.computeDependencies(4, mNoParallel);
+		mDependencies.print("TEST FOR H1 (before optimization)");
+		mDependencies.optimizeDependencies();
+		mDependencies.print("TEST FOR H1");
+	}
 
 	/// Compute the alternative hypothesis log likelihood.
 	///
@@ -427,10 +451,17 @@ public:
 		CODON_CLASS_2b			///< Codon class 2b
 	};
 
+	/// Compute the likelihood for the given forest and the given set of parameters when computing BEB.
+	///
+	/// @param[in] aCodonClass The codon class to be computed
+	/// @param[in] aOmegaFg Omega to be used on the foreground branch
+	/// @param[in] aOmegaBg Omega to be used on the background branches
+	/// @param[out] aLikelihoods The computed likelihoods
+	///
 	void computeLikelihoodForBEB(CodonClass aCodonClass, double aOmegaFg, double aOmegaBg, double* aLikelihoods);
 
 private:
-	/// Disabled assignment operator to avoid warnings on Windows
+	/// Disabled assignment operator to avoid warnings on Windows.
 	///
 	/// @fn BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& aObj)
 	///
@@ -438,7 +469,8 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/) {return *this;}
+	//BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/) {return *this;}
+	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///

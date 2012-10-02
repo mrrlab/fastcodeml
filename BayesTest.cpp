@@ -20,7 +20,7 @@ BayesTest::BayesTest(size_t aNumSites, unsigned int aVerbose) : mSiteClassProb(4
 	const static double w2b1 = 11.;
 
 	// Initialize the w0 and w2 values to be tested
-	for(int i=0; i < BEB_N1D; i++)
+	for(unsigned int i=0; i < BEB_N1D; i++)
 	{
 		mPara[0][i] = mPara[1][i] = -1;						// p0 & p1
 		mPara[2][i] = w0b0 + (i+0.5)*(w0b1-w0b0)/BEB_N1D;	// w0
@@ -45,7 +45,7 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel)
 	//   site class 2a:     w0     w2       100
 	//   site class 2b:     w1=1   w2        10
 
-	for(int iw=0; iw < BEB_NUM_CAT; ++iw)
+	for(unsigned int iw=0; iw < BEB_NUM_CAT; ++iw)
 	{
 		if(iw < BEB_N1D)										// class 0: w0 w0
 		{
@@ -83,9 +83,9 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel)
 
 	const std::vector<double>& site_mult = aModel.getSiteMultiplicity();
 	double scale = 0.;
-	for(int site=0; site < mNumSites; ++site)
+	for(size_t site=0; site < mNumSites; ++site)
 	{
-		int k;
+		size_t k;
 		double fh = mPriors[site];
 		for(k=1; k < BEB_NUM_CAT; ++k)
 		{

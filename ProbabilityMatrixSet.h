@@ -20,9 +20,6 @@ extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *Fi
 static int x = 1;
 #endif
 
-// Uncomment to move the element wise multiplication up one level
-#define BUNDLE_ELEMENT_WISE_MULT
-
 //extern int num_matvect;
 /// Set of probability matrices for all branches of a tree.
 ///
@@ -43,7 +40,7 @@ protected:
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumMatSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
-#if !defined(BUNDLE_ELEMENT_WISE_MULT) || defined(NEW_LIKELIHOOD)
+#ifdef NEW_LIKELIHOOD
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
 #endif
 	}
@@ -84,9 +81,10 @@ public:
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
-#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-	elementWiseMult(aGout, mInvCodonFreq);
-#endif
+		// The element wise multiplication has been moved up one level
+		//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+		//	elementWiseMult(aGout, mInvCodonFreq);
+		//#endif
 #else
 		for(int r=0; r < N; ++r)
 		{
@@ -142,9 +140,10 @@ public:
 			break;
 		}
 
-#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-		elementWiseMult(aGout, mInvCodonFreq);
-#endif
+		// The element wise multiplication has been moved up one level
+		//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+		//		elementWiseMult(aGout, mInvCodonFreq);
+		//#endif
 #else
 		for(int r=0; r < N; ++r)
 		{
@@ -195,15 +194,11 @@ public:
 	}
 #endif
 
-private:
-	/// Private default constructor to forbid base class usage except by its derived classes.
-	///
-	ProbabilityMatrixSet();
 
 protected:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area
 	double**		mMatrices;			///< Access to the matrix set (contains pointers to mMatrixSpaces matrices)
-#if !defined(BUNDLE_ELEMENT_WISE_MULT) || defined(NEW_LIKELIHOOD)
+#ifdef NEW_LIKELIHOOD
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
 #endif
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)

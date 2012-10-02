@@ -5,30 +5,20 @@
 #include "WriteResults.h"
 
 
-void WriteResults::outputResults(bool aOutputToStdout)
+void WriteResults::outputResults(void)
 {
-	// If should not output to screen and no file set, then do nothing
-	if(!aOutputToStdout && !mFilename) return;
+	// If no file set, then do nothing
+	if(!mFilename) return;
 
-	// Redirect cout to the file if requested
-	std::ofstream out;
-	std::streambuf* backup;
-	if(!aOutputToStdout)
+	// Open the output file
+	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
+	if(!out.good())
 	{
-		out.open(mFilename, std::ios_base::trunc | std::ios_base::out);
-		if(out.good())
-		{
-			backup = std::cout.rdbuf();
-			std::cout.rdbuf(out.rdbuf());
-		}
-		else
-		{
-			std::cerr << "Cannot create results file <" << mFilename << "> Sending to screen" << std::endl;
-			aOutputToStdout = true;
-		}
+		std::cerr << "Cannot create results file <" << mFilename << ">" << std::endl;
+		return;
 	}
 
-	// Range of branches
+	// Range of branches to be output (for H0 and H1)
 	std::map<size_t, double>::const_iterator im = mLnL[0].begin();
 	size_t min_branch = im->first;
 	size_t max_branch = min_branch;
@@ -49,31 +39,31 @@ void WriteResults::outputResults(bool aOutputToStdout)
 	size_t branch;
 	for(branch = min_branch; branch <= max_branch; ++branch)
 	{
-		std::cout << "Branch: " << std::setw(4) << branch << "  LnL0: ";
+		out << "Branch: " << std::setw(4) << branch << "  LnL0: ";
 
 		// Prints LnL for H0 if present
 		im = mLnL[0].find(branch);
 		if(im == mLnL[0].end())
 		{
-			std::cout << std::setw(22) << "NA";
+			out << std::setw(22) << "NA";
 		}
 		else
 		{
-			std::cout << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
+			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 		}
-		std::cout << "  LnL1: ";
+		out << "  LnL1: ";
 
 		// Prints LnL for H1 if present
 		im = mLnL[1].find(branch);
 		if(im == mLnL[1].end())
 		{
-			std::cout << std::setw(22) << "NA";
+			out << std::setw(22) << "NA";
 		}
 		else
 		{
-			std::cout << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
+			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 		}
-		std::cout << std::endl;
+		out << std::endl;
 	}
 
 	// Write the positive selection sites
@@ -89,22 +79,20 @@ void WriteResults::outputResults(bool aOutputToStdout)
 			size_t ns = site.size();
 			for(size_t s=0; s < ns; ++s)
 			{
-				std::cout << "PositiveSelectionSite for branch: " << std::setw(4) << branch;
-				std::cout << "  Site: " << std::setw(6) << site[s] << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[s] << std::endl;
+				out << "PositiveSelectionSite for branch: " << std::setw(4) << branch;
+				out << "  Site: " << std::setw(6) << site[s] << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[s] << std::endl;
 			}
 		}
 	}
 
-	// Undo the redirect if setup
-	if(!aOutputToStdout)
-	{
-		std::cout.rdbuf(backup);
-		out.close();
-	}
+	out.close();
 }
 
 void WriteResults::saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothesis)
 {
+	// If no file set, then do nothing
+	if(!mFilename) return;
+
 	// Sanity check
 	if(aHypothesis > 1) return;
 
@@ -114,6 +102,9 @@ void WriteResults::saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothes
 
 void WriteResults::savePositiveSelSites(size_t aFgBranch, const std::vector<unsigned int>& aPositiveSelSites, const std::vector<double>& aPositiveSelSitesProb)
 {
+	// If no file set, then do nothing
+	if(!mFilename) return;
+
 	// Save the positive selection sites and corresponding probabilities for later printing
 	mPositiveSelSites[aFgBranch] = std::make_pair(aPositiveSelSites, aPositiveSelSitesProb);
 }

@@ -321,7 +321,7 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
 		mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
 
 		// Compute likelihoods
-		mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+		mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 	}
 	else
 	{
@@ -333,7 +333,7 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
 		mSet.setMatrices(aGradientVar, mSetForGradient.getChangedMatrices(aGradientVar));
 
 		// Compute likelihoods
-		mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+		mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 
 		// Restore the previous value of the matrix
 		mSet.restoreSavedMatrix(aGradientVar);
@@ -424,7 +424,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
 
 	// Compute likelihoods
-	mForest.computeLikelihoods(mSet, mLikelihoods, 0);
+	mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 
 	if(mExtraDebug > 0)
 	{
@@ -618,7 +618,7 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(const std::vector<dou
 		mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
 
 		// Compute likelihoods
-		mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+		mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 	}
 	else
 	{
@@ -630,7 +630,7 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(const std::vector<dou
 		mSet.setMatrices(aGradientVar, mSetForGradient.getChangedMatrices(aGradientVar));
 
 		// Compute likelihoods
-		mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+		mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 
 		// Restore the previous value of the matrices
 		mSet.restoreSavedMatrix(aGradientVar);
@@ -758,7 +758,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
 
 	// Compute likelihoods
-	mForest.computeLikelihoods(mSet, mLikelihoods, 1);
+	mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
 
 	if(mExtraDebug > 0)
 	{
@@ -892,8 +892,10 @@ void BranchSiteModelAltHyp::computeLikelihoodForBEB(CodonClass aCodonClass, doub
 	// Fill the set of Probability Matrices
 	beb_set.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mVar);
 
+	TreeAndSetsDependencies dep(mForest, mVerbose);
+
 	// Compute likelihoods
-	mForest.computeLikelihoods(beb_set, mLikelihoods, 1);
+	mForest.computeLikelihoods(beb_set, mLikelihoods, dep.getDependencies());
 
 	memcpy(aLikelihoods, &mLikelihoods[0], mForest.getNumSites()*sizeof(double));
 }
@@ -1062,7 +1064,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 		catch(std::exception& e)
 		{
 			std::ostringstream o;
-			o << "Exception in computation: " << e.what() << std::endl;
+			o << "Exception in Ming2 computation: " << e.what() << std::endl;
 			throw FastCodeMLFatal(o);
 		}
 	}

@@ -117,11 +117,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
 	cf->setCodonFrequencies(codon_count, aCodonFrequencyModel);
-	mCodonFreq = cf->getCodonFrequencies();
-#ifdef BUNDLE_ELEMENT_WISE_MULT
+	mCodonFreq     = cf->getCodonFrequencies();
 	mInvCodonFreq  = cf->getInvCodonFrequencies();
 	mInv2CodonFreq = cf->getCodonFreqInv2();
-#endif
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
 	std::map<unsigned int, unsigned int> map_internal_to_branchID;
@@ -390,7 +388,7 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	}
 }
 
-
+#if 0
 #ifdef USE_LAPACK
 #include "blas.h"
 #endif
@@ -409,10 +407,10 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 	// Prepare dummy data
 	double dummy[N];
 	double m[N*N];
-#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-	double cf[N];
-	for(int i=0; i < N; ++i) cf[i] = 61.;
-#endif
+//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+//	double cf[N];
+//	for(int i=0; i < N; ++i) cf[i] = 61.;
+//#endif
 	for(int i=0; i < N*N; ++i) m[i] = 0.1;
 	Timer timer;
 
@@ -425,9 +423,9 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 			for(; i < c; ++i) dummy[i] = m[c*N+i];
 			for(; i < N; ++i) dummy[i] = m[i*N+c];
 
-#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-			elementWiseMult(dummy, cf);
-#endif
+//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+//			elementWiseMult(dummy, cf);
+//#endif
 		}
 	double time_leaf = timer.stop();
 
@@ -438,9 +436,9 @@ void Forest::measureEffort(std::vector<unsigned int>& aEffort)
 		{
 			dsymv_("U", &N, &D1, m, &N, dummy, &I1, &D0, dummy, &I1);
 
-#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-			elementWiseMult(dummy, cf);
-#endif
+//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
+//			elementWiseMult(dummy, cf);
+//#endif
 		}
 	double time_non_leaf = timer.stop();
 	unsigned int effort_ratio = (unsigned int)(time_non_leaf/time_leaf+0.5);
@@ -552,7 +550,6 @@ unsigned int Forest::totalEffort(const std::vector<unsigned int>& aEffort, unsig
 	return total_effort;
 }
 
-
 void Forest::prepareDependencies(bool aForceSerial)
 {
 	// Compute the dependencies: for each class list all sites that should be done at this level
@@ -609,7 +606,6 @@ void Forest::prepareDependencies(bool aForceSerial)
 		printEffortByGroup(effort, 1);
 	}
 }
-
 
 void Forest::groupByDependency(bool aForceSerial)
 {
@@ -938,7 +934,7 @@ void Forest::printDependenciesClassesAndTrees(void)
 		}
 	}
 }
-
+#endif
 
  std::ostream& operator<< (std::ostream& aOut, const Forest& aForest)
 {
@@ -976,6 +972,19 @@ void Forest::printDependenciesClassesAndTrees(void)
 	return aOut;
 }
 
+void Forest::getEffortPerSite(std::vector<unsigned int>& aEfforts, unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const
+{
+	// Initialize effort array
+	aEfforts.clear();
+	aEfforts.reserve(mNumSites);
+
+	// Get the total cost per site
+	for(size_t i=0; i < mNumSites; ++i)
+	{
+		unsigned int total_cost = mRoots[i].getCost(aCostAtLeaf, aCostIntern, aCostPtr);
+		aEfforts.push_back(total_cost);
+	}
+}
 
 void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode) const
 {
@@ -1442,6 +1451,7 @@ void crc(const std::vector<double>& v, unsigned int nsites)
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 
+#if 0
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
 	// To speedup the inner OpenMP parallel loop, this is precomputed
@@ -1480,7 +1490,45 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		}
 	}
 }
+#endif
+void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies)
+{
+	// To speedup the inner OpenMP parallel loop, this is precomputed
+	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
+	const ForestNode* tmp_roots = &mRoots[0];
+	double* likelihoods = &aLikelihoods[0];
 
+	ListDependencies::const_iterator ivs=aDependencies.begin();
+	const ListDependencies::const_iterator end=aDependencies.end();
+	for(; ivs != end; ++ivs)
+	{
+		// Things that do not change in the parallel loop
+		const int len = static_cast<int>(ivs->size());
+		const unsigned int* tmp_ivs = &(*ivs)[0];
+
+#ifdef _MSC_VER
+		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
+#else
+		#pragma omp parallel for default(shared)
+#endif
+		for(int i=0; i < len; ++i)
+		{
+#ifndef _MSC_VER
+			#pragma omp task untied
+#endif
+			{
+				// Compute likelihood array at the root of one tree (the access order is the fastest)
+				const unsigned int tmp     = tmp_ivs[i];
+				const unsigned int site    = TreeAndSetsDependencies::getSiteNum(tmp);
+				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
+
+				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+			}
+		}
+	}
+}
 
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
@@ -1549,7 +1597,7 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 			}
 		}
 	}
-#if defined(BUNDLE_ELEMENT_WISE_MULT) && defined(USE_LAPACK)
+#ifdef USE_LAPACK
 	switch(nc)
 	{
 	case 1:

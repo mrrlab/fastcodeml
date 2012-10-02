@@ -16,7 +16,7 @@
 ///
 class PhyloTree
 {
-public:
+protected:
 	/// Constructor.
 	///
 	/// @param[in] aVerboseLevel Set the verbosity level
@@ -29,6 +29,7 @@ public:
 	///
 	virtual ~PhyloTree();
 
+public:
 	/// Load a phylo tree definition from a Newick formatted file.
 	/// This routine should be defined by a derived class.
 	///
