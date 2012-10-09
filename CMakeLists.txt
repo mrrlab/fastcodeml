@@ -41,18 +41,18 @@ endif(Boost_FOUND)
 
 
 # Get the configuration switches
-OPTION(USE_LAPACK         "Use BLAS/LAPACK" ON)
-OPTION(USE_MKL_VML        "Use Intel MKL vectorized routines" OFF)
-OPTION(USE_OPENMP         "Compile with OpenMP support" OFF)
-OPTION(USE_MPI            "Use MPI for high level parallelization" ON)
+OPTION(USE_LAPACK         		"Use BLAS/LAPACK" ON)
+OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
+OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
+OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
 if(NOT WIN32)
-OPTION(BUILD_NOT_SHARED   "Build FastCodeML not shared" OFF)
+OPTION(BUILD_NOT_SHARED   		"Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
-OPTION(BUILD_SEARCH_MPI   "Search for MPI installation?" OFF)
-OPTION(USE_ORIGINAL_PROPORTIONS "Use the original CodeML proportion definition" OFF)
-SET(USE_LIKELIHOOD_METHOD "Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
+OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF)
+OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" OFF)
+SET(   USE_LIKELIHOOD_METHOD	"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
-OPTION(USE_IDENTITY_MATRIX "Force identity matrix when time equal zero" OFF)
+OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
 
 
 # Search for OpenMP support
@@ -171,8 +171,8 @@ endif($ENV{HOST} MATCHES "matterhorn")
 ###########################################################
 if($ENV{HOST} MATCHES "julier")
 
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl=sequential -restrict" CACHE "Flags used by the compiler during all build types" STRING)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl -restrict" CACHE "Flags used by the compiler during all build types" STRING)
 	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
 
 endif($ENV{HOST} MATCHES "julier")
@@ -180,8 +180,8 @@ endif($ENV{HOST} MATCHES "julier")
 ###########################################################
 if($ENV{HOST} MATCHES "rosa")
 
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl=sequential" CACHE "Linker options" STRING)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl=sequential" CACHE "Flags used by the compiler during all build types" STRING)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl" CACHE "Flags used by the compiler during all build types" STRING)
 	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
 
 endif($ENV{HOST} MATCHES "rosa")

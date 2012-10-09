@@ -262,6 +262,10 @@ protected:
 class CheckpointableTransitionMatrix : public TransitionMatrix
 {
 public:
+	/// Constructor.
+	///
+	CheckpointableTransitionMatrix() : TransitionMatrix() {}
+	
 	/// Save a checkpoint of the matrices
 	///
 	/// @param[in] aScale The matrix scale to be saved

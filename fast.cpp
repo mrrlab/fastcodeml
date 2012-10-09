@@ -267,6 +267,18 @@ int main(int ac, char **av)
 	size_t branch_start, branch_end;
 	const size_t num_branches  = forest.getNumInternalBranches();
 	const size_t marked_branch = forest.getMarkedInternalBranch();
+
+	// Check if the request make sense
+	if(cmd.mBranchFromFile && marked_branch >= num_branches)
+	{
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl; 
+	}
+	else if(cmd.mBranch >= num_branches && cmd.mBranch < UINT_MAX)
+	{
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
+	}
+
+	// Compute branch to compute (or switch to the entire range of branches
 	if(cmd.mBranchFromFile && marked_branch < num_branches)
 	{
 		// Branch from file and valid
@@ -374,7 +386,7 @@ int main(int ac, char **av)
 		if(cmd.mComputeHypothesis > 1 && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
 			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
-			bt.computeBEB(h1);
+			bt.computeBEB(h1, fg_branch);
 			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
 
 			// Get the sites under positive selection for printing in the results file

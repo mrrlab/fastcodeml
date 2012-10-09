@@ -3,6 +3,7 @@
 #include <iomanip>
 #include "BayesTest.h"
 #include "VerbosityLevels.h"
+#include "TreeAndSetsDependencies.h"
 
 
 /// The minimum value for class 2 sites probability to be a positive selection site.
@@ -29,13 +30,30 @@ BayesTest::BayesTest(size_t aNumSites, unsigned int aVerbose) : mSiteClassProb(4
 }
 
 
-double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel)
+double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
 {
-	// Omega for foreground and background branches
+	// Omega for foreground and background branches and the corresponding codon class
 	double omega_fg;
 	double omega_bg;
 
-	BranchSiteModelAltHyp::CodonClass codon_class;
+	// Get the optimized kappa
+	std::vector<double> vars;
+	aModel.getVariables(vars);
+	size_t kappa_idx = vars.size()-2;
+	const double kappa = vars[kappa_idx];
+
+	// Compute the corresponding Q matrices for foreground and background branches
+	TransitionMatrix q_fg, q_bg;
+	double scale_q_fg, scale_q_bg;
+
+	// Create the dependency list for forest likelihood computation
+	Forest& forest = aModel.getForest();
+	TreeAndSetsDependencies dep(forest, mVerbose);
+	dep.computeDependencies(1, true);
+
+	// Initialize the probability list
+	ProbabilityMatrixSetBEB beb_set(forest.getNumBranches());
+	beb_set.initializeSet(forest.adjustFgBranchIdx(aFgBranch));
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
@@ -50,28 +68,48 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel)
 		if(iw < BEB_N1D)										// class 0: w0 w0
 		{
 			omega_fg = omega_bg = mPara[2][iw];
-			codon_class = BranchSiteModelAltHyp::CODON_CLASS_0;
 		}
 		else if(iw == BEB_N1D)									// class 1: w1 w1
 		{
 			omega_fg = omega_bg = 1.;
-			codon_class = BranchSiteModelAltHyp::CODON_CLASS_1;
 		}
 		else if(iw < (BEB_N1D+1+BEB_N1D*BEB_N1D))				// class 2a: w0 w2
 		{                                  
             omega_fg = mPara[2][(iw-BEB_N1D-1) / BEB_N1D];
             omega_bg = mPara[3][(iw-BEB_N1D-1) % BEB_N1D];
-			codon_class = BranchSiteModelAltHyp::CODON_CLASS_2a;
 		}
 		else													// class 2b: w1 w2
 		{                                                       
             omega_fg = 1.;
             omega_bg = mPara[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
-			codon_class = BranchSiteModelAltHyp::CODON_CLASS_2b;
 		}
 
-		// Do It
-		aModel.computeLikelihoodForBEB(codon_class, omega_fg, omega_bg, &mPriors[iw*mNumSites]);
+		// Fill the matrices and compute their eigen decomposition.
+#ifdef _MSC_VER
+		#pragma omp parallel sections default(none) shared(omega_fg, omega_bg, kappa, scale_q_fg, scale_q_bg, q_fg, q_bg)
+#else
+		#pragma omp parallel sections default(shared)
+#endif
+		{
+			#pragma omp section
+			{
+				scale_q_fg = q_fg.fillMatrix(omega_fg, kappa);
+				q_fg.eigenQREV();
+			} 
+			#pragma omp section
+			{
+				scale_q_bg = q_bg.fillMatrix(omega_bg, kappa);
+				q_bg.eigenQREV();
+			}
+		}
+
+		// Fill the matrix set with the new matrices and the times computed before
+		beb_set.fillMatrixSet(q_fg, q_bg, scale_q_bg, scale_q_fg, vars);
+
+		// Compute likelihoods
+		CacheAlignedDoubleVector likelihoods(forest.getNumSites());
+		forest.computeLikelihoods(beb_set, likelihoods, dep.getDependencies());
+		memcpy(&mPriors[iw*mNumSites], &likelihoods[0], forest.getNumSites()*sizeof(double));
 
 		std::cerr << std::setw(3) << iw << ' ';
 		std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_fg << ' ';
@@ -101,12 +139,13 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel)
 	return scale;
 }
 
-void BayesTest::computeBEB(BranchSiteModelAltHyp& aModel)
+void BayesTest::computeBEB(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB" << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB for " << aFgBranch << std::endl;
 
 	// Enable it as soon as the dependency list problem as been solved.
-	//	double s1 = getGridParams(aModel);
+	double scale1 = getGridParams(aModel, aFgBranch);
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Scale is " << scale1 << std::endl;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Test

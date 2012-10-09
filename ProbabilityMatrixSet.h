@@ -61,7 +61,7 @@ public:
 	unsigned int size(void) const {return mNumSets;}
 
 	/// Initialize only the foreground branch value.
-	/// It leaves the mMatrix array of pointers uninitialized. This is OK if the set is used nly to store the matrices for later usage.
+	/// It leaves the mMatrix array of pointers uninitialized. This is OK if the set is used only to store the matrices for later usage.
 	///
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	///

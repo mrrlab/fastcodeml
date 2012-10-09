@@ -257,6 +257,10 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 	// Start the jobs
 	if(mRank == MASTER_JOB)
 	{
+		// If users set the fg branch tell them it is ignored
+		if((aCmdLine.mBranchFromFile || aCmdLine.mBranch != UINT_MAX) && mVerbose >= VERBOSE_INFO_OUTPUT)
+			std::cerr << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
+
 		// Initialize structures
 		mVerbose = aCmdLine.mVerboseLevel;
 		mNumInternalBranches = aForest.getNumInternalBranches();
@@ -446,13 +450,14 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		std::cerr << std::endl << "Positive selection sites" << std::endl;
 		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 		{
-			if(mWorkTable->mResults[branch].mPositiveSelSites.empty()) continue;
+			WorkTable::ResultSet& branch_results = mWorkTable->mResults[branch];
+			if(branch_results.mPositiveSelSites.empty()) continue;
 
 			std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
-			for(size_t pss=0; pss < mWorkTable->mResults[branch].mPositiveSelSites.size(); ++pss)
+			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
-				std::cerr << std::setw(5) << mWorkTable->mResults[branch].mPositiveSelSites[pss] <<
-							 std::fixed << std::setw(12) << std::setprecision(6) << mWorkTable->mResults[branch].mPositiveSelProbs[pss] << std::endl;
+				std::cerr << std::setw(5) << branch_results.mPositiveSelSites[pss] <<
+							 std::fixed << std::setw(12) << std::setprecision(6) << branch_results.mPositiveSelProbs[pss] << std::endl;
 			}
 		}
 	}
@@ -534,7 +539,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			{
 			// Compute the BEB
 			BayesTest bt(aForest.getNumSites(), 0);
-			bt.computeBEB(h1);
+			bt.computeBEB(h1, static_cast<size_t>(job[1]));
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;

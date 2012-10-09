@@ -18,6 +18,9 @@
 
 void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aNoParallel)
 {
+	size_t  j;
+
+	// Save for the optimization phase
 	mNoParallel = aNoParallel;
 
 	// Take values from forest
@@ -38,21 +41,19 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 	}
 	else
 	{
-		size_t i, j;
-
 		// Prepare the search of dependencies
 		boost::dynamic_bitset<> done(num_sites);	// The sites that has dependencies satisfied in the previous level
 		boost::dynamic_bitset<> prev;				// Dependencies till the previous level
 		std::vector<unsigned int> v;				// Temporary list of sites
 
 		// Mark trees without dependencies
-		// mTreeDependencies[tj] can be done after: t1 t2 t3
-		for(i=0; i < num_sites; ++i)
+		// tree_dependencies[tj] can be done after: t1 t2 t3
+		for(size_t site=0; site < num_sites; ++site)
 		{
-			if(tree_dependencies[i].empty())
+			if(tree_dependencies[site].empty())
 			{
-				done.set(i);
-				v.push_back(static_cast<unsigned int>(i));
+				done.set(site);
+				v.push_back(static_cast<unsigned int>(site));
 			}
 		}
 
@@ -65,19 +66,19 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 		{
 			v.clear();
 			bool all_done = true;
-			for(i=0; i < num_sites; ++i)
+			for(size_t site=0; site < num_sites; ++site)
 			{
 				// If tree i has been already processed skip it
-				if(prev[i]) continue;
+				if(prev[site]) continue;
 				all_done = false;
 
-				size_t nc = tree_dependencies[i].size();
+				size_t nc = tree_dependencies[site].size();
 				bool all = true;
-				for(j=0; j < nc; ++j) if(!prev[tree_dependencies[i][j]]) {all = false; break;}
+				for(j=0; j < nc; ++j) if(!prev[tree_dependencies[site][j]]) {all = false; break;}
 				if(all)
 				{
-					v.push_back(static_cast<unsigned int>(i));
-					done.set(i);
+					v.push_back(static_cast<unsigned int>(site));
+					done.set(site);
 				}
 			}
 			if(all_done) break;
@@ -94,18 +95,18 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 
 	// Transform the list multiplying the entries by the number of codon classes
 	mDependenciesClassesAndTrees.clear();
-	for(size_t i=0; i < nc; ++i)
+	for(size_t dep_class=0; dep_class < nc; ++dep_class)
 	{
 		// Prepare the dependency classe
 		one_class.clear();
 
 		// Number of trees in the class
-		const size_t nt = tree_groups_dependencies[i].size();
+		const size_t nt = tree_groups_dependencies[dep_class].size();
 		for(unsigned int set=0; set < aNumSets; ++set)
 		{
 			for(size_t j=0; j < nt; ++j)
 			{
-				one_class.push_back(makePair(tree_groups_dependencies[i][j], set));
+				one_class.push_back(makePair(tree_groups_dependencies[dep_class][j], set));
 			}
 		}
 		mDependenciesClassesAndTrees.push_back(one_class);
@@ -169,6 +170,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 
 void TreeAndSetsDependencies::optimizeDependencies(void)
 {
+#if 0
 	unsigned int relative_effort = measureRelativeEffort();
 
 	// Compute effort per site
@@ -176,7 +178,7 @@ void TreeAndSetsDependencies::optimizeDependencies(void)
 	{
 		mForest.getEffortPerSite(mEffortPerSite, 10, 10*relative_effort, 1);
 	}
-
+#endif
 	balanceDependenciesClassesAndTrees(true);
 }
 
@@ -246,7 +248,7 @@ bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy)
 		size_t resid_jolly = num_jolly;
 		if(over)
 		{
-			unsigned int min_add = num_threads - over;
+			size_t min_add = num_threads - over;
 			if(min_add <= num_jolly)
 			{
 				needed_add = min_add;

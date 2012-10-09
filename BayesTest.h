@@ -6,11 +6,6 @@
 #include <cstdlib>
 #include "BranchSiteModel.h"
 
-/// Few constants
-const static unsigned int BEB_N1D = 10;	///< Number of categories for w0 and w2
-const static unsigned int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
-const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
-
 /// Tests to find the sites under positive selection.
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -35,7 +30,7 @@ public:
 	///
 	/// @todo Missing computeBEB routine. The values that are output are simulated.
 	///
-	void computeBEB(BranchSiteModelAltHyp& aModel);
+	void computeBEB(BranchSiteModelAltHyp& aModel, size_t aFgBranch);
 	
 	/// Print the sites under positive selection.
 	///
@@ -72,7 +67,12 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	double getGridParams(BranchSiteModelAltHyp& aModel);
+	double getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch);
+
+private:
+	const static unsigned int BEB_N1D = 10;	///< Number of intervals for w0 and w2
+	const static unsigned int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
+	const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
 
 private:
 	std::vector<double> mSiteClassProb;				///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).

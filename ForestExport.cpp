@@ -40,7 +40,6 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 
 	// Map values to branches (identified by the end node)
 	std::map<std::pair<int, int>, double> map_value;
-	std::map<std::pair<int, int>, bool> map_same;
 	for(size_t i=0; i < node_to.size(); ++i)
 	{
 		map_value[node_to[i]] = branch_length[i];

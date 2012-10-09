@@ -159,6 +159,12 @@ public:
 	///
 	const std::vector<double>& getSiteMultiplicity(void) const {return mForest.getSiteMultiplicity();}
 
+	/// Get the corresponding forest.
+	///
+	/// @return Reference to the forest
+	///
+	Forest& getForest(void) {return mForest;}
+
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
 	///
@@ -442,24 +448,6 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
-	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
-	enum CodonClass
-	{
-		CODON_CLASS_0,			///< Codon class 0
-		CODON_CLASS_1,			///< Codon class 1
-		CODON_CLASS_2a,			///< Codon class 2a
-		CODON_CLASS_2b			///< Codon class 2b
-	};
-
-	/// Compute the likelihood for the given forest and the given set of parameters when computing BEB.
-	///
-	/// @param[in] aCodonClass The codon class to be computed
-	/// @param[in] aOmegaFg Omega to be used on the foreground branch
-	/// @param[in] aOmegaBg Omega to be used on the background branches
-	/// @param[out] aLikelihoods The computed likelihoods
-	///
-	void computeLikelihoodForBEB(CodonClass aCodonClass, double aOmegaFg, double aOmegaBg, double* aLikelihoods);
-
 private:
 	/// Disabled assignment operator to avoid warnings on Windows.
 	///
@@ -469,7 +457,6 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	//BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/) {return *this;}
 	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
@@ -492,6 +479,5 @@ private:
 	double							mScaleQw2;			///< Scale value for Qw2
 	double							mScaleQ1;			///< Scale value for Q1
 };
-
 
 #endif

@@ -22,7 +22,7 @@ public:
 	/// @param[in] aForest The corresponding forest
 	/// @param[in] aVerbose The verbosity level
 	///
-	explicit TreeAndSetsDependencies(const Forest& aForest, unsigned int aVerbose=0) : mForest(aForest), mVerbose(aVerbose) {}
+	explicit TreeAndSetsDependencies(const Forest& aForest, unsigned int aVerbose=0) : mForest(aForest), mNoParallel(false), mVerbose(aVerbose) {}
 
 	/// Destructor.
 	///
@@ -35,13 +35,9 @@ public:
 	///
 	void computeDependencies(unsigned int aNumSets, bool aNoParallel);
 
+	/// Optimize the dependy list.
+	///
 	void optimizeDependencies(void);
-
-	/// Measure the relative effort of doTransitionAtLeaf and doTransition.
-	///
-	/// @return The ratio between the time spent by doTransition and doTransitionAtLeaf.
-	///
-	unsigned int measureRelativeEffort(void);
 
 	/// Print the dependency list and the maximum effort
 	///
@@ -49,9 +45,26 @@ public:
 	///
 	void print(const char* aTitle=0) const;
 
+	/// Access the computed dependency list
+	///
+	/// @return Reference to the dependency list.
+	///
 	const ListDependencies& getDependencies(void) {return mDependenciesClassesAndTrees;}
 
+private:
+	/// Move dependent trees from class to class trying to balance the size of the classes
+	///
+	/// @param[in] aGreedy If set move the trees as far as possible, otherwise move them to the first useful pot.
+	///
+	/// @return True if the redistribuition has been successful
+	///
 	bool balanceDependenciesClassesAndTrees(bool aGreedy);
+
+	/// Measure the relative effort of doTransitionAtLeaf and doTransition.
+	///
+	/// @return The ratio between the time spent by doTransition and doTransitionAtLeaf.
+	///
+	unsigned int measureRelativeEffort(void);
 
 public:
 	/// Given the combined entry in the dependency list, extract the site number.
@@ -70,6 +83,7 @@ public:
 	///
 	inline static unsigned int getSetNum(unsigned int aPair) {return aPair & 03u;}
 
+private:
 	/// Create the combined entry in the dependency list from site and set numbers.
 	///
 	/// @param[in] aSite The site number
@@ -79,13 +93,22 @@ public:
 	///
 	inline static unsigned int makePair(unsigned int aSite, unsigned int aSet) {return aSite << 2 | aSet;}
 
+	/// Disabled assignment operator to avoid warnings on Windows.
+	///
+	/// @fn TreeAndSetsDependencies& operator=(const TreeAndSetsDependencies& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	TreeAndSetsDependencies& operator=(const TreeAndSetsDependencies& /*aObj*/);
 
 private:
-	const Forest&				mForest;
+	const Forest&				mForest;						///< The forest for which dependencies should be clculated
 	ListDependencies			mDependenciesClassesAndTrees;	///< The groups of dependencies between trees
-	bool						mNoParallel;
-	unsigned int				mVerbose;
-	std::vector<unsigned int>	mEffortPerSite;
+	bool						mNoParallel;					///< Set if the execution is sequential, so no tree dependencies needed
+	unsigned int				mVerbose;						///< The verbose level
+	std::vector<unsigned int>	mEffortPerSite;					///< Effort per site
 };
 
 
