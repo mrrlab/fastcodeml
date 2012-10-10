@@ -94,7 +94,9 @@ struct HighLevelCoordinator::WorkTable
 
 	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
 	///
-	/// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0, JOB_H1, JOB_BEB, JOB_SHUTDOWN) and [1] to the branch number (or zero for JOB_SHUTDOWN)
+	/// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0, JOB_H1, JOB_BEB, JOB_SHUTDOWN);
+	///									  [1] to the fg branch number (or zero for JOB_SHUTDOWN);
+	///                                   [2] zero or the number of variables for a JOB_BEB request
 	/// @param[in] aRank The current worker rank
 	///
 	/// @return True if a job has been assigned, false if the job is JOB_SHUTDOWN
@@ -131,6 +133,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 			{
 				aJob[0] = kind;
 				aJob[1] = static_cast<int>(branch);
+				aJob[2] = 0; // No additional data sent
 				mJobStatus[idx] = JOB_ASSIGNED;
 				mWorkList[idx]  = aRank;
 				return true;
@@ -157,6 +160,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 		// Assign the BEB job
 		aJob[0] = JOB_BEB;
 		aJob[1] = static_cast<int>(branch);
+		aJob[2] = static_cast<int>(mResults[branch].mHxVariables[1].size());
 
 		// Mark it as assigned
 		size_t idx = branch*JOBS_PER_BRANCH+JOB_BEB;
@@ -168,6 +172,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 	// If no job available, shutdown this worker
 	aJob[0] = JOB_SHUTDOWN;
 	aJob[1] = 0;
+	aJob[2] = 0;
 	return false;
 }
 
@@ -246,38 +251,6 @@ HighLevelCoordinator::~HighLevelCoordinator()
 {
 	delete mWorkTable;
 	MPI_Finalize();
-}
-
-void HighLevelCoordinator::createDatatypes(size_t aNumVariables)
-{
-	struct JobBranchVarsStruct 
-	{ 
-		int		job_type;	// Job type 
-		int		fg_branch;	// Foreground branch
-		int		num_var;	// Number of variables
-		double	vars[1];	// Variables 
-	};
-
-	JobBranchVarsStruct msg;
-
-	MPI_Datatype JobBranchVars; 
-	MPI_Datatype type[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE}; 
-	int          blocklen[4] = {1, 1, 1, static_cast<int>(aNumVariables)}; 
-	MPI_Aint     disp[4]; 
-
-	MPI_Address(static_cast<void *>(&msg.job_type),  disp+0); 
-	MPI_Address(static_cast<void *>(&msg.fg_branch), disp+1); 
-	MPI_Address(static_cast<void *>(&msg.num_var),   disp+2); 
-	MPI_Address(static_cast<void *>(msg.vars),       disp+3); 
-
-	MPI_Aint base = disp[0]; 
-	for (unsigned int i=0; i < 4; ++i) disp[i] -= base;
-
-	MPI_Type_struct(4, blocklen, disp, type, &JobBranchVars);
-   
-	MPI_Type_commit(&JobBranchVars); 
-
-	//MPI_Send(msg, 1, JobBranchVars, dest, tag, comm);
 }
 
 bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
@@ -412,10 +385,17 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			break;
 		}
 
-		// Send work packet or shutdown request (job[1] is the fg branch)
-		int job[2];
+		// Send work packet or shutdown request (job[1] is the fg branch, job[2] the length of the additional data)
+		int job[3];
 		mWorkTable->getNextJob(job, worker);
-		MPI_Send((void*)job, 2, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+		MPI_Send((void*)job, 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+
+		// For BEB send the variables from H1
+		if(job[2] > 0)
+		{
+			double* v = &(mWorkTable->mResults[job[1]].mHxVariables[1][0]);
+			MPI_Send((void*)v, job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+		}
 
 		// Trace the messages
 		if(mVerbose >= VERBOSE_MORE_DEBUG)
@@ -537,10 +517,18 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			break;
 		}
 
-		// Receive the job to execute or the shutdown request
-		int job[2];
-		MPI_Recv((void*)job, 2, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
+		// Receive the job to execute or the shutdown request (job[0] the request; [1] fg branch; [2] optional number of variables)
+		int job[3];
+		MPI_Recv((void*)job, 3, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
 
+		// If there is additional data
+		if(job[2] > 0)
+		{
+			values_double.resize(job[2]);
+			MPI_Recv((void*)&values_double[0], job[2], MPI_DOUBLE, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
+		}
+
+		// Do the work
 		switch(job[0])
 		{
 		case JOB_SHUTDOWN:
@@ -581,8 +569,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			// Compute the BEB
 			BayesTest bt(aForest.getNumSites(), 0);
 
-			// BEWARE! The vars should be taken from the master, not from h1
-			bt.computeBEB(aForest, h1.getVariables(), aForest.getSiteMultiplicity(), static_cast<size_t>(job[1]));
+			// The vars are taken from the master
+			bt.computeBEB(aForest, values_double, aForest.getSiteMultiplicity(), static_cast<size_t>(job[1]));
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;

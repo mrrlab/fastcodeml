@@ -121,12 +121,11 @@ int main(int ac, char **av)
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 		}
 		else
-#else
+#endif
 		{
 													std::cerr << "Num. threads:  1 serial" << std::endl
 		                                                      << "Num. cores:    1"  << std::endl;
 		}
-#endif
 #ifdef USE_MPI
 		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
 		else										std::cerr << "Num. MPI proc: Insufficient, single task execution" << std::endl;
