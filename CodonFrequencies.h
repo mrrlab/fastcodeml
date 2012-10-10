@@ -32,8 +32,8 @@ public:
 	///
 	enum CodonFrequencyModel
 	{
-		CODON_FREQ_MODEL_UNIF=0,	///< All codon probabilities are equal
-		CODON_FREQ_MODEL_F3X4		///< F3x4 model
+		CODON_FREQ_MODEL_UNIF,	///< All codon probabilities are equal to 1/61
+		CODON_FREQ_MODEL_F3X4	///< F3x4 model
 	};
 
 	/// Compute the codon frequencies from the codon count

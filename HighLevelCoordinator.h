@@ -68,6 +68,8 @@ private:
 	///
 	void doWorker(Forest& aForest, const CmdLine& aCmdLine);
 
+	void createDatatypes(size_t aNumVariables);
+
 
 private:
 	unsigned int		mVerbose;				///< The verbose level

@@ -1,16 +1,14 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include "BayesTest.h"
 #include "VerbosityLevels.h"
 #include "TreeAndSetsDependencies.h"
 
 
-/// The minimum value for class 2 sites probability to be a positive selection site.
-///
-static const double MIN_PROB = 0.95;
 
-BayesTest::BayesTest(size_t aNumSites, unsigned int aVerbose) : mSiteClassProb(4*aNumSites), mNumSites(aNumSites), mVerbose(aVerbose), mPriors(aNumSites*BEB_NUM_CAT)
+BayesTest::BayesTest(size_t aNumSites, unsigned int aVerbose) : mSiteClassProb(BEB_DIMS*aNumSites), mNumSites(aNumSites), mVerbose(aVerbose), mPriors(aNumSites*BEB_NUM_CAT)
 {
 	// Searching range for w0
 	const static double w0b0 = 0.;
@@ -29,31 +27,27 @@ BayesTest::BayesTest(size_t aNumSites, unsigned int aVerbose) : mSiteClassProb(4
 	}
 }
 
-
-double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
+double BayesTest::getGridParams(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch)
 {
 	// Omega for foreground and background branches and the corresponding codon class
 	double omega_fg;
 	double omega_bg;
 
 	// Get the optimized kappa
-	std::vector<double> vars;
-	aModel.getVariables(vars);
-	size_t kappa_idx = vars.size()-2;
-	const double kappa = vars[kappa_idx];
+	size_t kappa_idx = aVars.size()-2;
+	const double kappa = aVars[kappa_idx];
 
 	// Compute the corresponding Q matrices for foreground and background branches
 	TransitionMatrix q_fg, q_bg;
 	double scale_q_fg, scale_q_bg;
 
 	// Create the dependency list for forest likelihood computation
-	Forest& forest = aModel.getForest();
-	TreeAndSetsDependencies dep(forest, mVerbose);
+	TreeAndSetsDependencies dep(aForest, mVerbose);
 	dep.computeDependencies(1, true);
 
 	// Initialize the probability list
-	ProbabilityMatrixSetBEB beb_set(forest.getNumBranches());
-	beb_set.initializeSet(forest.adjustFgBranchIdx(aFgBranch));
+	ProbabilityMatrixSetBEB beb_set(aForest.getNumBranches());
+	beb_set.initializeSet(aForest.adjustFgBranchIdx(aFgBranch));
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
@@ -104,22 +98,24 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
 		}
 
 		// Fill the matrix set with the new matrices and the times computed before
-		beb_set.fillMatrixSet(q_fg, q_bg, scale_q_bg, scale_q_fg, vars);
+		beb_set.fillMatrixSet(q_fg, q_bg, scale_q_bg, scale_q_fg, aVars);
 
 		// Compute likelihoods
-		CacheAlignedDoubleVector likelihoods(forest.getNumSites());
-		forest.computeLikelihoods(beb_set, likelihoods, dep.getDependencies());
-		memcpy(&mPriors[iw*mNumSites], &likelihoods[0], forest.getNumSites()*sizeof(double));
+		CacheAlignedDoubleVector likelihoods(aForest.getNumSites());
+		aForest.computeLikelihoods(beb_set, likelihoods, dep.getDependencies());
+		memcpy(&mPriors[iw*mNumSites], &likelihoods[0], aForest.getNumSites()*sizeof(double));
 
-		std::cerr << std::setw(3) << iw << ' ';
-		std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_fg << ' ';
-		std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_bg << " = " << std::setprecision(16);
-		std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+0] << ' ';        // Print only the first three sites
-		std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+1] << ' ';
-		std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+2] << std::endl;
+		if(mVerbose >= VERBOSE_ONLY_RESULTS)
+		{
+			std::cerr << std::setw(3) << iw << ' ';
+			std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_fg << ' ';
+			std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_bg << " = " << std::setprecision(16);
+			std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+0] << ' ';        // Print only the first three sites
+			std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+1] << ' ';
+			std::cerr << std::scientific << std::setw(14) << mPriors[iw*mNumSites+2] << std::endl;
+		}
 	}
 
-	const std::vector<double>& site_mult = aModel.getSiteMultiplicity();
 	double scale = 0.;
 	for(size_t site=0; site < mNumSites; ++site)
 	{
@@ -133,50 +129,194 @@ double BayesTest::getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
 		{
 			mPriors[k*mNumSites+site] = exp(mPriors[k*mNumSites+site]-fh);
 		}
-		scale += fh*site_mult[site];
+		scale += fh*aSiteMultiplicity[site];
 	}
 
 	return scale;
 }
 
-void BayesTest::computeBEB(BranchSiteModelAltHyp& aModel, size_t aFgBranch)
+void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB for " << aFgBranch << std::endl;
+	unsigned int ix = static_cast<unsigned int>(sqrt(static_cast<double>(aTriangleIdx)));
+	unsigned int iy = aTriangleIdx - ix*ix;
 
-	// Enable it as soon as the dependency list problem as been solved.
-	double scale1 = getGridParams(aModel, aFgBranch);
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Scale is " << scale1 << std::endl;
+	*aProbX = (1. + floor(iy/2.)*3. + (iy%2))/(3.*BEB_N1D);
+	*aProbY = (1. + (BEB_N1D - 1 - ix)*3. + (iy%2))/(3.*BEB_N1D);
+}
 
-	////////////////////////////////////////////////////////////////////////////////////////
-	// Test
+void BayesTest::computeBEB(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch)
+{
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
+
+	// Prepare the prior list
+	double scale1 = getGridParams(aForest, aVars, aSiteMultiplicity, aFgBranch);
+
+	// Temporary here till I understand their usage
+	int iw[BEB_NGRID*BEB_DIMS];
+	double pclassM[BEB_NGRID*BEB_DIMS];
+
+	// Set up im and pclassM, for each igrid and iclassM
+	for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
+	{
+		unsigned int ip[BEB_DIMS];
+		unsigned int it = igrid;
+		for(int j=BEB_DIMS-1; j >= 0; --j)
+		{
+			ip[j]= it % BEB_N1D;
+			it /= BEB_N1D;
+		}
+
+		// In the original code instead of BEB_DIMS there is nclassM. Both values are 4.
+		for(unsigned int k=0; k < BEB_DIMS; ++k)
+		{
+			// Given the point on the grid ip[] and iclassM, this returns iw and pclassM, 
+			//   where iw locates the correct f(x_h|w) stored in com.fhK[], and pclassM is 
+			//   the proportion of the site class under the model.
+			//   The n1d*n1d grid for p0-p1 is mapped onto the ternary graph for p0-p1-p2.  
+			//
+			//   See get_grid_para_like_AC() for order of iw or site classes.
+			//
+			//  Parameters are model A: (p0 p1 w0 w2)
+			//
+			int idx;
+			switch(k)
+			{
+			case 0: idx = ip[2]; break;								/* class 0: w0 */
+			case 1: idx = BEB_N1D; break;							/* class 1: w1 */
+			case 2: idx = BEB_N1D+1+ip[2]*BEB_N1D+ip[3]; break;		/* class 2a model A: w0 & w2 */
+			case 3: idx = BEB_N1D+1+BEB_N1D*BEB_N1D+ip[3]; break;	/* class 2b model A: w1 & w2 */
+			}
+			iw[igrid*BEB_DIMS+k] = idx;
+
+			// Fill the volume with the probabilities for each class
+			double p[3];
+			getIndexTernary(&p[0], &p[1], ip[0]*BEB_N1D+ip[1]);
+			p[2] = 1.0 - p[0] - p[1];
+
+			pclassM[igrid*BEB_DIMS+k] = (k < 2) ? p[k] : p[2]*p[k-2]/(1.0-p[2]);
+		}
+	}
+
+	// Calculate marginal prob of data, fX, and postpara[].  scale2 is scale.
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
+	double fX = 1.;
+	double scale2 = -1e300;
+	double lnfXs[BEB_NGRID];
+
+	for(unsigned int j=0; j < BEB_DIMS; ++j)  /* postpara[0-1] for p0p1 ignored */
+		for(unsigned int k=0; k < BEB_N1D; ++k) 
+			mPostPara[j][k] = 1.;
+
+	double postp0p1[BEB_N1D*BEB_N1D];
+	for(unsigned int k=0; k < BEB_N1D*BEB_N1D; k++) postp0p1[k] = 1.;
+
+   	for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
+	{
+		unsigned int ip[BEB_DIMS];
+		unsigned int it = igrid;
+		for(int j=BEB_DIMS-1; j >= 0; --j)
+		{
+			ip[j]= it % BEB_N1D;
+			it /= BEB_N1D;
+		}
+
+		lnfXs[igrid] = 0.;
+		for(unsigned int site=0; site < mNumSites; ++site)
+		{
+			double fh = 0.;
+			for(unsigned int k=0; k < BEB_DIMS; ++k)
+				fh += pclassM[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
+			if(fh < 1e-300)
+			{
+				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "strange: f[" << site << "] = " << fh << " very small." << std::endl;
+				continue;
+			}
+			lnfXs[igrid] += log(fh)*aSiteMultiplicity[site];
+		}
+
+		double t = lnfXs[igrid]-scale2;
+		if(t > 0)
+		{
+			/* change scale factor scale2 */
+			t = (t<200) ? exp(-t) : 0;
+			fX = fX*t+1;
+			for(unsigned int j=0; j < BEB_DIMS; ++j) for(unsigned int k=0; k < BEB_N1D; ++k) mPostPara[j][k] *= t;
+			for(unsigned int k=0; k < BEB_N1D*BEB_N1D; ++k) postp0p1[k] *= t;
+
+			for(unsigned int j=0; j < BEB_DIMS; ++j) mPostPara[j][ip[j]] ++;
+			postp0p1[ip[0]*BEB_N1D+ip[1]] ++;
+			scale2 = lnfXs[igrid];
+		}
+		else if(t > -200)
+		{
+			t = exp(t);
+			fX += t;
+			for(unsigned int j=0; j < BEB_DIMS; ++j) mPostPara[j][ip[j]] += t;
+			postp0p1[ip[0]*BEB_N1D+ip[1]] += t;
+		}
+	}
+
+	// Normalize probabilities
+	for(unsigned int j=0; j<BEB_DIMS; ++j) for(unsigned int k=0; k < BEB_N1D; ++k) mPostPara[j][k] /= fX;
+	for(unsigned int k=0; k<BEB_N1D*BEB_N1D; k++) postp0p1[k] /=fX;
+
+	fX = log(fX)+scale2;
+
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
+		                                           << "  Scales = " << scale1 << " " << scale2 << std::endl;
+
+	// Calculate posterior probabilities for sites.  S1 is scale factor */
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
+
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
-		mSiteClassProb[0*mNumSites+site] = randFrom0to1();
-		mSiteClassProb[1*mNumSites+site] = randFrom0to1();
-		mSiteClassProb[2*mNumSites+site] = randFrom0to1();
-		mSiteClassProb[3*mNumSites+site] = randFrom0to1();
+		scale1 = -1e300;
 
-		double tot = mSiteClassProb[0*mNumSites+site] +
-					 mSiteClassProb[1*mNumSites+site] +
-					 mSiteClassProb[2*mNumSites+site] +
-					 mSiteClassProb[3*mNumSites+site];
+		for(unsigned int j=0; j < BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] = 1.;
 
-		mSiteClassProb[0*mNumSites+site] /= tot;
-		mSiteClassProb[1*mNumSites+site] /= tot;
-		mSiteClassProb[2*mNumSites+site] /= tot;
-		mSiteClassProb[3*mNumSites+site] /= tot;
-
-		// Just to be sure at least some site appears
-		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
-		if(prob > 0.9 && prob < 0.95)
+   		for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
 		{
-			mSiteClassProb[2*mNumSites+site] += 0.025;
-			mSiteClassProb[3*mNumSites+site] += 0.025;
-			mSiteClassProb[0*mNumSites+site] -= 0.025;
-			mSiteClassProb[1*mNumSites+site] -= 0.025;
+			//unsigned int ip[BEB_DIMS];
+			//unsigned int it = igrid;
+			//for(int j=BEB_DIMS-1; j >= 0; --j)
+			//{
+			//	ip[j]= it % BEB_N1D;
+			//	it /= BEB_N1D;
+			//}
+
+			double fh = 0.;
+			double fhk[BEB_DIMS];
+			for(unsigned int k=0; k < BEB_DIMS; ++k) /* duplicated calculation */
+			{
+				fhk[k] = pclassM[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
+				fh += fhk[k];
+			}
+
+			for(unsigned int iclassM=0; iclassM < BEB_DIMS; ++iclassM)
+			{
+				fhk[iclassM] /= fh;
+				double t = log(fhk[iclassM]) + lnfXs[igrid]; /* t is log of term on grid */
+				if(t > scale1 + 50)
+				{  /* change scale factor scale1 */
+					for(unsigned int j=0; j < BEB_DIMS; ++j)
+						mSiteClassProb[j*mNumSites+site] *= exp(scale1-t);
+					scale1 = t;
+				}
+				mSiteClassProb[iclassM*mNumSites+site] += exp(t-scale1);
+			}
+		}
+		for(unsigned int j=0; j<BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] *= exp(scale1-fX);
+
+		// For debug
+		if(mVerbose >= VERBOSE_ONLY_RESULTS) 
+		{
+			std::cerr << "Site " << std::setw(4) << site;
+			for(unsigned int k=0; k < BEB_DIMS; ++k) std::cerr << std::setw(20) << std::setprecision(12) << mSiteClassProb[k*mNumSites+site];
+			std::cerr << std::endl;
 		}
 	}
 }
+
 
 void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 {
@@ -185,7 +325,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 	// For all sites
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
-		// Check if is a type 2 site with prob > 95%
+		// Check if is a type 2 site with prob > 50%
 		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
 		if(prob > MIN_PROB)
 		{
@@ -196,8 +336,14 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 				print_title = false;
 			}
 			
+			// Set significance
+			const char* sig;
+			if(prob > TWO_STARS_PROB)     sig = "**";
+			else if(prob > ONE_STAR_PROB) sig = "*";
+			else                          sig = "";
+
 			// Print site number and probability
-			std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << std::endl;
+			std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 		}
 	}
 }
@@ -212,7 +358,7 @@ void BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelS
 	// For all sites
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
-		// Check if it is a type 2 site with prob > 95%
+		// Check if it is a type 2 site with prob > minimum cutoff
 		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
 		if(prob > MIN_PROB)
 		{

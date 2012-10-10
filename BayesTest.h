@@ -6,6 +6,12 @@
 #include <cstdlib>
 #include "BranchSiteModel.h"
 
+/// The minimum value for class 2 sites probability to be a positive selection site.
+///
+const static double MIN_PROB       = 0.50;
+const static double ONE_STAR_PROB  = 0.95;
+const static double TWO_STARS_PROB = 0.99;
+
 /// Tests to find the sites under positive selection.
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -25,12 +31,12 @@ public:
 	/// Destructor.
 	///
 	~BayesTest() {}
-	
+
 	/// Bayes Empirical Bayes (BEB) test.
 	///
-	/// @todo Missing computeBEB routine. The values that are output are simulated.
+	/// @param[in] aModel The last computed H1 test
 	///
-	void computeBEB(BranchSiteModelAltHyp& aModel, size_t aFgBranch);
+	void computeBEB(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch);
 	
 	/// Print the sites under positive selection.
 	///
@@ -46,12 +52,6 @@ public:
 	void extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const;
 
 private:
-	/// Generate a double random number between 0 and 1
-	///
-	/// @return The random number
-	///
-	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
-
 	/// This sets up the grid (mPara[][]) according to the priors.  
 	/// It calculates the probability of data at each site given w: f(f_h|w).  
 	/// This is calculated using the branch model (NSsites = 0 model = 2), with 
@@ -67,19 +67,36 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	double getGridParams(BranchSiteModelAltHyp& aModel, size_t aFgBranch);
+	double getGridParams(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch);
+
+	///    This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for 
+	///    the aTriangleIdx-th triangle, with aTriangleIdx from 0, 1, ..., BEB_N1D*BEB_N1D-1.  
+	///    The ternary graph (0-1 on each axis) is partitioned into BEB_N1D*BEB_N1D equal-sized triangles.  
+	///    In the first row (ix=0), there is one triangle (iy=0);
+	///    In the second row (ix=1), there are 3 triangles (iy=0,1,2);
+	///    In the i-th row (ix=i), there are 2*i+1 triangles (iy=0,1,...,2*i).
+	///
+	///    aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the 
+	///    centroid in the ij-th small triangle.
+	///    
+	///    aProbX and aProbY each takes on 2*BEB_N1D-1 possible values.
+	///
+	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx);
+
 
 private:
-	const static unsigned int BEB_N1D = 10;	///< Number of intervals for w0 and w2
-	const static unsigned int BEB_DIMS = 4;	///< Number of codon classes (0, 1, 2a, 2b)
-	const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D; ///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
+	const static unsigned int BEB_N1D = 10;												///< Number of intervals for w0 and w2
+	const static unsigned int BEB_DIMS = 4;												///< Number of codon classes (0, 1, 2a, 2b)
+	const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D;	///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
+	const static unsigned int BEB_NGRID = BEB_N1D*BEB_N1D*BEB_N1D*BEB_N1D;				///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
 
 private:
-	std::vector<double> mSiteClassProb;				///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
-	size_t				mNumSites;					///< Number of sites.
-	double				mPara[BEB_DIMS][BEB_N1D];	///< Parameters for w0, w1, w2 prior computation
-	unsigned int		mVerbose;					///< If greather than zero prints more info
-	std::vector<double>	mPriors;					///< Computed priors (each points to a list, one for each site)
+	std::vector<double> mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
+	size_t				mNumSites;						///< Number of sites.
+	double				mPara[BEB_DIMS][BEB_N1D];		///< Parameters for w0, w1, w2 prior computation
+	double				mPostPara[BEB_DIMS][BEB_N1D];	///< Parameters for w0, w1, w2 posterior computation
+	unsigned int		mVerbose;						///< If greather than zero prints more info
+	std::vector<double>	mPriors;						///< Computed priors (each points to a list, one for each site)
 };
 
 #endif

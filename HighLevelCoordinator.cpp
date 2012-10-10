@@ -248,6 +248,37 @@ HighLevelCoordinator::~HighLevelCoordinator()
 	MPI_Finalize();
 }
 
+void HighLevelCoordinator::createDatatypes(size_t aNumVariables)
+{
+	struct JobBranchVarsStruct 
+	{ 
+		int		job_type;	// Job type 
+		int		fg_branch;	// Foreground branch
+		int		num_var;	// Number of variables
+		double	vars[1];	// Variables 
+	};
+
+	JobBranchVarsStruct msg;
+
+	MPI_Datatype JobBranchVars; 
+	MPI_Datatype type[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_DOUBLE}; 
+	int          blocklen[4] = {1, 1, 1, static_cast<int>(aNumVariables)}; 
+	MPI_Aint     disp[4]; 
+
+	MPI_Address(static_cast<void *>(&msg.job_type),  disp+0); 
+	MPI_Address(static_cast<void *>(&msg.fg_branch), disp+1); 
+	MPI_Address(static_cast<void *>(&msg.num_var),   disp+2); 
+	MPI_Address(static_cast<void *>(msg.vars),       disp+3); 
+
+	MPI_Aint base = disp[0]; 
+	for (unsigned int i=0; i < 4; ++i) disp[i] -= base;
+
+	MPI_Type_struct(4, blocklen, disp, type, &JobBranchVars);
+   
+	MPI_Type_commit(&JobBranchVars); 
+
+	//MPI_Send(msg, 1, JobBranchVars, dest, tag, comm);
+}
 
 bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 {
@@ -266,7 +297,8 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 		mNumInternalBranches = aForest.getNumInternalBranches();
 
 		// Check if the number of worker is ok
-		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= VERBOSE_INFO_OUTPUT) std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
+		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= VERBOSE_INFO_OUTPUT)
+			std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
 
 		// In the master initialize the work table
 		delete mWorkTable;
@@ -456,8 +488,17 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
 			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
+				// Get probability
+				double prob = branch_results.mPositiveSelProbs[pss];
+
+				// Set significance
+				const char* sig;
+				if(prob > TWO_STARS_PROB)     sig = "**";
+				else if(prob > ONE_STAR_PROB) sig = "*";
+				else                          sig = "";
+
 				std::cerr << std::setw(5) << branch_results.mPositiveSelSites[pss] <<
-							 std::fixed << std::setw(12) << std::setprecision(6) << branch_results.mPositiveSelProbs[pss] << std::endl;
+							 std::fixed << std::setw(12) << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}
 	}
@@ -539,7 +580,9 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			{
 			// Compute the BEB
 			BayesTest bt(aForest.getNumSites(), 0);
-			bt.computeBEB(h1, static_cast<size_t>(job[1]));
+
+			// BEWARE! The vars should be taken from the master, not from h1
+			bt.computeBEB(aForest, h1.getVariables(), aForest.getSiteMultiplicity(), static_cast<size_t>(job[1]));
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;

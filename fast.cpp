@@ -121,13 +121,11 @@ int main(int ac, char **av)
 		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
 		}
 		else
+#else
 		{
 													std::cerr << "Num. threads:  1 serial" << std::endl
 		                                                      << "Num. cores:    1"  << std::endl;
 		}
-#else
-													std::cerr << "Num. threads:  1 serial" << std::endl
-		                                                      << "Num. cores:    1"  << std::endl;
 #endif
 #ifdef USE_MPI
 		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
@@ -330,12 +328,7 @@ int main(int ac, char **av)
 		double lnl1 = 0;
 		if(cmd.mComputeHypothesis != 0)
 		{
-			if(cmd.mInitH1fromH0)
-			{
-				std::vector<double> starting_values;
-				h0.getVariables(starting_values);
-				h1.initFromResult(starting_values);
-			}
+			if(cmd.mInitH1fromH0)			h1.initFromResult(h0.getVariables());
 			else if(cmd.mInitFromParams)	h1.initFromTreeAndParams();
 			else if(cmd.mTimesFromFile)		h1.initFromTree();
 
@@ -385,8 +378,11 @@ int main(int ac, char **av)
 		// If the two hypothesis are computed and the run passes the LRT, then compute the BEB
 		if(cmd.mComputeHypothesis > 1 && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
+			// Run the test
 			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
-			bt.computeBEB(h1, fg_branch);
+			bt.computeBEB(h1.getForest(), h1.getVariables(), h1.getSiteMultiplicity(), fg_branch);
+
+			// Output the sites under positive selection (if any)
 			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
 
 			// Get the sites under positive selection for printing in the results file

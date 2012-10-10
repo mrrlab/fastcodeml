@@ -137,6 +137,12 @@ public:
 	///
 	void getVariables(std::vector<double>& aVariables) const {aVariables = mVar;}
 
+	/// Get variable values
+	///
+	/// @return The optimized variables
+	///
+	const std::vector<double>& getVariables(void) const {return mVar;}
+
 	/// Get the number of function evaluation.
 	///
 	/// @return The number of likelihood function calls

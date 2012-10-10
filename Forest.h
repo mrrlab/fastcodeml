@@ -121,7 +121,6 @@ public:
 	/// @param[out] aLikelihoods Values of the codon probabilities at the tree root (one set for each set of matrices)
 	/// @param[in] aDependencies The dependency list between sets of trees
 	///
-	//void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp);
 	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
 #endif
 
