@@ -536,11 +536,13 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 		case JOB_H0:
 			{
-			// Compute H0
+			// Initialize maximizer
 			if(aCmdLine.mInitFromParams)		h0.initFromTreeAndParams();
 			else if(aCmdLine.mTimesFromFile)	h0.initFromTree();
-			double lnl = h0(job[1]);
 
+			// Compute H0
+			double lnl = h0(static_cast<size_t>(job[1]));
+	
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);
 			values_double.push_back(lnl);
@@ -551,10 +553,12 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 		case JOB_H1:
 			{
-			// Compute H1
+			// Initialize maximizer
 			if(aCmdLine.mInitFromParams)		h1.initFromTreeAndParams();
 			else if(aCmdLine.mTimesFromFile)	h1.initFromTree();
-			double lnl = h1(job[1]);
+
+			// Compute H1
+			double lnl = h1(static_cast<size_t>(job[1]));
 
 			// Assemble the results to be passed to the master
 			h1.getVariables(values_double);
