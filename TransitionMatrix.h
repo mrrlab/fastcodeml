@@ -126,7 +126,8 @@ public:
 #endif
 //std::cerr << "(*)P" << std::endl;
 #ifdef USE_LAPACK
-
+// vdExp creates problems to one MPI implementation (even if the segfault seems harmless and happens after the program end)
+#undef USE_MKL_VML
 		double ALIGN64 tmp[N*N64]; // The rows are padded to 64 to increase performance
 		double ALIGN64 expt[N];
 

@@ -16,9 +16,9 @@
 #include "blas.h"
 #endif
 
-#ifdef USE_MKL_VML
-#include <mkl_vml_functions.h>
-#endif
+//#ifdef USE_MKL_VML
+//#include <mkl_vml_functions.h>
+//#endif
 
 #if 0
 /// Dot product for vectors of variable length.
