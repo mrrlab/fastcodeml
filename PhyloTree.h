@@ -76,7 +76,7 @@ public:
 	///
 	/// @return The node id to the next node
 	///
-	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
 
 	/// Extract global data (data that do not depend on the site) from the phylo tree.
 	///
@@ -88,7 +88,7 @@ public:
 	///
 	/// @return The node id to the next node
 	///
-	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=0, unsigned int aNodeId=0) const;
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///
@@ -96,7 +96,7 @@ public:
 	///
 	/// @exception FastCodeMLFatal If any leaf has null branch length associated
 	///
-	void checkNullBranchLengths(const TreeNode* aTreeNode=0) const;
+	void checkNullBranchLengths(const TreeNode* aTreeNode=NULL) const;
 
 #ifdef CHECK_ALGO
 	/// Print the phylogenetic tree completed with all the info loaded.

@@ -43,7 +43,7 @@ public:
 	///
 	/// @param[in] aTitle If present a title is written on top of the table
 	///
-	void print(const char* aTitle=0) const;
+	void print(const char* aTitle=NULL) const;
 
 	/// Access the computed dependency list
 	///

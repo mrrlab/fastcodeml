@@ -17,7 +17,7 @@ class TreeNode
 public:
 	/// Constructor.
 	///
-	TreeNode() : mParent(0), mBranchLength(0.)  {}
+	TreeNode() : mParent(NULL), mBranchLength(0.)  {}
 
 	/// Destructor.
 	///
@@ -147,7 +147,7 @@ public:
 	///
 	TreeNode* getChild(unsigned int aIdx) const
 	{
-		if(aIdx >= mChildrenList.size()) return 0;
+		if(aIdx >= mChildrenList.size()) return NULL;
 		return mChildrenList[aIdx];
 	}
 

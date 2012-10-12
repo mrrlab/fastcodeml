@@ -49,7 +49,7 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 	char temp_filename[1024];
 	if(strrchr(aFilename, '%'))
 	{
-		sprintf(temp_filename, aFilename, aCounter);
+		sprintf(temp_filename, aFilename, static_cast<unsigned int>(aCounter));
 		aFilename = temp_filename;
 	}
 	else if(strrchr(aFilename, '@'))
@@ -59,7 +59,7 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 		z[1023] = '\0';
 		char *p = strrchr(z, '@');
 		*p = '%';
-		sprintf(temp_filename, z, aCounter);
+		sprintf(temp_filename, z, static_cast<unsigned int>(aCounter));
 		aFilename = temp_filename;
 	}
 

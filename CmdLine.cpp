@@ -84,6 +84,10 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		case SO_MULTI:
 			type = "(multiple arguments)";
 			break;
+
+		default:
+			type = "(?)";
+			break;
 		}
 
 		std::cerr << " " << type << std::endl;
@@ -226,6 +230,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mVerboseLevel = VERBOSE_NONE;
 			break;
 
+		default:
 		case OPT_HELP:
 			std::cerr << "Usage:" << std::endl;
 			std::cerr << "    " << usage_msg << std::endl << std::endl;

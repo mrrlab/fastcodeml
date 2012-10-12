@@ -55,6 +55,10 @@ public:
 #endif
 	}
 
+	/// Virtual destructor.
+	///
+	virtual ~TransitionMatrix() {}
+
 	/// Fill the Q (or the S) matrix and return the matrix scale value.
 	///
 	/// @param[in] aOmega The omega value.
@@ -265,7 +269,7 @@ class CheckpointableTransitionMatrix : public TransitionMatrix
 public:
 	/// Constructor.
 	///
-	CheckpointableTransitionMatrix() : TransitionMatrix() {}
+	CheckpointableTransitionMatrix() : TransitionMatrix(), mSavedScale(1.) {}
 	
 	/// Save a checkpoint of the matrices
 	///

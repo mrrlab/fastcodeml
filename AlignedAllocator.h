@@ -111,24 +111,18 @@ public:
         // (the implementation can define malloc(0) to return NULL,
         // in which case the bad_alloc check below would fire).
         // All allocators can return NULL in this case.
-        if (n == 0) {
-            return NULL;
-        }
+        if (n == 0) return NULL;
 
         // All allocators should contain an integer overflow check.
         // The Standardization Committee recommends that std::length_error
         // be thrown in the case of integer overflow.
-        if (n > max_size()) {
-            throw std::length_error("AlignedAllocator<T>::allocate() - Integer overflow.");
-        }
+        if (n > max_size()) throw std::length_error("AlignedAllocator<T>::allocate() - Integer overflow.");
 
         // AlignedAllocator wraps aligned malloc().
         void * const pv = alignedMalloc(n * sizeof(T), A);
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
-        if(pv == NULL) {
-            throw std::bad_alloc();
-        }
+        if(pv == NULL) throw std::bad_alloc();
 
         return static_cast<T *>(pv);
     }

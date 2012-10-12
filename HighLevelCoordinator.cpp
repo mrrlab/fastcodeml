@@ -209,7 +209,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 }
 
 
-HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(INVALID_RANK), mSize(0), mNumInternalBranches(0), mWorkTable(0)
+HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(INVALID_RANK), mSize(0), mNumInternalBranches(0), mWorkTable(NULL)
 {
 #ifdef _OPENMP
 #ifdef VTRACE
@@ -265,13 +265,17 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 		if((aCmdLine.mBranchFromFile || aCmdLine.mBranch != UINT_MAX) && mVerbose >= VERBOSE_INFO_OUTPUT)
 			std::cerr << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
 
+		// If the user asks for one hypothesis only
+		if(aCmdLine.mComputeHypothesis < 2)
+			std::cerr << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
+
 		// Initialize structures
 		mVerbose = aCmdLine.mVerboseLevel;
 		mNumInternalBranches = aForest.getNumInternalBranches();
 
 		// Check if the number of worker is ok
 		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cerr << "Too many MPI jobs. " << mSize-1-2*mNumInternalBranches << " of them will not be used" << std::endl;
+			std::cerr << "Too many MPI jobs: " << mSize-1-2*mNumInternalBranches << " of them will not be used." << std::endl;
 
 		// In the master initialize the work table
 		delete mWorkTable;
@@ -308,7 +312,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		// Wait for a request of work packet
 		int job_request[2];
 		MPI_Status status;
-		MPI_Recv((void*)job_request, 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
+		MPI_Recv(static_cast<void*>(job_request), 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
 		int worker = status.MPI_SOURCE;
 
 		// Act on the request (job_request[0] values are from the JobRequestType enum, [1] is the response length)
@@ -323,7 +327,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			{
 			// Get the variables and last the loglikelihood value
 			results_double.resize(job_request[1]);
-			MPI_Recv((void*)&results_double[0], job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+			MPI_Recv(static_cast<void*>(&results_double[0]), job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 
 			// Mark the step as done (and compute branch and hypothesis)
 			int idx    = mWorkTable->markJobFinished(worker);
@@ -349,9 +353,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			if(job_request[1] > 0)
 			{
 				results_integer.resize(job_request[1]);
-				MPI_Recv((void*)&results_integer[0], job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+				MPI_Recv(static_cast<void*>(&results_integer[0]), job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 			}
-			
+
 			// Mark the step as done (and compute branch)
 			int idx    = mWorkTable->markJobFinished(worker);
 			int branch = idx / JOBS_PER_BRANCH;
@@ -383,18 +387,21 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
 			}
 			break;
+
+		default:
+			throw "Invalid job request in doMaster";
 		}
 
 		// Send work packet or shutdown request (job[1] is the fg branch, job[2] the length of the additional data)
 		int job[3];
 		mWorkTable->getNextJob(job, worker);
-		MPI_Send((void*)job, 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+		MPI_Send(static_cast<void*>(job), 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 
 		// For BEB send the variables from H1
 		if(job[2] > 0)
 		{
 			double* v = &(mWorkTable->mResults[job[1]].mHxVariables[1][0]);
-			MPI_Send((void*)v, job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+			MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 		}
 
 		// Trace the messages
@@ -503,29 +510,33 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 	{
 		// Signal that I'm ready for work
 		MPI_Request request;
-		MPI_Isend((void*)job_request, 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
+		MPI_Isend(static_cast<void*>(job_request), 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
 
 		// If needed (i.e. it is not a worker announcement), send step results
 		switch(job_request[0])
 		{
 		case REQ_HX_RESULT:
-			MPI_Send((void*)&values_double[0], job_request[1], MPI_DOUBLE, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			MPI_Send(static_cast<void*>(&values_double[0]), job_request[1], MPI_DOUBLE, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
 			break;
 
 		case REQ_BEB_RESULT:
-			if(job_request[1]) MPI_Send((void*)&values_integer[0], job_request[1], MPI_INTEGER, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			if(job_request[1]) MPI_Send(static_cast<void*>(&values_integer[0]), job_request[1], MPI_INTEGER, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			break;
+
+		default:
+			throw "Invalid request in doWorker";
 			break;
 		}
 
 		// Receive the job to execute or the shutdown request (job[0] the request; [1] fg branch; [2] optional number of variables)
 		int job[3];
-		MPI_Recv((void*)job, 3, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
+		MPI_Recv(static_cast<void*>(job), 3, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
 
 		// If there is additional data
 		if(job[2] > 0)
 		{
 			values_double.resize(job[2]);
-			MPI_Recv((void*)&values_double[0], job[2], MPI_DOUBLE, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
+			MPI_Recv(static_cast<void*>(&values_double[0]), job[2], MPI_DOUBLE, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
 		}
 
 		// Do the work

@@ -7,7 +7,7 @@
 #include <iomanip>
 #endif
 
-CodonFrequencies* CodonFrequencies::mInstance = 0;
+CodonFrequencies* CodonFrequencies::mInstance = NULL;
 
 CodonFrequencies* CodonFrequencies::getInstance(void)
 {

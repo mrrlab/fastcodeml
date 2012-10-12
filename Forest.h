@@ -17,7 +17,9 @@
 #include "CodonFrequencies.h"
 #include "Types.h"
 #include "ForestExport.h"
+#ifdef USE_DAG
 #include "DAGScheduler.h"
+#endif
 #include "TreeAndSetsDependencies.h"
 
 // Global scaling factor (uncomment the define only if the scaling factor is different from one)
@@ -105,14 +107,14 @@ public:
 	///
 	/// @param[in] aNode The tree node from which the walker should start (no argument starts from the root)
 	///
-	void addAggressiveReduction(ForestNode* aNode=0);
+	void addAggressiveReduction(ForestNode* aNode=NULL);
 #endif
 
 	/// Remove all work data used for reduction.
 	///
 	/// @param[in] aNode The node from which to start. Pass zero to start from the root of all the trees in the forest.
 	///
-	void cleanReductionWorkingData(ForestNode* aNode=0);
+	void cleanReductionWorkingData(ForestNode* aNode=NULL);
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 	/// Compute likelihood visiting the trees in a non-recursive way
@@ -188,14 +190,14 @@ public:
 	/// @param[out] aTimes The array with all the tree times
 	/// @param[in] aNode The node from which to start (if zero starts from the root)
 	///
-	void setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode=0) const;
+	void setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* aNode=NULL) const;
 
 	/// Set the times (i.e.\ the branch lengths) on the tree from the values read from the times array
 	///
 	/// @param[in] aTimes The array with all the tree times
 	/// @param[out] aNode The node from which to start (if zero starts from the root)
 	///
-	void setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode=0);
+	void setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode=NULL);
 
 	/// Change the internal branch identifier for the foreground branch into the corresponding internal branch index.
 	///
@@ -220,7 +222,7 @@ public:
 	///
 	/// @param[in] aNode The node from which to start. If null then starts from all the trees' roots.
 	///
-	void prepareNewReduction(ForestNode* aNode=0);
+	void prepareNewReduction(ForestNode* aNode=NULL);
 
 	/// Prepare the data for a forest that has not been reduced
 	///
@@ -234,7 +236,7 @@ public:
 	/// @param[in] aCopyId The current copy entered
 	/// @param[in] aNode If null starts from the roots. It is used for recursive visit
 	///
-	void loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId=0, const ForestNode* aNode=0);
+	void loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId=0, const ForestNode* aNode=NULL);
 #endif
 
 #ifdef CHECK_ALGO
@@ -247,7 +249,7 @@ public:
 	///
 	/// @return The next node ID
 	///
-	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=0, unsigned int aSite=0, unsigned int aNodeId=0) const;
+	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=NULL, unsigned int aSite=0, unsigned int aNodeId=0) const;
 #endif
 
 	/// Access the dependency list.

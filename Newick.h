@@ -48,7 +48,7 @@ public:
 	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	///
-	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=0) const;
+	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const;
 
 
 private:

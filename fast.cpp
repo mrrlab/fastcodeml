@@ -367,6 +367,9 @@ int main(int ac, char **av)
 			case 1:
 				h1.saveComputedTimes();
 				break;
+
+			default:
+				break;
 			}
 
 			// Use the forest export class

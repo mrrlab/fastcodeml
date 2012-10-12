@@ -242,7 +242,7 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 	if(!aNode)
 	{
 		aOut << '(';
-		for(idx=0; (m = mTreeRoot.getChild(idx)) != 0; ++idx)
+		for(idx=0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx)
 		{
 			if(idx > 0) aOut << ',';
 			printTreeUnformatted(aOut, m);
@@ -258,7 +258,7 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 	else
 	{
 		aOut << '(';
-		for(idx=0; (m = aNode->getChild(idx)) != 0; ++idx)
+		for(idx=0; (m = aNode->getChild(idx)) != NULL; ++idx)
 		{
 			if(idx > 0) aOut << ',';
 			printTreeUnformatted(aOut, m);

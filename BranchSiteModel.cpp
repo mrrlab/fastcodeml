@@ -303,6 +303,10 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
 			mPrevK      = DBL_MAX;
 			mPrevOmega0 = DBL_MAX;
 			break;
+
+		default:
+			throw "Impossible switch value in BranchSiteModelNullHyp::computeLikelihoodForGradient";
+			break;
 		}
 
 		// Compute the scale values
@@ -600,6 +604,10 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(const std::vector<dou
 			mPrevK      = DBL_MAX;
 			mPrevOmega0 = DBL_MAX;
 			mPrevOmega2 = DBL_MAX;
+			break;
+
+		default:
+			throw "Impossible switch value in BranchSiteModelAltHyp::computeLikelihoodForGradient";
 			break;
 		}
 
@@ -1110,7 +1118,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 				break;
 
 			default:
-				std::cerr << "Other reason: " << result << std::endl;	
+				std::cerr << "Other reason: " << static_cast<unsigned int>(result) << std::endl;	
 				break;
 			}
 			std::cerr << "Final log-likelihood value: " << maxl << std::endl;

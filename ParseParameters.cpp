@@ -6,7 +6,7 @@
 #include "Exceptions.h"
 
 
-ParseParameters* ParseParameters::mInstance = 0;
+ParseParameters* ParseParameters::mInstance = NULL;
 
 ParseParameters* ParseParameters::getInstance(void)
 {

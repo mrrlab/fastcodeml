@@ -28,7 +28,7 @@ void PhyloTree::fillSpecies(TreeNode *aNode)
 	else
 	{
 		TreeNode *m;
-		for(int idx=0; (m = aNode->getChild(idx)) != 0; ++idx) fillSpecies(m);
+		for(int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillSpecies(m);
 	}
 }
 
@@ -56,7 +56,7 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode)
 	}
 
 	TreeNode *m;
-	for(int idx=0; (m = aNode->getChild(idx)) != 0; ++idx) fillInternalBranches(m);
+	for(int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillInternalBranches(m);
 }
 
 
@@ -80,11 +80,11 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	unsigned int id;
 
 	// Start with the tree root
-	if(aTreeNode == 0)
+	if(aTreeNode == NULL)
 	{
 		aTreeNode = &mTreeRoot;
 		aNodeId   = UINT_MAX;
-		aForestNode->mParent = 0;
+		aForestNode->mParent = NULL;
 		id = 0;
 	}
 	else
@@ -113,14 +113,14 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 #endif
 
 	// Recurse
-	TreeNode *m = 0;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
+	TreeNode *m = NULL;
+	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
 		aForestNode->mChildrenCount++;
 #ifndef NEW_LIKELIHOOD
-		aForestNode->mOtherTreeProb.push_back(0);
+		aForestNode->mOtherTreeProb.push_back(NULL);
 #endif
 		rn->mParent = aForestNode;
 		id = cloneTree(rn, aTreeId, aNumSites, aProbVectors, m, id);
@@ -134,7 +134,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 	unsigned int id;
 
 	// Start with the tree root
-	if(aTreeNode == 0)
+	if(aTreeNode == NULL)
 	{
 		aTreeNode = &mTreeRoot;
 		aNodeId = UINT_MAX;
@@ -152,7 +152,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 
 	// Recurse
 	TreeNode *m;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
+	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, m, id);
 	}
@@ -164,7 +164,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 void PhyloTree::checkNullBranchLengths(const TreeNode* aTreeNode) const
 {
 	// Start with the tree root (don't check its branch length that is invalid)
-	if(aTreeNode == 0)
+	if(aTreeNode == NULL)
 	{
 		aTreeNode = &mTreeRoot;
 	}
@@ -181,7 +181,7 @@ void PhyloTree::checkNullBranchLengths(const TreeNode* aTreeNode) const
 
 	// Recurse
 	TreeNode *m;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != 0; ++idx)
+	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		checkNullBranchLengths(m);
 	}

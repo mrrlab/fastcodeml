@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <boost/dynamic_bitset.hpp>
+#include <set>
 #include "TreeAndSetsDependencies.h"
 #include "Timer.h"
 #include "VerbosityLevels.h"
@@ -104,7 +105,7 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 		const size_t nt = tree_groups_dependencies[dep_class].size();
 		for(unsigned int set=0; set < aNumSets; ++set)
 		{
-			for(size_t j=0; j < nt; ++j)
+			for(j=0; j < nt; ++j)
 			{
 				one_class.push_back(makePair(tree_groups_dependencies[dep_class][j], set));
 			}
@@ -160,7 +161,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 //#endif
 		}
 	double time_non_leaf = timer.stop();
-	unsigned int effort_ratio = (unsigned int)(time_non_leaf/time_leaf+0.5);
+	unsigned int effort_ratio = static_cast<unsigned int>(time_non_leaf/time_leaf+0.5);
 #else
 	unsigned int effort_ratio = 16;
 #endif

@@ -62,7 +62,7 @@ struct ForestNode
 
 	/// Constructor.
 	///
-	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(0), mInternalNodeId(0)
+	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(NULL), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
 				   , mFirstChild(false), mChildIdx(0),
 #endif		  
@@ -265,14 +265,14 @@ struct ForestNode
 		if(mPreprocessingSupport)
 		{
 			std::vector<int>::const_iterator ig=mPreprocessingSupport->mSubtreeCodonsSignature.begin();
-			std::vector<int>::const_iterator end=mPreprocessingSupport->mSubtreeCodonsSignature.end();
+			const std::vector<int>::const_iterator end=mPreprocessingSupport->mSubtreeCodonsSignature.end();
 			for(; ig != end; ++ig) aOut << *ig << ' ';
 			aOut << std::endl;
 		}
 
 		// Print the subtree
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
@@ -302,7 +302,7 @@ struct ForestNode
 		else
 		{
 			std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-			std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+			const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
 			for(; irn != end; ++irn) (*irn)->pushLeaf(aLeafsList);
 		}
 	}
@@ -312,7 +312,7 @@ struct ForestNode
 	void gatherCodons(void)
 	{
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
 		for(; irn != end; ++irn)
 		{
 			(*irn)->gatherCodons();
@@ -333,7 +333,7 @@ struct ForestNode
 
 		// Visit the subtrees
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
@@ -365,7 +365,7 @@ struct ForestNode
 
 		// Visit the subtrees
 		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
@@ -400,7 +400,7 @@ struct ForestNode
 	///
 	void markNotSameTree(unsigned int aChildIndex)
 	{
-		mChildrenSameTreeFlags &= ~mMaskTable[aChildIndex];
+		mChildrenSameTreeFlags &= static_cast<unsigned char>(~mMaskTable[aChildIndex]);
 	}
 
 	/// Test if child aChildIndex is in the same tree.

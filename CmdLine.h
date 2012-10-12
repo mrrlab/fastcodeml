@@ -22,10 +22,10 @@ public:
 	CmdLine() : 
 		mDeltaValueForGradient(0.0),
 		mRelativeError(1e-8),
-		mTreeFile(0),
-		mGeneFile(0),
-		mGraphFile(0),
-		mResultsFile(0),
+		mTreeFile(NULL),
+		mGeneFile(NULL),
+		mGraphFile(NULL),
+		mResultsFile(NULL),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
 		mBranch(UINT_MAX),
@@ -43,7 +43,7 @@ public:
 		mBranchFromFile(false),
 		mInitH1fromH0(false),
 		mInitFromParams(false),
-		mCmdLineImpl(0) {}
+		mCmdLineImpl(NULL) {}
 
 	/// Destructor.
 	///

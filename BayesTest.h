@@ -26,7 +26,8 @@ public:
 	/// @param[in] aNumSites Number of sites
 	/// @param[in] aVerbose The verbosity level
 	///
-	explicit BayesTest(size_t aNumSites, unsigned int aVerbose=0);
+	explicit BayesTest(size_t aNumSites, unsigned int aVerbose=0)
+						: mSiteClassProb(BEB_DIMS*aNumSites), mNumSites(aNumSites), mVerbose(aVerbose), mPriors(aNumSites*BEB_NUM_CAT) {}
 
 	/// Destructor.
 	///
@@ -93,8 +94,6 @@ private:
 private:
 	std::vector<double> mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
 	size_t				mNumSites;						///< Number of sites.
-	double				mPara[BEB_DIMS][BEB_N1D];		///< Parameters for w0, w1, w2 prior computation
-	double				mPostPara[BEB_DIMS][BEB_N1D];	///< Parameters for w0, w1, w2 posterior computation
 	unsigned int		mVerbose;						///< If greather than zero prints more info
 	std::vector<double>	mPriors;						///< Computed priors (each points to a list, one for each site)
 };

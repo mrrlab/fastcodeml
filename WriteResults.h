@@ -22,6 +22,15 @@ public:
 	///
 	explicit WriteResults(const char* aFilename) : mFilename(aFilename) {}
 
+	/// Destructor.
+	///
+	~WriteResults()
+	{
+		mLnL[0].clear();
+		mLnL[1].clear();
+		mPositiveSelSites.clear();
+	}
+
 	/// Output the results to the file given
 	///
 	void outputResults(void);
