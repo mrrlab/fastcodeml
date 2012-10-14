@@ -31,7 +31,7 @@
 class TransitionMatrix
 {
 public:
-	/// Constructor
+	/// Constructor.
 	///
 	TransitionMatrix()
 	{
@@ -44,7 +44,7 @@ public:
 		// Initialize the codons' frequencies
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
 		mCodonFreq = cf->getCodonFrequencies();
-		mNumGoodFreq = cf->getNumGoodCodons();
+		mNumGoodFreq = static_cast<int>(cf->getNumGoodCodons());
 		mSqrtCodonFreq = cf->getSqrtCodonFrequencies();
 		cf->cloneGoodCodonIndicators(mGoodFreq);
 
@@ -54,10 +54,6 @@ public:
 		for(int i=0; i < N; ++i) mIdentity[i*(1+N)] = 1.0;
 #endif
 	}
-
-	/// Virtual destructor.
-	///
-	virtual ~TransitionMatrix() {}
 
 	/// Fill the Q (or the S) matrix and return the matrix scale value.
 	///
@@ -242,7 +238,7 @@ protected:
 	double ALIGN64	mIdentity[N*N];	///< Pre-filled identify matix
 #endif
 	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
-	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero
+	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero (must be int)
 #ifndef USE_LAPACK
 	double ALIGN64	mQ[N*N];		///< The Q matrix
 #else

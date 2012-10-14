@@ -58,7 +58,7 @@ public:
 
 		// Support values needed for the eigensolver
 		mNumGoodCodons = 0;
-		for(int k=0; k < N; ++k)
+		for(size_t k=0; k < N; ++k)
 		{
 			mCodonFreqSqrt[k] = sqrt(mCodonFrequencies[k]);
 
@@ -128,7 +128,7 @@ private:
 	///
 	/// @return The corresponding id in the range 0 to 60
 	///
-	int codon64to61(unsigned int aId64) const;
+	int codon64to61(int aId64) const;
 
 private:
 	static CodonFrequencies*	mInstance;					///< Pointer to the singleton instance

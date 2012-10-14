@@ -44,7 +44,7 @@ const char *CmdLine::CmdLineImpl::getLastErrorText(CSimpleOpt& aOptParser)
 
 void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 {
-	int i, j, cnt;
+	size_t i, j, cnt;
 
 	// Count entries and create an indicator array
 	for(cnt=0; aParserOptions[cnt].pszArg != NULL; ++cnt) {}
@@ -223,7 +223,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			if(mVerboseLevel == VERBOSE_NONE) break; // Ignore option if quiet is set
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid verbose level");
-			mVerboseLevel = tmpi;
+			mVerboseLevel = static_cast<unsigned int>(tmpi);
 			break;
 
 		case OPT_QUIET:
@@ -240,13 +240,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_SEED:
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid seed value");
-			mSeed = tmpi;
+			mSeed = static_cast<unsigned int>(tmpi);
 			break;
 
 		case OPT_BRANCH:
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid branch value");
-			mBranch = tmpi;
+			mBranch = static_cast<unsigned int>(tmpi);
 			break;
 
 		case OPT_IGNORE_FREQ:
@@ -270,7 +270,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_COMP_TIMES:
-			mExportComputedTimes = atoi(args.OptionArg());
+			mExportComputedTimes = static_cast<unsigned int>(atoi(args.OptionArg()));
 			if(mExportComputedTimes > 1) mExportComputedTimes = UINT_MAX;
 			break;
 
@@ -287,7 +287,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_ONE_HYP_ONLY:
-			mComputeHypothesis = atoi(args.OptionArg());
+			mComputeHypothesis = static_cast<unsigned int>(atoi(args.OptionArg()));
 			if(mComputeHypothesis != 0 && mComputeHypothesis != 1) throw FastCodeMLFatal("Invalid hypothesis specified");
 			break;
 
@@ -296,7 +296,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_OPTIM_ALGO:
-			mOptimizationAlgo = atoi(args.OptionArg());
+			mOptimizationAlgo = static_cast<unsigned int>(atoi(args.OptionArg()));
 			break;
 
 		case OPT_DELTA_VAL:
@@ -314,7 +314,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_EXTRA_DEBUG:
-			mExtraDebug = atoi(args.OptionArg());
+			mExtraDebug = static_cast<unsigned int>(atoi(args.OptionArg()));
 			break;
 
 		case OPT_REL_ERROR:
@@ -323,7 +323,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_NUM_RBLOCKS:
-			mNumReductionBlocks = atoi(args.OptionArg());
+			mNumReductionBlocks = static_cast<unsigned int>(atoi(args.OptionArg()));
 			break;
 
 		case OPT_OUT_RESULTS:

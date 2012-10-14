@@ -44,7 +44,7 @@ public:
 	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	///
-	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=0) const =0;
+	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const =0;
 
 	/// Return the list of species.
 	///
@@ -120,10 +120,11 @@ protected:
 
 
 protected:
-	TreeNode				mTreeRoot;			///< The root of the phylogenetic tree in memory
-	unsigned int			mVerboseLevel;		///< The verbosity level
-	std::vector<TreeNode *>	mLeavesSpecies;		///< The list of the tree leaves
-	std::vector<TreeNode *> mInternalNodes;		///< The list of the tree internal nodes
+	TreeNode				mTreeRoot;				///< The root of the phylogenetic tree in memory
+	unsigned int			mVerboseLevel;			///< The verbosity level
+	std::vector<TreeNode *>	mLeavesSpecies;			///< The list of the tree leaves
+	std::vector<TreeNode *> mInternalNodes;			///< The list of the tree internal nodes
+	mutable std::vector<std::string> mSpeciesList;	///< Temporary to securely return the list of species from getSpecies()
 };
 
 #endif

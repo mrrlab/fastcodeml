@@ -43,7 +43,7 @@ public:
 	/// @param[in] aVerbose The verbosity level
 	///
 	explicit Forest(unsigned int aVerbose=0)
-							: mNumSites(0), mCodonFreq(0), mInvCodonFreq(0), mInv2CodonFreq(0),
+							: mNumSites(0), mCodonFreq(NULL), mInvCodonFreq(NULL), mInv2CodonFreq(NULL),
 							  mNumBranches(0), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX), mVerbose(aVerbose) {}
 
 	/// Destructor

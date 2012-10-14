@@ -73,7 +73,7 @@ int main(int ac, char **av)
 
 	// Adjust and report the number of threads that will be used
 #ifdef _OPENMP
-	unsigned int num_threads = omp_get_max_threads();
+	int num_threads = omp_get_max_threads();
 	if(num_threads < 2 || cmd.mForceSerial)
 	{
 		cmd.mForceSerial = true;
@@ -82,7 +82,7 @@ int main(int ac, char **av)
 	}
 #else
 	cmd.mForceSerial = true;
-	unsigned int num_threads = 1;
+	int num_threads = 1;
 #endif
 
 #ifdef USE_MPI
@@ -407,13 +407,28 @@ int main(int ac, char **av)
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions
 	}
-	catch(FastCodeMLSuccess&)
+	catch(const FastCodeMLSuccess&)
 	{
 		return 0;
 	}
-	catch(FastCodeMLFatal& e)
+	catch(const FastCodeMLFatal& e)
 	{
 		std::cerr << std::endl << e.what() << std::endl;
+		return 1;
+	}
+	catch(const FastCodeMLMemoryError& e)
+	{
+		std::cerr << std::endl << e.what() << std::endl;
+		return 1;
+	}
+	catch(const std::bad_alloc& e)
+	{
+		std::cerr << std::endl << e.what() << std::endl;
+		return 1;
+	}
+	catch(const char* e)
+	{
+		std::cerr << std::endl << e << std::endl;
 		return 1;
 	}
 	catch(...)

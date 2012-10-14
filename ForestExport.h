@@ -20,7 +20,7 @@ public:
 	///
 	/// @param[in] aForest The forest to be exported
 	///
-	ForestExport(const Forest& aForest) : mForest(aForest) {}
+	explicit ForestExport(const Forest& aForest) : mForest(aForest) {}
 
 	/// Export the forest in GML format
 	///

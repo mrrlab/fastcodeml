@@ -8,6 +8,7 @@
 #include "AlignedMalloc.h"
 #include "CodonFrequencies.h"
 #include "MathSupport.h"
+#include "Exceptions.h"
 
 #ifdef USE_LAPACK
 #include "blas.h"
@@ -36,10 +37,13 @@ protected:
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	/// @param[in] aNumMatSets How many sets of matrices to allocate
 	///
-	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets, unsigned int aNumMatSets) : mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
+	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets, unsigned int aNumMatSets)
+		: mMatrixSpace(NULL), mMatrices(NULL), mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumMatSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
+		if(!mMatrixSpace) throw FastCodeMLMemoryError("Cannot allocate mMatrixSpace");
 		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
+		if(!mMatrices) throw FastCodeMLMemoryError("Cannot allocate mMatrices");
 #ifdef NEW_LIKELIHOOD
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
 #endif

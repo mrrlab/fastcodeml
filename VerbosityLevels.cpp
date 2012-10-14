@@ -1,7 +1,7 @@
 
 #include "VerbosityLevels.h"
 
-const char* decodeVerboseLevel(int aLevel)
+const char* decodeVerboseLevel(unsigned int aLevel)
 {
 	switch(aLevel)
 	{

@@ -64,7 +64,7 @@ public:
 	///
 	/// @return The codon index or -1 in case of error or invalid codon at the given position.
 	///
-	int getCodonIdx(std::string aSpecie, unsigned int aSite) const;
+	int getCodonIdx(std::string aSpecie, size_t aSite) const;
 
 	/// Return the list of species present in the gene file
 	///

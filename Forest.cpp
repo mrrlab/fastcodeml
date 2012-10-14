@@ -49,10 +49,10 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Clone tree inside the forest
 	mRoots.resize(mNumSites);
-	for(unsigned int site=0; site < mNumSites; ++site)
+	for(size_t site=0; site < mNumSites; ++site)
 	{
 		// Create a copy of the tree
-		aTree.cloneTree(&mRoots[site], site, mNumSites, mProbs);
+		aTree.cloneTree(&mRoots[site], static_cast<unsigned int>(site), mNumSites, mProbs);
 
 		// Create a list of pointers to leaves
 		leaves.clear();
@@ -371,7 +371,7 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 	{
 		// Clean myself
 		delete aNode->mPreprocessingSupport;
-		aNode->mPreprocessingSupport = 0;
+		aNode->mPreprocessingSupport = NULL;
 
 		// Clean the children
 		const unsigned int nc = aNode->mChildrenCount;
@@ -575,7 +575,12 @@ void Forest::addAggressiveReduction(ForestNode* aNode)
 				ForestNode *other = m->mParent;
 
 				// Add the array on the other side
-				if(!other->mOtherTreeProb[i]) other->mOtherTreeProb[i] = static_cast<double*>(alignedMalloc(VECTOR_SLOT*Nt*sizeof(double), CACHE_LINE_ALIGN));
+				if(!other->mOtherTreeProb[i])
+				{
+					double* pd = static_cast<double*>(alignedMalloc(VECTOR_SLOT*Nt*sizeof(double), CACHE_LINE_ALIGN));
+					if(!pd) throw FastCodeMLMemoryError("Cannot allocate mOtherTreeProb");
+					other->mOtherTreeProb[i] = pd;
+				}
 
 				// Add the pointer here
 				aNode->mOtherTreeProb[i] = other->mOtherTreeProb[i];

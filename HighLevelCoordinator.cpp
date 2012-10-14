@@ -86,7 +86,7 @@ struct HighLevelCoordinator::WorkTable
 	///
 	/// @param[in] aNumInternalBranches Number of internal branches that can be marked as foreground branch.
 	///
-	WorkTable(size_t aNumInternalBranches) :
+	explicit WorkTable(size_t aNumInternalBranches) :
 					mNumInternalBranches(aNumInternalBranches),
 					mJobStatus(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
@@ -179,12 +179,12 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 
 int HighLevelCoordinator::WorkTable::markJobFinished(int aRank)
 {
-	for(unsigned int i=0; i < mNumInternalBranches*JOBS_PER_BRANCH; ++i)
+	for(size_t i=0; i < mNumInternalBranches*JOBS_PER_BRANCH; ++i)
 	{
 		if(mJobStatus[i] == JOB_ASSIGNED && mWorkList[i] == aRank)
 		{
 			mJobStatus[i] = JOB_COMPLETED;
-			return i;
+			return static_cast<int>(i);
 		}
 	}
 
@@ -389,7 +389,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			break;
 
 		default:
-			throw "Invalid job request in doMaster";
+			throw FastCodeMLFatal("Invalid job request in doMaster");
 		}
 
 		// Send work packet or shutdown request (job[1] is the fg branch, job[2] the length of the additional data)
@@ -521,10 +521,6 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 		case REQ_BEB_RESULT:
 			if(job_request[1]) MPI_Send(static_cast<void*>(&values_integer[0]), job_request[1], MPI_INTEGER, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
-			break;
-
-		default:
-			throw "Invalid request in doWorker";
 			break;
 		}
 

@@ -394,7 +394,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	double opt_work;
 	int opt_iwork;
     dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
-	if(info != 0) throw std::runtime_error("Error sizing workareas");
+	if(info != 0) throw FastCodeMLMemoryError("Error sizing workareas");
 
 	//Notice that LAPACK stores an integer value in a double array
     lwork = static_cast<unsigned long>(opt_work);

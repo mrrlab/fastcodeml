@@ -136,7 +136,7 @@ int Genes::idxCodon(const char* aCodon) const
 }
 
 
-int Genes::getCodonIdx(std::string aSpecie, unsigned int aSite) const
+int Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 {
 	// Find the specie
 	const unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;

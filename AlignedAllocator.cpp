@@ -27,8 +27,8 @@ void* alignedMalloc(size_t aSize, size_t aAlignment)
 #endif
 	return _aligned_malloc(aSize, aAlignment);
 #else
-	void* ptr = 0;
-	if(posix_memalign(&ptr, aAlignment, aSize)) return 0;
+	void* ptr = NULL;
+	if(posix_memalign(&ptr, aAlignment, aSize)) return NULL;
 	return ptr;
 #endif
 }

@@ -28,24 +28,23 @@ void PhyloTree::fillSpecies(TreeNode *aNode)
 	else
 	{
 		TreeNode *m;
-		for(int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillSpecies(m);
+		for(unsigned int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillSpecies(m);
 	}
 }
 
 const std::vector<std::string>& PhyloTree::getSpecies(void) const
 {
-	static std::vector<std::string> species_list;
-	species_list.clear();
+	mSpeciesList.clear();
 
 	std::vector<TreeNode *>::const_iterator is = mLeavesSpecies.begin();
 	const std::vector<TreeNode *>::const_iterator end = mLeavesSpecies.end();
 	for(; is != end; ++is)
 	{
 		std::string label = (*is)->getLabel();
-		species_list.push_back(label);
+		mSpeciesList.push_back(label);
 	}
 
-	return species_list;
+	return mSpeciesList;
 }
 
 void PhyloTree::fillInternalBranches(TreeNode *aNode)
@@ -56,7 +55,7 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode)
 	}
 
 	TreeNode *m;
-	for(int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillInternalBranches(m);
+	for(unsigned int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillInternalBranches(m);
 }
 
 
@@ -114,7 +113,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 
 	// Recurse
 	TreeNode *m = NULL;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
+	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
@@ -152,7 +151,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 
 	// Recurse
 	TreeNode *m;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
+	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, m, id);
 	}
@@ -181,7 +180,7 @@ void PhyloTree::checkNullBranchLengths(const TreeNode* aTreeNode) const
 
 	// Recurse
 	TreeNode *m;
-	for(int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
+	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
 		checkNullBranchLengths(m);
 	}

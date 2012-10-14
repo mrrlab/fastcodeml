@@ -126,7 +126,7 @@ public:
 	///
 	/// @return The node label
 	///
-	const std::string getLabel(void) const {return mNodeName;}
+	const std::string& getLabel(void) const {return mNodeName;}
 
 	/// Get the node type from file.
 	///

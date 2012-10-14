@@ -48,6 +48,38 @@ public:
 	{}
 };
 
+/// Fatal error in FastCodeML.
+/// The message explains the reason.
+///
+class FastCodeMLMemoryError : public std::bad_alloc
+{
+public:
+	/// Constructor.
+	/// Print the standard bad_alloc message.
+	///
+	FastCodeMLMemoryError(void) : bad_alloc(), mMessage("std::bad_alloc")
+	{}
+
+	/// Constructor.
+	/// Print a message before termination.
+	///
+	/// @param[in] aMessage The message to be printed before termination
+	///
+	FastCodeMLMemoryError(const char *aMessage) : bad_alloc(), mMessage(aMessage)
+	{}
+
+	/// Override wat to display a more meaningful message
+	///
+	/// @return The message text
+	///
+	const char* what() const throw()
+	{
+		return mMessage;
+	}
+
+private:
+	const char* mMessage;	///< The exception message
+};
 
 #endif
 

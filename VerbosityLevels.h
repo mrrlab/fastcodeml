@@ -19,7 +19,7 @@ enum VerbosityLevelsEnum
 ///
 /// @return The decoded level as string
 ///
-extern const char* decodeVerboseLevel(int aLevel);
+extern const char* decodeVerboseLevel(unsigned int aLevel);
 
 #endif
 

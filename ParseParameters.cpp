@@ -35,7 +35,7 @@ void ParseParameters::addParameter(const char* aParamValuePair)
 {
 	// Parse string in the format: name=value (or name:value)
 	const char* p=aParamValuePair;
-	int i = 0;
+	size_t i = 0;
 	for(; *p != '=' && *p != ':' && *p != '\0'; ++p, ++i) {}
 	if(*p == '\0') throw FastCodeMLFatal("Added pair with missing value in addParameter");
 	if(i == 0) throw FastCodeMLFatal("Added pair with missing param name in addParameter");

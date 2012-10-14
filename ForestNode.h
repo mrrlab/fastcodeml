@@ -6,9 +6,9 @@
 #include <climits>
 #include <cstring>
 #include <string>
-//#include <new>
 #include "MatrixSize.h"
 #include "AlignedMalloc.h"
+#include "Exceptions.h"
 
 /// Max number of children for a given node (in reality they are only 2)
 static const int MAX_NUM_CHILDREN = 8;
@@ -173,7 +173,7 @@ struct ForestNode
 	void* operator new(size_t aSize)
 	{
 		void *m = alignedMalloc(aSize, CACHE_LINE_ALIGN);
-		if(!m) throw std::bad_alloc();
+		if(!m) throw FastCodeMLMemoryError("Error in ForestNode allocation");
 		return m;
 	}
 

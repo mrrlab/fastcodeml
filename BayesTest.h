@@ -12,6 +12,20 @@ const static double MIN_PROB       = 0.50;
 const static double ONE_STAR_PROB  = 0.95;
 const static double TWO_STARS_PROB = 0.99;
 
+/// Helper class to compute BEB_N1D^BEB_DIMS at compile time (that is Y^N)
+template<unsigned int Y, unsigned int N>
+class Pow
+{
+public:
+	static const int value = Y * Pow<Y, N-1>::value;
+};
+template<unsigned int Y>
+class Pow<Y, 1>
+{
+public:
+	static const int value = Y;
+};
+
 /// Tests to find the sites under positive selection.
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -89,7 +103,8 @@ private:
 	const static unsigned int BEB_N1D = 10;												///< Number of intervals for w0 and w2
 	const static unsigned int BEB_DIMS = 4;												///< Number of codon classes (0, 1, 2a, 2b)
 	const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D;	///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
-	const static unsigned int BEB_NGRID = BEB_N1D*BEB_N1D*BEB_N1D*BEB_N1D;				///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
+	//const static unsigned int BEB_NGRID = BEB_N1D*BEB_N1D*BEB_N1D*BEB_N1D;			///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
+	const static unsigned int BEB_NGRID = Pow<BEB_N1D, BEB_DIMS>::value;				///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
 
 private:
 	std::vector<double> mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
