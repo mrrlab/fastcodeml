@@ -2,8 +2,20 @@
 #ifndef BLAS_H
 #define BLAS_H
 
+//#define USE_REFERENCE_BLAS
+
 // These mappings are for ACML 5.0.1 64 bits
 #ifdef _MSC_VER
+#ifdef USE_REFERENCE_BLAS
+#define ddot_   _ddot_
+#define dscal_  _dscal_
+#define dsymv_  _dsymv_
+#define dsymm_  _dsymm_
+#define dsyevr_ _dsyevr_
+#define dsyevd_ _dsyevd_
+#define dsyrk_  _dsyrk_
+#define dnrm2_  _dnrm2_
+#else
 #define ddot_   DDOT
 #define dscal_  DSCAL
 #define dsymv_  DSYMV
@@ -12,6 +24,7 @@
 #define dsyevd_ DSYEVD
 #define dsyrk_  DSYRK
 #define dnrm2_  DNRM2
+#endif
 #endif
 
 #ifdef __cplusplus

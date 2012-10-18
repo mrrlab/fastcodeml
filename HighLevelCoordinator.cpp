@@ -493,7 +493,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		}
 		else
 		{
-			std::cerr << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
+			std::cerr << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
 		}
 		std::cerr << "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
 	}
