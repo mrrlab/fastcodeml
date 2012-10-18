@@ -168,7 +168,7 @@ struct ForestNode
 	///
 	/// @return Pointer to the allocated memory area
 	///
-	/// @exception std::bad_alloc If no memory available
+	/// @exception FastCodeMLMemoryError If no memory available
 	///
 	void* operator new(size_t aSize)
 	{
@@ -264,15 +264,15 @@ struct ForestNode
 		// Print the indexes of the codons accumulated till this node
 		if(mPreprocessingSupport)
 		{
-			std::vector<int>::const_iterator ig=mPreprocessingSupport->mSubtreeCodonsSignature.begin();
-			const std::vector<int>::const_iterator end=mPreprocessingSupport->mSubtreeCodonsSignature.end();
+			std::vector<int>::const_iterator ig(mPreprocessingSupport->mSubtreeCodonsSignature.begin());
+			const std::vector<int>::const_iterator end(mPreprocessingSupport->mSubtreeCodonsSignature.end());
 			for(; ig != end; ++ig) aOut << *ig << ' ';
 			aOut << std::endl;
 		}
 
 		// Print the subtree
-		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
+		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
@@ -301,8 +301,8 @@ struct ForestNode
 		}
 		else
 		{
-			std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-			const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+			std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
+			const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
 			for(; irn != end; ++irn) (*irn)->pushLeaf(aLeafsList);
 		}
 	}
@@ -311,8 +311,8 @@ struct ForestNode
 	///
 	void gatherCodons(void)
 	{
-		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
+		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
 		for(; irn != end; ++irn)
 		{
 			(*irn)->gatherCodons();
@@ -332,8 +332,8 @@ struct ForestNode
 		unsigned int i;
 
 		// Visit the subtrees
-		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
+		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
@@ -364,8 +364,8 @@ struct ForestNode
 		unsigned int i;
 
 		// Visit the subtrees
-		std::vector<ForestNode*>::const_iterator irn=mChildrenList.begin();
-		const std::vector<ForestNode*>::const_iterator end=mChildrenList.end();
+		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
+		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
 		for(i=0; irn != end; ++irn, ++i)
 		{
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.

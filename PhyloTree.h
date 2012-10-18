@@ -35,7 +35,7 @@ public:
 	///
 	/// @param[in] aFilename The filename
 	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
+	/// @exception FastCodeMLFatal For errors like cannot open the file
 	///
 	virtual void readFile(const char *aFilename) =0;
 

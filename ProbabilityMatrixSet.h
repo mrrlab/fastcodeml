@@ -37,6 +37,8 @@ protected:
 	/// @param[in] aNumSets How many sets to allocate (one set is composed by the bg and fg matrices for one of the tree traversals)
 	/// @param[in] aNumMatSets How many sets of matrices to allocate
 	///
+	/// @exception FastCodeMLMemoryError Cannot allocate mMatrixSpace or mMatrices
+	///
 	ProbabilityMatrixSet(size_t aNumMatrices, unsigned int aNumSets, unsigned int aNumMatSets)
 		: mMatrixSpace(NULL), mMatrices(NULL), mNumMatrices(static_cast<int>(aNumMatrices)), mNumSets(aNumSets), mFgBranch(0)
 	{

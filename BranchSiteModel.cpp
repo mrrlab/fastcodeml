@@ -38,8 +38,8 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 
 	// Print all variables formatted to be readable
 	double v0 = 0;
-	std::vector<double>::const_iterator ix = aVars.begin();
-	const std::vector<double>::const_iterator end = aVars.end();
+	std::vector<double>::const_iterator ix(aVars.begin());
+	const std::vector<double>::const_iterator end(aVars.end());
 	for(int k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
 	{
 		switch(k)
@@ -214,7 +214,7 @@ void BranchSiteModel::initVariables(void)
 }
 
 
-double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
+double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, double aThreshold)
 {
 	// Initialize the variables to be optimized
 	initVariables();
@@ -228,7 +228,7 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch)
 	mSetForGradient.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
 
 	// Run the optimizer
-	return maximizeLikelihood(aFgBranch);
+	return maximizeLikelihood(aFgBranch, aStopIfBigger, aThreshold);
 }
 
 
@@ -247,7 +247,7 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 	mSetForGradient.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
 
 	// Run the optimizer
-	return maximizeLikelihood(aFgBranch);
+	return maximizeLikelihood(aFgBranch, false, 0.);
 }
 
 double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar)
@@ -861,10 +861,14 @@ public:
 	/// @param[in] aUpper Upper limit for the variables (to constrain the gradient computation)
 	/// @param[in] aDeltaForGradient The variable increment to compute gradient
 	/// @param[in] aNumMatrixParams Number of variables besides the branch lengths
+	/// @param[in] aStopIfBigger If true stop computation as soon as value is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
 	///
-	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient, size_t aNumMatrixParams)
+	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient, size_t aNumMatrixParams, bool aStopIfBigger, double aThreshold)
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
-					    mTotalNumVariables(aUpper.size()), mNumMatrixParams(aNumMatrixParams) {}
+					    mTotalNumVariables(aUpper.size()), mNumMatrixParams(aNumMatrixParams),
+						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
+						{}
 
 	/// Wrapper to be passed to the optimizer
 	///
@@ -879,23 +883,29 @@ public:
 		return (*reinterpret_cast<MaximizerFunction*>(aData))(aVars, aGrad);
 	}
 
-	/// Functor.
-	/// It computes the function and the gradient if needed.
+	/// Computes the function and the gradient if needed.
 	///
 	/// @param[in] aVars Variables to be optimized
 	/// @param[out] aGrad Gradient values
+	///
 	/// @return The evaluated function
+	///
+	/// @exception nlopt::forced_stop To force halt the maximization because LRT it is already not satisfied
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		// Compute the function at the requested point
 		double f0 = mModel->computeLikelihood(aVars, mTrace);
 
+		// Stop optimization if value is greather or equal to threshold
+		if(mStopIfBigger && f0 >= mThreshold) throw nlopt::forced_stop();
+
 		// Compute gradient if requested
 		if(!aGrad.empty()) computeGradient(f0, aVars, aGrad);
 
 		return f0;
 	}
+
 
 private:
 	/// Compute the function gradient
@@ -958,10 +968,12 @@ private:
 	double				mDeltaForGradient;	///< The variable increment to compute gradient
 	size_t				mTotalNumVariables;	///< Total number of variables to be used to compute gradient
 	size_t				mNumMatrixParams;	///< Number of variables besides the branch lengths
+	bool				mStopIfBigger;		///< If true stop optimization as soon as function value is above mThreshold
+	double				mThreshold;			///< Threshold value to stop optimization
 };
 
 
-double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
+double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger, double aThreshold)
 {
 	// Print starting values
 	if(mTrace)
@@ -989,8 +1001,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	{
 		try
 		{
-			// Create the optimizer
-			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient, mRelativeError);
+			// Create the optimizer (instead of mRelativeError is used the fixed value from CodeML)
+			Ming2 optim(this, mTrace, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8);
 
 			// Do the maximization
 			double maxl = optim.minimizeFunction(mVar);
@@ -1056,25 +1068,16 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 	}
 
 	// Initialize bounds and termination criteria
-	try
-	{
-		opt->set_lower_bounds(mLowerBound);
-		opt->set_upper_bounds(mUpperBound);
-    	opt->set_ftol_rel(mRelativeError);
-		nlopt::srand(static_cast<unsigned long>(mSeed));
-	}
-	catch(std::exception& e)
-	{
-		std::ostringstream o;
-		o << "Exception during inizialization: " << e.what() << std::endl;
-		throw FastCodeMLFatal(o);
-	}
+	opt->set_lower_bounds(mLowerBound);
+	opt->set_upper_bounds(mUpperBound);
+    opt->set_ftol_rel(mRelativeError);
+	nlopt::srand(static_cast<unsigned long>(mSeed));
 
 	// Optimize the function
 	double maxl = 0;
 	try
 	{
-		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables);
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
 
@@ -1117,7 +1120,12 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch)
 			printVar(mVar);
 		}
 	}
-	catch(std::exception& e)
+	catch(const nlopt::forced_stop&)
+	{
+		if(mTrace) std::cerr << "Optimization stopped because LRT not satisfied" << std::endl;
+		return DBL_MAX;
+	}
+	catch(const std::exception& e)
 	{
 		std::ostringstream o;
 		o << "Exception in computation: " << e.what() << std::endl;

@@ -9,9 +9,9 @@
 
 /// The high-performance DAG scheduler. Visits the DAG obeying the dependencies.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-05-14 (initial version)
-///     @version 1.0
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2012-05-14 (initial version)
+///   @version 1.0
 ///
 class DAGScheduler
 {
@@ -66,8 +66,8 @@ public:
 private:
 	std::set<const void*> mNodes;								///< Load the distinct node addresses
 	std::vector<std::pair<const void*, const void*> > mEdges;	///< Load the edges
-	std::map<const void*, int> mRefCounter;
-	std::map<const void*, int> mRefCounterSave;
+	std::map<const void*, int> mRefCounter;						///< Reference counter
+	std::map<const void*, int> mRefCounterSave;					///< Save the referece counter map 
 };
 
 #endif

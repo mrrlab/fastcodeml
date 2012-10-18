@@ -103,7 +103,7 @@ int main(int ac, char **av)
 		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
 		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
-		if(cmd.mInitH1fromH0)						std::cerr << "Starting val.: From H0" << std::endl;
+		if(cmd.mInitH0fromH1)						std::cerr << "Starting val.: From H1" << std::endl;
 		else if(cmd.mInitFromParams)				std::cerr << "Starting val.: Times from tree file and params from const (see below)" << std::endl;
 		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.: Times from tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
@@ -177,22 +177,22 @@ int main(int ac, char **av)
 
 	// Enclose file loading into a block so temporary structures could be deleted when no more needed
 	{
-	// Load the genes
-	Phylip g(cmd.mVerboseLevel);
-	g.readFile(cmd.mGeneFile);
+	// Load the multiple sequence alignment (MSA)
+	Phylip msa(cmd.mVerboseLevel);
+	msa.readFile(cmd.mGeneFile);
 
 	// Load the phylogenetic tree
 	Newick tree(cmd.mVerboseLevel);
 	tree.readFile(cmd.mTreeFile);
 
 	// Check coherence between the two files
-	g.checkNameCoherence(tree.getSpecies());
+	msa.checkNameCoherence(tree.getSpecies());
 
 	// If times from file then check for null branch lengths for any leaf
 	if(cmd.mTimesFromFile) tree.checkNullBranchLengths();
 
 	// Load the forest
-	forest.loadTreeAndGenes(tree, g, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
 	}
 
 #ifdef CHECK_ALGO
@@ -240,13 +240,16 @@ int main(int ac, char **av)
 	// Get the time needed by data preprocessing
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 
+	// Print few statistics
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << forest;
+
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
-	bool sts = hlc.startWork(forest, cmd);
+	bool has_run_under_MPI = hlc.startWork(forest, cmd);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
-	if(sts)
+	if(has_run_under_MPI)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << std::setprecision(3) << timer.get() << std::endl;}
 		return 0;
@@ -295,9 +298,6 @@ int main(int ac, char **av)
 		branch_end   = num_branches;
 	}
 
-	// Print few statistics
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << forest;
-
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
@@ -310,25 +310,11 @@ int main(int ac, char **av)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
 
-		// Compute the null model maximum loglikelihood
-		double lnl0 = 0;
-		if(cmd.mComputeHypothesis != 1)
-		{
-			if(cmd.mInitFromParams)		h0.initFromTreeAndParams();
-			else if(cmd.mTimesFromFile)	h0.initFromTree();
-
-			lnl0 = h0(fg_branch);
-
-			// Save the value for formatted output
-			output_results.saveLnL(fg_branch, lnl0, 0);
-		}
-
 		// Compute the alternate model maximum loglikelihood
-		double lnl1 = 0;
+		double lnl1 = 0.;
 		if(cmd.mComputeHypothesis != 0)
 		{
-			if(cmd.mInitH1fromH0)			h1.initFromResult(h0.getVariables());
-			else if(cmd.mInitFromParams)	h1.initFromTreeAndParams();
+			if(cmd.mInitFromParams)			h1.initFromTreeAndParams();
 			else if(cmd.mTimesFromFile)		h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
@@ -337,13 +323,30 @@ int main(int ac, char **av)
 			output_results.saveLnL(fg_branch, lnl1, 1);
 		}
 
+		// Compute the null model maximum loglikelihood
+		double lnl0 = 0.;
+		if(cmd.mComputeHypothesis != 1)
+		{
+			if(cmd.mInitH0fromH1)			h0.initFromResult(h1.getVariables());
+			else if(cmd.mInitFromParams)	h0.initFromTreeAndParams();
+			else if(cmd.mTimesFromFile)		h0.initFromTree();
+
+			lnl0 = h0(fg_branch, cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
+
+			// Save the value for formatted output (only if has not be forced to stop)
+			if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+		}
+
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
 		{
 			std::cerr << std::endl;
 			if(cmd.mComputeHypothesis != 1)
 			{
 				std::cerr << "LnL0: ";
-				std::cerr << std::setprecision(15) << std::fixed << lnl0;
+				if(lnl0 < DBL_MAX)
+					std::cerr << std::setprecision(15) << std::fixed << lnl0;
+				else
+					std::cerr << "(Forced stop)";
 				std::cerr << " Function calls: " << h0.getNumEvaluations() << "   ";
 			}
 			if(cmd.mComputeHypothesis != 0)
@@ -377,12 +380,18 @@ int main(int ac, char **av)
 			fe.exportForest(cmd.mGraphFile, fg_branch);
 		}
 
-		// If the two hypothesis are computed and the run passes the LRT, then compute the BEB
-		if(cmd.mComputeHypothesis > 1 && BranchSiteModel::performLRT(lnl0, lnl1))
+		// If the two hypothesis are computed, one has not been stopped and the run passes the LRT, then compute the BEB
+		if(cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
-			// Run the test
+			// Initialize the test
 			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
-			bt.computeBEB(h1.getForest(), h1.getVariables(), h1.getSiteMultiplicity(), fg_branch);
+
+			// Get the scale values from the latest optimized h1.
+			std::vector<double> scales(2);
+			h1.getScales(scales);
+
+			// Run the BEB test
+			bt.computeBEB(h1.getForest(), h1.getVariables(), fg_branch, scales);
 
 			// Output the sites under positive selection (if any)
 			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
@@ -424,11 +433,6 @@ int main(int ac, char **av)
 	catch(const std::bad_alloc& e)
 	{
 		std::cerr << std::endl << e.what() << std::endl;
-		return 1;
-	}
-	catch(const char* e)
-	{
-		std::cerr << std::endl << e << std::endl;
 		return 1;
 	}
 	catch(...)
@@ -480,12 +484,13 @@ int main(int ac, char **av)
 ///
 /// Array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int. 
 ///
+/// The null pointer should be written as NULL, not 0 to make clear its purpose.
 ///
 /// @page cmd_page Command Line Switches
 ///
 /// Here is a quick list of the valid command line switches for FastCodeML.
 ///
-/// @verbatim
+///@verbatim
 /*
 
 Usage:
@@ -552,16 +557,16 @@ Usage:
         Start from default parameter values and times from tree file
 
 -x  --extra-debug (required argument)
-        Extra debug parameter (zero disable it)
+        Extra debug parameter (zero disables it)
 
 -re  --relative-error (required argument)
-        Relative error where to stop maximization
+        Relative error where to stop maximization (default: 1e-3)
 
 -rb  --reduction-blocks (required argument)
-        Divide reduce subtrees into these blocks (zero disable it)
+        Divide reduce subtrees into these blocks (zero disables it)
 
 -ou  --output (required argument)
-        Write results formatted on this file
+        Write results formatted to this file
 
 @endverbatim
 */

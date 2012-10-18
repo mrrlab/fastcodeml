@@ -208,14 +208,22 @@ void Genes::readFile(const char* aFilename)
 		}
 	}
 
+	// Check if at least one site remains
+	size_t valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
+	if(valid_codons == 0) throw FastCodeMLFatal("Not a single valid codon read");
+
+	// Print statistics
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 		std::cerr << std::endl;
 		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
 		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
-		int valid_codons = static_cast<int>(std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1));
 		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
 	}
+
+	// Prepare the mapping from program sites back to original sites
+	std::multimap<size_t, size_t> sites_back_mapping;
+	mOriginalNumSites = ncodons;
 
 	// Remove duplicated sites
 	for(i=0; i < ncodons-1; ++i)
@@ -235,13 +243,15 @@ void Genes::readFile(const char* aFilename)
 			{
 				++codon_multiplicity[i];
 				codon_multiplicity[j] = 0;
+
+				sites_back_mapping.insert(std::pair<size_t,size_t>(i,j));
 			}
 		}
 	}
 
 	// Compute site multiplicity (remove zero multiplicity sites from codon_multiplicity)
 	mSiteMultiplicity = codon_multiplicity;
-	std::vector<unsigned int>::iterator pend = std::remove(mSiteMultiplicity.begin(), mSiteMultiplicity.end(), 0);
+	std::vector<unsigned int>::iterator pend(std::remove(mSiteMultiplicity.begin(), mSiteMultiplicity.end(), 0));
 	mSiteMultiplicity.erase(pend, mSiteMultiplicity.end());
 
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
@@ -252,9 +262,47 @@ void Genes::readFile(const char* aFilename)
 	}
 	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
 	{
+		std::cerr << std::endl;
 		std::ostream_iterator<unsigned int> out_it(std::cerr, " ");
 		std::copy(codon_multiplicity.begin(), codon_multiplicity.end(), out_it);
 		std::cerr << std::endl;
+	}
+
+	// Prepare the map from reduced site num. (j) to list of corresponding original sites (i).
+	for(i=j=0; i < codon_multiplicity.size(); ++i)
+	{
+		if(codon_multiplicity[i] > 0)
+		{
+			mSitesMappingToOriginal.insert(std::pair<size_t,size_t>(j,i));
+
+			std::multimap<size_t, size_t>::iterator it;
+			std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret;
+			ret = sites_back_mapping.equal_range(i);
+			for(it=ret.first; it != ret.second; ++it)
+			{
+				mSitesMappingToOriginal.insert(std::pair<size_t,size_t>(j,it->second));
+			}
+			++j;
+		}
+	}
+
+	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
+	{
+		std::cerr << std::endl;
+		for(j=0; j < mSiteMultiplicity.size(); ++j)
+		{
+			std::multimap<size_t, size_t>::iterator it;
+			std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret;
+			ret = mSitesMappingToOriginal.equal_range(j);
+
+			std::cout << "Reduced " << std::setw(4) << j << " maps to original:";
+			for(it=ret.first; it != ret.second; ++it)
+			{
+				std::cout << " " << it->second;
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
 	}
 
 	// Compute map from site to position on mDnaGene

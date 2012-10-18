@@ -125,7 +125,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
-		OPT_INIT_H1_FROM_H0,
+		OPT_INIT_H0_FROM_H1,
 		OPT_OPTIM_ALGO,
 		OPT_DELTA_VAL,
 		OPT_INIT_PARAM,
@@ -171,8 +171,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
-		{ OPT_INIT_H1_FROM_H0,	"-i0",					SO_NONE,	"Start H1 optimization from H0 results" },
-		{ OPT_INIT_H1_FROM_H0,	"--init-from-h0",		SO_NONE,	"" },
+		{ OPT_INIT_H0_FROM_H1,	"-i1",					SO_NONE,	"Start H0 optimization from H1 results" },
+		{ OPT_INIT_H0_FROM_H1,	"--init-from-h1",		SO_NONE,	"" },
 		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
 		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
@@ -181,13 +181,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_PARAM,		"--init-param",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_DEFAULT,		"-ic",					SO_NONE,	"Start from default parameter values and times from tree file" },
 		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
-		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disable it)" },
+		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disables it)" },
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
-		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization" },
+		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization (default: 1e-3)" },
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
-		{ OPT_NUM_RBLOCKS,		"-rb",					SO_REQ_SEP,	"Divide reduce subtrees into these blocks (zero disable it)" },
+		{ OPT_NUM_RBLOCKS,		"-rb",					SO_REQ_SEP,	"Divide reduce subtrees into these blocks (zero disables it)" },
 		{ OPT_NUM_RBLOCKS,		"--reduction-blocks",	SO_REQ_SEP,	"" },
-		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted on this file" },
+		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
@@ -291,8 +291,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			if(mComputeHypothesis != 0 && mComputeHypothesis != 1) throw FastCodeMLFatal("Invalid hypothesis specified");
 			break;
 
-		case OPT_INIT_H1_FROM_H0:
-			mInitH1fromH0 = true;
+		case OPT_INIT_H0_FROM_H1:
+			mInitH0fromH1 = true;
 			break;
 
 		case OPT_OPTIM_ALGO:
@@ -319,7 +319,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_REL_ERROR:
 			mRelativeError = atof(args.OptionArg());
-			if(mRelativeError <= 0.0) mRelativeError = 1e-15;
+			if(mRelativeError <= 0.0) throw FastCodeMLFatal("Invalid relative error value");
 			break;
 
 		case OPT_NUM_RBLOCKS:
@@ -354,7 +354,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 	// Some final checks and settings
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
-	if(mComputeHypothesis < 2) mInitH1fromH0 = false;
+	if(mComputeHypothesis < 2) mInitH0fromH1 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
 }

@@ -2,8 +2,6 @@
 #ifndef TRANSITION_MATRIX_H
 #define TRANSITION_MATRIX_H
 
-#include <iostream>
-
 #include <cstring>
 #include <cmath>
 #include <vector>
@@ -220,6 +218,10 @@ private:
 	/// @param[in] aDim The matrix dimension
 	/// @param[out] aR The eigenvalues
 	/// @param[out] aWork A working area used only for non lapack version
+	///
+	/// @exception std::range_error Error in EigenTridagQLImplicit (no lapack used)
+	/// @exception FastCodeMLMemoryError Error sizing workareas
+	/// @exception std::range_error No convergence in dsyevr
 	///
 	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
 

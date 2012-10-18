@@ -13,9 +13,9 @@
 /// It will be used to obtain a vector aligned to a given power of 2.
 /// Example allocation aligned to 64: std::vector<double, AlignedAllocator<double, 64> > aligned_vector;
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-22 (initial version)
-///     @version 1.0
+///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///  @date 2010-12-22 (initial version)
+///  @version 1.0
 ///
 template <typename T, size_t A> class AlignedAllocator
 {
@@ -97,7 +97,16 @@ public:
 	///
     ~AlignedAllocator() { }
 
-    // The following will be different for each allocator.
+	/// The main allocator routine.
+	/// The following will be different for each allocator.
+	///
+	/// @param[in] n Number of objects of type T to allocate
+	///
+	/// @return The allocated memory
+	///
+	/// @exception std::length_error Integer overflow
+	/// @exception std::bad_alloc Memory allocation failure
+	///
     T * allocate(const size_t n) const
 	{
         // AlignedAllocator prints a diagnostic message to demonstrate

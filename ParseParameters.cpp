@@ -52,7 +52,7 @@ void ParseParameters::addParameter(const char* aParamValuePair)
 double ParseParameters::getParameter(const char* aParamName) const
 {
 	// The name should exist in the dictionary
-	std::map<std::string, double>::const_iterator ip = mDictionary.find(aParamName);
+	std::map<std::string, double>::const_iterator ip(mDictionary.find(aParamName));
 	if(ip == mDictionary.end()) throw FastCodeMLFatal("Invalid key requested in getParameter");
 
 	// Return the corresponding value
@@ -63,8 +63,8 @@ double ParseParameters::getParameter(const char* aParamName) const
 std::ostream& operator<< (std::ostream& aOut, const ParseParameters* aParamsList)
 {
 	// Print the dictionary
-	std::map<std::string, double>::const_iterator ip = aParamsList->mDictionary.begin();
-	const std::map<std::string, double>::const_iterator end = aParamsList->mDictionary.end();
+	std::map<std::string, double>::const_iterator ip(aParamsList->mDictionary.begin());
+	const std::map<std::string, double>::const_iterator end(aParamsList->mDictionary.end());
 	for(; ip != end; ++ip)
 	{
 		aOut << std::setw(20) << ip->first << " = " << std::fixed << std::setprecision(6) << ip->second << std::endl;

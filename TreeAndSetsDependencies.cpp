@@ -229,7 +229,7 @@ bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy)
 
 	// At each level collect the 'jolly' threads (trees that are not preconditions for trees in classes above)
 	// This step makes sense only if run multithread and if there are more than one class
-	const int num_threads = omp_get_max_threads();
+	const size_t num_threads = static_cast<size_t>(omp_get_max_threads());
 	const size_t num_classes = mDependenciesClassesAndTrees.size();
 	if(num_threads < 2 || num_classes < 2) return false;
 
@@ -288,7 +288,7 @@ bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy)
 		{
 			for(unsigned int j=0; j < needed_add; ++j)
 			{
-				std::set<unsigned int>::iterator it = jolly_sites.begin();
+				std::set<unsigned int>::iterator it(jolly_sites.begin());
 				mDependenciesClassesAndTrees[k].push_back(*it);
 				jolly_sites.erase(it);
 			}

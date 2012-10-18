@@ -60,8 +60,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		num_leaves = leaves.size();
 
 		// Add codon code to leaves
-		std::vector<ForestNode*>::const_iterator il=leaves.begin();
-		const std::vector<ForestNode*>::const_iterator end=leaves.end();
+		std::vector<ForestNode*>::const_iterator il(leaves.begin());
+		const std::vector<ForestNode*>::const_iterator end(leaves.end());
 		for(; il != end; ++il)
 		{
 			// Node id (adjusted so root is 0)
@@ -121,9 +121,26 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Transform the map into a table (better for performance)
 	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
-	std::map<unsigned int, unsigned int>::const_iterator im=map_internal_to_branchID.begin();
-	const std::map<unsigned int, unsigned int>::const_iterator end=map_internal_to_branchID.end();
+	std::map<unsigned int, unsigned int>::const_iterator im(map_internal_to_branchID.begin());
+	const std::map<unsigned int, unsigned int>::const_iterator end(map_internal_to_branchID.end());
 	for(; im != end; ++im) mTableInternalToBranchID[im->first] = im->second;
+
+	// Save the new to original site number map
+	mSitesMappingToOriginal = aGenes.getSitesMappingToOriginal();
+	
+	// Set mapping from original to reduced
+	std::vector<unsigned int> sites_forw_mapping(aGenes.getOriginalNumSites());
+	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
+	{
+		std::multimap<size_t, size_t>::iterator it;
+		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret;
+		ret = mSitesMappingToOriginal.equal_range(j);
+
+		for(it=ret.first; it != ret.second; ++it)
+		{
+			sites_forw_mapping[it->second] = static_cast<unsigned int>(j);
+		}
+	}
 
 #ifdef NEW_LIKELIHOOD
 	postLoad();
@@ -152,8 +169,8 @@ void Forest::postLoad(void)
         level_nodes.clear();
 
         // Put in a list all the children of the current level nodes
-        std::vector<ForestNode*>::const_iterator il=curr_level.begin();
-        const std::vector<ForestNode*>::const_iterator end=curr_level.end();
+        std::vector<ForestNode*>::const_iterator il(curr_level.begin());
+        const std::vector<ForestNode*>::const_iterator end(curr_level.end());
         for(; il != end; ++il)
         {
             if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
@@ -195,14 +212,14 @@ void Forest::postLoad(void)
 		unsigned int max_level = 0;
 		unsigned int max_leaf  = 0;
 		unsigned int level = 0;
-		std::vector< std::vector<ForestNode*> >::iterator inbl=mNodesByLevel.begin();
-		const std::vector< std::vector<ForestNode*> >::iterator end=mNodesByLevel.end();
+		std::vector< std::vector<ForestNode*> >::iterator inbl(mNodesByLevel.begin());
+		const std::vector< std::vector<ForestNode*> >::iterator end(mNodesByLevel.end());
 		for(level=0; inbl != end; ++inbl,++level)
 		{
 			unsigned int num_leaves = 0;
 			unsigned int leaf = 0, i=0;
-			std::vector<ForestNode*>::const_iterator ifn=inbl->begin();
-			const std::vector<ForestNode*>::const_iterator end=inbl->end();
+			std::vector<ForestNode*>::const_iterator ifn(inbl->begin());
+			const std::vector<ForestNode*>::const_iterator end(inbl->end());
 			for(; ifn != end; ++ifn,++i)
 			{
 				if((*ifn)->mChildrenList.empty()) {++num_leaves; leaf = i;}
@@ -441,8 +458,9 @@ void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* 
 		aTimes[id] = mBranchLengths[id+1];
 	}
 
-	std::vector<ForestNode *>::const_iterator ifn=aNode->mChildrenList.begin();
-	for(; ifn != aNode->mChildrenList.end(); ++ifn)
+	std::vector<ForestNode *>::const_iterator ifn(aNode->mChildrenList.begin());
+	const std::vector<ForestNode *>::const_iterator end(aNode->mChildrenList.end());
+	for(; ifn != end; ++ifn)
 	{
 		setTimesFromLengths(aTimes, *ifn);
 	}
@@ -456,8 +474,9 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 	// Get all forest connections
 	if(!aNode)
 	{
-		std::vector<ForestNode>::iterator ifn=mRoots.begin();
-		for(; ifn != mRoots.end(); ++ifn)
+		std::vector<ForestNode>::iterator ifn(mRoots.begin());
+		const std::vector<ForestNode>::iterator end(mRoots.end());
+		for(; ifn != end; ++ifn)
 		{
 			for(ifnp=ifn->mChildrenList.begin(); ifnp != ifn->mChildrenList.end(); ++ifnp)
 			{
@@ -909,8 +928,8 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	const ForestNode* tmp_roots = &mRoots[0];
 	double* likelihoods = &aLikelihoods[0];
 
-	ListDependencies::const_iterator ivs=aDependencies.begin();
-	const ListDependencies::const_iterator end=aDependencies.end();
+	ListDependencies::const_iterator ivs(aDependencies.begin());
+	const ListDependencies::const_iterator end(aDependencies.end());
 	for(; ivs != end; ++ivs)
 	{
 		// Things that do not change in the parallel loop

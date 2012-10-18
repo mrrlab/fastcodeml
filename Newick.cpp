@@ -1,3 +1,11 @@
+
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4512) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
+    #pragma warning(disable: 4503) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
+#endif
+
+
 #include <iostream>
 #include <fstream>
 #include "Newick.h"
@@ -214,8 +222,8 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 			std::cerr << "Tree as read in PhyloTree" << std::endl;
 			printTree(info.trees.begin());
 			mTreeRoot.printFormatted();
-			std::vector<TreeNode *>::const_iterator isp=mLeavesSpecies.begin();
-			const std::vector<TreeNode *>::const_iterator end=mLeavesSpecies.end();
+			std::vector<TreeNode *>::const_iterator isp(mLeavesSpecies.begin());
+			const std::vector<TreeNode *>::const_iterator end(mLeavesSpecies.end());
 			for(; isp != end; ++isp) std::cerr << (*isp)->getLabel() << std::endl;
 		}
 	}
@@ -268,3 +276,7 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 	}
 }
 
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif

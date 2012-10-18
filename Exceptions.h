@@ -12,22 +12,19 @@
 class FastCodeMLFatal : public std::runtime_error
 {
 public:
-	/// Constructor.
-	/// No message because it has already been printed.
+	/// Exception with no message because it has already been printed.
 	///
 	FastCodeMLFatal(void) : runtime_error("")
 	{}
 
-	/// Constructor.
-	/// Print a message before termination.
+	/// Exception that prints a message before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination
 	///
 	FastCodeMLFatal(const char *aMessage) : runtime_error(aMessage)
 	{}
 
-	/// Constructor.
-	/// Print a message (previously built into a std::ostringstream) before termination.
+	/// Exception that prints a message (previously built into a std::ostringstream) before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination (has been formatted printing into a std::ostringstream).
 	///
@@ -42,33 +39,31 @@ public:
 class FastCodeMLSuccess : public std::exception
 {
 public:
-	/// Constructor.
+	/// Early successful termination exception.
 	///
 	FastCodeMLSuccess() : exception()
 	{}
 };
 
-/// Fatal error in FastCodeML.
-/// The message explains the reason.
+/// Memory error in FastCodeML.
+/// The message explains the reason in detail.
 ///
 class FastCodeMLMemoryError : public std::bad_alloc
 {
 public:
-	/// Constructor.
-	/// Print the standard bad_alloc message.
+	/// Exception that prints the standard bad_alloc message.
 	///
 	FastCodeMLMemoryError(void) : bad_alloc(), mMessage("std::bad_alloc")
 	{}
 
-	/// Constructor.
-	/// Print a message before termination.
+	/// Exception that prints a message before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination
 	///
 	FastCodeMLMemoryError(const char *aMessage) : bad_alloc(), mMessage(aMessage)
 	{}
 
-	/// Override wat to display a more meaningful message
+	/// Override what() to display a more meaningful message.
 	///
 	/// @return The message text
 	///

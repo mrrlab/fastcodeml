@@ -20,7 +20,7 @@ protected:
 	///
 	/// @param[in] aVerboseLevel The verbosity level
 	///
-	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel)
+	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel), mOriginalNumSites(0)
 	{
 		mMapBaseToIdx['t'] = 0;
 		mMapBaseToIdx['T'] = 0;
@@ -41,19 +41,19 @@ public:
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
 	///
-	/// @exception FastCodeMLFatalNoMsg If cannot open file and other problems
+	/// @exception FastCodeMLFatal If cannot open file and other problems
 	///
 	void readFile(const char* aFilename);
 
-	/// Return the number of valid sites loaded
+	/// Return the number of valid sites loaded.
 	///
 	/// @return The number of sites
 	///
 	size_t getNumSites(void) const {return mSiteMultiplicity.size();}
 
-	/// Return the site multiplicity
+	/// Return the site multiplicity.
 	///
-	/// @return Pointer to the site multiplicity array
+	/// @return Reference to the site multiplicity array
 	///
 	const std::vector<unsigned int>& getSiteMultiplicity(void) const {return mSiteMultiplicity;}
 
@@ -66,12 +66,6 @@ public:
 	///
 	int getCodonIdx(std::string aSpecie, size_t aSite) const;
 
-	/// Return the list of species present in the gene file
-	///
-	/// @param[out] aSpeciesList Will be filled with the list of species
-	///
-	void getSpecies(std::vector<std::string>& aSpeciesList) const {aSpeciesList = mDnaSpecies;}
-
 	/// Check coherence between tree and genes.
 	///
 	/// @param[in] aNames The phylogenetic tree species names
@@ -79,6 +73,14 @@ public:
 	/// @exception FastCodeMLFatal Throw exception if the species do not match
 	///
 	void checkNameCoherence(const std::vector<std::string>& aNames) const;
+
+	/// Access the map that convert from the site number to the original MSA site number.
+	///
+	/// @return The map from reduced site number to list of corresponding original sites.
+	///
+	const std::multimap<size_t, size_t>& getSitesMappingToOriginal(void) const {return mSitesMappingToOriginal;}
+
+	size_t getOriginalNumSites(void) const {return mOriginalNumSites;}
 
 
 protected:
@@ -109,15 +111,17 @@ private:
 	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences) =0;
 
 protected:
-	unsigned int						mVerboseLevel;			///< The verbosity level as set in the constructor
+	unsigned int						mVerboseLevel;				///< The verbosity level as set in the constructor
 
 private:
-	std::vector<std::string>			mDnaSpecies;			///< The list of species labels
-	std::vector<std::string>			mDnaGene;				///< The gene DNA basis strings
-	std::vector<unsigned int>			mSiteMultiplicity;		///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
-	std::vector<unsigned int>			mMapSiteToDnaGene;		///< Map the site number to the position in mDnaGene
-	std::map<std::string, unsigned int> mMapSpecieToDnaGene;	///< Map specie name to position in the gene list mDnaGene
-	std::map<char, int>					mMapBaseToIdx;			///< Map DNA base letter (TCAG) to number 0 to 3
+	std::vector<std::string>			mDnaSpecies;				///< The list of species labels
+	std::vector<std::string>			mDnaGene;					///< The gene DNA basis strings
+	std::vector<unsigned int>			mSiteMultiplicity;			///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
+	std::vector<unsigned int>			mMapSiteToDnaGene;			///< Map the site number to the position in mDnaGene
+	std::map<std::string, unsigned int> mMapSpecieToDnaGene;		///< Map specie name to position in the gene list mDnaGene
+	std::map<char, int>					mMapBaseToIdx;				///< Map DNA base letter (TCAG) to number 0 to 3
+	std::multimap<size_t, size_t>		mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
+	size_t								mOriginalNumSites;			///< Original number of sites (before cleaning)
 };
 
 #endif

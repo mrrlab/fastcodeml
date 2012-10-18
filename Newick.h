@@ -39,7 +39,7 @@ public:
 	///
 	/// @param[in] aFilename The filename
 	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file or cannot parse the tree
+	/// @exception FastCodeMLFatal For errors like cannot open the file or cannot parse the tree
 	///
 	virtual void readFile(const char *aFilename);
 
@@ -56,7 +56,7 @@ private:
 	///
 	/// @param[in] aTreeAsString The string to be loaded
 	///
-	/// @exception FastCodeMLFatalNoMsg For parsing errors
+	/// @exception FastCodeMLFatal For parsing errors
 	///
 	void loadTreeFromString(const std::string& aTreeAsString);
 
@@ -69,7 +69,7 @@ private:
 	/// @param[in] aTreeIterator Tree iterator
 	/// @param[in,out] aNode Node from which the construction should continue
 	///
-	/// @exception FastCodeMLFatalNoMsg For errors like cannot open the file
+	/// @exception FastCodeMLFatal For parsing errors
 	///
 	void evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNode *aNode);
 

@@ -4,12 +4,15 @@
 
 #include <vector>
 #include <cstdlib>
-
+#include <cfloat>
 #include "TransitionMatrix.h"
 #include "ProbabilityMatrixSet.h"
 #include "Forest.h"
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
+
+//// Value used for the LRT test. It is chisq(.95, df=1)/2
+static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
 /// Common routines for testing the two hypothesis (H0 and H1).
 ///
@@ -32,20 +35,21 @@ protected:
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	/// @param[in] aRelativeError Relative error for convergence
+	/// @param[in] aNoParallel If true no parallel execution support is setup
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	///
-	BranchSiteModel(Forest& aForest,
-					size_t aNumBranches,
-					size_t aNumSites,
+	BranchSiteModel(Forest&      aForest,
+					size_t       aNumBranches,
+					size_t       aNumSites,
 					unsigned int aSeed,
 					unsigned int aNumVariables,
-					bool aOnlyInitialStep,
-					bool aTrace,
+					bool         aOnlyInitialStep,
+					bool         aTrace,
 					unsigned int aOptAlgo,
-					double aDeltaValueForGradient,
-					double aRelativeError,
-					bool	aNoParallel,
+					double       aDeltaValueForGradient,
+					double       aRelativeError,
+					bool	     aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug)
 		: mForest(aForest),
@@ -92,10 +96,16 @@ public:
 	/// Compute the maximum likelihood for the given forest
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
+	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
 	///
 	/// @return The maximum Likelihood value
 	///
-	double maximizeLikelihood(size_t aFgBranch);
+	/// @exception FastCodeMLFatal Exception in Ming2 computation
+	/// @exception FastCodeMLFatal Invalid optimization algorithm identifier on the command line
+	/// @exception FastCodeMLFatal Exception in computation
+	///
+	double maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger, double aThreshold);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -157,7 +167,7 @@ public:
 	///
 	///	@return True if the test is passed
 	///
-	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > 1.92072941;}
+	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > THRESHOLD_FOR_LRT;}
 	
 	/// Get site multeplicity values.
 	///
@@ -170,6 +180,12 @@ public:
 	/// @return Reference to the forest
 	///
 	Forest& getForest(void) {return mForest;}
+
+	/// Get the latest scale values suitable for BEB computation.
+	///
+	/// @param[out] aScales The array will get the fg scale in [1] and the bg scale in [0]
+	///
+	void getScales(std::vector<double>& aScales) const {aScales.resize(2); aScales[0] = mBgScale; aScales[1] = mFgScale;}
 
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
@@ -257,6 +273,8 @@ public:
 	/// Initialize the times from the input phylogenetic tree and set the other values to hardcoded constants with P0=1 and P1=0.
 	/// This routine could be used in place of initFromTree()
 	///
+	/// @exception FastCodeMLFatal Invalid p0 and p1 values
+	///
 	void initFromTreeAndParams(void);
 
 	/// Initialize variables from a previous optimization result
@@ -300,7 +318,7 @@ protected:
 	unsigned int				mVerbose;			///< Parameter for extra development testing
 	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
-	bool						mNoParallel;
+	bool						mNoParallel;		///< True if no preparation for multithreading should be done
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -342,10 +360,12 @@ public:
 	/// Compute the null hypothesis log likelihood.
 	///
 	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
 	///
 	/// @return The log likelihood under the null hypothesis
 	///
-	double operator()(size_t aFgBranch);
+	double operator()(size_t aFgBranch, bool aStopIfBigger=false, double aThreshold=0.);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///

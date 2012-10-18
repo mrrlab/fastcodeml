@@ -21,14 +21,17 @@ static const int MASTER_JOB = 0;
 class HighLevelCoordinator
 {
 public:
-	/// Constructor
+	/// Constructor.
 	///
 	/// @param[in,out] aRgc Pointer to the number of arguments
 	/// @param[in,out] aRgv Pointer to the arguments' list
 	///
+	/// @exception FastCodeMLFatal MPI Failed to initalize
+	/// @exception FastCodeMLSuccess To terminate unused worker processes
+	///
 	HighLevelCoordinator(int* aRgc, char*** aRgv);
 
-	/// Destructor
+	/// Destructor.
 	///
 	~HighLevelCoordinator();
 
@@ -58,6 +61,8 @@ private:
 	/// The master coordination job
 	///
 	/// @param[in] aOutputResults To collect and output results to a results file
+	///
+	/// @exception FastCodeMLFatal Invalid job request found
 	///
 	void doMaster(WriteResults& aOutputResults);
 

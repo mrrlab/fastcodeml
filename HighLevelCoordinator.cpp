@@ -115,7 +115,7 @@ struct HighLevelCoordinator::WorkTable
 
 	/// Check that all jobs have been processed
 	///
-	/// @exception FastCodeMLFatalNoMsg If jobs still pending
+	/// @exception FastCodeMLFatal If found jobs still pending
 	///
 	void checkAllJobsDone(void) const;
 };
@@ -123,21 +123,48 @@ struct HighLevelCoordinator::WorkTable
 
 bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 {
-	// Assign all H0 jobs, then all H1 jobs
-	for(int kind=JOB_H0; kind <= JOB_H1; ++kind)
+	// Assign all H1 jobs
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
-		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+		size_t idx = branch*JOBS_PER_BRANCH+JOB_H1;
+		if(mJobStatus[idx] == JOB_WAITING)
 		{
-			size_t idx = branch*JOBS_PER_BRANCH+kind;
-			if(mJobStatus[idx] == JOB_WAITING)
-			{
-				aJob[0] = kind;
-				aJob[1] = static_cast<int>(branch);
-				aJob[2] = 0; // No additional data sent
-				mJobStatus[idx] = JOB_ASSIGNED;
-				mWorkList[idx]  = aRank;
-				return true;
-			}
+			aJob[0] = JOB_H1;
+			aJob[1] = static_cast<int>(branch);
+			aJob[2] = 0; // No additional data sent
+			mJobStatus[idx] = JOB_ASSIGNED;
+			mWorkList[idx]  = aRank;
+			return true;
+		}
+	}
+
+	// Then assign all H0 jobs with corresponding H1 already completed
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+	{
+		size_t idx = branch*JOBS_PER_BRANCH+JOB_H0;
+		if(mJobStatus[idx] == JOB_WAITING && mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_COMPLETED)
+		{
+			aJob[0] = JOB_H0;
+			aJob[1] = static_cast<int>(branch);
+			aJob[2] = 1; // Send the lnl of the corresponding H1 step
+			mJobStatus[idx] = JOB_ASSIGNED;
+			mWorkList[idx]  = aRank;
+			return true;
+		}
+	}
+
+	// Then assign all remaining H0 jobs
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+	{
+		size_t idx = branch*JOBS_PER_BRANCH+JOB_H0;
+		if(mJobStatus[idx] == JOB_WAITING)
+		{
+			aJob[0] = JOB_H0;
+			aJob[1] = static_cast<int>(branch);
+			aJob[2] = 0; // No additional data sent
+			mJobStatus[idx] = JOB_ASSIGNED;
+			mWorkList[idx]  = aRank;
+			return true;
 		}
 	}
 
@@ -150,8 +177,8 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 		// The corresponding H0 and H1 jobs should be completed
 		if(mJobStatus[branch*JOBS_PER_BRANCH+JOB_H0] != JOB_COMPLETED || mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] != JOB_COMPLETED) continue;
 
-		// If the previous results do not pass the LRT, then skip the BEB computation
-		if(!BranchSiteModel::performLRT(mResults[branch].mLnl[0], mResults[branch].mLnl[1]))
+		// If the previous results do not pass the LRT or H0 has been interrupted, then skip the BEB computation
+		if(mResults[branch].mLnl[0] == DBL_MAX || !BranchSiteModel::performLRT(mResults[branch].mLnl[0], mResults[branch].mLnl[1]))
 		{
 			mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] = JOB_SKIP;
 			continue;
@@ -266,7 +293,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 			std::cerr << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
 
 		// If the user asks for one hypothesis only
-		if(aCmdLine.mComputeHypothesis < 2)
+		if(aCmdLine.mComputeHypothesis < 2 && mVerbose >= VERBOSE_INFO_OUTPUT)
 			std::cerr << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
 
 		// Initialize structures
@@ -335,15 +362,16 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			int h      = idx % JOBS_PER_BRANCH;
 
 			// Save all results (lnl + all variables)
+			// For H1 there are also the two scale values at the end of variables for BEB computation
 			double lnl = results_double[job_request[1]-1];
 			mWorkTable->mResults[branch].mLnl[h] = lnl;
 			mWorkTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
 
-			// Save for the results file
-			aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
+			// Save for the results file (if has been computed)
+			if(lnl < DBL_MAX) aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
 
 			// Output a status message
-			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
 			}
 			break;
 
@@ -384,7 +412,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			}
 
 			// Output a status message
-			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
 			}
 			break;
 
@@ -397,32 +425,43 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		mWorkTable->getNextJob(job, worker);
 		MPI_Send(static_cast<void*>(job), 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 
-		// For BEB send the variables from H1
+		// For BEB send the variables from H1; for H0 send the lnl value from corresponding H1
 		if(job[2] > 0)
 		{
-			double* v = &(mWorkTable->mResults[job[1]].mHxVariables[1][0]);
-			MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+			double* v;
+			switch(job[0])
+			{
+			case JOB_BEB:
+				v = &(mWorkTable->mResults[job[1]].mHxVariables[1][0]);
+				MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+				break;
+
+			case JOB_H0:
+				v = &(mWorkTable->mResults[job[1]].mLnl[1]);
+				MPI_Send(static_cast<void*>(v), 1, MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+				break;
+			}
 		}
 
 		// Trace the messages
-		if(mVerbose >= VERBOSE_MORE_DEBUG)
+		if(mVerbose >= VERBOSE_MPI_TRACE)
 		{
 			switch(job[0])
 			{
 			case JOB_H0:
-				std::cerr << "Sent H0 [" << job[1] << "] to "  << worker << std::endl;
+				std::cerr << "Sent H0 [branch " << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_H1:
-				std::cerr << "Sent H1 [" << job[1] << "] to "  << worker << std::endl;
+				std::cerr << "Sent H1 [branch " << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_BEB:
-				std::cerr << "Sent BEB [" << job[1] << "] to " << worker << std::endl;
+				std::cerr << "Sent BEB [branch " << job[1] << "] to " << worker << std::endl;
 				break;
 			case JOB_SHUTDOWN:
-				std::cerr << "Sent SHUTDOWN to "               << worker << std::endl;
+				std::cerr << "Sent SHUTDOWN to "                      << worker << std::endl;
 				break;
 			default:
-				std::cerr << "Sent " << job[0] << " [" << job[1] << "] to " <<  worker << std::endl;
+				std::cerr << "Sent " << job[0] << " [branch " << job[1] << "] to " <<  worker << std::endl;
 				break;
 			}
 		}
@@ -431,7 +470,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		if(job[0] == JOB_SHUTDOWN)
 		{
 			--num_workers;
-			if(mVerbose >= VERBOSE_MORE_DEBUG) std::cerr << "Workers remaining " << num_workers << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << "Workers remaining " << num_workers << std::endl;
 			if(num_workers == 0) break;
 		}
 	}
@@ -447,9 +486,16 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 	std::cerr << std::endl;
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
-		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch <<
-					 "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0] << 
-					 "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
+		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch;
+		if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
+		{
+			std::cerr << "  Lnl H0: " << std::setw(12) << "NA";
+		}
+		else
+		{
+			std::cerr << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
+		}
+		std::cerr << "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
 	}
 
 	// Check if at least one site is under positive selection
@@ -547,8 +593,11 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			if(aCmdLine.mInitFromParams)		h0.initFromTreeAndParams();
 			else if(aCmdLine.mTimesFromFile)	h0.initFromTree();
 
+			// Get the lnl from the corresponding H1 step if any
+			double threshold = (job[2] > 0) ? values_double[0]-THRESHOLD_FOR_LRT : 0.;
+
 			// Compute H0
-			double lnl = h0(static_cast<size_t>(job[1]));
+			double lnl = h0(static_cast<size_t>(job[1]), job[2] > 0, threshold);
 	
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);
@@ -567,8 +616,12 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			// Compute H1
 			double lnl = h1(static_cast<size_t>(job[1]));
 
-			// Assemble the results to be passed to the master
+			// Assemble the results to be passed to the master (variables, lnl and scales for BEB)
 			h1.getVariables(values_double);
+			std::vector<double> scales(2);
+			h1.getScales(scales);
+			values_double.push_back(scales[0]); // bg scale
+			values_double.push_back(scales[1]); // fg scale
 			values_double.push_back(lnl);
 			job_request[0] = REQ_HX_RESULT;
 			job_request[1] = static_cast<int>(values_double.size());
@@ -580,8 +633,12 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			// Compute the BEB
 			BayesTest bt(aForest.getNumSites(), 0);
 
+			// Get the scale values
+			std::vector<double> scales(2);
+			scales.assign(values_double.end()-2, values_double.end());
+
 			// The vars are taken from the master
-			bt.computeBEB(aForest, values_double, aForest.getSiteMultiplicity(), static_cast<size_t>(job[1]));
+			bt.computeBEB(aForest, values_double, static_cast<size_t>(job[1]), scales);
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;

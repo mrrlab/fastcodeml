@@ -29,7 +29,7 @@ private:
 	/// @param[out] aSpecies The list of species read
 	/// @param[out] aSequences Array of genes, one per specie
 	///
-	/// @exception FastCodeMLFatalNoMsg On various error conditions
+	/// @exception FastCodeMLFatal On various error conditions
 	///
 	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences);
 };

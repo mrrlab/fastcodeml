@@ -36,8 +36,8 @@ const std::vector<std::string>& PhyloTree::getSpecies(void) const
 {
 	mSpeciesList.clear();
 
-	std::vector<TreeNode *>::const_iterator is = mLeavesSpecies.begin();
-	const std::vector<TreeNode *>::const_iterator end = mLeavesSpecies.end();
+	std::vector<TreeNode *>::const_iterator is(mLeavesSpecies.begin());
+	const std::vector<TreeNode *>::const_iterator end(mLeavesSpecies.end());
 	for(; is != end; ++is)
 	{
 		std::string label = (*is)->getLabel();

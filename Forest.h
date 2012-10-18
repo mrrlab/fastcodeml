@@ -72,6 +72,8 @@ public:
 	/// @param[in] aGenes The corresponding genes
 	/// @param[in] aCodonFrequencyModel Model to be used to compute the codon empirical frequencies.
 	///
+	/// @exception FastCodeMLFatal Invalid codon found
+	///
 	void loadTreeAndGenes(const PhyloTree& aTree,
 						  const Genes& aGenes,
 						  CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel);
@@ -106,6 +108,8 @@ public:
 	/// Add more aggressive subtree reduction.
 	///
 	/// @param[in] aNode The tree node from which the walker should start (no argument starts from the root)
+	///
+	/// @exception FastCodeMLMemoryError Cannot allocate mOtherTreeProb
 	///
 	void addAggressiveReduction(ForestNode* aNode=NULL);
 #endif
@@ -378,8 +382,8 @@ private:
 #ifdef USE_DAG
 	DAGScheduler mDAG;		///< DAG Scheduler
 #endif
-	unsigned int			mVerbose;					///< If greather than zero prints more info
-
+	unsigned int					mVerbose;					///< If greather than zero prints more info
+	std::multimap<size_t, size_t>	mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
 };
 
 #endif

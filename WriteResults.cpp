@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <climits>
 #include "WriteResults.h"
 
 
@@ -10,19 +11,11 @@ void WriteResults::outputResults(void)
 	// If no file set, then do nothing
 	if(!mFilename) return;
 
-	// Open the output file
-	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
-	if(!out.good())
-	{
-		std::cerr << "Cannot create results file <" << mFilename << ">" << std::endl;
-		return;
-	}
-
 	// Range of branches to be output (for H0 and H1)
-	std::map<size_t, double>::const_iterator im = mLnL[0].begin();
-	size_t min_branch = im->first;
-	size_t max_branch = min_branch;
-	for(; im != mLnL[0].end(); ++im)
+	std::map<size_t, double>::const_iterator im;
+	size_t min_branch = UINT_MAX;
+	size_t max_branch = 0;
+	for(im = mLnL[0].begin(); im != mLnL[0].end(); ++im)
 	{
 		size_t v = im->first;
 		if(v < min_branch) min_branch = v;
@@ -33,6 +26,17 @@ void WriteResults::outputResults(void)
 		size_t v = im->first;
 		if(v < min_branch) min_branch = v;
 		if(v > max_branch) max_branch = v;
+	}
+
+	// No entries, so do nothing
+	if(min_branch == UINT_MAX) return;
+
+	// Open the output file
+	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
+	if(!out.good())
+	{
+		std::cerr << "Cannot create results file <" << mFilename << ">" << std::endl;
+		return;
 	}
 
 	// Write the log-likelihood values (if a value is not present, write NA)

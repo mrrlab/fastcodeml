@@ -21,7 +21,7 @@ public:
 	///
 	CmdLine() : 
 		mDeltaValueForGradient(0.0),
-		mRelativeError(1e-8),
+		mRelativeError(1e-3),
 		mTreeFile(NULL),
 		mGeneFile(NULL),
 		mGraphFile(NULL),
@@ -41,7 +41,7 @@ public:
 		mTrace(false),
 		mForceSerial(false),
 		mBranchFromFile(false),
-		mInitH1fromH0(false),
+		mInitH0fromH1(false),
 		mInitFromParams(false),
 		mCmdLineImpl(NULL) {}
 
@@ -82,7 +82,7 @@ public:
 	bool			mTrace;					///< Trace the optimization steps
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
-	bool			mInitH1fromH0;			///< If set starts the H1 computation from the H0 results
+	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line 
 
 private:

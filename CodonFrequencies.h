@@ -58,7 +58,7 @@ public:
 
 		// Support values needed for the eigensolver
 		mNumGoodCodons = 0;
-		for(size_t k=0; k < N; ++k)
+		for(size_t k=0; k < static_cast<size_t>(N); ++k)
 		{
 			mCodonFreqSqrt[k] = sqrt(mCodonFrequencies[k]);
 

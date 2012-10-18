@@ -92,6 +92,8 @@ public:
 
 	/// Prints (on stderr) for each branch the first and last valid positions and the valid entries in this range).
 	///
+	/// @exception FastCodeMLFatal No SITE_EXISTS in mNodePresent at branch
+	///
 	void printCountGoodElements(void) const;
 
 	/// Prints (on stderr) the visit sequence of branches.
@@ -103,6 +105,8 @@ public:
 	void printNodeStatus(void) const;
 
 	/// Compute the commands needed to compact the various fat vectors (matrices, one for each branch) of probability vectors
+	///
+	/// @exception FastCodeMLFatal No SITE_EXISTS in mNodePresent at branch
 	///
 	void compactMatrix(void);
 

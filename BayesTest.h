@@ -12,19 +12,28 @@ const static double MIN_PROB       = 0.50;
 const static double ONE_STAR_PROB  = 0.95;
 const static double TWO_STARS_PROB = 0.99;
 
+///@cond Private
+
 /// Helper class to compute BEB_N1D^BEB_DIMS at compile time (that is Y^N)
+///
 template<unsigned int Y, unsigned int N>
 class Pow
 {
 public:
 	static const int value = Y * Pow<Y, N-1>::value;
 };
+
+/// Specialization of the above class to end the recursion
+///
 template<unsigned int Y>
 class Pow<Y, 1>
 {
 public:
 	static const int value = Y;
 };
+
+///@endcond
+
 
 /// Tests to find the sites under positive selection.
 ///
@@ -49,9 +58,12 @@ public:
 
 	/// Bayes Empirical Bayes (BEB) test.
 	///
-	/// @param[in] aModel The last computed H1 test
+	/// @param[in] aForest The forest
+	/// @param[in] aVars   The variables otimized at the end of H1 run
+	/// @param[in] aFgBranch The foreground branch under test
+	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
-	void computeBEB(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch);
+	void computeBEB(Forest& aForest, const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales);
 	
 	/// Print the sites under positive selection.
 	///
@@ -82,19 +94,30 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	double getGridParams(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch);
-
-	///    This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for 
-	///    the aTriangleIdx-th triangle, with aTriangleIdx from 0, 1, ..., BEB_N1D*BEB_N1D-1.  
-	///    The ternary graph (0-1 on each axis) is partitioned into BEB_N1D*BEB_N1D equal-sized triangles.  
-	///    In the first row (ix=0), there is one triangle (iy=0);
-	///    In the second row (ix=1), there are 3 triangles (iy=0,1,2);
-	///    In the i-th row (ix=i), there are 2*i+1 triangles (iy=0,1,...,2*i).
+	/// @param[in] aForest The forest
+	/// @param[in] aVars   The variables otimized at the end of H1 run
+	/// @param[in] aSiteMultiplicity   The site multiplicity vector
+	/// @param[in] aFgBranch The foreground branch under test
+	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
-	///    aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the 
-	///    centroid in the ij-th small triangle.
-	///    
-	///    aProbX and aProbY each takes on 2*BEB_N1D-1 possible values.
+	/// @return The computed scale.
+	///
+	double getGridParams(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales);
+
+	/// This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for 
+	/// the aTriangleIdx-th triangle, with aTriangleIdx from 0, 1, ..., BEB_N1D*BEB_N1D-1.
+	///
+	/// The ternary graph (0-1 on each axis) is partitioned into BEB_N1D*BEB_N1D equal-sized triangles.  
+	/// In the first row (ix=0), there is one triangle (iy=0);
+	/// In the second row (ix=1), there are 3 triangles (iy=0,1,2);
+	/// In the i-th row (ix=i), there are 2*i+1 triangles (iy=0,1,...,2*i).
+	///
+	/// aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the 
+	/// centroid in the ij-th small triangle. aProbX and aProbY each takes on 2*BEB_N1D-1 possible values.
+	///
+	/// @param[out] aProbX The p0 value on the X axis of the triangular grid
+	/// @param[out] aProbY The p1 value on the Y axis of the triangular grid
+	/// @param[in] aTriangleIdx The index inside the triangular grid.
 	///
 	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx);
 
@@ -103,7 +126,6 @@ private:
 	const static unsigned int BEB_N1D = 10;												///< Number of intervals for w0 and w2
 	const static unsigned int BEB_DIMS = 4;												///< Number of codon classes (0, 1, 2a, 2b)
 	const static unsigned int BEB_NUM_CAT = BEB_N1D + 1 + BEB_N1D*BEB_N1D + BEB_N1D;	///< Total number of categories for w0 and w2 (it is com.ncatG in codeml.c)
-	//const static unsigned int BEB_NGRID = BEB_N1D*BEB_N1D*BEB_N1D*BEB_N1D;			///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
 	const static unsigned int BEB_NGRID = Pow<BEB_N1D, BEB_DIMS>::value;				///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
 
 private:
