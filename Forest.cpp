@@ -568,7 +568,8 @@ void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsig
 	{
 		ForestNode *m = aNode->mChildrenList[i];
 
-		if(m->mInternalNodeId != UINT_MAX) aMapInternalToBranchID[m->mInternalNodeId] = m->mBranchId;
+		//if(m->mInternalNodeId != UINT_MAX) aMapInternalToBranchID[m->mInternalNodeId] = m->mBranchId;
+		if(m->mInternalNodeId != UINT_MAX) aMapInternalToBranchID.insert(std::pair<unsigned int, unsigned int>(m->mInternalNodeId, m->mBranchId));
 
 		mapInternalToBranchIdWalker(m, aMapInternalToBranchID);
 	}

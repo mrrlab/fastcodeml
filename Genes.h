@@ -12,7 +12,6 @@
 ///     @date 2010-12-22 (initial version)
 ///     @version 1.0
 ///
-///
 class Genes
 {
 protected:
@@ -22,14 +21,14 @@ protected:
 	///
 	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel), mOriginalNumSites(0)
 	{
-		mMapBaseToIdx['t'] = 0;
-		mMapBaseToIdx['T'] = 0;
-		mMapBaseToIdx['c'] = 1;
-		mMapBaseToIdx['C'] = 1;
-		mMapBaseToIdx['a'] = 2;
-		mMapBaseToIdx['A'] = 2;
-		mMapBaseToIdx['g'] = 3;
-		mMapBaseToIdx['G'] = 3;
+		mMapBaseToIdx.insert(std::pair<char, int>('t', 0));
+		mMapBaseToIdx.insert(std::pair<char, int>('T', 0));
+		mMapBaseToIdx.insert(std::pair<char, int>('c', 1));
+		mMapBaseToIdx.insert(std::pair<char, int>('C', 1));
+		mMapBaseToIdx.insert(std::pair<char, int>('a', 2));
+		mMapBaseToIdx.insert(std::pair<char, int>('A', 2));
+		mMapBaseToIdx.insert(std::pair<char, int>('g', 3));
+		mMapBaseToIdx.insert(std::pair<char, int>('G', 3));
 	}
 
 	/// Destructor
