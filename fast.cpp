@@ -238,7 +238,7 @@ int main(int ac, char **av)
 #endif
 
 	// Get the time needed by data preprocessing
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << forest;
@@ -251,7 +251,7 @@ int main(int ac, char **av)
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(has_run_under_MPI)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << timer.get() << std::endl;}
 		return 0;
 	}
 	else
@@ -304,6 +304,9 @@ int main(int ac, char **av)
 	// Initialize the models
 	BranchSiteModelNullHyp h0(forest, cmd);
 	BranchSiteModelAltHyp  h1(forest, cmd);
+
+	// Initialize the test
+	BayesTest beb(forest, cmd.mVerboseLevel);
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
@@ -383,29 +386,29 @@ int main(int ac, char **av)
 		// If the two hypothesis are computed, one has not been stopped and the run passes the LRT, then compute the BEB
 		if(cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
-			// Initialize the test
-			BayesTest bt(forest.getNumSites(), cmd.mVerboseLevel);
-
 			// Get the scale values from the latest optimized h1.
 			std::vector<double> scales(2);
 			h1.getScales(scales);
 
 			// Run the BEB test
-			bt.computeBEB(h1.getForest(), h1.getVariables(), fg_branch, scales);
+			beb.computeBEB(h1.getVariables(), fg_branch, scales);
 
 			// Output the sites under positive selection (if any)
-			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) bt.printPositiveSelSites(fg_branch);
+			if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) beb.printPositiveSelSites(fg_branch);
 
-			// Get the sites under positive selection for printing in the results file
-			std::vector<unsigned int> positive_sel_sites;
-			std::vector<double> positive_sel_sites_prob;
-			bt.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
-			output_results.savePositiveSelSites(fg_branch, positive_sel_sites, positive_sel_sites_prob);
+			// Get the sites under positive selection for printing in the results file (if defined)
+			if(output_results.isWriteResultsEnabled())
+			{
+				std::vector<unsigned int> positive_sel_sites;
+				std::vector<double> positive_sel_sites_prob;
+				beb.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
+				output_results.savePositiveSelSites(fg_branch, positive_sel_sites, positive_sel_sites_prob);
+			}
 		}
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << std::setprecision(3) << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
 	// Output the results
 	output_results.outputResults();
@@ -596,4 +599,3 @@ Usage:
 ///
 /// Now you can analyze the results by running vampir on the *.otf file generated.
 ///
-

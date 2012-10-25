@@ -46,11 +46,19 @@ class BayesTest
 public:
 	/// Constructor.
 	///
-	/// @param[in] aNumSites Number of sites
+	/// @param[in] aForest The forest
 	/// @param[in] aVerbose The verbosity level
 	///
-	explicit BayesTest(size_t aNumSites, unsigned int aVerbose=0)
-						: mSiteClassProb(BEB_DIMS*aNumSites), mNumSites(aNumSites), mVerbose(aVerbose), mPriors(aNumSites*BEB_NUM_CAT) {}
+	explicit BayesTest(Forest& aForest, unsigned int aVerbose=0)
+		: mForest(aForest), mNumSites(mForest.getNumSites()), mSiteClassProb(BEB_DIMS*mNumSites),
+		  mVerbose(aVerbose), mPriors(mNumSites*BEB_NUM_CAT), mDependencies(mForest, aVerbose), mBEBset(mForest.getNumBranches())
+	{
+		// Create the dependency list for forest likelihood computation
+		mDependencies.computeDependencies(1, false);
+		if(mVerbose >= VERBOSE_ONLY_RESULTS) mDependencies.print("TEST FOR BEB (before optimization)");
+		mDependencies.optimizeDependencies();
+		if(mVerbose >= VERBOSE_ONLY_RESULTS) mDependencies.print("TEST FOR BEB");
+	}
 
 	/// Destructor.
 	///
@@ -58,12 +66,11 @@ public:
 
 	/// Bayes Empirical Bayes (BEB) test.
 	///
-	/// @param[in] aForest The forest
 	/// @param[in] aVars   The variables otimized at the end of H1 run
 	/// @param[in] aFgBranch The foreground branch under test
 	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
-	void computeBEB(Forest& aForest, const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales);
+	void computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales);
 	
 	/// Print the sites under positive selection.
 	///
@@ -102,7 +109,7 @@ private:
 	///
 	/// @return The computed scale.
 	///
-	double getGridParams(Forest& aForest, const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales);
+	double getGridParams(const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales);
 
 	/// This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for 
 	/// the aTriangleIdx-th triangle, with aTriangleIdx from 0, 1, ..., BEB_N1D*BEB_N1D-1.
@@ -121,6 +128,16 @@ private:
 	///
 	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx);
 
+private:
+	/// Disabled assignment operator to avoid warning on Windows.
+	///
+	/// @fn BayesTest& operator=(const BayesTest& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	BayesTest& operator=(const BayesTest&);
 
 private:
 	const static unsigned int BEB_N1D = 10;												///< Number of intervals for w0 and w2
@@ -129,10 +146,13 @@ private:
 	const static unsigned int BEB_NGRID = Pow<BEB_N1D, BEB_DIMS>::value;				///< Number of points in the grid used to evaluate the integral. It is BEB_N1D^BEB_DIMS
 
 private:
-	std::vector<double> mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
-	size_t				mNumSites;						///< Number of sites.
-	unsigned int		mVerbose;						///< If greather than zero prints more info
-	std::vector<double>	mPriors;						///< Computed priors (each points to a list, one for each site)
+	Forest&					mForest;						///< The forest.
+	size_t					mNumSites;						///< Number of sites.
+	std::vector<double>		mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
+	unsigned int			mVerbose;						///< If greather than zero prints more info
+	std::vector<double>		mPriors;						///< Computed priors (each points to a list, one for each site)
+	TreeAndSetsDependencies	mDependencies;					///< Dependency list for likelihood computation
+	ProbabilityMatrixSetBEB	mBEBset;						///< Probability matrix set to be used for likelihood computation
 };
 
 #endif

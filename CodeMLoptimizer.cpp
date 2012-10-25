@@ -95,34 +95,37 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
        ix[i] specifies the i-th free parameter
 
     */
-    int i, j, i1, i2, it, fail = 0, *xmark, *ix, nfree;
+    int i, j, i1, i2, it, fail = 0, nfree;
     int Ngoodtimes = 2, goodtimes = 0;
     double small = 1.e-30, sizep0 = 0;	/* small value for checking |w|=0 */
-    double f0, *g0, *g, *p, *x0, *y, *s, *z, *H, *C, *tv;
-    double w, v, alpha, am, h, maxstep = 8;
+    double w, v, am, h, maxstep = 8;
+	int iround;
 
 	// Sanity check.
     if(n == 0) return 0;
 
 	// Prepare the temporary variables
-    g0 = space;
-    g = g0 + n;
-    p = g + n;
-    x0 = p + n;
-    y = x0 + n;
-    s = y + n;
-    z = s + n;
-    H = z + n;
-    C = H + n * n, tv = C + n * n;
-    //xmark = (int *) (tv + 2 * n);
-	xmark = ispace;
-    ix    = ispace + n;
+    double* g0 = space;
+    double* g  = g0 + n;
+    double* p  = g + n;
+    double* x0 = p + n;
+    double* y  = x0 + n;
+    double* s  = y + n;
+    double* z  = s + n;
+    double* H  = z + n;
+    double* C  = H + n * n;
+	double* tv = C + n * n;
+    //int* xmark = (int *) (tv + 2 * n);
+	int* xmark = ispace;
+    int* ix    = ispace + n;
 
-    for(i = 0; i < n; i++)
-    {
-        xmark[i] = 0;
-        ix[i] = i;
-    }
+	// Initialize the two integer workspaces
+    //for(i = 0; i < n; i++)
+    //{
+    //    xmark[i] = 0;
+    //    ix[i] = i;
+    //}
+	memset(ispace, 0, 2*n*sizeof(int));
 
     for(i = 0, nfree = 0; i < n; i++)
     {
@@ -158,27 +161,27 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         }
     }
 
-    //f0 = *f = (*fun) (x, n);	++mNumFunCall;
-	f0 = *f = -mModel->computeLikelihood(x, n, mTraceFun);
+    //double f0 = *f = (*fun) (x, n);	++mNumFunCall;
+	double f0 = *f = -mModel->computeLikelihood(x, n, mTraceFun);
     xtoy(x, x0, n);
-    mSIZEp = 99;
+    double sizep = 99.;
 
-    if (mNoisy > 2)
+    if(mNoisy > 2)
     {
         printf("\nInitial: fx = %12.6f\nx =", f0);
         for(i=0; i < n; ++i) printf(" %8.6f", x[i]);
         printf("\n");
     }
 
-    gradientB(n, x0, f0, g0, tv, xmark);
+    gradientB(n, x0, f0, g0, tv, xmark, sizep);
 
     identityMatrix(H, nfree);
 
-    for(mIround = 0; mIround < MAX_ITERATIONS; ++mIround)
+    for(iround = 0; iround < MAX_ITERATIONS; ++iround)
     {
         if (fout)
         {
-            fprintf(fout, "\n%3d %7.4f %13.6f  x: ", mIround, sizep0, f0);
+            fprintf(fout, "\n%3d %7.4f %13.6f  x: ", iround, sizep0, f0);
             for(j=0; j < n; ++j) fprintf(fout, "%8.6f  ", x0[i]);
             fflush(fout);
         }
@@ -187,8 +190,8 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             for(j=0; j < nfree; ++j)
 				p[ix[i]] -= H[i * nfree + j] * g0[ix[j]];
 
-        sizep0 = mSIZEp;
-        mSIZEp = norm(p, n);	/* check this */
+        sizep0 = sizep;
+        sizep = norm(p, n);	/* check this */
 
         for (i = 0, am = maxstep; i < n; i++)  	/* max step length */
         {
@@ -202,30 +205,31 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             }
         }
 
-        if (mIround == 0)
+        if(iround == 0)
         {
+			// First round
             h = fabs(2 * f0 * .01 / innerp(g0, p, n));	/* check this?? */
             h = min2(h, am / 2000.0);
 
         }
         else
         {
-            h = norm(s, nfree) / mSIZEp;
+            h = norm(s, nfree) / sizep;
             h = max2(h, am / 500.0);
         }
 
         h = max2(h, 1e-5);
         h = min2(h, am / 5.0);
         *f = f0;
-        alpha = LineSearch2(f, x0, p, h, am, min2(1e-3, rel_error), tv, n);	/* n or nfree? */
+        double alpha = LineSearch2(f, x0, p, h, am, min2(1e-3, rel_error), tv, iround, n);	/* n or nfree? */
 
-        if (alpha <= 0)
+        if(alpha <= 0)
         {
             if(fail)
             {
                 if(mAlwaysCenter)
                 {
-                    mIround = MAX_ITERATIONS;
+                    iround = MAX_ITERATIONS;
                     break;
                 }
                 else
@@ -237,7 +241,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             }
             else
             {
-                if (mNoisy > 2)
+                if(mNoisy > 2)
                 {
                     printf(".. ");
                 }
@@ -257,7 +261,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
                 w = 0.01;
             }
 
-            if (mIround == 0 || mSIZEp < sizep0 || (mSIZEp < .001 && sizep0 < .001))
+            if (iround == 0 || sizep < sizep0 || (sizep < .001 && sizep0 < .001))
             {
                 goodtimes++;
             }
@@ -266,13 +270,13 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
                 goodtimes = 0;
             }
 
-            if ((n == 1 || goodtimes >= Ngoodtimes) && mSIZEp < (rel_error > 1e-5 ? 1 : .001) && H_end(x0, x, f0, *f, rel_error, rel_error, n))
+            if ((n == 1 || goodtimes >= Ngoodtimes) && sizep < (rel_error > 1e-5 ? 1 : .001) && H_end(x0, x, f0, *f, rel_error, rel_error, n))
             {
                 break;
             }
         }
 
-		gradientB(n, x, *f, g, tv, xmark);
+		gradientB(n, x, *f, g, tv, xmark, sizep);
 
         /* modify the working set */
         for (i = 0; i < n; i++)  	/* add constraints, reduce H */
@@ -328,7 +332,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             }
         }
 
-        if (w > 10 * mSIZEp / nfree)  	/* *** */
+        if (w > 10 * sizep / nfree)  	/* *** */
         {
             xtoy(H, C, nfree * nfree);
 
@@ -386,7 +390,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 		for(i=0; i < nfree; ++i)
 			for(j=0; j < nfree; ++j)
 				H[i*nfree + j] += ((1 + w / v) * s[i] * s[j] - z[i] * s[j] - s[i] * z[j]) / v;
-    }				/* for (mIround,MAX_ITERATIONS)  */
+    }				/* for (iround,MAX_ITERATIONS)  */
 
     /* try to remove this after updating LineSearch2() */
     //*f = (*fun) (x, n);	++mNumFunCall;
@@ -397,7 +401,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         printf("\n");
     }
 
-    if (mIround == MAX_ITERATIONS)
+    if (iround == MAX_ITERATIONS)
     {
         if (fout)
         {
@@ -407,7 +411,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
         return -1;
     }
 
-    if (nfree == n)
+    if(nfree == n)
     {
         xtoy(H, space, n * n);	/* H has variance matrix, or inverse of Hessian */
         return 1;
@@ -417,9 +421,8 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 }
 
 bool Ming2::H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n) const
-/*   Himmelblau termination rule.   return true for stop, false otherwise.
-*/
 {
+	//   Himmelblau termination rule. Return true for stop, false otherwise.
     double r = norm(x0, n);
 
     if(r < e2) r = 1;
@@ -446,7 +449,7 @@ double Ming2::fun_LineSearch(double t, const double x0[], const double p[], doub
 
 
 
-double Ming2::LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int n)
+double Ming2::LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n)
 {
     /* linear search using quadratic interpolation
        from x0[] in the direction of p[],
@@ -470,7 +473,7 @@ double Ming2::LineSearch2(double *f, const double x0[], const double p[], double
     */
 
     if (mNoisy > 2)
-        printf("\n%3d h-m-p %7.4f %6.4f %8.4f ", mIround + 1, step, limit, norm(p, n));
+        printf("\n%3d h-m-p %7.4f %6.4f %8.4f ", iround + 1, step, limit, norm(p, n));
 
     if (step <= 0 || limit < small || step >= limit)
     {
@@ -810,7 +813,7 @@ double Ming2::LineSearch2(double *f, const double x0[], const double p[], double
 }
 
 
-void Ming2::gradientB(int n, const double x[], double f0, double g[], double space[], const int xmark[]) const
+void Ming2::gradientB(int n, const double x[], double f0, double g[], double space[], const int xmark[], double sizep) const
 {
     /* f0=fun(x) is always provided.
        xmark=0: central; 1: upper; -1: down
@@ -822,7 +825,7 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[], double spa
     {
         eh = mDeltaForGradient * (fabs(x[i]) + 1);
 
-        if(xmark[i] == 0 && (mAlwaysCenter || mSIZEp < 1))  	/* central */
+        if(xmark[i] == 0 && (mAlwaysCenter || sizep < 1))  	/* central */
         {
             for(j=0; j < n; ++j) x0[j] = x1[j] = x[j];
             eh = pow(eh, .67);

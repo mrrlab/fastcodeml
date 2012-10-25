@@ -75,6 +75,13 @@ struct HighLevelCoordinator::WorkTable
 		std::vector<double> mHxVariables[2];		///< Variables for H0 and H1
 		std::vector<int>    mPositiveSelSites;		///< Sites (if any) under positive selection
 		std::vector<double>	mPositiveSelProbs;		///< Corresponding probabilities
+
+		/// Default constructor.
+		///
+		ResultSet()
+		{
+			mLnl[0] = mLnl[1] = -DBL_MAX;
+		}
 	};
 
 	size_t					mNumInternalBranches;	///< Number of internal branches that can be marked as foreground branch.
@@ -543,6 +550,9 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 	// Initialize the two hypothesis
 	BranchSiteModelNullHyp h0(aForest, aCmdLine);
 	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
+		
+	// Initialize the BEB
+	BayesTest beb(aForest, 0);
 
 	// This value signals that this is the first work request
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
@@ -630,20 +640,17 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 		case JOB_BEB:
 			{
-			// Compute the BEB
-			BayesTest bt(aForest.getNumSites(), 0);
-
 			// Get the scale values
 			std::vector<double> scales(2);
 			scales.assign(values_double.end()-2, values_double.end());
 
-			// The vars are taken from the master
-			bt.computeBEB(aForest, values_double, static_cast<size_t>(job[1]), scales);
+			// Compute the BEB with the vars are taken from the master
+			beb.computeBEB(values_double, static_cast<size_t>(job[1]), scales);
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;
 			std::vector<double>       positive_sel_sites_prob;
-			bt.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
+			beb.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
 			size_t num_sites = positive_sel_sites.size();
 
 			// Assemble the results

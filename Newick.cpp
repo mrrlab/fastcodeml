@@ -1,10 +1,8 @@
 
 #ifdef _MSC_VER
-    #pragma warning(push)
     #pragma warning(disable: 4512) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
-    #pragma warning(disable: 4503) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
+    #pragma warning(disable: 4503) // warning C4503: '...' : decorated name length exceeded, name was truncated
 #endif
-
 
 #include <iostream>
 #include <fstream>
@@ -276,7 +274,3 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 	}
 }
 
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif

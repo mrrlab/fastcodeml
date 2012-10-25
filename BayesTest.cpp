@@ -7,7 +7,7 @@
 #include "TreeAndSetsDependencies.h"
 
 
-double BayesTest::getGridParams(Forest& aForest, const std::vector<double>& aVars2, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales2)
+double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales2)
 {
 	// Parameters for w0, w1, w2 prior computation
 	double prior_params[BEB_DIMS][BEB_N1D];
@@ -29,31 +29,32 @@ double BayesTest::getGridParams(Forest& aForest, const std::vector<double>& aVar
 	}
 
 	//TEST!
-	std::vector<double>aVars = aVars2;
-	std::vector<double> aScales = aScales2;
+	std::vector<double> aVars   = aVars2;    // After test rename funcion parameter to aVars
+	std::vector<double> aScales = aScales2;  // After test rename funcion parameter to aScales
 	FILE *fp = fopen("x.dat", "rb");
 	if(fp)
 	{
 		double x[32];
 		fread(x, sizeof(double), 32, fp); 
-		for(int i=0; i < 27; ++i) aVars[i] = x[i];
+		for(int i=0; i < 27; ++i) aVars[i] = x[i]; // 0-26 are branch lengths
 		double p0 = exp(x[28]); 
 		double p1 = exp(x[29]); 
 		double tot = p0+p1+1;
 		p0 /= tot;
 		p1 /= tot;
-		aVars[27] = p0+p1;
-		aVars[28] = p0/(p0+p1);
-		aVars[29] = x[30];
-		aVars[30] = x[27];
-		aVars[31] = x[31];
+		aVars[27] = p0+p1;							// v0
+		aVars[28] = p0/(p0+p1);						// v1
+		aVars[29] = x[30];							// w0
+		aVars[30] = x[31];							// w2
+		aVars[31] = x[27];							// k
 		for(int i=0; i < 32; ++i) {std::cerr << "t[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
 		fclose(fp);
 
 		//TEST! force the scale factors
-		std::cerr << "FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
+		std::cerr << "(computed) FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
 		aScales[1] = 1./5.833284036955;
 		aScales[0] = 1./5.834837576257;
+		std::cerr << "(forced)   FG: " << aScales[1]  << "  BG: " << aScales[0] << std::endl;
 	}
 
 	// Omega for foreground and background branches (the bools are for optimization)
@@ -62,20 +63,15 @@ double BayesTest::getGridParams(Forest& aForest, const std::vector<double>& aVar
 	bool omega_fg_is_one;
 	bool omega_bg_is_one;
 
-	// Get the optimized kappa from the last H1 computation (that is, I know the kappa is the third value after the branch lengths)
-	size_t kappa_idx = aForest.getNumBranches()+3;
+	// Get the optimized kappa from the last H1 computation (that is, I know the kappa is the forth value after the branch lengths)
+	size_t kappa_idx = mForest.getNumBranches() - 1 + 4;
 	const double kappa = aVars[kappa_idx];
 
 	// Compute the corresponding Q matrices for foreground and background branches
 	TransitionMatrix q_fg, q_bg;
 
-	// Create the dependency list for forest likelihood computation
-	TreeAndSetsDependencies dep(aForest, mVerbose);
-	dep.computeDependencies(1, true);
-
 	// Initialize the probability list
-	ProbabilityMatrixSetBEB beb_set(aForest.getNumBranches());
-	beb_set.initializeSet(aForest.adjustFgBranchIdx(aFgBranch));
+	mBEBset.initializeSet(mForest.adjustFgBranchIdx(aFgBranch));
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
@@ -120,27 +116,29 @@ double BayesTest::getGridParams(Forest& aForest, const std::vector<double>& aVar
 			#pragma omp section
 			{
 				if(omega_fg_is_one)
-					static_cast<void>(q_fg.fillMatrix(kappa));
+					q_fg.fillMatrix(kappa);
 				else
-					static_cast<void>(q_fg.fillMatrix(omega_fg, kappa));
+					q_fg.fillMatrix(omega_fg, kappa);
+
 				q_fg.eigenQREV();
 			} 
 			#pragma omp section
 			{
 				if(omega_bg_is_one)
-					static_cast<void>(q_bg.fillMatrix(kappa));
+					q_bg.fillMatrix(kappa);
 				else
-					static_cast<void>(q_bg.fillMatrix(omega_bg, kappa));
+					q_bg.fillMatrix(omega_bg, kappa);
+
 				q_bg.eigenQREV();
 			}
 		}
 
 		// Fill the matrix set with the new matrices and the times computed before (and scales from the latest H1 optimization)
-		beb_set.fillMatrixSet(q_fg, q_bg, aScales[0], aScales[1], aVars);
+		mBEBset.fillMatrixSet(q_fg, q_bg, aScales[0], aScales[1], aVars);
 
 		// Compute likelihoods
 		CacheAlignedDoubleVector likelihoods(mNumSites);
-		aForest.computeLikelihoods(beb_set, likelihoods, dep.getDependencies());
+		mForest.computeLikelihoods(mBEBset, likelihoods, mDependencies.getDependencies());
 		for(size_t site=0; site < mNumSites; ++site)
 		{
 			double p = likelihoods[site];
@@ -204,15 +202,15 @@ void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTr
 	*aProbY = (1. + (BEB_N1D - 1 - ix)*3. + (iy%2))/(3.*BEB_N1D);
 }
 
-void BayesTest::computeBEB(Forest& aForest, const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
+void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
 {
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
 
 	// Get the site multiplicity
-	const std::vector<double>& site_multiplicity = aForest.getSiteMultiplicity();
+	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
 
 	// Prepare the priors list
-	double scale1 = getGridParams(aForest, aVars, site_multiplicity, aFgBranch, aScales);
+	double scale1 = getGridParams(aVars, site_multiplicity, aFgBranch, aScales);
 
 	// Set up iw and codon_class_proportion, for each igrid and codon_class
 	unsigned int iw[BEB_NGRID*BEB_DIMS];

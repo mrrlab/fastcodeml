@@ -147,7 +147,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 //#endif
 		}
 	}
-	double time_leaf = timer.stop();
+	double time_leaf = static_cast<double>(timer.stop());
 
 	// Measure doTransition()
 	timer.start();
@@ -160,7 +160,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 //			elementWiseMult(dummy, cf);
 //#endif
 		}
-	double time_non_leaf = timer.stop();
+	double time_non_leaf = static_cast<double>(timer.stop());
 	unsigned int effort_ratio = static_cast<unsigned int>(time_non_leaf/time_leaf+0.5);
 #else
 	unsigned int effort_ratio = 16;

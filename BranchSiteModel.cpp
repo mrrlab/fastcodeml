@@ -1125,10 +1125,26 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		if(mTrace) std::cerr << "Optimization stopped because LRT not satisfied" << std::endl;
 		return DBL_MAX;
 	}
+	catch(const nlopt::roundoff_limited&)
+	{
+		throw FastCodeMLFatal("Exception in computation:Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+	}
+	catch(const std::runtime_error&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Generic failure, equivalent to NLOPT_FAILURE.");
+	}
+	catch(const std::invalid_argument&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Invalid arguments (e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etcetera), equivalent to NLOPT_INVALID_ARGS.");
+	}
+	catch(const std::bad_alloc&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Ran out of memory (a memory allocation failed), equivalent to NLOPT_OUT_OF_MEMORY.");
+	}
 	catch(const std::exception& e)
 	{
 		std::ostringstream o;
-		o << "Exception in computation: " << e.what() << std::endl;
+		o << "Exception in computation: " << e.what();
 		throw FastCodeMLFatal(o);
 	}
 

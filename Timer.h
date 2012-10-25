@@ -4,7 +4,15 @@
 
 #ifdef _MSC_VER
 
+// Define this if you want to enable the high resolution timer on Windows
+#define USE_WIN_MSEC_TIMER
+
+#ifdef USE_WIN_MSEC_TIMER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <time.h>
+#endif
 
 /// Simple timer.
 ///
@@ -17,25 +25,39 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : mDelta(0.) {start();}
+	Timer() : mDelta(0)
+	{
+#ifdef USE_WIN_MSEC_TIMER
+		QueryPerformanceFrequency(&mFreq);
+#endif
+		start();
+	}
 
 	/// Start the timer
 	///
 	void start(void)
 	{
+#ifndef USE_WIN_MSEC_TIMER
 		time(&mStartTime);
+#else
+		QueryPerformanceCounter(&mStartTime);
+#endif
 	}
 
 	/// Stop the timer
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	double stop(void)
+	time_t stop(void)
 	{
-		time_t end_time;
-		time(&end_time);
+#ifndef USE_WIN_MSEC_TIMER
+		mDelta = (time(NULL) - mStartTime)*1000L;
+#else
+		LARGE_INTEGER end_time_w;
+		QueryPerformanceCounter(&end_time_w);
 
-		mDelta = difftime(end_time, mStartTime)*1000;
+		mDelta = static_cast<time_t>(((end_time_w.QuadPart - mStartTime.QuadPart) * 1000)/mFreq.QuadPart);
+#endif
 		return mDelta;
 	}
 
@@ -43,14 +65,19 @@ public:
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	double get(void) const
+	time_t get(void) const
 	{
 		return mDelta;
 	}
 
 private:
-	time_t mStartTime;			///< The start time
-	double mDelta;				///< The elapsed time in milliseconds
+#ifndef USE_WIN_MSEC_TIMER
+	time_t			mStartTime;	///< The start time
+#else
+    LARGE_INTEGER	mFreq;		///< The timer frequency
+    LARGE_INTEGER	mStartTime;	///< The start time
+#endif
+	time_t			mDelta;		///< The elapsed time in milliseconds
 };
 
 #else
@@ -68,7 +95,7 @@ class Timer
 public:
 	/// Constructor
 	///
-	Timer() : mDelta(0.) {start();}
+	Timer() : mDelta(0) {start();}
 
 	/// Start the timer
 	///
@@ -81,14 +108,14 @@ public:
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	double stop(void)
+	time_t stop(void)
 	{
 		struct timeval end_time;
 		gettimeofday(&end_time, NULL);
 
-		mDelta  = static_cast<double>(end_time.tv_sec)*1e6+end_time.tv_usec;
-		mDelta -= static_cast<double>(mStartTime.tv_sec)*1e6+mStartTime.tv_usec;
-		mDelta /= 1000.;
+		mDelta  = end_time.tv_sec*1000000L+end_time.tv_usec;
+		mDelta -= mStartTime.tv_sec*1000000L+mStartTime.tv_usec;
+		mDelta /= 1000L;
 
 		return mDelta;
 	}
@@ -97,14 +124,14 @@ public:
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	double get(void) const
+	time_t get(void) const
 	{
 		return mDelta;
 	}
 
 private:
-	struct timeval mStartTime;	///< The start time
-	double         mDelta;		///< The elapsed time in milliseconds
+	struct timeval	mStartTime;	///< The start time
+	time_t			mDelta;		///< The elapsed time in milliseconds
 };
 
 #endif

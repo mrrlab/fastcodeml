@@ -4,11 +4,19 @@
 
 // The following headers contain stuff that AlignedAllocator uses.
 #include <stdlib.h>  // For malloc() and free()
+#ifdef __MTA__
+//extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
+static int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+	*memptr = malloc(size);
+	return 0;
+}
+#endif
 
 #include "AlignedMalloc.h"
 
 #ifndef _MSC_VER
-#include <stdint.h>  // for uintptr_t
+//#include <stdint.h>  // for uintptr_t
 #include <malloc.h>
 #endif
 

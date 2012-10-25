@@ -33,9 +33,7 @@ public:
 			mDeltaForGradient(aDeltaForGradient),
 			mRelativeError(aRelativeError),
 			mAlwaysCenter(false),
-			mNoisy(0),
-			mIround(0),
-			mSIZEp(0.) {}
+			mNoisy(0) {}
 
 	/// Do the minimization of: aModel->computeLikelihood(x, n, mTraceFun);
 	///
@@ -71,8 +69,9 @@ private:
 	/// @param[out] g The computed gradient
 	/// @param[out] space Workspace
 	/// @param[in] xmark 0: central; 1: upper; -1: down
+	/// @param[in] sizep SIZEp original variable
 	///
-	void gradientB(int n, const double x[], double f0, double g[], double space[], const int xmark[]) const;
+	void gradientB(int n, const double x[], double f0, double g[], double space[], const int xmark[], double sizep) const;
 
 	/// Himmelblau termination rule.
 	///
@@ -114,11 +113,12 @@ private:
 	/// @param[in] limit Limit the range of search between 0 and this value
 	/// @param[in] e (Unknown)
 	/// @param[out] space Workspace
+	/// @param[in] iround Iteration number just for reporting
 	/// @param[in] n Number of coordinates
 	///
 	/// @return The value of a as in: x = x0 + a*p  a ~(0,limit)
 	///
-	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int n);
+	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n);
 
 	/// Disabled assignment operator to avoid warning on Windows
 	///
@@ -144,8 +144,6 @@ private:
 	/// The following variables are from the original code
 	bool						mAlwaysCenter;		///< From the original code
 	int							mNoisy;				///< How much rubbish on the screen. Valid values: 0,1,2,3,9
-	int							mIround;			///< From the original code
-	double						mSIZEp;				///< From the original code
 };
 
 #endif

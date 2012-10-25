@@ -469,7 +469,6 @@ void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* 
 
 void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode)
 {
-	std::vector<ForestNode *>::const_iterator ifnp;
 
 	// Get all forest connections
 	if(!aNode)
@@ -478,7 +477,9 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 		const std::vector<ForestNode>::iterator end(mRoots.end());
 		for(; ifn != end; ++ifn)
 		{
-			for(ifnp=ifn->mChildrenList.begin(); ifnp != ifn->mChildrenList.end(); ++ifnp)
+			std::vector<ForestNode *>::const_iterator ifnp(ifn->mChildrenList.begin());
+			const std::vector<ForestNode *>::const_iterator end(ifn->mChildrenList.end());
+			for(; ifnp != end; ++ifnp)
 			{
 				setLengthsFromTimes(aTimes, *ifnp);
 			}
@@ -489,7 +490,9 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 		const unsigned int idx = aNode->mBranchId+1;
 		mBranchLengths[idx] = aTimes[aNode->mBranchId];
 
-		for(ifnp=aNode->mChildrenList.begin(); ifnp != aNode->mChildrenList.end(); ++ifnp)
+		std::vector<ForestNode *>::const_iterator ifnp(aNode->mChildrenList.begin());
+		const std::vector<ForestNode *>::const_iterator end(aNode->mChildrenList.end());
+		for(; ifnp != end; ++ifnp)
 		{
 			setLengthsFromTimes(aTimes, *ifnp);
 		}

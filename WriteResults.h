@@ -51,6 +51,11 @@ public:
 	///
 	void savePositiveSelSites(size_t aFgBranch, const std::vector<unsigned int>& aPositiveSelSites, const std::vector<double>& aPositiveSelSitesProb);
 
+	/// Check if anything will be output at the end.
+	///
+	/// @return True if the output to file is enabled.
+	///
+	bool isWriteResultsEnabled(void) const { return mFilename != NULL; }
 
 private:
 	const char*					mFilename;			///< The file to which the results should be written. If null, no printing appear
