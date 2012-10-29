@@ -4,7 +4,9 @@
 
 #include <vector>
 #include <cstdlib>
-#include "BranchSiteModel.h"
+#include "TreeAndSetsDependencies.h"
+#include "ProbabilityMatrixSet.h"
+#include "VerbosityLevels.h"
 
 /// The minimum value for class 2 sites probability to be a positive selection site.
 ///

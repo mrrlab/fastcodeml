@@ -224,7 +224,7 @@ class ProbabilityMatrixSetH0 : public ProbabilityMatrixSet
 public:
 	/// Create matrix set. It allocates 3 sets.
 	///
-	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
 	ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3, 2) {}
 
@@ -245,7 +245,7 @@ public:
 	///	@param[in] aQ1 The mQ1 transition matrix
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (p0+p1, p0/(p0+p1), w0, k, w2)
 	///
 	void fillMatrixSet(const TransitionMatrix& aQw0,
 						    const TransitionMatrix& aQ1,
@@ -298,7 +298,7 @@ class ProbabilityMatrixSetH1 : public ProbabilityMatrixSet
 public:
 	/// Create matrix set
 	///
-	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
 	ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4, 3) {}
 
@@ -320,7 +320,7 @@ public:
 	///	@param[in] aQw2 The mQw2 transition matrix
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (p0+p1, p0/(p0+p1), w0, k, w2)
 	///
 	void fillMatrixSet(const  TransitionMatrix& aQw0,
 						    const  TransitionMatrix& aQ1,
@@ -373,17 +373,17 @@ private:
 class ProbabilityMatrixSetBEB : public ProbabilityMatrixSet
 {
 public:
-	/// Create matrix set
+	/// Create matrix set.
 	///
-	/// @param[in] aNumMatrices The number of matrices to be managed (is the number of branches of the tree)
+	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1, 1) {}
-
-	/// Initialize the set for a given foreground branch number for H1
-	///
-	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
-	///
-	void initializeSet(unsigned int aFgBranch);
+	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1, 1)
+	{
+		for(int branch=0; branch < mNumMatrices; ++branch)
+		{
+			mMatrices[branch] = &mMatrixSpace[branch*MATRIX_SLOT];
+		}
+	}
 
 	/// Compute the sets of matrices for the BEB computation.
 	/// The sets are (these are the bg and fg matrices): 
@@ -396,7 +396,7 @@ public:
 	///	@param[in] aQbg The transition matrix for the bg branch
 	/// @param[in] aSbg Background Q matrix scale
 	/// @param[in] aSfg Foreground Q matrix scale
-	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (k, w0, 02, p0+p1, p0/(p0+p1), w2)
+	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (p0+p1, p0/(p0+p1), w0, k, w2)
 	///
 	void fillMatrixSet(const  TransitionMatrix& aQfg,
 					   const  TransitionMatrix& aQbg,

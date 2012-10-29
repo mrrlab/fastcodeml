@@ -2,9 +2,8 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <climits>
+#include <limits>
 #include "WriteResults.h"
-
 
 void WriteResults::outputResults(void)
 {
@@ -13,7 +12,7 @@ void WriteResults::outputResults(void)
 
 	// Range of branches to be output (for H0 and H1)
 	std::map<size_t, double>::const_iterator im;
-	size_t min_branch = UINT_MAX;
+	size_t min_branch = std::numeric_limits<size_t>::max();
 	size_t max_branch = 0;
 	for(im = mLnL[0].begin(); im != mLnL[0].end(); ++im)
 	{
@@ -29,7 +28,7 @@ void WriteResults::outputResults(void)
 	}
 
 	// No entries, so do nothing
-	if(min_branch == UINT_MAX) return;
+	if(min_branch == std::numeric_limits<size_t>::max()) return;
 
 	// Open the output file
 	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
@@ -40,8 +39,7 @@ void WriteResults::outputResults(void)
 	}
 
 	// Write the log-likelihood values (if a value is not present, write NA)
-	size_t branch;
-	for(branch = min_branch; branch <= max_branch; ++branch)
+	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
 		out << "Branch: " << std::setw(4) << branch << "  LnL0: ";
 
@@ -71,7 +69,7 @@ void WriteResults::outputResults(void)
 	}
 
 	// Write the positive selection sites
-	for(branch = min_branch; branch <= max_branch; ++branch)
+	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
 		std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double> > >::const_iterator ipss;
 		ipss = mPositiveSelSites.find(branch);

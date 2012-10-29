@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <iterator>
 #include <algorithm>
-#include <climits>
+#include <limits>
 #include "Genes.h"
 #include "Exceptions.h"
 #include "VerbosityLevels.h"
@@ -188,10 +188,10 @@ void Genes::readFile(const char* aFilename)
 	size_t nspecies = mDnaSpecies.size();
 
 	// Check for too many sites (in Forest site*0+class is coded in a unsigned int)
-	if(ncodons >= UINT_MAX/10)
+	if(ncodons >= std::numeric_limits<size_t>::max()/10U)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " too many basis. Max " << UINT_MAX/10 << std::endl;
+		o << "File " << aFilename << " too many basis. Max " << std::numeric_limits<size_t>::max()/10U << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 

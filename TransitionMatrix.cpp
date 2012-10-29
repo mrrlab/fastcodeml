@@ -396,7 +396,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
     dsyevr_("V", "A", "U", &aDim, aU, &aDim, &D0, &D0, &I0, &I0, &D0, &m, aR, tmp_u, &N64, isuppz, &opt_work, &lwork, &opt_iwork, &liwork, &info);
 	if(info != 0) throw FastCodeMLMemoryError("Error sizing workareas");
 
-	//Notice that LAPACK stores an integer value in a double array
+	// Notice that LAPACK stores an integer value in a double array
     lwork = static_cast<unsigned long>(opt_work);
     liwork = opt_iwork;
 
@@ -647,6 +647,7 @@ fclose(fp);
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
+		throw;
 	}
 }
 #else
@@ -797,6 +798,7 @@ checkReducedEigen(mNumGoodFreq, z, true);
 	catch(std::exception& e)
 	{
 		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
+		throw;
 	}
 #ifdef CHECK_ALGO
 	std::cerr << "*=*=*=* Check eigen" << std::endl;

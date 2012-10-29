@@ -8,7 +8,7 @@
 
 /// Minimizer from CodeML.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS) based on code from Ziheng Yang CodeML.
 ///     @date 2012-01-11 (initial version)
 ///     @version 1.0
 ///

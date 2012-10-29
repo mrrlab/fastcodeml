@@ -43,7 +43,7 @@ endif(Boost_FOUND)
 # Get the configuration switches
 OPTION(USE_LAPACK         		"Use BLAS/LAPACK" ON)
 OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
-OPTION(USE_OPENMP         		"Compile with OpenMP support" OFF)
+OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
 OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
 if(NOT WIN32)
 OPTION(BUILD_NOT_SHARED   		"Build FastCodeML not shared" OFF)
@@ -166,6 +166,8 @@ if($ENV{HOST} MATCHES "matterhorn")
 	add_definitions(-exceptions)
 	add_definitions(-pl ${CMAKE_CURRENT_BINARY_DIR}/fast.pl)
 
+	set(EXTRA_LIBS "m")
+
 endif($ENV{HOST} MATCHES "matterhorn")
 
 ###########################################################
@@ -220,12 +222,13 @@ endif($ENV{HOST} MATCHES "eiger")
 # Executable
 add_executable(fast ${SRCS})
 
-
 # Link libraries
 target_link_libraries(fast nlopt)
 if(MATH_LIB_NAMES AND USE_LAPACK)
 	target_link_libraries(fast ${MATH_LIB_NAMES})
 endif(MATH_LIB_NAMES AND USE_LAPACK)
+
+target_link_libraries(fast ${EXTRA_LIBS})
 
 if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})

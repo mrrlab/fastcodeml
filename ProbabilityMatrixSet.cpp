@@ -185,16 +185,6 @@ void ProbabilityMatrixSetH1::setMatrices(size_t aBranch, const double** aMatrice
 	}
 }
 
-void ProbabilityMatrixSetBEB::initializeSet(unsigned int aFgBranch)
-{
-	mFgBranch = static_cast<int>(aFgBranch);
-
-	int num_matrices = mNumMatrices;
-	for(int branch=0; branch < num_matrices; ++branch)
-	{
-		mMatrices[branch] = &mMatrixSpace[branch*MATRIX_SLOT];
-	}
-}
 
 void ProbabilityMatrixSetBEB::fillMatrixSet(const TransitionMatrix& aQfg, const TransitionMatrix& aQbg, double aSbg, double aSfg, const std::vector<double>& aParams)
 {

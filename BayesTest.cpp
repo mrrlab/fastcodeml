@@ -3,9 +3,6 @@
 #include <iomanip>
 #include <cmath>
 #include "BayesTest.h"
-#include "VerbosityLevels.h"
-#include "TreeAndSetsDependencies.h"
-
 
 double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales2)
 {
@@ -23,14 +20,14 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 	// Initialize the w0 and w2 values to be tested
 	for(unsigned int i=0; i < BEB_N1D; i++)
 	{
-		prior_params[0][i] = prior_params[1][i] = -1;				// p0 & p1
+		prior_params[0][i] = prior_params[1][i] = -1.;				// p0 & p1
 		prior_params[2][i] = w0b0 + (i+0.5)*(w0b1-w0b0)/BEB_N1D;	// w0
 		prior_params[3][i] = w2b0 + (i+0.5)*(w2b1-w2b0)/BEB_N1D;	// w2
 	}
 
 	//TEST!
-	std::vector<double> aVars   = aVars2;    // After test rename funcion parameter to aVars
-	std::vector<double> aScales = aScales2;  // After test rename funcion parameter to aScales
+	std::vector<double> aVars   = aVars2;    // After test rename function parameter to aVars
+	std::vector<double> aScales = aScales2;  // After test rename function parameter to aScales
 	FILE *fp = fopen("x.dat", "rb");
 	if(fp)
 	{
@@ -47,7 +44,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 		aVars[29] = x[30];							// w0
 		aVars[30] = x[31];							// w2
 		aVars[31] = x[27];							// k
-		for(int i=0; i < 32; ++i) {std::cerr << "t[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
+		for(int i=0; i < 32; ++i) {std::cerr << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
 		fclose(fp);
 
 		//TEST! force the scale factors
@@ -70,8 +67,8 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 	// Compute the corresponding Q matrices for foreground and background branches
 	TransitionMatrix q_fg, q_bg;
 
-	// Initialize the probability list
-	mBEBset.initializeSet(mForest.adjustFgBranchIdx(aFgBranch));
+	// Initialize the probability list. Only the fg branch needs to be set
+	mBEBset.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
@@ -143,7 +140,9 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 		{
 			double p = likelihoods[site];
 			mPriors[iw*mNumSites+site] = (p > 0) ? log(p) : -184.2068074395237; // If p < 0 then the value in codeml.c is: log(1e-80);
-		}
+
+printf("LNL: step: %3u site: %3lu %20.12e\n", iw, site, mPriors[iw*mNumSites+site]);
+ 		}
 
 		if(mVerbose >= VERBOSE_ONLY_RESULTS)
 		{
@@ -159,17 +158,15 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 	double scale = 0.;
 	for(size_t site=0; site < mNumSites; ++site)
 	{
-		size_t k;
-
 		// Find the maximum likelihood for the given site between all the try values (121 values)
 		double fh = mPriors[site];
-		for(k=1; k < BEB_NUM_CAT; ++k)
+		for(size_t k=1; k < BEB_NUM_CAT; ++k)
 		{
 			if(mPriors[k*mNumSites+site] > fh) fh = mPriors[k*mNumSites+site];
 		}
 
 		// Normalize the priors so they are less or equal to 0, then exponent to remove the previous log.
-		for(k=0; k < BEB_NUM_CAT; ++k)
+		for(size_t k=0; k < BEB_NUM_CAT; ++k)
 		{
 			mPriors[k*mNumSites+site] = exp(mPriors[k*mNumSites+site]-fh);
 		}
@@ -356,7 +353,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
 		                                           << "  Scales = " << scale1 << " " << scale2 << std::endl;
 
-	// Calculate posterior probabilities for sites.  scale1 is scale factor
+	// Calculate posterior probabilities for sites. scale1 is scale factor
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
 
 	for(unsigned int site=0; site < mNumSites; ++site)
