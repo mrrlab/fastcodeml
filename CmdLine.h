@@ -33,7 +33,6 @@ public:
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
 		mExtraDebug(0),
-		mNumReductionBlocks(1),
 		mIgnoreFreq(false),
 		mDoNotReduceForest(false),
 		mTimesFromFile(false),
@@ -74,7 +73,6 @@ public:
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
-	unsigned int	mNumReductionBlocks;	///< Number of blocks for the "divide and conquer" approach: 0 no reduction, 1 the usual reuse
 	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
 	bool			mTimesFromFile;			///< The initial value of the branch lengths is taken from the phylo tree file

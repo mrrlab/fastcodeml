@@ -103,7 +103,6 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	/// @param[in] aForest The forest
 	/// @param[in] aVars   The variables otimized at the end of H1 run
 	/// @param[in] aSiteMultiplicity   The site multiplicity vector
 	/// @param[in] aFgBranch The foreground branch under test

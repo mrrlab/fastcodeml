@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cstring>
 #include <cstdio>
+#include <limits>
 #include <boost/dynamic_bitset.hpp>
 #include "Forest.h"
 #include "ForestNode.h"
@@ -128,19 +129,38 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Save the new to original site number map
 	mSitesMappingToOriginal = aGenes.getSitesMappingToOriginal();
 	
+#if 0
 	// Set mapping from original to reduced
-	std::vector<unsigned int> sites_forw_mapping(aGenes.getOriginalNumSites());
+	mSitesMappingFromOriginal.resize(aGenes.getOriginalNumSites(), std::numeric_limits<size_t>::max());
+	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
+	{
+		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret(mSitesMappingToOriginal.equal_range(j));
+
+		std::multimap<size_t, size_t>::iterator it(ret.first);
+		const std::multimap<size_t, size_t>::iterator end(ret.second);
+		for(; it != end; ++it) mSitesMappingFromOriginal[it->second] = j;
+	}
+
 	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
 	{
 		std::multimap<size_t, size_t>::iterator it;
-		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret;
-		ret = mSitesMappingToOriginal.equal_range(j);
+		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret = mSitesMappingToOriginal.equal_range(j);
 
+		std::cerr << std::setw(5) << j;
 		for(it=ret.first; it != ret.second; ++it)
 		{
-			sites_forw_mapping[it->second] = static_cast<unsigned int>(j);
+			std::cerr << std::setw(5) << it->second;
 		}
+		std::cerr << std::endl;
 	}
+	for(size_t j=0; j < aGenes.getOriginalNumSites(); ++j)
+	{
+		if(mSitesMappingFromOriginal[j] == std::numeric_limits<size_t>::max())
+			std::cerr << std::setw(5) << j << std::setw(5) << "-" << std::endl;
+		else
+			std::cerr << std::setw(5) << j << std::setw(5) << mSitesMappingFromOriginal[j] << std::endl;
+	}
+#endif
 
 #ifdef NEW_LIKELIHOOD
 	postLoad();
@@ -267,7 +287,6 @@ void Forest::postLoad(void)
 }
 #endif
 
-#if 0
 void Forest::reduceSubtrees(void)
 {
 	// Setup dependency vectors
@@ -287,8 +306,8 @@ void Forest::reduceSubtrees(void)
 		}
 	}
 }
-#endif
 
+#if 0
 bool Forest::reduceSubtrees(unsigned int aBlocks)
 {
 	// Setup dependency vectors
@@ -342,6 +361,7 @@ bool Forest::reduceSubtrees(unsigned int aBlocks)
 
 	return true;
 }
+#endif
 
 
 void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)

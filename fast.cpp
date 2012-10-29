@@ -203,10 +203,11 @@ int main(int ac, char **av)
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
-		bool sts = forest.reduceSubtrees(cmd.mNumReductionBlocks);
+		//bool sts = forest.reduceSubtrees(cmd.mNumReductionBlocks);
+		forest.reduceSubtrees();
 
 #ifndef NEW_LIKELIHOOD
-		if(sts) forest.addAggressiveReduction();
+		forest.addAggressiveReduction();
 #endif
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
@@ -500,7 +501,7 @@ Usage:
     FastCodeML [options] tree_file gene_file
 
 -d  --debug  -v  --verbose (required argument)
-        Verbosity level
+        Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
 
 -q  --quiet (no argument)
         No messages except results
@@ -544,14 +545,14 @@ Usage:
 -hy  --only-hyp (required argument)
         Compute only H0 if 0, H1 if 1
 
--i0  --init-from-h0 (no argument)
-        Start H1 optimization from H0 results
+-i1  --init-from-h1 (no argument)
+        Start H0 optimization from H1 results
 
 -m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)
+        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML) (default: 0)
 
 -sd  --small-diff (required argument)
-        Delta used in gradient computation
+        Delta used in gradient computation (default: 1.49e-8)
 
 -p  --init-param (required argument)
         Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
@@ -564,9 +565,6 @@ Usage:
 
 -re  --relative-error (required argument)
         Relative error where to stop maximization (default: 1e-3)
-
--rb  --reduction-blocks (required argument)
-        Divide reduce subtrees into these blocks (zero disables it)
 
 -ou  --output (required argument)
         Write results formatted to this file

@@ -412,6 +412,9 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 {
 	bool print_title = true;
 
+	// Access the mapping from internal to original site numbers
+	const std::multimap<size_t, size_t>& internal_to_original_site = mForest.getSitesMappingToOriginal();
+
 	// For all sites
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -433,7 +436,16 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			else                          sig = "";
 
 			// Print site number and probability
-			std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+			//std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+
+			// Print site number and probability after mapping the site number to the original value
+			std::pair<std::multimap<size_t, size_t>::const_iterator,std::multimap<size_t, size_t>::const_iterator> ret(internal_to_original_site.equal_range(site));
+			std::multimap<size_t, size_t>::const_iterator it(ret.first);
+			const std::multimap<size_t, size_t>::const_iterator end(ret.second);
+			for(; it != end; ++it)
+			{
+				std::cerr << std::setw(6) << it->second << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+			}
 		}
 	}
 }
@@ -445,6 +457,9 @@ void BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelS
 	aPositiveSelSites.clear();
 	aPositiveSelSitesProb.clear();
 
+	// Access the mapping from internal to original site numbers
+	const std::multimap<size_t, size_t>& internal_to_original_site = mForest.getSitesMappingToOriginal();
+
 	// For all sites
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -452,8 +467,14 @@ void BayesTest::extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelS
 		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
 		if(prob > MIN_PROB)
 		{
-			aPositiveSelSites.push_back(site);
-			aPositiveSelSitesProb.push_back(prob);
+			std::pair<std::multimap<size_t, size_t>::const_iterator,std::multimap<size_t, size_t>::const_iterator> ret(internal_to_original_site.equal_range(site));
+			std::multimap<size_t, size_t>::const_iterator it(ret.first);
+			const std::multimap<size_t, size_t>::const_iterator end(ret.second);
+			for(; it != end; ++it)
+			{
+				aPositiveSelSites.push_back(static_cast<unsigned int>(it->second));
+				aPositiveSelSitesProb.push_back(prob);
+			}
 		}
 	}
 }

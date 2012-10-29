@@ -132,13 +132,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
 		OPT_REL_ERROR,
-		OPT_NUM_RBLOCKS,
 		OPT_OUT_RESULTS
 	};
 
 	// Then the definitions of each command line option
 	CSimpleOpt::SOption parser_options[] = {
-		{ OPT_VERBOSE,			"-d",					SO_REQ_SEP, "Verbosity level" },
+		{ OPT_VERBOSE,			"-d",					SO_REQ_SEP, "Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)" },
 		{ OPT_VERBOSE,			"--debug",				SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"-v",					SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"--verbose",			SO_REQ_SEP, "" },
@@ -173,9 +172,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H0_FROM_H1,	"-i1",					SO_NONE,	"Start H0 optimization from H1 results" },
 		{ OPT_INIT_H0_FROM_H1,	"--init-from-h1",		SO_NONE,	"" },
-		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML)" },
+		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML) (default: 0)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
-		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation" },
+		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation (default: 1.49e-8)" },
 		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_PARAM,		"-p",					SO_REQ_SEP,	"Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)" },
 		{ OPT_INIT_PARAM,		"--init-param",			SO_REQ_SEP,	"" },
@@ -185,8 +184,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
 		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization (default: 1e-3)" },
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
-		{ OPT_NUM_RBLOCKS,		"-rb",					SO_REQ_SEP,	"Divide reduce subtrees into these blocks (zero disables it)" },
-		{ OPT_NUM_RBLOCKS,		"--reduction-blocks",	SO_REQ_SEP,	"" },
 		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
@@ -320,10 +317,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_REL_ERROR:
 			mRelativeError = atof(args.OptionArg());
 			if(mRelativeError <= 0.0) throw FastCodeMLFatal("Invalid relative error value");
-			break;
-
-		case OPT_NUM_RBLOCKS:
-			mNumReductionBlocks = static_cast<unsigned int>(atoi(args.OptionArg()));
 			break;
 
 		case OPT_OUT_RESULTS:

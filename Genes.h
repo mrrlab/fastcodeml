@@ -79,6 +79,10 @@ public:
 	///
 	const std::multimap<size_t, size_t>& getSitesMappingToOriginal(void) const {return mSitesMappingToOriginal;}
 
+	/// Get the number of sites in the loaded MSA.
+	///
+	/// @return The number of sites in the loaded gene file.
+	///
 	size_t getOriginalNumSites(void) const {return mOriginalNumSites;}
 
 

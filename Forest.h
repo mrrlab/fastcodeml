@@ -87,12 +87,11 @@ public:
 	///
 	friend std::ostream& operator<< (std::ostream& aOut, const Forest& aForest);
 
-#if 0
 	/// Reduce common subtrees on the whole forest.
 	///
 	void reduceSubtrees(void);
-#endif
 
+#if 0
 	/// Reduce common subtrees on the whole forest adopting a divide-and-conquer approach.
 	/// If aBlocks is 1, then the routine works as the old one, reducing all the sites together.
 	/// If aBlocks is 0, no reduction is performed and a false is returned.
@@ -103,6 +102,7 @@ public:
 	/// @return True if the reduction has taken place.
 	///
 	bool reduceSubtrees(unsigned int aBlocks);
+#endif
 
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction.
@@ -216,6 +216,12 @@ public:
 	/// @return A reference to the list of node names.
 	///
 	const std::vector<std::string>& getNodeNames(void) const {return mNodeNames;}
+
+	/// Get the mapping from the internal site number to the original site.
+	///
+	/// @return Multimap with key the internal site, and value one of the original sites.
+	///
+	const std::multimap<size_t, size_t>& getSitesMappingToOriginal(void) {return mSitesMappingToOriginal;}
 
 #ifdef NEW_LIKELIHOOD
 	/// All the preparatory steps needed for the Fat Vector approach.
