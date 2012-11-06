@@ -36,7 +36,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Initialize the count of codon types
 	std::vector<unsigned int> codon_count(N, 0);
 
-	// Initialize the array of all probability vectors
+	// Initialize the array of all probability vectors to be all zeros
 	mProbs.assign(mNumSites*(mNumBranches+1)*Nt*VECTOR_SLOT, 0.0);
 #ifdef NEW_LIKELIHOOD
 	mProbsOut.assign(mNumSites*(mNumBranches+1)*Nt*VECTOR_SLOT, 0.0);
@@ -68,35 +68,35 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 			// Node id (adjusted so root is 0)
 			unsigned int node = (*il)->mBranchId+1;
 
-			// Get the codon index and add it to the node signature
-			int codon = aGenes.getCodonIdx(mNodeNames[node], site);
-			if(codon < 0)
-			{
-				std::ostringstream o;
-				o << "Invalid codon at site " << site << " node: " << node << " " << mNodeNames[node] << std::endl;
-				throw FastCodeMLFatal(o);
-			}
+			// Get the codon index and internally build the list of corresponding positions
+			long codon = aGenes.getCodonIdx(mNodeNames[node], site);
+
+			// Add the codon index to the node signature
 			(*il)->mPreprocessingSupport->mSubtreeCodonsSignature.push_back(codon);
 
-			// Record the codon number on the leaf node (to use a simpler transition for leaves)
-			(*il)->mLeafCodon = static_cast<short>(codon);
+			// Record the codon number on the leaf node (to use a simpler transition computation for leaves) it it is a simple codon
+			(*il)->mLeafCodon = (codon < 0) ? -1 : static_cast<short>(codon);
 
 			// Set leaves probability vector (Nt copies)
+			// Beware, the arrays should be already zeroed
 #ifdef NEW_LIKELIHOOD
-			for(int set=0; set < Nt; ++set) mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)+codon] = 1.0
+
 #ifdef USE_GLOBAL_SCALING	
-				*GLOBAL_SCALING_FACTOR
-#endif
-				; // The rest already zeroed by assign()
+			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb(&mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)], GLOBAL_SCALING_FACTOR);
 #else
-			for(int set=0; set < Nt; ++set) (*il)->mProb[set][codon] = 1.0
+			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb(&mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)]);
+#endif
+#else
+
 #ifdef USE_GLOBAL_SCALING	
-				*GLOBAL_SCALING_FACTOR
+			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set], GLOBAL_SCALING_FACTOR);
+#else
+			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set]);
 #endif
-				; // The rest already zeroed by assign()
 #endif
+
 			// Count codons
-			codon_count[codon] += mult[site];
+			aGenes.updateCodonCount(codon_count, mult[site]);
 		}
 
 		// Combine the subtrees signatures going up to the root

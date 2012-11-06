@@ -27,7 +27,7 @@ struct ForestNodeSupport
 	///
 	ForestNodeSupport() {}
 
-	std::vector<int>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
+	std::vector<long>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
 };
 
 /// One node of each tree in the forest.
@@ -264,8 +264,8 @@ struct ForestNode
 		// Print the indexes of the codons accumulated till this node
 		if(mPreprocessingSupport)
 		{
-			std::vector<int>::const_iterator ig(mPreprocessingSupport->mSubtreeCodonsSignature.begin());
-			const std::vector<int>::const_iterator end(mPreprocessingSupport->mSubtreeCodonsSignature.end());
+			std::vector<long>::const_iterator ig(mPreprocessingSupport->mSubtreeCodonsSignature.begin());
+			const std::vector<long>::const_iterator end(mPreprocessingSupport->mSubtreeCodonsSignature.end());
 			for(; ig != end; ++ig) aOut << *ig << ' ';
 			aOut << std::endl;
 		}

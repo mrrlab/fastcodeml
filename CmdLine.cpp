@@ -132,7 +132,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
 		OPT_REL_ERROR,
-		OPT_OUT_RESULTS
+		OPT_OUT_RESULTS,
+		OPT_CLEAN_DATA
 	};
 
 	// Then the definitions of each command line option
@@ -186,6 +187,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
 		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
+		{ OPT_CLEAN_DATA,		"-cl",					SO_NONE,	"Remove ambiguous or missing sites from the MSA (default: no)" },
+		{ OPT_CLEAN_DATA,		"--clean-data",			SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
 
@@ -321,6 +324,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_OUT_RESULTS:
 			mResultsFile = args.OptionArg();
+			break;
+
+		case OPT_CLEAN_DATA:
+			mCleanData = true;
 			break;
 		}
 	}

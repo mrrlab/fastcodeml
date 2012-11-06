@@ -21,14 +21,7 @@ protected:
 	///
 	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel), mOriginalNumSites(0)
 	{
-		mMapBaseToIdx.insert(std::pair<char, int>('t', 0));
-		mMapBaseToIdx.insert(std::pair<char, int>('T', 0));
-		mMapBaseToIdx.insert(std::pair<char, int>('c', 1));
-		mMapBaseToIdx.insert(std::pair<char, int>('C', 1));
-		mMapBaseToIdx.insert(std::pair<char, int>('a', 2));
-		mMapBaseToIdx.insert(std::pair<char, int>('A', 2));
-		mMapBaseToIdx.insert(std::pair<char, int>('g', 3));
-		mMapBaseToIdx.insert(std::pair<char, int>('G', 3));
+		initFullCodonMap();
 	}
 
 	/// Destructor
@@ -39,10 +32,11 @@ public:
 	/// Load the gene file.
 	///
 	/// @param[in] aFilename The filename containing the genes under analysis
+	/// @param[in] aCleanData If true remove missing or ambiguous sites
 	///
 	/// @exception FastCodeMLFatal If cannot open file and other problems
 	///
-	void readFile(const char* aFilename);
+	void readFile(const char* aFilename, bool aCleanData);
 
 	/// Return the number of valid sites loaded.
 	///
@@ -57,13 +51,32 @@ public:
 	const std::vector<unsigned int>& getSiteMultiplicity(void) const {return mSiteMultiplicity;}
 
 	/// Return the codon index for the one identified by the specie label and the site.
+	/// It record internally the decoded codon to be used by setLeaveProb() and updateCodonCount()
 	///
 	/// @param[in] aSpecie The specie label.
 	/// @param[in] aSite The site index.
 	///
 	/// @return The codon index or -1 in case of error or invalid codon at the given position.
 	///
-	int getCodonIdx(std::string aSpecie, size_t aSite) const;
+	long getCodonIdx(std::string aSpecie, size_t aSite) const;
+
+	/// Set the correct positions in the leave probability vector to one.
+	///
+	/// @param[out] aLeaveProbVect The leave probability vector to be set.
+	/// @param[in] aProb The probability to be set at the codon positions inside aLeaveProbVect.
+	///
+	/// @exception FastCodeMLFatal If saved codon is invalid.
+	///
+	void setLeaveProb(double* aLeaveProbVect, double aProb=1.0) const;
+
+	/// Update codon count in a given array.
+	///
+	/// @param[in,out] aCodonCounts Counts for each codon type.
+	/// @param[in] aSiteMultiplicity The multiplicity of the given site.
+	///
+	/// @exception FastCodeMLFatal If saved codon is invalid.
+	///
+	void updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const;
 
 	/// Check coherence between tree and genes.
 	///
@@ -86,22 +99,26 @@ public:
 	size_t getOriginalNumSites(void) const {return mOriginalNumSites;}
 
 
-protected:
-	/// Test if the three letters of the argument represent a valid codon 
-	///
-	/// @param[in] aCodon String of three letters TCAG repesenting the codon (not null terminated)
-	/// @return True if codon is a valid codon and not a stop codon
-	///
-	bool validCodon(const char* aCodon) const {return idxCodon(aCodon) >= 0;}
-
-	/// Return the index of the given codon
-	///
-	/// @param[in] aCodon String of three letters TCAG repesenting the codon (not null terminated)
-	/// @return Index in the range 0 - 60 (or -1 if the codon is invalid)
-	///
-	int idxCodon(const char* aCodon) const;
-
 private:
+	/// Convert givend codon in the codons positions after expanding ambiguous characters.
+	/// The valid letter are TGKCYSBAWRDMHVN and U that is mapped to T and - that is mapped to N.
+	/// The full list can be found on http://en.wikipedia.org/wiki/Nucleic_acid_notation
+	///
+	/// @param[in] aCodon The three letters for the codon (no need to be zero terminated)
+	///
+	/// @return The list of expanded positions or an empty list on error.
+	///
+	const std::vector<int>& getPositions(const char* aCodon) const;
+
+	/// Test if the three letters of the argument represent a valid codon.
+	///
+	/// @param[in] aCodon String of three letters repesenting the codon (not null terminated)
+	/// @param[in] aRemoveAmbiguous If true only TCAG codons are valid, else also ambiguous one are valid
+	///
+	/// @return True if codon is a valid codon
+	///
+	bool validCodon(const char* aCodon, bool aRemoveAmbiguous) const;
+
 	/// Load the gene file.
 	/// This routine is redefined in every derived class to load a specific format.
 	///
@@ -113,18 +130,32 @@ private:
 	///
 	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences) =0;
 
+	/// Initialize the valid codon map.
+	/// This routine fills mMapCodonToPosition.
+	///
+	void initFullCodonMap(void);
+
+	/// Compare two codons.
+	///
+	/// @return True if the codons are valid, equal or if ambiguous expand to the same set of positions.
+	///
+	bool compareCodons(const char* aCodon1, const char* aCodon2) const;
+
 protected:
-	unsigned int						mVerboseLevel;				///< The verbosity level as set in the constructor
+	unsigned int								mVerboseLevel;				///< The verbosity level as set in the constructor
 
 private:
-	std::vector<std::string>			mDnaSpecies;				///< The list of species labels
-	std::vector<std::string>			mDnaGene;					///< The gene DNA basis strings
-	std::vector<unsigned int>			mSiteMultiplicity;			///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
-	std::vector<unsigned int>			mMapSiteToDnaGene;			///< Map the site number to the position in mDnaGene
-	std::map<std::string, unsigned int> mMapSpecieToDnaGene;		///< Map specie name to position in the gene list mDnaGene
-	std::map<char, int>					mMapBaseToIdx;				///< Map DNA base letter (TCAG) to number 0 to 3
-	std::multimap<size_t, size_t>		mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
-	size_t								mOriginalNumSites;			///< Original number of sites (before cleaning)
+	std::vector<std::string>					mDnaSpecies;				///< The list of species labels
+	std::vector<std::string>					mDnaGene;					///< The gene DNA basis strings
+	std::vector<unsigned int>					mSiteMultiplicity;			///< Site multiplicity (sites with multiplicity of zero has been removed from the site list)
+	std::vector<unsigned int>					mMapSiteToDnaGene;			///< Map the site number to the position in mDnaGene
+	std::map<std::string, unsigned int>			mMapSpecieToDnaGene;		///< Map specie name to position in the gene list mDnaGene
+	std::multimap<size_t, size_t>				mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites
+	size_t										mOriginalNumSites;			///< Original number of sites (before cleaning)
+
+	std::map<std::string, std::vector<int> >	mMapCodonToPosition;		///< Map codons (including ambiguous ones) to positions on the CPV
+	std::vector<int>							mEmptyVector;				///< Empty vector to be returned if no position available
+	mutable std::vector<int>					mCurrentPositions;			///< Positions for the last codon decoded
 };
 
 #endif

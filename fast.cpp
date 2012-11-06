@@ -109,6 +109,8 @@ int main(int ac, char **av)
 		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
 		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
 		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
+		if(cmd.mCleanData)							std::cerr << "Clean data:    On" << std::endl;
+		else										std::cerr << "Clean data:    Off" << std::endl;
 		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
 													std::cerr << "Optimizer:     " << cmd.mOptimizationAlgo << std::endl;
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cerr << "Delta value:   " << cmd.mDeltaValueForGradient << std::endl;
@@ -179,7 +181,7 @@ int main(int ac, char **av)
 	{
 	// Load the multiple sequence alignment (MSA)
 	Phylip msa(cmd.mVerboseLevel);
-	msa.readFile(cmd.mGeneFile);
+	msa.readFile(cmd.mGeneFile, cmd.mCleanData);
 
 	// Load the phylogenetic tree
 	Newick tree(cmd.mVerboseLevel);
@@ -568,6 +570,9 @@ Usage:
 
 -ou  --output (required argument)
         Write results formatted to this file
+
+-cl  --clean-data (no argument)
+        Remove ambiguous or missing sites from the MSA (default: no)
 
 @endverbatim
 */

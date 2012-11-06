@@ -42,6 +42,7 @@ public:
 		mBranchFromFile(false),
 		mInitH0fromH1(false),
 		mInitFromParams(false),
+		mCleanData(false),
 		mCmdLineImpl(NULL) {}
 
 	/// Destructor.
@@ -81,7 +82,8 @@ public:
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
-	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line 
+	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line
+	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 
 private:
 	struct CmdLineImpl;

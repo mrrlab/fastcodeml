@@ -6,6 +6,7 @@
 #include <iterator>
 #include <algorithm>
 #include <limits>
+#include <cctype>
 #include "Genes.h"
 #include "Exceptions.h"
 #include "VerbosityLevels.h"
@@ -18,125 +19,23 @@ Genes::~Genes()
 	mSiteMultiplicity.clear();	
 	mMapSiteToDnaGene.clear();	
 	mMapSpecieToDnaGene.clear();
+	mSitesMappingToOriginal.clear();
+	mMapCodonToPosition.clear();
+	mCurrentPositions.clear();
 }
 
 
-int Genes::idxCodon(const char* aCodon) const
+bool Genes::validCodon(const char* aCodon, bool aRemoveAmbiguous) const
 {
-	int i, j, k;
-#if 1
-	std::map<char, int>::const_iterator im = mMapBaseToIdx.find(aCodon[0]);
-	if(im == mMapBaseToIdx.end()) return -1;
-	i = im->second;
-	if(aCodon[0] == aCodon[1])
-	{
-		j = i;
-	}
-	else
-	{
-		im = mMapBaseToIdx.find(aCodon[1]);
-		if(im == mMapBaseToIdx.end()) return -1;
-		j = im->second;
-	}
-	if(aCodon[0] == aCodon[2])
-	{
-		k = i;
-	}
-	else if(aCodon[1] == aCodon[2])
-	{
-		k = j;
-	}
-	else
-	{
-		im = mMapBaseToIdx.find(aCodon[2]);
-		if(im == mMapBaseToIdx.end()) return -1;
-		k = im->second;
-	}
-#else
-	switch(aCodon[0])
-	{
-	case 'T':
-	case 't':
-		i = 0;
-		break;
-	case 'C':
-	case 'c':
-		i = 1;
-		break;
-	case 'A':
-	case 'a':
-		i = 2;
-		break;
-	case 'G':
-	case 'g':
-		i = 3;
-		break;
-	default:
-		return -1;
-	}
+	const std::vector<int>& pos = getPositions(aCodon);
 
-	switch(aCodon[1])
-	{
-	case 'T':
-	case 't':
-		j = 0;
-		break;
-	case 'C':
-	case 'c':
-		j = 1;
-		break;
-	case 'A':
-	case 'a':
-		j = 2;
-		break;
-	case 'G':
-	case 'g':
-		j = 3;
-		break;
-	default:
-		return -1;
-	}
-
-	switch(aCodon[2])
-	{
-	case 'T':
-	case 't':
-		k = 0;
-		break;
-	case 'C':
-	case 'c':
-		k = 1;
-		break;
-	case 'A':
-	case 'a':
-		k = 2;
-		break;
-	case 'G':
-	case 'g':
-		k = 3;
-		break;
-	default:
-		return -1;
-	}
-#endif
-	// Check if it is a stop codon
-	if(i == 0)
-	{
-		if((j == 2) && (k == 2 || k == 3)) return -1;
-		else if(j == 3 && k == 2) return -1;
-	}
-
-	// Compute the index
-	int idx = i*4*4+j*4+k;
-
-	// Adjust for missing stop codons
-	if(idx > 14) return idx-3;
-	if(idx >  9) return idx-2;
-	return idx;
+	if(pos.empty()) return false;		// Invalid codon
+	if(pos.size() == 1) return true;	// Valid, non ambiguous codon
+	return !aRemoveAmbiguous;			// Ambiguous codon
 }
 
 
-int Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
+long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 {
 	// Find the specie
 	const unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;
@@ -147,8 +46,54 @@ int Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 	// Convert the site to the position on the gene
 	unsigned int position_on_gene = mMapSiteToDnaGene[aSite];
 
-	// Return the index for the codon
-	return idxCodon(gene+3*position_on_gene);
+	// Get the list of positions for the given codon
+	const std::vector<int>& pos = getPositions(gene+3*position_on_gene);
+
+	// Update last decoded set of positions
+	mCurrentPositions.assign(pos.begin(), pos.end());
+
+	// Return -1 if invalid, the position or a negative code summarizing all the positions
+	if(pos.empty()) return -1;
+	if(pos.size() == 1) return pos[0];
+	long code = 0;
+	for(size_t i=0; i < pos.size(); ++i) code |= (1 << pos[i]);
+	return -code;
+}
+
+void Genes::setLeaveProb(double* aLeaveProbVect, double aProb) const
+{
+	if(mCurrentPositions.empty())
+	{
+		throw FastCodeMLFatal("Invalid codon found in setLeaveProb.");
+	}
+	else
+	{
+		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = aProb;
+	}
+}
+
+void Genes::updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const
+{
+	if(mCurrentPositions.empty())
+	{
+		throw FastCodeMLFatal("Invalid codon found in updateCodonCount.");
+	}
+	else
+	{
+		for(size_t i=0; i < mCurrentPositions.size(); ++i) aCodonCounts[mCurrentPositions[i]] += aSiteMultiplicity;
+	}
+}
+
+bool Genes::compareCodons(const char* aCodon1, const char* aCodon2) const
+{
+	const std::vector<int>& pos1 = getPositions(aCodon1);
+	const std::vector<int>& pos2 = getPositions(aCodon2);
+
+	if(pos1.empty() || pos2.empty()) return false;	// Both should be valid
+	if(pos1.size() != pos2.size()) return false;	// They should expand to the same number of positions
+
+	for(size_t i=0; i < pos1.size(); ++i) if(pos1[i] != pos2[i]) return false;	// All positions must be equal
+	return true;
 }
 
 
@@ -174,7 +119,7 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 }
 
 
-void Genes::readFile(const char* aFilename)
+void Genes::readFile(const char* aFilename, bool aCleanData)
 {
 	// Read sequences and the corresponding species
 	loadData(aFilename, mDnaSpecies, mDnaGene);
@@ -204,7 +149,7 @@ void Genes::readFile(const char* aFilename)
 		const char *p = mDnaGene[i].c_str();
 		for(j=0; j < ncodons; ++j)
 		{
-			if(!validCodon(&p[3*j])) codon_multiplicity[j] = 0;
+			if(!validCodon(&p[3*j], aCleanData)) codon_multiplicity[j] = 0;
 		}
 	}
 
@@ -237,7 +182,7 @@ void Genes::readFile(const char* aFilename)
 			for(; k < nspecies; ++k)
 			{
 				const char *p = mDnaGene[k].c_str();
-				if(p[3*i+0] != p[3*j+0] || p[3*i+1] != p[3*j+1] || p[3*i+2] != p[3*j+2]) break;
+				if(!compareCodons(p+3*i, p+3*j)) break;
 			}
 			if(k == nspecies)
 			{
@@ -318,3 +263,132 @@ void Genes::readFile(const char* aFilename)
 	for(; is != end; ++is, ++idx) mMapSpecieToDnaGene[*is] = idx;
 }
 
+void Genes::initFullCodonMap(void)
+{
+	int i, j, k;
+
+	// Create the list of codons without ambiguities
+	const char* base = "TCAG";
+	std::map<std::string, int> codons;
+
+	char codon[4];
+	codon[3] = '\0';
+
+	for(i=0; i < 4; ++i)
+	{
+		for(j=0; j < 4; ++j)
+		{
+			for(k=0; k < 4; ++k)
+			{
+				// Skip stop codons
+			    if(i == 0)
+			    {
+					if((j == 2) && (k == 2 || k == 3)) continue;
+					else if(j == 3 && k == 2) continue;
+			    }
+
+			    // Compute the index
+			    int idx = i*4*4+j*4+k;
+
+			    // Adjust for missing stop codons
+			    if(idx > 14) idx -= 3;
+			    else if(idx >  9) idx -= 2;
+
+				// Create the valid codon
+			    codon[0] = base[i];
+			    codon[1] = base[j];
+			    codon[2] = base[k];
+
+				// Add to the map from codon to position in the CPV
+			    codons.insert(std::pair<std::string, int>(std::string(codon), idx));
+			}
+		}
+	}
+
+	// Create the list of codons with ambiguous positions
+	int mask[4] = {0x1, 0x4, 0x8, 0x2};
+	const char* amb = ".TGKCYSBAWRDMHVN";
+	char codona[4];
+	codona[3] = '\0';
+	codon[3] = '\0';
+
+	for(i=1; i < 16; ++i)
+	{
+		for(j=1; j < 16; ++j)
+		{
+			for(k=1; k < 16; ++k)
+			{
+				// Build one of the possible codons (valid and ambiguous)
+				codona[0] = amb[i];					
+				codona[1] = amb[j];					
+				codona[2] = amb[k];					
+
+				std::vector<int> pos;
+				bool valid = false;
+
+				// Translate back to the corresponding non-ambiguous codons
+				for(int mi=0; mi < 4; ++mi)
+				{
+					for(int mj=0; mj < 4; ++mj)
+					{
+						for(int mk=0; mk < 4; ++mk)
+						{
+							if((i & mask[mi]) && (j & mask[mj]) && (k & mask[mk]))
+							{
+								codon[0] = base[mi];
+								codon[1] = base[mj];
+								codon[2] = base[mk];
+
+								// If valid, record the corresponding position
+								std::map<std::string, int>::const_iterator im(codons.find(codon));
+								if(im == codons.end()) continue;
+
+								valid = true;
+								pos.push_back(im->second);
+							}
+						}
+					}
+				}
+
+				// This is a valid, possibly ambiguous codon
+				if(valid)
+				{
+					mMapCodonToPosition.insert(std::pair<std::string, std::vector<int> >(std::string(codona), pos));
+				}
+			}
+		}
+	}
+}
+
+
+const std::vector<int>& Genes::getPositions(const char* aCodon) const
+{
+	// Convert to canonical form (only valid uppercase letters)
+	char codon[4];
+	if(aCodon[0] == '-') codon[0] = 'N';
+	else
+	{
+		char b = toupper(aCodon[0]);
+		codon[0] = (b == 'U') ? 'T' : b;
+	}
+	if(aCodon[1] == '-') codon[1] = 'N';
+	else
+	{
+		char b = toupper(aCodon[1]);
+		codon[1] = (b == 'U') ? 'T' : b;
+	}
+	if(aCodon[2] == '-') codon[2] = 'N';
+	else
+	{
+		char b = toupper(aCodon[2]);
+		codon[2] = (b == 'U') ? 'T' : b;
+	}
+	codon[3] = '\0';
+
+	// Check if it is in the list of valid codons
+	std::map<std::string, std::vector<int> >::const_iterator im(mMapCodonToPosition.find(std::string(codon)));
+
+	// If no, return an empty list, else return the list of corresponding positions
+	if(im == mMapCodonToPosition.end()) return mEmptyVector;
+	return im->second;
+}
