@@ -40,10 +40,6 @@
 #include "HighLevelCoordinator.h"
 #endif
 
-//int num_eigenqrev = 0;
-//int num_matmat = 0;
-//int num_matvect = 0;
-
 /// Main program for FastCodeML.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -55,6 +51,9 @@
 ///
 int main(int ac, char **av)
 {
+	//std::cerr << "ac: " << ac << std::endl;
+	//for(int i=0; i < ac; ++i) std::cerr << i << " <" << av[i] << '>' << std::endl;
+
 	try
 	{
 #ifdef USE_MKL_VML
@@ -164,7 +163,6 @@ int main(int ac, char **av)
 																  << ParseParameters::getInstance();
 													}
 	}
-
 
 	// Initialize the random number generator (0 means it is not set on the command line)
 	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));
@@ -416,9 +414,6 @@ int main(int ac, char **av)
 	// Output the results
 	output_results.outputResults();
 
-	//std::cerr << "Num. eigenQREV: " << num_eigenqrev << std::endl;
-	//std::cerr << "Num. Matrix matrix: " << num_matmat << std::endl;
-	//std::cerr << "Num. Matrix vector: " << num_matvect << std::endl;
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions
 	}
