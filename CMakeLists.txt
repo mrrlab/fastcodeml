@@ -53,6 +53,7 @@ OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" 
 SET(   USE_LIKELIHOOD_METHOD	"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
 
 
 # Search for OpenMP support
