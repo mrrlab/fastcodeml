@@ -133,7 +133,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_EXTRA_DEBUG,
 		OPT_REL_ERROR,
 		OPT_OUT_RESULTS,
-		OPT_CLEAN_DATA
+		OPT_CLEAN_DATA,
+		OPT_NO_PRE_STOP
 	};
 
 	// Then the definitions of each command line option
@@ -189,9 +190,11 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		{ OPT_CLEAN_DATA,		"-cl",					SO_NONE,	"Remove ambiguous or missing sites from the MSA (default: no)" },
 		{ OPT_CLEAN_DATA,		"--clean-data",			SO_NONE,	"" },
+		{ OPT_NO_PRE_STOP,		"-ps",					SO_NONE,	"Don't stop H0 maximization if it cannot satisfy LRT (default: stop)" },
+		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};
-
+	
 	// Setup the usage string
 	const char* usage_msg = "FastCodeML [options] tree_file gene_file";
 
@@ -328,6 +331,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_CLEAN_DATA:
 			mCleanData = true;
+			break;
+
+		case OPT_NO_PRE_STOP:
+			mStopIfNotLRT = false;
 			break;
 		}
 	}

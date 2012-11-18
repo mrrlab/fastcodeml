@@ -43,7 +43,9 @@ public:
 		mInitH0fromH1(false),
 		mInitFromParams(false),
 		mCleanData(false),
-		mCmdLineImpl(NULL) {}
+		mCmdLineImpl(NULL),
+		mStopIfNotLRT(true)
+	{}
 
 	/// Destructor.
 	///
@@ -84,6 +86,7 @@ public:
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the comman line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
+	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
 
 private:
 	struct CmdLineImpl;

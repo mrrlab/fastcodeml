@@ -607,7 +607,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 			double threshold = (job[2] > 0) ? values_double[0]-THRESHOLD_FOR_LRT : 0.;
 
 			// Compute H0
-			double lnl = h0(static_cast<size_t>(job[1]), job[2] > 0, threshold);
+			double lnl = h0(static_cast<size_t>(job[1]), aCmdLine.mStopIfNotLRT && job[2] > 0, threshold);
 	
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);

@@ -335,7 +335,7 @@ int main(int ac, char **av)
 			else if(cmd.mInitFromParams)	h0.initFromTreeAndParams();
 			else if(cmd.mTimesFromFile)		h0.initFromTree();
 
-			lnl0 = h0(fg_branch, cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
+			lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
 
 			// Save the value for formatted output (only if has not be forced to stop)
 			if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
@@ -568,6 +568,9 @@ Usage:
 
 -cl  --clean-data (no argument)
         Remove ambiguous or missing sites from the MSA (default: no)
+
+-ps  --no-pre-stop (no argument)
+        Don't stop H0 maximization if it cannot satisfy LRT (default: stop)
 
 @endverbatim
 */
