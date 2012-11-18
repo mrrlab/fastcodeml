@@ -190,7 +190,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		{ OPT_CLEAN_DATA,		"-cl",					SO_NONE,	"Remove ambiguous or missing sites from the MSA (default: no)" },
 		{ OPT_CLEAN_DATA,		"--clean-data",			SO_NONE,	"" },
-		{ OPT_NO_PRE_STOP,		"-ps",					SO_NONE,	"Don't stop H0 maximization if it cannot satisfy LRT (default: stop)" },
+		{ OPT_NO_PRE_STOP,		"-ps",					SO_NONE,	"Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)" },
 		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
 		SO_END_OF_OPTIONS
 	};

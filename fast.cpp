@@ -570,7 +570,7 @@ Usage:
         Remove ambiguous or missing sites from the MSA (default: no)
 
 -ps  --no-pre-stop (no argument)
-        Don't stop H0 maximization if it cannot satisfy LRT (default: stop)
+        Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
 
 @endverbatim
 */
