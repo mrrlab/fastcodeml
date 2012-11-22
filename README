@@ -1,3 +1,5 @@
+How to set your hostname for cmake to recognize your system: export HOST=<hostname>
+
 How to compile without CMake:
 g++ *.cpp ./libblas.a ./liblapack.a ./libblas.a ./liblapack.a ./libnlopt.a -DUSE_LAPACK -D_USE_OPTIMIZER -lgfortran -lm -o codeml
 Notice this does NOT optimize the code!!!

@@ -1,3 +1,4 @@
+# CMakeLists.txt by mvalle@cscs.ch, some modifications by hannes.schabauer@unil.ch
 cmake_minimum_required(VERSION 2.8.0)
 project(FastCodeML)
 
@@ -160,7 +161,7 @@ include_directories(${INCLUDE_DIR_NLOPT})
 
 ###########################################################
 # Set options for the various platforms
-if($ENV{HOST} MATCHES "matterhorn")
+if($ENV{HOST} MATCHES "matterhorn") #CSCS machine
 
 	add_definitions(-DBOOST_NO_CWCTYPE)
 	add_definitions(-xmt2)
@@ -172,7 +173,7 @@ if($ENV{HOST} MATCHES "matterhorn")
 endif($ENV{HOST} MATCHES "matterhorn")
 
 ###########################################################
-if($ENV{HOST} MATCHES "julier")
+if($ENV{HOST} MATCHES "julier") #CSCS machine
 
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl -restrict" CACHE "Flags used by the compiler during all build types" STRING)
@@ -181,7 +182,7 @@ if($ENV{HOST} MATCHES "julier")
 endif($ENV{HOST} MATCHES "julier")
 
 ###########################################################
-if($ENV{HOST} MATCHES "rosa")
+if($ENV{HOST} MATCHES "rosa") #CSCS machine
 
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl" CACHE "Flags used by the compiler during all build types" STRING)
@@ -190,7 +191,7 @@ if($ENV{HOST} MATCHES "rosa")
 endif($ENV{HOST} MATCHES "rosa")
 
 ###########################################################
-if($ENV{HOST} MATCHES "eiger")
+if($ENV{HOST} MATCHES "eiger") #CSCS machine
 
 	#Set g++ specific compiler settings
 	if(CMAKE_COMPILER_IS_GNUCXX)
@@ -216,7 +217,11 @@ if($ENV{HOST} MATCHES "eiger")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
 endif($ENV{HOST} MATCHES "eiger")
-
+###########################################################
+if($ENV{HOST} MATCHES "macpro") #CSCS desktop machine
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall -ffast-math -std=c++98 -Wextra -Wno-unused-parameter -Wunused -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -g -O0 -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused -Wstrict-aliasing")
+endif($ENV{HOST} MATCHES "macpro")
 ###########################################################
 
 
