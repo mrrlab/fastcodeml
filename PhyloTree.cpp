@@ -11,13 +11,6 @@ PhyloTree::~PhyloTree()
 }
 
 
-#ifdef CHECK_ALGO
-void PhyloTree::printFormattedTree(void) const
-{
-	mTreeRoot.printFormatted();
-}
-#endif
-
 
 void PhyloTree::fillSpecies(TreeNode *aNode)
 {

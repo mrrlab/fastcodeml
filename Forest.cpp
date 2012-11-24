@@ -8,7 +8,14 @@
 #include <cstring>
 #include <cstdio>
 #include <limits>
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wlong-long"
+#endif
 #include <boost/dynamic_bitset.hpp>
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
+#endif
 #include "Forest.h"
 #include "ForestNode.h"
 #include "Exceptions.h"
@@ -306,62 +313,6 @@ void Forest::reduceSubtrees(void)
 		}
 	}
 }
-
-#if 0
-bool Forest::reduceSubtrees(unsigned int aBlocks)
-{
-	// Setup dependency vectors
-	std::vector<unsigned int> empty_vector;
-	mTreeDependencies.resize(mNumSites, empty_vector);
-	mTreeRevDependencies.resize(mNumSites, empty_vector);
-
-	// Make integer the number of sites and the number of blocks (otherwise the countdown does not work)
-	const int ns = static_cast<int>(mNumSites);
-	const int num_blocks = static_cast<int>(aBlocks);
-
-	if(num_blocks < 1 || num_blocks >= ns/2)
-	{
-		// No reduction at all
-		return false;
-	}
-	if(num_blocks == 1)
-	{
-		// Try to merge equal subtrees (this is the usual global check and reduction)
-		// Trees at the beginning of the forest point to trees ahead
-		// (this way a delete does not choke with pointers pointing to freed memory)
-		for(int i=ns-1; i > 0; --i)
-		{
-			for(int j=i-1; j >= 0; --j)
-			{
-				reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
-			}
-		}
-	}
-	else
-	{
-		const int bsize = ns / num_blocks;
-		int start = -1;
-		int end   =  0;
-
-		for(int block=0; block < num_blocks; ++block)
-		{
-			end = start+1;
-			start += bsize;
-			if((ns-1-start) < bsize) start = ns-1;
-
-			for(int i=start; i > end; --i)
-			{
-				for(int j=i-1; j >= end; --j)
-				{
-					reduceSubtreesWalker(&mRoots[i], &mRoots[j]);
-				}
-			}
-		}
-	}
-
-	return true;
-}
-#endif
 
 
 void Forest::reduceSubtreesWalker(ForestNode* aNode, ForestNode* aNodeDependent)
@@ -835,113 +786,6 @@ void Forest::prepareNewReductionNoReuse(void)
 }
 #endif
 
-#ifdef CHECK_ALGO
-unsigned int Forest::checkForest(bool aCheckId, const ForestNode* aNode, unsigned int aSite, unsigned int aNodeId) const
-{
-	if(!aNode)
-	{
-		std::cerr << "========== Start forest check" << std::endl;
-		size_t nsites = mRoots.size();
-
-		// Visit each site tree
-		for(size_t i=0; i < nsites; ++i)
-		{
-			checkForest(aCheckId, &mRoots[i], (unsigned int)i, UINT_MAX);
-		}
-		std::cerr << "==========   End forest check" << std::endl;
-		return UINT_MAX;
-	}
-	else
-	{
-		// Check the node
-		if(aNode->mOwnTree != aSite) std::cerr << "[site: " << std::setw(5) << aSite << "] mOwnTree mismatch " << aNode->mOwnTree << " should be: " << aSite << std::endl;
-
-		// Check node ID
-		if(aCheckId && aNode->mBranchId != aNodeId) std::cerr << "[site: " << std::setw(5) << aSite << "] aNodeId mismatch " << aNode->mBranchId << " should be: " << aNodeId << std::endl;
-
-		unsigned int id = aNodeId+1;
-
-		unsigned int idx;
-		std::vector<ForestNode *>::const_iterator icl=aNode->mChildrenList.begin();
-		const std::vector<ForestNode *>::const_iterator end=aNode->mChildrenList.end();
-		for(idx=0; icl != end; ++icl,++idx)
-		{
-			if(aNode->isSameTree(idx))
-			{
-				// Check parent pointer
-				if((*icl)->mParent != aNode)
-					std::cerr << "[site: " << std::setw(5) << aSite << "] mParent mismatch " << aNode->mParent << " should be: " << aNode << std::endl;
-
-				id = checkForest(aCheckId, *icl, aSite, id);
-			}
-			else if((*icl)->mOwnTree <= aNode->mOwnTree)
-			{
-				std::cerr << "[site: " << std::setw(5) << aSite << "] Strange intersite pointer. This: " << aNode->mOwnTree << " children: " << (*icl)->mOwnTree << std::endl;
-			}
-			else
-			{
-				//id = checkForest(aCheckId, *icl, aSite, id);
-			}
-		}
-		return id;
-	}
-}
-
-void chkleaves(CacheAlignedDoubleVector& p, int slot, const char *filename)
-{
-	std::ofstream out(filename, std::ios_base::trunc | std::ios_base::out);
-	if(!out.good()) return;
-
-	int nslots = p.size()/slot;
-
-	for(int i=0; i < nslots; ++i)
-	{
-		for(int j=0; j < N; ++j)
-		{
-			if(p[i*slot+j] > 0.1)
-			{
-				out << std::setw(5) << i << std::setw(3) << j << std::endl;
-				break;
-			}
-		}
-	}
-	out.close();
-}
-
-void crc(const std::vector<double>& v, unsigned int nsites)
-{
-	union { double value; unsigned char bytes[sizeof(double)]; } data;
-	int  c1 = 52845; 
-	int  c2 = 22719;
-	unsigned int nv = v.size();
-
-	for(unsigned int n=0; n < (nv/(VECTOR_SLOT*nsites*Nt)); ++n)
-	{
-		std::cerr << std::setw(2) << n << ": ";
-		for(unsigned int s=0; s < nsites; ++s)
-		{
-			long sum = 0;
-			int r = 55665;
-			for(int j=0; j < N; ++j)
-			{
-				data.value = v[n*(Nt*nsites*VECTOR_SLOT)+s*(VECTOR_SLOT)+j];
-
-				for(unsigned int k = 0; k < sizeof(double); ++k)
-				{
-					unsigned char cipher = (data.bytes[k] ^ (r >> 8));
-					r = (cipher + r) * c1 + c2;
-					sum += cipher;
-				}
-			}
-			if(sum == 0xfb9d) std::cerr << "  -  ";
-			else  			  std::cerr << std::hex << sum << ' ';
-		}
-		std::cerr << std::endl;
-	}
-	std::cerr << std::endl;
-}
-#endif
-
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
 
@@ -1072,18 +916,6 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
 		break;
 	}
-#endif
-
-#ifdef CHECK_ALGO
-	for(unsigned int dx=0; dx < nc; ++dx)
-	{
-			ForestNode *m = aNode->mChildrenList[dx];
-			const unsigned int branch_id = m->mBranchId;
-			std::cerr << branch_id << ' ';
-	}
-	std::cerr << '<' << aNode->mBranchId << ' ' << mNodeNames[aNode->mBranchId+1] << "> ";
-	for(int j=0; j<N; ++j) std::cerr << anode_prob[j] << ' ';
-	std::cerr << std::endl;
 #endif
 
 	return anode_prob;

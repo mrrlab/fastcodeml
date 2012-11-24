@@ -26,7 +26,7 @@ public:
 
 	/// Exception that prints a message (previously built into a std::ostringstream) before termination.
 	///
-	/// @param[in] aMessage The message to be printed before termination (has been formatted printing into a std::ostringstream).
+	/// @param[in] aMessage The message to be printed before termination (has been formatted by printing into a std::ostringstream).
 	///
 	FastCodeMLFatal(const std::ostringstream& aMessage) : runtime_error(aMessage.str().c_str())
 	{}

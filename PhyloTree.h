@@ -98,11 +98,6 @@ public:
 	///
 	void checkNullBranchLengths(const TreeNode* aTreeNode=NULL) const;
 
-#ifdef CHECK_ALGO
-	/// Print the phylogenetic tree completed with all the info loaded.
-	///
-	void printFormattedTree(void) const;
-#endif
 
 protected:
 

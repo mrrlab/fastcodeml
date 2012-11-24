@@ -43,8 +43,8 @@ public:
 		mInitH0fromH1(false),
 		mInitFromParams(false),
 		mCleanData(false),
-		mCmdLineImpl(NULL),
-		mStopIfNotLRT(true)
+		mStopIfNotLRT(true),
+		mCmdLineImpl(NULL)
 	{}
 
 	/// Destructor.

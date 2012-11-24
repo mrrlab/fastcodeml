@@ -10,7 +10,6 @@ using namespace boost::spirit::classic;
 /// Grammar for the Newick formatted tree files.
 /// Adapted from one of the Spirit examples
 ///
-///
 struct NewickGrammar : public grammar<NewickGrammar>
 {
     static const int treeID      = 10;	///< Tree

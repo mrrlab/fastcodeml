@@ -91,19 +91,6 @@ public:
 	///
 	void reduceSubtrees(void);
 
-#if 0
-	/// Reduce common subtrees on the whole forest adopting a divide-and-conquer approach.
-	/// If aBlocks is 1, then the routine works as the old one, reducing all the sites together.
-	/// If aBlocks is 0, no reduction is performed and a false is returned.
-	/// If aBlocks is between 2 and num_sites/2 the sites are divided in this number of independent blocks before reducing.
-	///
-	/// @param[in] aBlocks Number of blocks in which to split sites before reduction
-	///
-	/// @return True if the reduction has taken place.
-	///
-	bool reduceSubtrees(unsigned int aBlocks);
-#endif
-
 #ifndef NEW_LIKELIHOOD
 	/// Add more aggressive subtree reduction.
 	///
@@ -247,19 +234,6 @@ public:
 	/// @param[in] aNode If null starts from the roots. It is used for recursive visit
 	///
 	void loadForestIntoDAG(unsigned int aMaxCopies, unsigned int aCopyId=0, const ForestNode* aNode=NULL);
-#endif
-
-#ifdef CHECK_ALGO
-	/// Check the forest structure for obvious mistakes (useful only during development)
-	///
-	/// @param[in] aCheckId If true checks also the node id's (cannot be done after subtree pruning)
-	/// @param[in] aNode The node from which to start. If null then start from the roots
-	/// @param[in] aSite The site number of the corresponding aNode
-	/// @param[in] aNodeId The aNode id
-	///
-	/// @return The next node ID
-	///
-	unsigned int checkForest(bool aCheckId=false, const ForestNode* aNode=NULL, unsigned int aSite=0, unsigned int aNodeId=0) const;
 #endif
 
 	/// Access the dependency list.

@@ -141,7 +141,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 			double p = likelihoods[site];
 			mPriors[iw*mNumSites+site] = (p > 0) ? log(p) : -184.2068074395237; // If p < 0 then the value in codeml.c is: log(1e-80);
 
-printf("LNL: step: %3u site: %3lu %20.12e\n", iw, site, mPriors[iw*mNumSites+site]);
+printf("LNL: step: %3u site: %3u %20.12e\n", iw, static_cast<unsigned int>(site), mPriors[iw*mNumSites+site]);
  		}
 
 		if(mVerbose >= VERBOSE_ONLY_RESULTS)
@@ -231,13 +231,13 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			// the proportion of the site class under the model.
 			// The BEB_N1D*BEB_N1D grid for p0-p1 is mapped onto the ternary graph for p0-p1-p2.  
 			//
-			unsigned int idx;
+			unsigned int idx = 0; // To stop compiler complaining
 			switch(codon_class)
 			{
-			case 0: idx = ip[2]; break;								/* class 0: w0 */
-			case 1: idx = BEB_N1D; break;							/* class 1: w1 */
-			case 2: idx = BEB_N1D+1+ip[2]*BEB_N1D+ip[3]; break;		/* class 2a model A: w0 & w2 */
-			case 3: idx = BEB_N1D+1+BEB_N1D*BEB_N1D+ip[3]; break;	/* class 2b model A: w1 & w2 */
+			case 0: idx = ip[2]; break;								// class 0: w0
+			case 1: idx = BEB_N1D; break;							// class 1: w1
+			case 2: idx = BEB_N1D+1+ip[2]*BEB_N1D+ip[3]; break;		// class 2a model A: w0 & w2
+			case 3: idx = BEB_N1D+1+BEB_N1D*BEB_N1D+ip[3]; break;	// class 2b model A: w1 & w2
 #if BEB_DIMS > 4
 			default: throw FastCodeMLFatal("Impossible case in computeBEB");
 #endif

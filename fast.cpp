@@ -51,9 +51,6 @@
 ///
 int main(int ac, char **av)
 {
-	//std::cerr << "ac: " << ac << std::endl;
-	//for(int i=0; i < ac; ++i) std::cerr << i << " <" << av[i] << '>' << std::endl;
-
 	try
 	{
 #ifdef USE_MKL_VML
@@ -195,11 +192,6 @@ int main(int ac, char **av)
 	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
 	}
 
-#ifdef CHECK_ALGO
-	// Check if forest is in shape
-	forest.checkForest(true);
-#endif
-
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
 	{
@@ -212,10 +204,6 @@ int main(int ac, char **av)
 		forest.cleanReductionWorkingData();		
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
-#endif
-#ifdef CHECK_ALGO
-		// Recheck the forest
-		forest.checkForest();
 #endif
 	}
 #ifdef NEW_LIKELIHOOD

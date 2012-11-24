@@ -1,8 +1,15 @@
 
 #include <iostream>
 #include <iomanip>
-#include <boost/dynamic_bitset.hpp>
 #include <set>
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wlong-long"
+#endif
+#include <boost/dynamic_bitset.hpp>
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#pragma GCC diagnostic pop
+#endif
 #include "TreeAndSetsDependencies.h"
 #include "Timer.h"
 #include "VerbosityLevels.h"
@@ -117,7 +124,6 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 
 unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 {
-	// Measure the relative effort of doTransitionAtLeaf and doTransition
 #ifdef USE_LAPACK
 	// Number of measurement iterations
 	static const int NR = 10000;
@@ -125,10 +131,6 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 	// Prepare dummy data
 	double dummy[N];
 	double m[N*N];
-//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-//	double cf[N];
-//	for(int i=0; i < N; ++i) cf[i] = 61.;
-//#endif
 	for(int i=0; i < N*N; ++i) m[i] = 0.1;
 	Timer timer;
 
@@ -141,10 +143,6 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 			int i = 0;
 			for(; i < c; ++i) dummy[i] = m[c*N+i];
 			for(; i < N; ++i) dummy[i] = m[i*N+c];
-
-//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-//			elementWiseMult(dummy, cf);
-//#endif
 		}
 	}
 	double time_leaf = static_cast<double>(timer.stop());
@@ -152,14 +150,12 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 	// Measure doTransition()
 	timer.start();
 	for(int i=0; i < NR; ++i)
+	{
 		for(int c=0; c < N; ++c)
 		{
 			dsymv_("U", &N, &D1, m, &N, dummy, &I1, &D0, dummy, &I1);
-
-//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
-//			elementWiseMult(dummy, cf);
-//#endif
 		}
+	}
 	double time_non_leaf = static_cast<double>(timer.stop());
 	unsigned int effort_ratio = static_cast<unsigned int>(time_non_leaf/time_leaf+0.5);
 #else
@@ -272,10 +268,10 @@ bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy)
 
 		// Compute how many sites to remove to have a multiple of num threads
 		size_t needed_remove = 0;
-		resid_jolly = new_possible_jolly_sites;
+		resid_jolly = static_cast<size_t>(new_possible_jolly_sites);
 		if(class_num_sites > num_threads && new_possible_jolly_sites >= over)
 		{
-			needed_remove = over;
+			needed_remove = static_cast<size_t>(over);
 			resid_jolly -= needed_remove;
 		}
 		if(aGreedy && resid_jolly >= 2*num_threads)

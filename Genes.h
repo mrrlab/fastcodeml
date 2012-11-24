@@ -137,6 +137,9 @@ private:
 
 	/// Compare two codons.
 	///
+	/// @param[in] aCodon1 First codon to be compared (three charactes, no need for zero termination)
+	/// @param[in] aCodon2 Second codon to be compared (three charactes, no need for zero termination)
+	///
 	/// @return True if the codons are valid, equal or if ambiguous expand to the same set of positions.
 	///
 	bool compareCodons(const char* aCodon1, const char* aCodon2) const;

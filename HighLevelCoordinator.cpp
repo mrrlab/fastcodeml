@@ -360,7 +360,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		case REQ_HX_RESULT:
 			{
 			// Get the variables and last the loglikelihood value
-			results_double.resize(job_request[1]);
+			results_double.resize(static_cast<size_t>(job_request[1]));
 			MPI_Recv(static_cast<void*>(&results_double[0]), job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 
 			// Mark the step as done (and compute branch and hypothesis)
@@ -387,7 +387,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			// Get results
 			if(job_request[1] > 0)
 			{
-				results_integer.resize(job_request[1]);
+				results_integer.resize(static_cast<size_t>(job_request[1]));
 				MPI_Recv(static_cast<void*>(&results_integer[0]), job_request[1], MPI_INTEGER, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 			}
 
@@ -587,7 +587,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		// If there is additional data
 		if(job[2] > 0)
 		{
-			values_double.resize(job[2]);
+			values_double.resize(static_cast<size_t>(job[2]));
 			MPI_Recv(static_cast<void*>(&values_double[0]), job[2], MPI_DOUBLE, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
 		}
 

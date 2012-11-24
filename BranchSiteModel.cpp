@@ -76,7 +76,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 }
 
 
-void BranchSiteModel::setLimits(unsigned int aNumTimes, unsigned int aNumVariables)
+void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables)
 {
 	// Reserve space
 	mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
@@ -161,8 +161,8 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 	else if(aValidLen < mNumTimes+4) aValidLen = mNumTimes;
 
 	// Copy the requested values
-	mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+aValidLen);
-	mVar.resize(mNumTimes+mNumVariables);
+	mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+static_cast<size_t>(aValidLen));
+	mVar.resize(static_cast<size_t>(mNumTimes+mNumVariables));
 
 	// Ask for initialization completion
 	if(aValidLen == mNumTimes)        mInitType = INIT_TYPE_TIMES;

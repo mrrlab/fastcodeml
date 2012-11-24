@@ -64,7 +64,7 @@ protected:
 		  mOptAlgo(aOptAlgo),
 		  mInitType(INIT_TYPE_NONE),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
-		  mNumVariables(static_cast<unsigned int>(aNumVariables)),
+		  mNumVariables(aNumVariables),
 		  mExtraDebug(aExtraDebug),
 		  mVerbose(aVerbose),
 		  mNumEvaluations(0),
@@ -73,7 +73,7 @@ protected:
 		  mSeed(aSeed),
 		  mRelativeError(aRelativeError)
 	{
-		setLimits(mNumTimes, mNumVariables);
+		setLimits(aNumBranches, static_cast<size_t>(aNumVariables));
 	}
 
 	/// Destructor.
@@ -231,7 +231,7 @@ private:
 	/// @param[in] aNumTimes Number of times (ie branch lengths)
 	/// @param[in] aNumVariables Number of other variables (4 for H0, 5 for H1)
 	///
-	void setLimits(unsigned int aNumTimes, unsigned int aNumVariables);
+	void setLimits(size_t aNumTimes, size_t aNumVariables);
 
 	/// Generate a double random number between 0 and 1
 	///

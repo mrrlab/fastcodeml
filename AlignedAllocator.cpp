@@ -1,9 +1,11 @@
 // The following headers are required for all allocators.
-#include <stddef.h>  // Required for size_t and ptrdiff_t and NULL
+#include <cstddef>  // Required for size_t and ptrdiff_t and NULL
 #include <stdexcept> // Required for std::length_error
 
 // The following headers contain stuff that AlignedAllocator uses.
-#include <stdlib.h>  // For malloc() and free()
+#include <cstdlib>  // For malloc() and free()
+
+// For XMT the following function should be supplied till the bug is fixed by Cray
 #ifdef __MTA__
 //extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
 static int posix_memalign(void **memptr, size_t alignment, size_t size)
