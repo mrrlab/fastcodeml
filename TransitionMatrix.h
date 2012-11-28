@@ -18,8 +18,6 @@
 #include "blas.h"
 #endif
 
-//extern int num_matmat;
-
 /// The transition matrix plus its eigen decomposition.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -76,36 +74,6 @@ public:
 	///
 	void eigenQREV(void);
 
-#ifdef CHECK_ALGO
-	/// Check the eigen decomposition.
-	///
-	/// @param[in] aFull If true also partially print the matrices
-	///
-	void checkEigen(bool aFull=false) const;
-
-	/// Check the eigen decomposition on the reduced matrix.
-	///
-	/// @param[in] aDim Dimension of the reduced matrix
-	/// @param[in] aPrev The reduced matrix before the eigendecomposition
-	/// @param[in] aFull If true also partially print the matrices
-	///
-	void checkReducedEigen(int aDim, const double* aPrev, bool aFull=false) const;
-
-	/// Print the Q matrix
-	///
-	/// @param[in] aMaxRow Max number of rows to print
-	/// @param[in] aMaxCol Max number of columns to print. If missing or equal zero, then takes the same value as aMaxRow
-	///
-	void print(unsigned int aMaxRow=6, unsigned int aMaxCol=0) const;
-
-	/// Print all the decomposed matrices (U, V, D)
-	///
-	/// @param[in] aMaxRow Max number of rows to print
-	/// @param[in] aMaxCol Max number of columns to print. If missing or equal zero, then takes the same value as aMaxRow
-	///
-	void printDecomposed(unsigned int aMaxRow=6, unsigned int aMaxCol=0) const;
-#endif
-
 	/// Store in an external matrix the result of exp(Q*t)
 	///
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
@@ -113,7 +81,6 @@ public:
 	///
 	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
 	{
-		//num_matmat++;
 #ifdef FORCE_IDENTITY_MATRIX
 		// if time is zero or almost zero, the transition matrix become an identity matrix
 		if(aT < 1e-100)
@@ -122,7 +89,7 @@ public:
 			return;
 		}
 #endif
-//std::cerr << "(*)P" << std::endl;
+
 #ifdef USE_LAPACK
 // vdExp creates problems to one MPI implementation (even if the segfault seems harmless and happens after the program end)
 #undef USE_MKL_VML
@@ -305,5 +272,4 @@ private:
 
 
 #endif
-
 

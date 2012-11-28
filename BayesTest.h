@@ -95,7 +95,7 @@ private:
 	///
 	///@verbatim
 	/// Order of site classes for iw or f(x_h|w):
-	///                     fore   back     num.sets
+	///                     back   fore     num.sets
 	/// Branchsite A (121 sets)
 	///   site class 0:      w0     w0        10
 	///   site class 1:      w1=1   w1=1       1
@@ -103,10 +103,10 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	/// @param[in] aVars   The variables otimized at the end of H1 run
-	/// @param[in] aSiteMultiplicity   The site multiplicity vector
-	/// @param[in] aFgBranch The foreground branch under test
-	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
+	/// @param[in] aVars  The variables otimized at the end of H1 run
+	/// @param[in] aSiteMultiplicity  The site multiplicity vector
+	/// @param[in] aFgBranch  The foreground branch under test
+	/// @param[in] aScales  The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
 	/// @return The computed scale.
 	///

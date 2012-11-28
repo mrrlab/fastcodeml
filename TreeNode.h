@@ -33,20 +33,13 @@ public:
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
 	TreeNode(const TreeNode& aNode) : mParent(aNode.getParent()), mBranchLength(aNode.getLen()), mNodeName(aNode.getLabel()), mNodeMark(aNode.getType())
-
 	{
-		//mParent = aNode.getParent();
-
 		for(unsigned int i=0; ; ++i)
 		{
 			TreeNode* n = getChild(i);
 			if(!n) break;
 			mChildrenList.push_back(n);
 		}
-
-		//mNodeName = aNode.getLabel();
-		//mNodeMark = aNode.getType();
-		//mBranchLength = aNode.getLen();
 	}
 
 	/// Assignment operator
@@ -143,6 +136,7 @@ public:
 	/// Return one of the node children.
 	///
 	/// @param[in] aIdx Index of the child to be returned
+	///
 	/// @return Pointer to the child node or NULL if the index is out of range
 	///
 	TreeNode* getChild(unsigned int aIdx) const

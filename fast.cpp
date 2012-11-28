@@ -46,10 +46,10 @@
 ///     @date 2010-12-22 (initial version)
 ///     @version 1.0
 ///
-///	@param[in] ac Number of command line parameters
-/// @param[in] av Command line parameters
+///	@param[in] aRgc Number of command line parameters
+/// @param[in] aRgv Command line parameters
 ///
-int main(int ac, char **av)
+int main(int aRgc, char **aRgv)
 {
 	try
 	{
@@ -60,12 +60,12 @@ int main(int ac, char **av)
 
 #ifdef USE_MPI
 	// Start the high level parallel executor (based on MPI)
-	HighLevelCoordinator hlc(&ac, &av);
+	HighLevelCoordinator hlc(&aRgc, &aRgv);
 #endif
 
 	// Parse the command line
 	CmdLine cmd;
-	cmd.parseCmdLine(ac, av);
+	cmd.parseCmdLine(aRgc, aRgv);
 
 	// Adjust and report the number of threads that will be used
 #ifdef _OPENMP
@@ -338,7 +338,7 @@ int main(int ac, char **av)
 				if(lnl0 < DBL_MAX)
 					std::cerr << std::setprecision(15) << std::fixed << lnl0;
 				else
-					std::cerr << "(Forced stop)";
+					std::cerr << "(Doesn't pass LRT, skipping)";
 				std::cerr << " Function calls: " << h0.getNumEvaluations() << "   ";
 			}
 			if(cmd.mComputeHypothesis != 0)

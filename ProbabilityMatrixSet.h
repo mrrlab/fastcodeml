@@ -16,12 +16,7 @@
 #ifdef USE_MKL_VML
 #include <mkl_vml_functions.h>
 #endif
-#ifdef SAVE_OCTAVE
-extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns); //CHHS
-static int x = 1;
-#endif
 
-//extern int num_matvect;
 /// Set of probability matrices for all branches of a tree.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -83,7 +78,6 @@ public:
 	///
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
-		//num_matvect++;
 #ifdef USE_LAPACK
 		dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 
@@ -110,20 +104,6 @@ public:
 	///
 	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout) const
 	{
-
-#ifdef SAVE_OCTAVE
-		if(x) {
-			FILE* fp = fopen("sasa.oct", "w");
-			SaveToOctave(mMatrices[aSetIdx*mNumMatrices+aBranch], "M", fp, N, N); //CHHS
-			fclose(fp);
-			x = 0;
-			int i;
-			int k = 5;
-			for(i=0; i < k; ++i) printf("%10.7lf\n", mMatrices[aSetIdx*mNumMatrices+aBranch][k*N+i]);
-			for(i=k; i < N; ++i) printf("%10.7lf\n", mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+k]);
-		}
-#endif
-
 #ifdef USE_LAPACK
 		// Simply copy the symmetric matrix column
 		// instead of: dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
@@ -226,14 +206,13 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3, 2) {}
+	explicit ProbabilityMatrixSetH0(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 3, 2) {}
 
 	/// Initialize the set for a given foreground branch number for H0
 	///
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	///
 	void initializeSet(unsigned int aFgBranch);
-
 
 	/// Compute the three sets of matrices for the H0 hypothesis.
 	/// The sets are (these are the bg and fg matrices): 
@@ -300,7 +279,7 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4, 3) {}
+	explicit ProbabilityMatrixSetH1(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 4, 3) {}
 
 	/// Initialize the set for a given foreground branch number for H1
 	///
@@ -377,7 +356,7 @@ public:
 	///
 	/// @param[in] aNumMatrices The number of matrices to be managed (it is the number of branches of the tree)
 	///
-	ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1, 1)
+	explicit ProbabilityMatrixSetBEB(size_t aNumMatrices) : ProbabilityMatrixSet(aNumMatrices, 1, 1)
 	{
 		for(int branch=0; branch < mNumMatrices; ++branch)
 		{

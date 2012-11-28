@@ -4,7 +4,7 @@
 #include <cmath>
 #include "BayesTest.h"
 
-double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales2)
+double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales)
 {
 	// Parameters for w0, w1, w2 prior computation
 	double prior_params[BEB_DIMS][BEB_N1D];
@@ -24,7 +24,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 		prior_params[2][i] = w0b0 + (i+0.5)*(w0b1-w0b0)/BEB_N1D;	// w0
 		prior_params[3][i] = w2b0 + (i+0.5)*(w2b1-w2b0)/BEB_N1D;	// w2
 	}
-
+#if 0
 	//TEST!
 	std::vector<double> aVars   = aVars2;    // After test rename function parameter to aVars
 	std::vector<double> aScales = aScales2;  // After test rename function parameter to aScales
@@ -32,27 +32,36 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 	if(fp)
 	{
 		double x[32];
-		fread(x, sizeof(double), 32, fp); 
-		for(int i=0; i < 27; ++i) aVars[i] = x[i]; // 0-26 are branch lengths
-		double p0 = exp(x[28]); 
-		double p1 = exp(x[29]); 
+		size_t n = fread(x, sizeof(double), 32, fp);
+		for(size_t i=0; i < n-5; ++i) aVars[i] = x[i]; // 0-26 are branch lengths
+		double p0 = exp(x[n-4]);
+		double p1 = exp(x[n-3]); 
 		double tot = p0+p1+1;
 		p0 /= tot;
 		p1 /= tot;
-		aVars[27] = p0+p1;							// v0
-		aVars[28] = p0/(p0+p1);						// v1
-		aVars[29] = x[30];							// w0
-		aVars[30] = x[31];							// w2
-		aVars[31] = x[27];							// k
-		for(int i=0; i < 32; ++i) {std::cerr << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
+		aVars[n-5] = p0+p1;							// v0
+		aVars[n-4] = p0/(p0+p1);					// v1
+		aVars[n-3] = x[n-2];						// w0
+		aVars[n-2] = x[n-5];						// k
+		aVars[n-1] = x[n-1];						// w2
+		for(size_t i=0; i < n; ++i) {std::cerr << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
 		fclose(fp);
 
 		//TEST! force the scale factors
 		std::cerr << "(computed) FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
-		aScales[1] = 1./5.833284036955;
-		aScales[0] = 1./5.834837576257;
+		if(n == 13)
+		{
+			aScales[1] = 1./0.001651;
+			aScales[0] = 1./0.950097;
+		}
+		else
+		{
+			aScales[1] = 1./5.833284036955;
+			aScales[0] = 1./5.834837576257;
+		}
 		std::cerr << "(forced)   FG: " << aScales[1]  << "  BG: " << aScales[0] << std::endl;
 	}
+#endif
 
 	// Omega for foreground and background branches (the bools are for optimization)
 	double omega_fg;
@@ -72,7 +81,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
-	//                     fore   back     #sets
+	//                     back   fore     #sets
 	//   site class 0:      w0     w0        10
 	//   site class 1:      w1=1   w1=1       1
 	//   site class 2a:     w0     w2       100
@@ -82,25 +91,25 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 	{
 		if(iw < BEB_N1D)										// class 0: w0 w0
 		{
-			omega_fg = omega_bg = prior_params[2][iw];
+			omega_bg = omega_fg = prior_params[2][iw];
 			omega_fg_is_one = omega_bg_is_one = false;
 		}
 		else if(iw == BEB_N1D)									// class 1: w1 w1
 		{
-			omega_fg = omega_bg = 1.;
+			omega_bg = omega_fg = 1.;
 			omega_fg_is_one = omega_bg_is_one = true;
 		}
 		else if(iw < (BEB_N1D+1+BEB_N1D*BEB_N1D))				// class 2a: w0 w2
 		{                                  
-            omega_fg = prior_params[2][(iw-BEB_N1D-1) / BEB_N1D];
-            omega_bg = prior_params[3][(iw-BEB_N1D-1) % BEB_N1D];
+            omega_bg = prior_params[2][(iw-BEB_N1D-1) / BEB_N1D];
+            omega_fg = prior_params[3][(iw-BEB_N1D-1) % BEB_N1D];
 			omega_fg_is_one = omega_bg_is_one = false;
 		}
 		else													// class 2b: w1 w2
 		{                                                       
-            omega_fg = 1.;
-            omega_bg = prior_params[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
-			omega_fg_is_one = true; omega_bg_is_one = false;
+            omega_bg = 1.;
+            omega_fg = prior_params[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
+			omega_fg_is_one = false; omega_bg_is_one = true;
 		}
 
 		// Fill the matrices and compute their eigen decomposition.
@@ -140,19 +149,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars2, const std::ve
 		{
 			double p = likelihoods[site];
 			mPriors[iw*mNumSites+site] = (p > 0) ? log(p) : -184.2068074395237; // If p < 0 then the value in codeml.c is: log(1e-80);
-
-printf("LNL: step: %3u site: %3u %20.12e\n", iw, static_cast<unsigned int>(site), mPriors[iw*mNumSites+site]);
  		}
-
-		if(mVerbose >= VERBOSE_ONLY_RESULTS)
-		{
-			std::cerr << std::setw(3) << iw << ' ';
-			std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_fg << ' ';
-			std::cerr << std::fixed << std::setw(8) << std::setprecision(4) << omega_bg << " = " << std::setprecision(16);
-			std::cerr << std::fixed << std::setw(21) << mPriors[iw*mNumSites+0] << ' ';        // Print only the first three sites
-			std::cerr << std::fixed << std::setw(21) << mPriors[iw*mNumSites+1] << ' ';
-			std::cerr << std::fixed << std::setw(21) << mPriors[iw*mNumSites+2] << std::endl;
-		}
 	}
 
 	double scale = 0.;
@@ -172,21 +169,30 @@ printf("LNL: step: %3u site: %3u %20.12e\n", iw, static_cast<unsigned int>(site)
 		}
 		scale += fh*aSiteMultiplicity[site];
 	}
-
+#if 0
 	//TEST!
+	int cml_to_fast[20] = {31, 33, 34, 39, 23, 37, 24, 28, 35, 25, 38, 36, 20, 22, 29, 21, 27, 30, 32, 26};
+
 	fp = fopen("fhK.dat", "rb");
 	if(fp)
 	{
 		std::vector<double> prio(mPriors.size());
 		fread(&prio[0], sizeof(double), mPriors.size(), fp);
-		for(int i=0; i < 40; ++i)
+
+		std::cerr << std::setw(4) << "idx" << std::setw(20) << "CodeML";
+		std::cerr                          << std::setw(20) << "FastCodeML" <<  "  (num. sites:" << mNumSites << ')' << std::endl;
+		for(size_t i=0; i < mPriors.size(); ++i)
 		{
-			std::cerr << std::fixed << std::setw(4) << i << std::setw(20) << std::setprecision(12) << prio[i];
-			std::cerr << std::fixed                      << std::setw(20) << std::setprecision(12) << mPriors[i] << std::endl;
+			int idx = (mNumSites == 20) ? cml_to_fast[i%20]-20+i-i%20 : i;
+
+			double perc = (prio[idx]-mPriors[i])/mPriors[i];
+			std::cerr << std::fixed << std::setw(4) << i << std::setw(20) << std::setprecision(12) << prio[idx];
+			std::cerr << std::fixed                      << std::setw(20) << std::setprecision(12) << mPriors[i];
+			std::cerr << std::fixed                      << std::setw(20) << std::setprecision(3) << perc << std::endl;
 		}
 		fclose(fp);
 	}
-
+#endif
 	return scale;
 }
 
@@ -231,7 +237,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			// the proportion of the site class under the model.
 			// The BEB_N1D*BEB_N1D grid for p0-p1 is mapped onto the ternary graph for p0-p1-p2.  
 			//
-			unsigned int idx = 0; // To stop compiler complaining
+			unsigned int idx;
 			switch(codon_class)
 			{
 			case 0: idx = ip[2]; break;								// class 0: w0
@@ -240,6 +246,8 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			case 3: idx = BEB_N1D+1+BEB_N1D*BEB_N1D+ip[3]; break;	// class 2b model A: w1 & w2
 #if BEB_DIMS > 4
 			default: throw FastCodeMLFatal("Impossible case in computeBEB");
+#else
+			default: idx = 0; // To stop compiler complains
 #endif
 			}
 			iw[igrid*BEB_DIMS+codon_class] = idx;
@@ -364,14 +372,6 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 
    		for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
 		{
-			//unsigned int ip[BEB_DIMS];
-			//unsigned int it = igrid;
-			//for(int j=BEB_DIMS-1; j >= 0; --j)
-			//{
-			//	ip[j]= it % BEB_N1D;
-			//	it /= BEB_N1D;
-			//}
-
 			double fh = 0.;
 			double fhk[BEB_DIMS];
 			unsigned int codon_class;
@@ -397,6 +397,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 		}
 		for(unsigned int j=0; j<BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] *= exp(scale1-fX);
 
+#if 0
 		// For debug
 		if(mVerbose >= VERBOSE_ONLY_RESULTS) 
 		{
@@ -404,6 +405,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			for(unsigned int k=0; k < BEB_DIMS; ++k) std::cerr << std::setw(20) << std::setprecision(12) << mSiteClassProb[k*mNumSites+site];
 			std::cerr << std::endl;
 		}
+#endif
 	}
 }
 
@@ -434,9 +436,6 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			if(prob > TWO_STARS_PROB)     sig = "**";
 			else if(prob > ONE_STAR_PROB) sig = "*";
 			else                          sig = "";
-
-			// Print site number and probability
-			//std::cerr << std::setw(6) << site << " " << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 
 			// Print site number and probability after mapping the site number to the original value
 			std::pair<std::multimap<size_t, size_t>::const_iterator,std::multimap<size_t, size_t>::const_iterator> ret(internal_to_original_site.equal_range(site));

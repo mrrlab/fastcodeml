@@ -1,9 +1,5 @@
 
 #include "ProbabilityMatrixSet.h"
-#ifdef SAVE_OCTAVE
-#include <cstdio>
-extern void SaveToOctave(const double *CVariable, char *OctaveVariable, FILE *FilePointer, int Rows, int Columns);
-#endif
 
 void ProbabilityMatrixSetH0::initializeSet(unsigned int aFgBranch)
 {
@@ -115,7 +111,6 @@ void ProbabilityMatrixSetH1::fillMatrixSet(const  TransitionMatrix& aQw0,
 #endif
 	{
 #ifdef _MSC_VER
-	//#pragma omp parallel for default(none) shared(aQw0, aQ1, aSbg, aSfg, params, num_matrices) schedule(guided)
 	#pragma omp for schedule(guided) nowait
 #else
 	#pragma omp for nowait
