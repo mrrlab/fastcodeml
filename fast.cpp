@@ -295,7 +295,7 @@ int main(int aRgc, char **aRgv)
 	BranchSiteModelAltHyp  h1(forest, cmd);
 
 	// Initialize the test
-	BayesTest beb(forest, cmd.mVerboseLevel);
+	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)

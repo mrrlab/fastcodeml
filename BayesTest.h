@@ -50,13 +50,14 @@ public:
 	///
 	/// @param[in] aForest The forest
 	/// @param[in] aVerbose The verbosity level
+	/// @param[in] aNoReduction If true the dependencies computed are for no reduced forests
 	///
-	explicit BayesTest(Forest& aForest, unsigned int aVerbose=0)
+	explicit BayesTest(Forest& aForest, unsigned int aVerbose=0, bool aNoReduction=true)
 		: mForest(aForest), mNumSites(mForest.getNumSites()), mSiteClassProb(BEB_DIMS*mNumSites),
 		  mVerbose(aVerbose), mPriors(mNumSites*BEB_NUM_CAT), mDependencies(mForest, aVerbose), mBEBset(mForest.getNumBranches())
 	{
 		// Create the dependency list for forest likelihood computation
-		mDependencies.computeDependencies(1, false);
+		mDependencies.computeDependencies(1, aNoReduction);
 		if(mVerbose >= VERBOSE_ONLY_RESULTS) mDependencies.print("TEST FOR BEB (before optimization)");
 		mDependencies.optimizeDependencies();
 		if(mVerbose >= VERBOSE_ONLY_RESULTS) mDependencies.print("TEST FOR BEB");

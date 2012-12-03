@@ -551,8 +551,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 	BranchSiteModelNullHyp h0(aForest, aCmdLine);
 	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
 		
-	// Initialize the BEB
-	BayesTest beb(aForest, 0);
+	// Initialize the BEB (no verbose at all)
+	BayesTest beb(aForest, 0, aCmdLine.mDoNotReduceForest);
 
 	// This value signals that this is the first work request
 	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
