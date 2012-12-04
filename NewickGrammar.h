@@ -19,7 +19,7 @@ struct NewickGrammar : public grammar<NewickGrammar>
     static const int branchlenID = 50;	///< Branch length
     static const int cblenID     = 60;	///< Colon plus length
     static const int labelID     = 70;	///< Label
-    static const int typeID      = 80;	///< Type (i.e. the optional #1)
+    static const int markerID    = 80;	///< Marker (i.e. the optional #1)
 
     template <typename ScannerT>
     struct definition
@@ -36,12 +36,12 @@ struct NewickGrammar : public grammar<NewickGrammar>
 
             branch_length = real_p;
 
-            full_label = no_node_d[ch_p('#')] >> type | label >> !(no_node_d[ch_p('#')] >> type);
+            full_label = no_node_d[ch_p('#')] >> marker | label >> !(no_node_d[ch_p('#')] >> marker);
 
             //label = leaf_node_d[alpha_p >> *(alnum_p|'.'|'_')];
             label = leaf_node_d[alnum_p >> *(alnum_p|'.'|'_')];
 
-            type = leaf_node_d[+alnum_p];
+            marker = leaf_node_d[+alnum_p];
         }
 
         rule<ScannerT, parser_context<>, parser_tag<treeID> >      tree;
@@ -51,7 +51,7 @@ struct NewickGrammar : public grammar<NewickGrammar>
         rule<ScannerT, parser_context<>, parser_tag<branchlenID> > branch_length;
         rule<ScannerT, parser_context<>, parser_tag<cblenID> >     colon_plus_len;
         rule<ScannerT, parser_context<>, parser_tag<labelID> >     label;
-        rule<ScannerT, parser_context<>, parser_tag<typeID> >      type;
+        rule<ScannerT, parser_context<>, parser_tag<markerID> >    marker;
 
         rule<ScannerT, parser_context<>, parser_tag<treeID> >   const&
         start() const { return tree; }

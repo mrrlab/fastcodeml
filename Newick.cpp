@@ -31,7 +31,7 @@ void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int 
     else if(id == NewickGrammar::subtreeID)   std::cerr << "SUBTREE";
     else if(id == NewickGrammar::fulllabelID) std::cerr << "FLAB";
     else if(id == NewickGrammar::labelID)     std::cerr << "LABEL";
-    else if(id == NewickGrammar::typeID)      std::cerr << "TYPE";
+    else if(id == NewickGrammar::markerID)    std::cerr << "MARKER";
     else if(id == NewickGrammar::branchlenID) std::cerr << "BRANCHLEN";
     else if(id == NewickGrammar::cblenID)     std::cerr << "CBLEN";
     else									  std::cerr << "????";
@@ -106,7 +106,7 @@ void Newick::evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNo
             	evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
     	}
 	}
-    else if(id == NewickGrammar::typeID)
+    else if(id == NewickGrammar::markerID)
     {
         if(aTreeIterator->children.size() == 0)
 		{
