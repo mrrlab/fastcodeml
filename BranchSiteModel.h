@@ -93,6 +93,12 @@ public:
 	///
 	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX, std::ostream& aOut=std::cerr) const;
 
+	/// Formatted print of the maximized variables
+	///
+	/// @param[in] aOut The stream on which the variables should be printed
+	///
+	void printFinalVars(std::ostream& aOut=std::cerr) const;
+
 	/// Compute the maximum likelihood for the given forest
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground

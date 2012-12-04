@@ -293,7 +293,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 				fh += codon_class_proportion[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
 			if(fh < 1e-300)
 			{
-				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "strange: f[" << site << "] = " << fh << " very small." << std::endl;
+				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
 				continue;
 			}
 			lnfXs[igrid] += log(fh)*site_multiplicity[site];
@@ -328,7 +328,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	// Print
 	if(mVerbose >= VERBOSE_ONLY_RESULTS)
 	{
-		std::cerr << "\n\nPosterior on the grid\n\n";
+		std::cerr << std::endl << "Posterior on the grid" << std::endl << std::endl;
 		const char* paras[5] = {"p0","p1","w0","w2","w3"};
 
 		for(unsigned int j=2; j < BEB_DIMS; ++j)
@@ -339,7 +339,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			std::cerr << std::endl;
 		}
 
-		std::cerr << "\nPosterior for p0-p1 (see the ternary graph)\n\n";
+		std::cerr << std::endl << "Posterior for p0-p1 (see the ternary graph)" << std::endl << std::endl;
 
 		double sum_postp0p1 = 0.;
 		for(unsigned int k=0; k<BEB_N1D*BEB_N1D; ++k)
@@ -352,8 +352,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 
 			sum_postp0p1 += postp0p1[k];
 		}
-		std::cerr << std::endl;
-		std::cerr << "Sum of density on p0-p1 = " << std::setw(9) << std::setprecision(3) << sum_postp0p1 << std::endl << std::endl;
+		std::cerr << std::endl << "Sum of density on p0-p1 = " << std::setprecision(4) << sum_postp0p1 << std::endl << std::endl;
 	}
 
 	fX = log(fX)+scale2;
@@ -385,7 +384,8 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			{
 				fhk[codon_class] /= fh;
 
-				double t = log(fhk[codon_class]) + lnfXs[igrid]; /* t is log of term on grid */
+				// t is log of term on grid
+				double t = log(fhk[codon_class]) + lnfXs[igrid];
 				if(t > scale1 + 50)
 				{ 
 					// Change scale factor scale1
@@ -396,16 +396,6 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 			}
 		}
 		for(unsigned int j=0; j<BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] *= exp(scale1-fX);
-
-#if 0
-		// For debug
-		if(mVerbose >= VERBOSE_ONLY_RESULTS) 
-		{
-			std::cerr << "Site " << std::setw(4) << site;
-			for(unsigned int k=0; k < BEB_DIMS; ++k) std::cerr << std::setw(20) << std::setprecision(12) << mSiteClassProb[k*mNumSites+site];
-			std::cerr << std::endl;
-		}
-#endif
 	}
 }
 

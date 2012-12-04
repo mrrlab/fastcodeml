@@ -340,14 +340,19 @@ int main(int aRgc, char **aRgv)
 				else
 					std::cerr << "(Doesn't pass LRT, skipping)";
 				std::cerr << " Function calls: " << h0.getNumEvaluations() << "   ";
+				std::cerr << std::endl << std::endl;
+				h0.printFinalVars(std::cerr);
+				std::cerr << std::endl;
 			}
 			if(cmd.mComputeHypothesis != 0)
 			{
 				std::cerr << "LnL1: ";
 				std::cerr << std::setprecision(15) << std::fixed << lnl1;
 				std::cerr << " Function calls: " << h1.getNumEvaluations();
+				std::cerr << std::endl << std::endl;
+				h1.printFinalVars(std::cerr);
+				std::cerr << std::endl;
 			}
-			std::cerr << std::endl;
 		}
 
 		// If requested set the time in the forest and export to a graph visualization tool

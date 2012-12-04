@@ -182,7 +182,7 @@ void TreeAndSetsDependencies::optimizeDependencies(void)
 void TreeAndSetsDependencies::print(const char* aTitle) const
 {
 	// Do nothing if the debug level is insufficient
-	if(mVerbose < VERBOSE_INFO_OUTPUT) return;
+	if(mVerbose < VERBOSE_MORE_DEBUG) return;
 
 	// If present print the title
 	std::cerr << std::endl;

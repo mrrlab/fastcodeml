@@ -27,6 +27,66 @@
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 
+void BranchSiteModel::printFinalVars(std::ostream& aOut) const
+{
+	// To nicely format num branch lengths per line
+	static const unsigned int VARS_PER_LINE = 8;
+	unsigned int count_per_line = 0;
+	static const std::streamsize VARS_PRECISION = 7;
+	static const std::streamsize VARS_WIDTH     = 11;
+	
+	// Write the data with an uniform precision
+	std::streamsize prec = aOut.precision(VARS_PRECISION);
+	aOut.setf(std::ios::fixed, std::ios::floatfield);
+
+	// Print all variables formatted to be readable
+	double v0 = 0;
+	std::vector<double>::const_iterator ix(mVar.begin());
+	const std::vector<double>::const_iterator end(mVar.end());
+	for(int k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
+	{
+		switch(k)
+		{
+		case 0:
+			if(count_per_line) aOut << std::endl;
+			v0 = *ix;
+			break;
+		case 1:
+			{
+				double p[4];
+				getProportions(v0, *ix, p);
+				aOut << std::endl;
+				aOut <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
+				aOut << "  p1:" << std::setw(VARS_WIDTH) << p[1];
+				aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
+				aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
+				aOut << std::endl;
+			}
+			break;
+		case 2:
+			aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
+			break;
+		case 3:
+			aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
+			break;
+		case 4:
+			aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+			break;
+		default:
+			aOut << std::setw(VARS_WIDTH) << *ix;
+			++count_per_line;
+			if(count_per_line == VARS_PER_LINE)
+			{
+				count_per_line = 0;
+				aOut << std::endl;
+			}
+			break;
+		}
+	}
+	aOut << std::endl;
+	aOut.precision(prec);
+}
+
 void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, std::ostream& aOut) const
 {
 	// Write the data with an uniform precision
