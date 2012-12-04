@@ -167,14 +167,16 @@ void Newick::readFile(const char *aFilename)
     size_t p1 = std::string::npos;
     while(getline(in, str))
 	{
-        p1 = str.find_first_not_of(" \t\r");
-        if(p1 != std::string::npos && str[p1] == '(') break;
+        p1 = str.find_first_of('(');
+        if(p1 != std::string::npos) break;
+       // p1 = str.find_first_not_of(" \t\r\n");
+       // if(p1 != std::string::npos && str[p1] == '(') break;
 	}
 	in.close();
 	if(p1 == std::string::npos)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " is empty" << std::endl;
+		o << "File " << aFilename << " is empty (cannot find starting parenthesis)" << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 
@@ -183,7 +185,7 @@ void Newick::readFile(const char *aFilename)
     if(p2 == std::string::npos)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " is empty" << std::endl;
+		o << "File " << aFilename << " is empty (cannot find ending semicolon)" << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 
