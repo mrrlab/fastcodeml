@@ -1,5 +1,5 @@
 *) Loading modules
-module load intel/2011
+module load intel/2013
 module load cmake
 module load boost
 module load mvapich2/1.8.1-intel-wocuda

@@ -1,5 +1,8 @@
 #!/bin/bash
 # Build FastcodeML on castor, sequential version
+One working library path is:
+echo $LD_LIBRARY_PATH
+/apps/castor/boost_1_50_0/lib:/apps/castor/boost_1_51_0/lib:/apps/castor/mvapich2/1.8.1/mvapich2-intel-woCUDA/lib:/apps/castor/slurm/default/lib:/apps/castor/intel-2013/compiler/lib/intel64:/apps/castor/intel-2013/mkl/lib/intel64:/apps/castor/intel-2013/ipp/lib/intel64:/apps/castor/intel-2013/tbb/lib/intel64
 # Loading modules
 module load intel
 module load mkl
