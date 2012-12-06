@@ -90,45 +90,47 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 													std::cerr << std::endl;
-													std::cerr << "Tree file:     " << cmd.mTreeFile << std::endl;
-													std::cerr << "Gene file:     " << cmd.mGeneFile << std::endl;
-													std::cerr << "Verbose level: " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
-		if(cmd.mSeed)								std::cerr << "Seed:          " << cmd.mSeed << std::endl;
-		if(cmd.mBranchFromFile)						std::cerr << "Branch:        From tree file" << std::endl;
-		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:        " << cmd.mBranch << std::endl;
-		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:   Ignore" << std::endl;
-		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest: Do not reduce" << std::endl;
-		else										std::cerr << "Reduce forest: Aggressive" << std::endl;
-		if(cmd.mInitH0fromH1)						std::cerr << "Starting val.: From H1" << std::endl;
-		else if(cmd.mInitFromParams)				std::cerr << "Starting val.: Times from tree file and params from const (see below)" << std::endl;
-		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.: Times from tree file" << std::endl;
-		if(cmd.mNoMaximization)						std::cerr << "Maximization:  No" << std::endl;
-		if(cmd.mExportComputedTimes != UINT_MAX)	std::cerr << "Graph times:   From H" << cmd.mExportComputedTimes << std::endl;
-		if(cmd.mTrace)								std::cerr << "Trace:         On" << std::endl;
-		if(cmd.mCleanData)							std::cerr << "Clean data:    On" << std::endl;
-		else										std::cerr << "Clean data:    Off" << std::endl;
-		if(cmd.mGraphFile)							std::cerr << "Graph file:    " << cmd.mGraphFile << std::endl;
-													std::cerr << "Optimizer:     " << cmd.mOptimizationAlgo << std::endl;
-		if(cmd.mDeltaValueForGradient > 0.0)		std::cerr << "Delta value:   " << cmd.mDeltaValueForGradient << std::endl;
-		if(cmd.mResultsFile)						std::cerr << "Results file:  " << cmd.mResultsFile << std::endl;
+													std::cerr << "Tree file:      " << cmd.mTreeFile << std::endl;
+													std::cerr << "Gene file:      " << cmd.mGeneFile << std::endl;
+													std::cerr << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
+		if(cmd.mSeed)								std::cerr << "Seed:           " << cmd.mSeed << std::endl;
+		if(cmd.mBranchFromFile)						std::cerr << "Branch:         From tree file" << std::endl;
+		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:         " << cmd.mBranch << std::endl;
+		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:    Ignore" << std::endl;
+		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest:  Do not reduce" << std::endl;
+		else										std::cerr << "Reduce forest:  Aggressive" << std::endl;
+		if(cmd.mInitH0fromH1)						std::cerr << "Starting val.:  From H1" << std::endl;
+		else if(cmd.mInitFromParams)				std::cerr << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
+		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.:  Times from tree file" << std::endl;
+		if(cmd.mNoMaximization)						std::cerr << "Maximization:   No" << std::endl;
+		if(cmd.mTrace)								std::cerr << "Trace:          On" << std::endl;
+		if(cmd.mCleanData)							std::cerr << "Clean data:     On" << std::endl;
+		else										std::cerr << "Clean data:     Off" << std::endl;
+		if(cmd.mGraphFile)							std::cerr << "Graph file:     " << cmd.mGraphFile << std::endl;
+		if(cmd.mGraphFile && cmd.mExportComputedTimes != UINT_MAX)
+													std::cerr << "Graph times:    From H" << cmd.mExportComputedTimes << std::endl;
+		if(!cmd.mNoMaximization)					std::cerr << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
+		if(cmd.mDeltaValueForGradient > 0.0)		std::cerr << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
+													std::cerr << "Relative error: " << cmd.mRelativeError << std::endl;
+		if(cmd.mResultsFile)						std::cerr << "Results file:   " << cmd.mResultsFile << std::endl;
 
 #ifdef _OPENMP
 		if(num_threads > 1)
 		{
-													std::cerr << "Num. threads:  " << num_threads << std::endl
-		                                                      << "Num. cores:    " << omp_get_num_procs() << std::endl;
+													std::cerr << "Num. threads:   " << num_threads << std::endl
+		                                                      << "Num. cores:     " << omp_get_num_procs() << std::endl;
 		}
 		else
 #endif
 		{
-													std::cerr << "Num. threads:  1 serial" << std::endl
-		                                                      << "Num. cores:    1"  << std::endl;
+													std::cerr << "Num. threads:   1 serial" << std::endl
+		                                                      << "Num. cores:     1"  << std::endl;
 		}
 #ifdef USE_MPI
-		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc: 1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
-		else										std::cerr << "Num. MPI proc: Insufficient, single task execution" << std::endl;
+		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc:  1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
+		else										std::cerr << "Num. MPI proc:  Insufficient, single task execution" << std::endl;
 #endif
-													std::cerr << "Compiled with: ";
+													std::cerr << "Compiled with:  ";
 #ifdef _OPENMP
 													std::cerr << "USE_OPENMP ";
 #endif
@@ -416,22 +418,22 @@ int main(int aRgc, char **aRgv)
 	}
 	catch(const FastCodeMLFatal& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl;
+		std::cerr << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(const FastCodeMLMemoryError& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl;
+		std::cerr << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(const std::bad_alloc& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl;
+		std::cerr << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(...)
 	{
-		std::cerr << std::endl << "Default exception" << std::endl;
+		std::cerr << std::endl << "Default exception caught." << std::endl << std::endl;
 		return 1;
 	}
 

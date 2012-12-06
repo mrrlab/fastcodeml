@@ -100,7 +100,7 @@ bool Genes::compareCodons(const char* aCodon1, const char* aCodon2) const
 void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 {
 	// Should at least have the same number of species
-	if(aNames.size() != mDnaSpecies.size()) throw FastCodeMLFatal("Different number of species in tree and genes");
+	if(aNames.size() != mDnaSpecies.size()) throw FastCodeMLFatal("Different number of species in tree and genes.");
 
 	// Create correspondence between species names
 	std::vector<std::string>::const_iterator is1=aNames.begin();
@@ -114,7 +114,7 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 		{
 			if(*is1 == *is2) {found = true; break;}
 		}
-		if(!found) throw FastCodeMLFatal("Mismatch between species in tree and genes");
+		if(!found) throw FastCodeMLFatal("Mismatch between species in tree and genes.");
 	}
 }
 
@@ -136,7 +136,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	if(ncodons >= std::numeric_limits<size_t>::max()/10U)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " too many basis. Max " << std::numeric_limits<size_t>::max()/10U << std::endl;
+		o << "File \"" << aFilename << "\" has too many basis. Max " << std::numeric_limits<size_t>::max()/10U;
 		throw FastCodeMLFatal(o);
 	}
 
@@ -155,7 +155,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 
 	// Check if at least one site remains
 	size_t valid_codons = std::count(codon_multiplicity.begin(), codon_multiplicity.end(), 1);
-	if(valid_codons == 0) throw FastCodeMLFatal("Not a single valid codon read");
+	if(valid_codons == 0) throw FastCodeMLFatal("Not a single valid codon read.");
 
 	// Print statistics
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)

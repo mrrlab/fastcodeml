@@ -157,7 +157,7 @@ void Newick::readFile(const char *aFilename)
 	if(!in)
 	{
 		std::ostringstream o;
-		o << "Cannot open " << aFilename << std::endl;
+		o << "Cannot open tree file \"" << aFilename << '"' << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 
@@ -176,7 +176,7 @@ void Newick::readFile(const char *aFilename)
 	if(p1 == std::string::npos)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " is empty (cannot find starting parenthesis)" << std::endl;
+		o << "File \"" << aFilename << "\" is empty (cannot find starting parenthesis)." << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 
@@ -185,7 +185,7 @@ void Newick::readFile(const char *aFilename)
     if(p2 == std::string::npos)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " is empty (cannot find ending semicolon)" << std::endl;
+		o << "File \"" << aFilename << "\" is empty (cannot find ending semicolon)." << std::endl;
 		throw FastCodeMLFatal(o);
 	}
 

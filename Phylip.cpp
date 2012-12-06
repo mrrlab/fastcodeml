@@ -13,7 +13,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(!in)
 	{
 		std::ostringstream o;
-		o << "Cannot open " << aFilename << std::endl;
+		o << "Cannot open gene file \"" << aFilename << '"';
 		throw FastCodeMLFatal(o);
 	}
 
@@ -22,7 +22,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	{
 		in.close();
 		std::ostringstream o;
-		o << "File " << aFilename << " is empty" << std::endl;
+		o << "File \"" << aFilename << "\" is empty";
 		throw FastCodeMLFatal(o);
 	}
 
@@ -35,7 +35,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	{
 		in.close();
 		std::ostringstream o;
-		o << "File " << aFilename << " is malformed" << std::endl;
+		o << "File \"" << aFilename << "\" is malformed";
 		throw FastCodeMLFatal(o);
 	}
 
@@ -45,7 +45,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	{
 		in.close();
 		std::ostringstream o;
-		o << "File " << aFilename << " is malformed" << std::endl;
+		o << "File \"" << aFilename << "\" is malformed";
 		throw FastCodeMLFatal(o);
 	}
 
@@ -88,7 +88,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(nspecies != aSpecies.size())
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " has number of species mismatch" << std::endl;
+		o << "File \"" << aFilename << "\" has number of species mismatch";
 		throw FastCodeMLFatal(o);
 	}
 
@@ -98,7 +98,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 		if(aSequences[n].length() != nbasis)
 		{
 			std::ostringstream o;
-			o << "File " << aFilename << " gene " << n << " has wrong number of nucleotides" << std::endl;
+			o << "File \"" << aFilename << "\" gene " << n << " has wrong number of nucleotides";
 			throw FastCodeMLFatal(o);
 		}
 	}
@@ -107,7 +107,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(nbasis % 3)
 	{
 		std::ostringstream o;
-		o << "File " << aFilename << " number of basis is not multiple of 3" << std::endl;
+		o << "File \"" << aFilename << "\" number of basis is not multiple of 3";
 		throw FastCodeMLFatal(o);
 	}
 }
