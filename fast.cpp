@@ -267,7 +267,7 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
 	}
 
-	// Compute branch to compute (or switch to the entire range of branches
+	// Compute branch to compute (or switch to the entire range of branches)
 	if(cmd.mBranchFromFile && marked_branch < num_branches)
 	{
 		// Branch from file and valid

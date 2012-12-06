@@ -372,14 +372,15 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 
  std::ostream& operator<< (std::ostream& aOut, const Forest& aForest)
 {
-	size_t i;
-
+	// General forest statistics
 	aOut << std::endl;
 	aOut << "Num branches:       " << std::setw(7) << aForest.mNumBranches << std::endl;
+	aOut << "Internal branches:  " << std::setw(7) << aForest.mNumInternalBranches << std::endl;
 	aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites << std::endl;
 	aOut << "Total branches:     " << std::setw(7) << aForest.mNumBranches*aForest.mNumSites << std::endl;
 
 	// Count total branches on the reduced forest
+	size_t i;
 	unsigned int cnt = 0;
 	unsigned int cntAggressive = 0;
 	for(i=0; i < aForest.mNumSites; ++i)
