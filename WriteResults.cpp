@@ -68,7 +68,7 @@ void WriteResults::outputResults(void)
 		out << std::endl;
 	}
 
-	// Write the positive selection sites
+	// Write the positive selection sites (adding one to the site number because they start from 1 and not zero)
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
 		std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double> > >::const_iterator ipss;
@@ -82,7 +82,7 @@ void WriteResults::outputResults(void)
 			for(size_t s=0; s < ns; ++s)
 			{
 				out << "PositiveSelectionSite for branch: " << std::setw(4) << branch;
-				out << "  Site: " << std::setw(6) << site[s] << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[s] << std::endl;
+				out << "  Site: " << std::setw(6) << site[s] + 1 << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[s] << std::endl;
 			}
 		}
 	}

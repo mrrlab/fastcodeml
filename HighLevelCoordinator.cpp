@@ -537,8 +537,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				else if(prob > ONE_STAR_PROB) sig = "*";
 				else                          sig = "";
 
-				std::cerr << std::setw(5) << branch_results.mPositiveSelSites[pss] <<
-							 std::fixed << std::setw(12) << std::setprecision(6) << prob << sig << std::endl;
+				// Adjust the site number because it starts from 1 and not zero
+				std::cerr << std::setw(6) << branch_results.mPositiveSelSites[pss] + 1 <<
+							 std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}
 	}

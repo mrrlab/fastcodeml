@@ -427,13 +427,13 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			else if(prob > ONE_STAR_PROB) sig = "*";
 			else                          sig = "";
 
-			// Print site number and probability after mapping the site number to the original value
+			// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
 			std::pair<std::multimap<size_t, size_t>::const_iterator,std::multimap<size_t, size_t>::const_iterator> ret(internal_to_original_site.equal_range(site));
 			std::multimap<size_t, size_t>::const_iterator it(ret.first);
 			const std::multimap<size_t, size_t>::const_iterator end(ret.second);
 			for(; it != end; ++it)
 			{
-				std::cerr << std::setw(6) << it->second << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+				std::cerr << std::setw(6) << it->second + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}
 	}
