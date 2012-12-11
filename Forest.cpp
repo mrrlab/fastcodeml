@@ -76,13 +76,13 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 			unsigned int node = (*il)->mBranchId+1;
 
 			// Get the codon index and internally build the list of corresponding positions
-			long codon = aGenes.getCodonIdx(mNodeNames[node], site);
+			long long codon = aGenes.getCodonIdx(mNodeNames[node], site);
 
 			// Add the codon index to the node signature
 			(*il)->mPreprocessingSupport->mSubtreeCodonsSignature.push_back(codon);
 
 			// Record the codon number on the leaf node (to use a simpler transition computation for leaves) it it is a simple codon
-			(*il)->mLeafCodon = (codon < 0) ? -1 : static_cast<short>(codon);
+			(*il)->mLeafCodon = (codon < 0 || codon > 60) ? -1 : static_cast<short>(codon);
 
 			// Set leaves probability vector (Nt copies)
 			// Beware, the arrays should be already zeroed

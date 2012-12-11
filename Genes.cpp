@@ -35,7 +35,7 @@ bool Genes::validCodon(const char* aCodon, bool aRemoveAmbiguous) const
 }
 
 
-long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
+long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 {
 	// Find the specie
 	const unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;
@@ -55,8 +55,9 @@ long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 	// Return -1 if invalid, the position or a negative code summarizing all the positions
 	if(pos.empty()) return -1;
 	if(pos.size() == 1) return pos[0];
-	long code = 0;
-	for(size_t i=0; i < pos.size(); ++i) code |= (1 << pos[i]);
+	long long code = 0;
+	for(size_t i=0; i < pos.size(); ++i) code |= (static_cast<long long>(1) << pos[i]);
+
 	return -code;
 }
 
