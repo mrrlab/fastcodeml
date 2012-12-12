@@ -153,19 +153,19 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 		std::multimap<size_t, size_t>::iterator it;
 		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret = mSitesMappingToOriginal.equal_range(j);
 
-		std::cerr << std::setw(5) << j;
+		std::cout << std::setw(5) << j;
 		for(it=ret.first; it != ret.second; ++it)
 		{
-			std::cerr << std::setw(5) << it->second;
+			std::cout << std::setw(5) << it->second;
 		}
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 	for(size_t j=0; j < aGenes.getOriginalNumSites(); ++j)
 	{
 		if(mSitesMappingFromOriginal[j] == std::numeric_limits<size_t>::max())
-			std::cerr << std::setw(5) << j << std::setw(5) << "-" << std::endl;
+			std::cout << std::setw(5) << j << std::setw(5) << "-" << std::endl;
 		else
-			std::cerr << std::setw(5) << j << std::setw(5) << mSitesMappingFromOriginal[j] << std::endl;
+			std::cout << std::setw(5) << j << std::setw(5) << mSitesMappingFromOriginal[j] << std::endl;
 	}
 #endif
 
@@ -216,18 +216,18 @@ void Forest::postLoad(void)
 
 #if 0
 	// Show the tree before balancing
-	std::cerr << std::endl;
+	std::cout << std::endl;
 	std::vector< std::vector<ForestNode*> >::const_reverse_iterator rinbl;
 	unsigned int level = 0;
 	for(rinbl=mNodesByLevel.rbegin(); rinbl != mNodesByLevel.rend(); ++rinbl,++level)
 	{
-		std::cerr << "Level " << level << ": ";
+		std::cout << "Level " << level << ": ";
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cerr << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
 		}
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 #endif
 
@@ -276,16 +276,16 @@ void Forest::postLoad(void)
 
 #if 0
 	// Show the tree after balancing
-	std::cerr << std::endl;
+	std::cout << std::endl;
 	for(rinbl=mNodesByLevel.rbegin(),level=0; rinbl != mNodesByLevel.rend(); ++rinbl,++level)
 	{
-		std::cerr << "Level " << level << ": ";
+		std::cout << "Level " << level << ": ";
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cerr << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
 		}
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 #endif
 

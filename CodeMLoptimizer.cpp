@@ -69,14 +69,14 @@ double Ming2::minimizeFunction(std::vector<double>& aVars)
 	std::vector<double> space(np*(np*2+9+2));
 	std::vector<int> ispace(2*np);
 
-	bool sy = std::cerr.sync_with_stdio(true);
+	bool sy = std::cout.sync_with_stdio(true);
 	mNoisy = mTrace ? 9 : 0;
 
 	mAlwaysCenter = false;
 	double lnL = 0;
 	int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0], &mUpperBound[0], &space[0], &ispace[0], mRelativeError, np);
-	if(sts < 0) std::cerr << "Check ming2 convergence" << std::endl;
-	std::cerr.sync_with_stdio(sy);
+	if(sts < 0) std::cout << "Check ming2 convergence" << std::endl;
+	std::cout.sync_with_stdio(sy);
 
 	return -lnL;
 }

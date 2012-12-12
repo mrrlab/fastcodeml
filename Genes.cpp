@@ -161,10 +161,10 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	// Print statistics
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-		std::cerr << std::endl;
-		std::cerr << "Num. species: " << std::setw(6) << nspecies << std::endl;
-		std::cerr << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
-		std::cerr << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
+		std::cout << std::endl;
+		std::cout << "Num. species: " << std::setw(6) << nspecies << std::endl;
+		std::cout << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
+		std::cout << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
 	}
 
 	// Prepare the mapping from program sites back to original sites
@@ -202,16 +202,16 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-		std::cerr << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
+		std::cout << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
 		int multi_codons = static_cast<int>(std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1)));
-		std::cerr << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
+		std::cout << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
 	}
 	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
 	{
-		std::cerr << std::endl;
-		std::ostream_iterator<unsigned int> out_it(std::cerr, " ");
+		std::cout << std::endl;
+		std::ostream_iterator<unsigned int> out_it(std::cout, " ");
 		std::copy(codon_multiplicity.begin(), codon_multiplicity.end(), out_it);
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 
 	// Prepare the map from reduced site num. (j) to list of corresponding original sites (i).
@@ -234,7 +234,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 
 	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
 	{
-		std::cerr << std::endl;
+		std::cout << std::endl;
 		for(j=0; j < mSiteMultiplicity.size(); ++j)
 		{
 			std::multimap<size_t, size_t>::iterator it;

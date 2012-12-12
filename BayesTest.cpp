@@ -44,11 +44,11 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 		aVars[n-3] = x[n-2];						// w0
 		aVars[n-2] = x[n-5];						// k
 		aVars[n-1] = x[n-1];						// w2
-		for(size_t i=0; i < n; ++i) {std::cerr << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
+		for(size_t i=0; i < n; ++i) {std::cout << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
 		fclose(fp);
 
 		//TEST! force the scale factors
-		std::cerr << "(computed) FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
+		std::cout << "(computed) FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
 		if(n == 13)
 		{
 			aScales[1] = 1./0.001651;
@@ -59,7 +59,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 			aScales[1] = 1./5.833284036955;
 			aScales[0] = 1./5.834837576257;
 		}
-		std::cerr << "(forced)   FG: " << aScales[1]  << "  BG: " << aScales[0] << std::endl;
+		std::cout << "(forced)   FG: " << aScales[1]  << "  BG: " << aScales[0] << std::endl;
 	}
 #endif
 
@@ -179,16 +179,16 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 		std::vector<double> prio(mPriors.size());
 		fread(&prio[0], sizeof(double), mPriors.size(), fp);
 
-		std::cerr << std::setw(4) << "idx" << std::setw(20) << "CodeML";
-		std::cerr                          << std::setw(20) << "FastCodeML" <<  "  (num. sites:" << mNumSites << ')' << std::endl;
+		std::cout << std::setw(4) << "idx" << std::setw(20) << "CodeML";
+		std::cout                          << std::setw(20) << "FastCodeML" <<  "  (num. sites:" << mNumSites << ')' << std::endl;
 		for(size_t i=0; i < mPriors.size(); ++i)
 		{
 			int idx = (mNumSites == 20) ? cml_to_fast[i%20]-20+i-i%20 : i;
 
 			double perc = (prio[idx]-mPriors[i])/mPriors[i];
-			std::cerr << std::fixed << std::setw(4) << i << std::setw(20) << std::setprecision(12) << prio[idx];
-			std::cerr << std::fixed                      << std::setw(20) << std::setprecision(12) << mPriors[i];
-			std::cerr << std::fixed                      << std::setw(20) << std::setprecision(3) << perc << std::endl;
+			std::cout << std::fixed << std::setw(4) << i << std::setw(20) << std::setprecision(12) << prio[idx];
+			std::cout << std::fixed                      << std::setw(20) << std::setprecision(12) << mPriors[i];
+			std::cout << std::fixed                      << std::setw(20) << std::setprecision(3) << perc << std::endl;
 		}
 		fclose(fp);
 	}
@@ -207,7 +207,7 @@ void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTr
 
 void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
 
 	// Get the site multiplicity
 	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
@@ -262,7 +262,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	}
 
 	// Calculate marginal prob of data, fX, and postpara[].  scale2 is scale.
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
 	double fX = 1.;
 	double scale2 = -1e300;
 	double lnfXs[BEB_NGRID];
@@ -293,7 +293,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 				fh += codon_class_proportion[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
 			if(fh < 1e-300)
 			{
-				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
+				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
 				continue;
 			}
 			lnfXs[igrid] += log(fh)*site_multiplicity[site];
@@ -328,40 +328,40 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	// Print
 	if(mVerbose >= VERBOSE_ONLY_RESULTS)
 	{
-		std::cerr << std::endl << "Posterior on the grid" << std::endl << std::endl;
+		std::cout << std::endl << "Posterior on the grid" << std::endl << std::endl;
 		const char* paras[5] = {"p0","p1","w0","w2","w3"};
 
 		for(unsigned int j=2; j < BEB_DIMS; ++j)
 		{
-			std::cerr << paras[j] << ": ";
+			std::cout << paras[j] << ": ";
 
-			for(unsigned int k=0; k < BEB_N1D; ++k) std::cerr << std::fixed << std::setw(7) << std::setprecision(3) << post_params[j][k];
-			std::cerr << std::endl;
+			for(unsigned int k=0; k < BEB_N1D; ++k) std::cout << std::fixed << std::setw(7) << std::setprecision(3) << post_params[j][k];
+			std::cout << std::endl;
 		}
 
-		std::cerr << std::endl << "Posterior for p0-p1 (see the ternary graph)" << std::endl << std::endl;
+		std::cout << std::endl << "Posterior for p0-p1 (see the ternary graph)" << std::endl << std::endl;
 
 		double sum_postp0p1 = 0.;
 		for(unsigned int k=0; k<BEB_N1D*BEB_N1D; ++k)
 		{
-			std::cerr << std::fixed << std::setw(6) << std::setprecision(3) << postp0p1[k];
+			std::cout << std::fixed << std::setw(6) << std::setprecision(3) << postp0p1[k];
 
 			int sq = static_cast<int>(sqrt(k+1.));
 
-			if(fabs(sq*sq-(k+1.))<1e-5) std::cerr << std::endl;
+			if(fabs(sq*sq-(k+1.))<1e-5) std::cout << std::endl;
 
 			sum_postp0p1 += postp0p1[k];
 		}
-		std::cerr << std::endl << "Sum of density on p0-p1 = " << std::setprecision(4) << sum_postp0p1 << std::endl << std::endl;
+		std::cout << std::endl << "Sum of density on p0-p1 = " << std::setprecision(4) << sum_postp0p1 << std::endl << std::endl;
 	}
 
 	fX = log(fX)+scale2;
 
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
 		                                           << "  Scales = " << scale1 << " " << scale2 << std::endl;
 
 	// Calculate posterior probabilities for sites. scale1 is scale factor
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
 
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -417,7 +417,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			// Put a title the firts time
 			if(print_title)
 			{
-				std::cerr << "Printing positive sel sites for branch " << aFgBranch << std::endl;
+				std::cout << "Printing positive sel sites for branch " << aFgBranch << std::endl;
 				print_title = false;
 			}
 			
@@ -433,7 +433,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			const std::multimap<size_t, size_t>::const_iterator end(ret.second);
 			for(; it != end; ++it)
 			{
-				std::cerr << std::setw(6) << it->second + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+				std::cout << std::setw(6) << it->second + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}
 	}

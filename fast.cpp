@@ -89,76 +89,76 @@ int main(int aRgc, char **aRgv)
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-													std::cerr << std::endl;
-													std::cerr << "Tree file:      " << cmd.mTreeFile << std::endl;
-													std::cerr << "Gene file:      " << cmd.mGeneFile << std::endl;
-													std::cerr << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
-		if(cmd.mSeed)								std::cerr << "Seed:           " << cmd.mSeed << std::endl;
-		if(cmd.mBranchFromFile)						std::cerr << "Branch:         From tree file" << std::endl;
-		else if(cmd.mBranch != UINT_MAX)			std::cerr << "Branch:         " << cmd.mBranch << std::endl;
-		if(cmd.mIgnoreFreq)							std::cerr << "Codon freq.:    Ignore" << std::endl;
-		if(cmd.mDoNotReduceForest)					std::cerr << "Reduce forest:  Do not reduce" << std::endl;
-		else										std::cerr << "Reduce forest:  Aggressive" << std::endl;
-		if(cmd.mInitH0fromH1)						std::cerr << "Starting val.:  From H1" << std::endl;
-		else if(cmd.mInitFromParams)				std::cerr << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
-		else if(cmd.mTimesFromFile)					std::cerr << "Starting val.:  Times from tree file" << std::endl;
-		if(cmd.mNoMaximization)						std::cerr << "Maximization:   No" << std::endl;
-		if(cmd.mTrace)								std::cerr << "Trace:          On" << std::endl;
-		if(cmd.mCleanData)							std::cerr << "Clean data:     On" << std::endl;
-		else										std::cerr << "Clean data:     Off" << std::endl;
-		if(cmd.mGraphFile)							std::cerr << "Graph file:     " << cmd.mGraphFile << std::endl;
+													std::cout << std::endl;
+													std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
+													std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
+													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
+		if(cmd.mSeed)								std::cout << "Seed:           " << cmd.mSeed << std::endl;
+		if(cmd.mBranchFromFile)						std::cout << "Branch:         From tree file" << std::endl;
+		else if(cmd.mBranch != UINT_MAX)			std::cout << "Branch:         " << cmd.mBranch << std::endl;
+		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
+		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
+		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
+		if(cmd.mInitH0fromH1)						std::cout << "Starting val.:  From H1" << std::endl;
+		else if(cmd.mInitFromParams)				std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
+		else if(cmd.mTimesFromFile)					std::cout << "Starting val.:  Times from tree file" << std::endl;
+		if(cmd.mNoMaximization)						std::cout << "Maximization:   No" << std::endl;
+		if(cmd.mTrace)								std::cout << "Trace:          On" << std::endl;
+		if(cmd.mCleanData)							std::cout << "Clean data:     On" << std::endl;
+		else										std::cout << "Clean data:     Off" << std::endl;
+		if(cmd.mGraphFile)							std::cout << "Graph file:     " << cmd.mGraphFile << std::endl;
 		if(cmd.mGraphFile && cmd.mExportComputedTimes != UINT_MAX)
-													std::cerr << "Graph times:    From H" << cmd.mExportComputedTimes << std::endl;
-		if(!cmd.mNoMaximization)					std::cerr << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
-		if(cmd.mDeltaValueForGradient > 0.0)		std::cerr << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
-													std::cerr << "Relative error: " << cmd.mRelativeError << std::endl;
-		if(cmd.mResultsFile)						std::cerr << "Results file:   " << cmd.mResultsFile << std::endl;
+													std::cout << "Graph times:    From H" << cmd.mExportComputedTimes << std::endl;
+		if(!cmd.mNoMaximization)					std::cout << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
+		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
+													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
+		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
 
 #ifdef _OPENMP
 		if(num_threads > 1)
 		{
-													std::cerr << "Num. threads:   " << num_threads << std::endl
+													std::cout << "Num. threads:   " << num_threads << std::endl
 		                                                      << "Num. cores:     " << omp_get_num_procs() << std::endl;
 		}
 		else
 #endif
 		{
-													std::cerr << "Num. threads:   1 serial" << std::endl
+													std::cout << "Num. threads:   1 serial" << std::endl
 		                                                      << "Num. cores:     1"  << std::endl;
 		}
 #ifdef USE_MPI
-		if(hlc.numJobs() > 2)						std::cerr << "Num. MPI proc:  1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
-		else										std::cerr << "Num. MPI proc:  Insufficient, single task execution" << std::endl;
+		if(hlc.numJobs() > 2)						std::cout << "Num. MPI proc:  1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
+		else										std::cout << "Num. MPI proc:  Insufficient, single task execution" << std::endl;
 #endif
-													std::cerr << "Compiled with:  ";
+													std::cout << "Compiled with:  ";
 #ifdef _OPENMP
-													std::cerr << "USE_OPENMP ";
+													std::cout << "USE_OPENMP ";
 #endif
 #ifdef USE_MPI
-													std::cerr << "USE_MPI ";
+													std::cout << "USE_MPI ";
 #endif
 #ifdef NEW_LIKELIHOOD
-													std::cerr << "NEW_LIKELIHOOD ";
+													std::cout << "NEW_LIKELIHOOD ";
 #endif
 #ifdef NON_RECURSIVE_VISIT
-													std::cerr << "NON_RECURSIVE_VISIT ";
+													std::cout << "NON_RECURSIVE_VISIT ";
 #endif
 #ifdef USE_DAG
-													std::cerr << "USE_DAG ";
+													std::cout << "USE_DAG ";
 #endif
 #ifdef USE_ORIGINAL_PROPORTIONS
-													std::cerr << "USE_ORIGINAL_PROPORTIONS ";
+													std::cout << "USE_ORIGINAL_PROPORTIONS ";
 #endif
 #ifdef USE_LAPACK
-													std::cerr << "USE_LAPACK ";
+													std::cout << "USE_LAPACK ";
 #endif
 #ifdef USE_MKL_VML
-													std::cerr << "USE_MKL_VML";
+													std::cout << "USE_MKL_VML";
 #endif
-													std::cerr << std::endl << std::endl;
+													std::cout << std::endl << std::endl;
 													if(cmd.mInitFromParams)
 													{
-														std::cerr << "Param initial values:" << std::endl << std::endl
+														std::cout << "Param initial values:" << std::endl << std::endl
 																  << ParseParameters::getInstance();
 													}
 	}
@@ -229,10 +229,10 @@ int main(int aRgc, char **aRgv)
 #endif
 
 	// Get the time needed by data preprocessing
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
 	// Print few statistics
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << forest;
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << forest;
 
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
@@ -242,7 +242,7 @@ int main(int aRgc, char **aRgv)
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(has_run_under_MPI)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << timer.get() << std::endl;}
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << timer.get() << std::endl;}
 		return 0;
 	}
 	else
@@ -262,11 +262,11 @@ int main(int aRgc, char **aRgv)
 	// Check if the request make sense
 	if(cmd.mBranchFromFile && marked_branch >= num_branches)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl; 
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl; 
 	}
 	else if(cmd.mBranch >= num_branches && cmd.mBranch < UINT_MAX)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cerr << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
 	}
 
 	// Compute branch to compute (or switch to the entire range of branches)
@@ -302,7 +302,7 @@ int main(int aRgc, char **aRgv)
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cerr << std::endl << "Doing branch " << fg_branch << std::endl;
+		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch " << fg_branch << std::endl;
 
 		// Compute the alternate model maximum loglikelihood
 		double lnl1 = 0.;
@@ -333,27 +333,27 @@ int main(int aRgc, char **aRgv)
 
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
 		{
-			std::cerr << std::endl;
+			std::cout << std::endl;
 			if(cmd.mComputeHypothesis != 1)
 			{
-				std::cerr << "LnL0: ";
+				std::cout << "LnL0: ";
 				if(lnl0 < DBL_MAX)
-					std::cerr << std::setprecision(15) << std::fixed << lnl0;
+					std::cout << std::setprecision(15) << std::fixed << lnl0;
 				else
-					std::cerr << "(Doesn't pass LRT, skipping)";
-				std::cerr << " Function calls: " << h0.getNumEvaluations() << "   ";
-				std::cerr << std::endl << std::endl;
-				h0.printFinalVars(std::cerr);
-				std::cerr << std::endl;
+					std::cout << "(Doesn't pass LRT, skipping)";
+				std::cout << " Function calls: " << h0.getNumEvaluations() << "   ";
+				std::cout << std::endl << std::endl;
+				h0.printFinalVars(std::cout);
+				std::cout << std::endl;
 			}
 			if(cmd.mComputeHypothesis != 0)
 			{
-				std::cerr << "LnL1: ";
-				std::cerr << std::setprecision(15) << std::fixed << lnl1;
-				std::cerr << " Function calls: " << h1.getNumEvaluations();
-				std::cerr << std::endl << std::endl;
-				h1.printFinalVars(std::cerr);
-				std::cerr << std::endl;
+				std::cout << "LnL1: ";
+				std::cout << std::setprecision(15) << std::fixed << lnl1;
+				std::cout << " Function calls: " << h1.getNumEvaluations();
+				std::cout << std::endl << std::endl;
+				h1.printFinalVars(std::cout);
+				std::cout << std::endl;
 			}
 		}
 
@@ -404,7 +404,7 @@ int main(int aRgc, char **aRgv)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cerr << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
 	// Output the results
 	output_results.outputResults();
@@ -418,22 +418,22 @@ int main(int aRgc, char **aRgv)
 	}
 	catch(const FastCodeMLFatal& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl << std::endl;
+		std::cout << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(const FastCodeMLMemoryError& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl << std::endl;
+		std::cout << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(const std::bad_alloc& e)
 	{
-		std::cerr << std::endl << e.what() << std::endl << std::endl;
+		std::cout << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(...)
 	{
-		std::cerr << std::endl << "Default exception caught." << std::endl << std::endl;
+		std::cout << std::endl << "Default exception caught." << std::endl << std::endl;
 		return 1;
 	}
 

@@ -56,12 +56,12 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		if(done[i]) continue;
 		done[i] = true;
 
-		std::cerr << aParserOptions[i].pszArg;
+		std::cout << aParserOptions[i].pszArg;
 		for(j=i+1; j < cnt; ++j)
 		{
 			if(done[j] || aParserOptions[j].nId != aParserOptions[i].nId) continue;
 			done[j] = true;
-			std::cerr << "  " << aParserOptions[j].pszArg;
+			std::cout << "  " << aParserOptions[j].pszArg;
 		}
 
 		// Translate the kind of argument
@@ -90,8 +90,8 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 			break;
 		}
 
-		std::cerr << " " << type << std::endl;
-		std::cerr << "        " << aParserOptions[i].pszHelp << std::endl << std::endl;
+		std::cout << " " << type << std::endl;
+		std::cout << "        " << aParserOptions[i].pszHelp << std::endl << std::endl;
 	}
 }
 
@@ -235,8 +235,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		default:
 		case OPT_HELP:
-			std::cerr << "Usage:" << std::endl;
-			std::cerr << "    " << usage_msg << std::endl << std::endl;
+			std::cout << "Usage:" << std::endl;
+			std::cout << "    " << usage_msg << std::endl << std::endl;
 			mCmdLineImpl->showHelp(parser_options);
 			throw FastCodeMLSuccess();
 
@@ -343,13 +343,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	switch(args.FileCount())
 	{
 	case 0:
-		std::cerr << "Missing NEWICK TREE file" << std::endl;
+		std::cout << "Missing NEWICK TREE file" << std::endl;
 		// Falltrough
 
 	case 1:
-		std::cerr << "Missing GENE file" << std::endl << std::endl;
-		std::cerr << "Usage:" << std::endl;
-		std::cerr << "    " << usage_msg << std::endl << std::endl;
+		std::cout << "Missing GENE file" << std::endl << std::endl;
+		std::cout << "Usage:" << std::endl;
+		std::cout << "    " << usage_msg << std::endl << std::endl;
 		mCmdLineImpl->showHelp(parser_options);
 		throw FastCodeMLFatal();
 

@@ -39,7 +39,7 @@ void DAGScheduler::endLoadDependencies(unsigned int aNumCodonSets)
 	mRefCounterSave = mRefCounter;
 
 	// For debugging dump the DAG content
-	//dumpDAG(std::cerr);
+	//dumpDAG(std::cout);
 }
 
 
@@ -86,7 +86,7 @@ void DAGScheduler::dumpDAG(std::ostream& aOut) const
 	{
 		size_t k = reinterpret_cast<size_t>(irc->first);
 		int cnt = irc->second;
-		std::cerr << std::hex << k << ' ' << std::dec << std::setw(6) << cnt << std::endl;
+		std::cout << std::hex << k << ' ' << std::dec << std::setw(6) << cnt << std::endl;
 	}
 }
 

@@ -67,7 +67,7 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 	std::ofstream net(aFilename, std::ios_base::trunc | std::ios_base::out);
 	if(!net.good())
 	{
-		std::cerr << "Cannot create net file <" << aFilename << ">" << std::endl;
+		std::cout << "Cannot create net file <" << aFilename << ">" << std::endl;
 	}
 	else
 	{

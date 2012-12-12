@@ -185,14 +185,14 @@ void TreeAndSetsDependencies::print(const char* aTitle) const
 	if(mVerbose < VERBOSE_MORE_DEBUG) return;
 
 	// If present print the title
-	std::cerr << std::endl;
-	if(aTitle) std::cerr << aTitle << std::endl;
+	std::cout << std::endl;
+	if(aTitle) std::cout << aTitle << std::endl;
 
 	// Print the number of executions for each class
 	const size_t num_classes = mDependenciesClassesAndTrees.size();
 	for(size_t tree_class=0; tree_class < num_classes; ++tree_class)
 	{
-		std::cerr << "Trees in class " << std::setw(3) << tree_class << ": " << std::setw(5) << mDependenciesClassesAndTrees[tree_class].size() << std::endl;
+		std::cout << "Trees in class " << std::setw(3) << tree_class << ": " << std::setw(5) << mDependenciesClassesAndTrees[tree_class].size() << std::endl;
 	}
 #if 0
 	// Compute the max effort of each class

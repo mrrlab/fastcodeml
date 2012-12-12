@@ -34,7 +34,7 @@ void WriteResults::outputResults(void)
 	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
 	if(!out.good())
 	{
-		std::cerr << "Cannot create results file <" << mFilename << ">" << std::endl;
+		std::cout << "Cannot create results file <" << mFilename << ">" << std::endl;
 		return;
 	}
 

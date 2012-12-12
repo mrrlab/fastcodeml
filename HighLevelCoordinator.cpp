@@ -234,7 +234,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 	{
 		if(mJobStatus[i] != JOB_COMPLETED && mJobStatus[i] != JOB_SKIP)
 		{
-			std::cerr << "Job kind: " << (i%JOBS_PER_BRANCH) << " for branch " << (i/JOBS_PER_BRANCH) << " still in status: " << mJobStatus[i] << std::endl;
+			std::cout << "Job kind: " << (i%JOBS_PER_BRANCH) << " for branch " << (i/JOBS_PER_BRANCH) << " still in status: " << mJobStatus[i] << std::endl;
 			any_error = true;
 		}
 	}
@@ -297,11 +297,11 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 	{
 		// If users set the fg branch tell them it is ignored
 		if((aCmdLine.mBranchFromFile || aCmdLine.mBranch != UINT_MAX) && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cerr << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
+			std::cout << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
 
 		// If the user asks for one hypothesis only
 		if(aCmdLine.mComputeHypothesis < 2 && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cerr << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
+			std::cout << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
 
 		// Initialize structures
 		mVerbose = aCmdLine.mVerboseLevel;
@@ -309,7 +309,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 
 		// Check if the number of worker is ok
 		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cerr << "Too many MPI jobs: " << mSize-1-2*mNumInternalBranches << " of them will not be used." << std::endl;
+			std::cout << "Too many MPI jobs: " << mSize-1-2*mNumInternalBranches << " of them will not be used." << std::endl;
 
 		// In the master initialize the work table
 		delete mWorkTable;
@@ -378,7 +378,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			if(lnl < DBL_MAX) aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
 
 			// Output a status message
-			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
 			}
 			break;
 
@@ -419,7 +419,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			}
 
 			// Output a status message
-			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
 			}
 			break;
 
@@ -456,19 +456,19 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			switch(job[0])
 			{
 			case JOB_H0:
-				std::cerr << "Sent H0 [branch " << job[1] << "] to "  << worker << std::endl;
+				std::cout << "Sent H0 [branch " << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_H1:
-				std::cerr << "Sent H1 [branch " << job[1] << "] to "  << worker << std::endl;
+				std::cout << "Sent H1 [branch " << job[1] << "] to "  << worker << std::endl;
 				break;
 			case JOB_BEB:
-				std::cerr << "Sent BEB [branch " << job[1] << "] to " << worker << std::endl;
+				std::cout << "Sent BEB [branch " << job[1] << "] to " << worker << std::endl;
 				break;
 			case JOB_SHUTDOWN:
-				std::cerr << "Sent SHUTDOWN to "                      << worker << std::endl;
+				std::cout << "Sent SHUTDOWN to "                      << worker << std::endl;
 				break;
 			default:
-				std::cerr << "Sent " << job[0] << " [branch " << job[1] << "] to " <<  worker << std::endl;
+				std::cout << "Sent " << job[0] << " [branch " << job[1] << "] to " <<  worker << std::endl;
 				break;
 			}
 		}
@@ -477,7 +477,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		if(job[0] == JOB_SHUTDOWN)
 		{
 			--num_workers;
-			if(mVerbose >= VERBOSE_MPI_TRACE) std::cerr << "Workers remaining " << num_workers << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "Workers remaining " << num_workers << std::endl;
 			if(num_workers == 0) break;
 		}
 	}
@@ -490,19 +490,19 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 
 	// Print likelihoods
 	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
-	std::cerr << std::endl;
+	std::cout << std::endl;
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
-		std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch;
+		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
 		if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
 		{
-			std::cerr << "  Lnl H0: " << std::setw(12) << "NA";
+			std::cout << "  Lnl H0: " << std::setw(12) << "NA";
 		}
 		else
 		{
-			std::cerr << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
+			std::cout << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
 		}
-		std::cerr << "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
+		std::cout << "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
 	}
 
 	// Check if at least one site is under positive selection
@@ -519,13 +519,13 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 	// If there are print the site and corresponding probability
 	if(has_positive_selection_sites)
 	{
-		std::cerr << std::endl << "Positive selection sites" << std::endl;
+		std::cout << std::endl << "Positive selection sites" << std::endl;
 		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 		{
 			WorkTable::ResultSet& branch_results = mWorkTable->mResults[branch];
 			if(branch_results.mPositiveSelSites.empty()) continue;
 
-			std::cerr << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
+			std::cout << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
 			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
 				// Get probability
@@ -538,7 +538,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				else                          sig = "";
 
 				// Adjust the site number because it starts from 1 and not zero
-				std::cerr << std::setw(6) << branch_results.mPositiveSelSites[pss] + 1 <<
+				std::cout << std::setw(6) << branch_results.mPositiveSelSites[pss] + 1 <<
 							 std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}

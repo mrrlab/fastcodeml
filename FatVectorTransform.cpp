@@ -65,7 +65,7 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 
 void FatVectorTransform::printCountGoodElements(void) const
 {
-	std::cerr << std::endl;
+	std::cout << std::endl;
 	for(unsigned int b=0; b < mNumBranches; ++b)
 	{
 		size_t begin_idx = 0;
@@ -92,31 +92,31 @@ void FatVectorTransform::printCountGoodElements(void) const
 		unsigned int cnt = 0;
 		for(size_t k=begin_idx; k < end_idx; ++k) if(mNodeStatus[b*mNumSites+k] == FatVectorTransform::SITE_EXISTS) ++cnt;
 
-		std::cerr << std::setw(2) << b << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
+		std::cout << std::setw(2) << b << ": " << std::setw(4) << begin_idx << '-' << std::setw(4) << end_idx-1 << " (" << cnt << ")" << std::endl;
 	}
 }
 
 
 void FatVectorTransform::printBranchVisitSequence(void) const
 {
-	std::cerr << std::endl << "Branch at level" << std::endl;
+	std::cout << std::endl << "Branch at level" << std::endl;
 	unsigned int level = 1;
 	std::vector< std::vector<unsigned int> >::const_iterator inbl=mBranchByLevel.begin();
 	const std::vector< std::vector<unsigned int> >::const_iterator end=mBranchByLevel.end();
 	for(; inbl != end; ++inbl, ++level)
 	{
-		std::cerr << level << ": ";
+		std::cout << level << ": ";
 
 		std::vector<unsigned int>::const_iterator ifn=inbl->begin();
-		for(; ifn != inbl->end(); ++ifn) std::cerr << (*ifn) << ' ';
+		for(; ifn != inbl->end(); ++ifn) std::cout << (*ifn) << ' ';
 
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 
-	std::cerr << std::endl << "Parent node for branch" << std::endl;
+	std::cout << std::endl << "Parent node for branch" << std::endl;
 	for(unsigned int i=0; i < mNumBranches; ++i)
 	{
-		std::cerr << std::setw(2) << i << " -> " << std::setw(2) << mParentNode[i] << std::endl;
+		std::cout << std::setw(2) << i << " -> " << std::setw(2) << mParentNode[i] << std::endl;
 	}
 }
 
@@ -124,19 +124,19 @@ void FatVectorTransform::printBranchVisitSequence(void) const
 
 void FatVectorTransform::printNodeStatus(void) const
 {
-	std::cerr << std::endl;
+	std::cout << std::endl;
 	for(unsigned int b=0; b < mNumBranches; ++b)
 	{
-		std::cerr << "Branch " << b << std::endl;
+		std::cout << "Branch " << b << std::endl;
 		bool is_num = false;
 		for(unsigned int k = 0; k < mNumSites; ++k)
 		{
 			int x = mNodeStatus[b*mNumSites+k];
-			if(x == FatVectorTransform::SITE_NOT_EXISTS)  {std::cerr << '-'; is_num = false;}
-			else if(x == FatVectorTransform::SITE_EXISTS) {std::cerr << 'x'; is_num = false;}
-			else                                          {if(is_num) std::cerr << ' '; std::cerr << x; is_num = true;}
+			if(x == FatVectorTransform::SITE_NOT_EXISTS)  {std::cout << '-'; is_num = false;}
+			else if(x == FatVectorTransform::SITE_EXISTS) {std::cout << 'x'; is_num = false;}
+			else                                          {if(is_num) std::cout << ' '; std::cout << x; is_num = true;}
 		}
-		std::cerr << std::endl << std::endl;
+		std::cout << std::endl << std::endl;
 	}
 }
 
@@ -249,26 +249,26 @@ void FatVectorTransform::printCommands(void) const
 {
 	for(unsigned int b=0; b < mNumBranches; ++b)
 	{
-		std::cerr << std::endl << "*** Branch " << b << std::endl;
+		std::cout << std::endl << "*** Branch " << b << std::endl;
 
 		VectorOfRanges::const_iterator icc=mCopyCmds[b].begin();
 		const VectorOfRanges::const_iterator endc=mCopyCmds[b].end();
 		for(; icc != endc; ++icc)
 		{
 			if(icc->cnt == 1)
-				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
+				std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
 			else if(icc->cnt > 1)
-				std::cerr << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
+				std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
 		}
 
 		VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[b].begin();
 		const VectorOfRangesNoCnt::const_iterator endr=mReuseCmds[b].end();
 		for(; icr != endr; ++icr)
 		{
-			std::cerr << "R " << std::setw(4) << icr->from << " - " << std::setw(4) << icr->to << std::endl;
+			std::cout << "R " << std::setw(4) << icr->from << " - " << std::setw(4) << icr->to << std::endl;
 		}
 
-		std::cerr << "L   from: " << mLimits[b].first << " cnt: " << mLimits[b].second << std::endl;
+		std::cout << "L   from: " << mLimits[b].first << " cnt: " << mLimits[b].second << std::endl;
 	}
 }
 

@@ -91,13 +91,13 @@ public:
 	/// @param[in] aLnl The likelihood value to be printed
 	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX, std::ostream& aOut=std::cerr) const;
+	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX, std::ostream& aOut=std::cout) const;
 
 	/// Formatted print of the maximized variables
 	///
 	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	void printFinalVars(std::ostream& aOut=std::cerr) const;
+	void printFinalVars(std::ostream& aOut=std::cout) const;
 
 	/// Compute the maximum likelihood for the given forest
 	///

@@ -247,7 +247,7 @@ struct ForestNode
 	/// @param[in] aIndent Initial number of indent spaces
 	/// @param[in] aIncrement The indent amount is incremented by this value at each level
 	///
-	void print(const std::vector<std::string>& aNodeNames, std::ostream& aOut=std::cerr, unsigned int aIndent=0, unsigned int aIncrement=3) const
+	void print(const std::vector<std::string>& aNodeNames, std::ostream& aOut=std::cout, unsigned int aIndent=0, unsigned int aIncrement=3) const
 	{
 		unsigned int i;
 

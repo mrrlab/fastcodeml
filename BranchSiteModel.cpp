@@ -401,11 +401,11 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
-		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
-		std::cerr << "Q0 " << mScaleQw0 << std::endl;
-		std::cerr << "Q1 " << mScaleQ1 << std::endl << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
+		std::cout << "The following is the value printed by CodeML" << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
+		std::cout << "Q0 " << mScaleQw0 << std::endl;
+		std::cout << "Q1 " << mScaleQ1 << std::endl << std::endl;
 	}
 
 	// Combine the site likelihood into a single value
@@ -488,11 +488,11 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
-		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
-		std::cerr << "Q0 " << mScaleQw0 << std::endl;
-		std::cerr << "Q1 " << mScaleQ1 << std::endl << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
+		std::cout << "The following is the value printed by CodeML" << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
+		std::cout << "Q0 " << mScaleQw0 << std::endl;
+		std::cout << "Q1 " << mScaleQ1 << std::endl << std::endl;
 	}
 
 	// Combine the site likelihood into a single value
@@ -546,11 +546,11 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void)
 #endif
 		if(mExtraDebug > 1)
 		{
-			std::cerr << std::setw(4) << site << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << " -> ";
-			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
+			std::cout << std::setw(4) << site << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << " -> ";
+			std::cout << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
 #ifdef USE_GLOBAL_SCALING
@@ -698,12 +698,12 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(const std::vector<dou
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
-		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
-		std::cerr << "Q0 " << mScaleQw0 << std::endl;
-		std::cerr << "Q1 " << mScaleQ1 << std::endl;
-		std::cerr << "Q2 " << mScaleQw2 << std::endl << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
+		std::cout << "The following is the value printed by CodeML" << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
+		std::cout << "Q0 " << mScaleQw0 << std::endl;
+		std::cout << "Q1 " << mScaleQ1 << std::endl;
+		std::cout << "Q2 " << mScaleQw2 << std::endl << std::endl;
 	}
 
 	// Combine the site likelihood into a single value
@@ -822,12 +822,12 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 
 	if(mExtraDebug > 0)
 	{
-		std::cerr << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
-		std::cerr << "The following is the value printed by CodeML" << std::endl;
-		std::cerr << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
-		std::cerr << "Q0 " << mScaleQw0 << std::endl;
-		std::cerr << "Q1 " << mScaleQ1 << std::endl;
-		std::cerr << "Q2 " << mScaleQw2 << std::endl << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << mFgScale << " BG: " << mBgScale << std::endl;
+		std::cout << "The following is the value printed by CodeML" << std::endl;
+		std::cout << "FG: " << std::setprecision(8) << 1./mFgScale << " BG: " << 1./mBgScale << std::endl;
+		std::cout << "Q0 " << mScaleQw0 << std::endl;
+		std::cout << "Q1 " << mScaleQ1 << std::endl;
+		std::cout << "Q2 " << mScaleQw2 << std::endl << std::endl;
 	}
 
 	// Combine the site likelihood into a single value
@@ -887,12 +887,12 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 #endif
 		if(mExtraDebug > 1)
 		{
-			std::cerr << std::setw(4) << site << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << ' ';
-			std::cerr << std::scientific << std::setw(14) << likelihoods[3*num_sites+site] << " -> ";
-			std::cerr << std::fixed << std::setw(14) << x*mult[site] << std::endl;
+			std::cout << std::setw(4) << site << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[0*num_sites+site] << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[1*num_sites+site] << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[2*num_sites+site] << ' ';
+			std::cout << std::scientific << std::setw(14) << likelihoods[3*num_sites+site] << " -> ";
+			std::cout << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
 #ifdef USE_GLOBAL_SCALING
@@ -1038,15 +1038,15 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	// Print starting values
 	if(mTrace)
 	{
-		std::cerr << std::endl;
-		std::cerr << "*****************************************" << std::endl;
-		std::cerr << "*** Starting branch " << aFgBranch << std::endl;
+		std::cout << std::endl;
+		std::cout << "*****************************************" << std::endl;
+		std::cout << "*** Starting branch " << aFgBranch << std::endl;
 		printVar(mVar);
-		std::cerr << "*** Upper" << std::endl;
+		std::cout << "*** Upper" << std::endl;
 		printVar(mUpperBound);
-		std::cerr << "*** Lower" << std::endl;
+		std::cout << "*** Lower" << std::endl;
 		printVar(mLowerBound);
-		std::cerr << std::endl;
+		std::cout << std::endl;
 	}
 
 	// Initialize the maximum value found and the function evaluations counter
@@ -1069,8 +1069,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			
 			if(mTrace)
 			{
-				std::cerr << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-				std::cerr <<              "Final log-likelihood value: " << maxl << std::endl;
+				std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+				std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
 				printVar(mVar);
 			}
 			return maxl;
@@ -1146,43 +1146,43 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		// Print the final optimum value
 		if(mTrace)
 		{
-			std::cerr << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+			std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 			switch(result)
 			{
 			case nlopt::SUCCESS:
 				break;
 
 			case nlopt::STOPVAL_REACHED:
-				std::cerr << "Optimization stopped because stopval was reached." << std::endl;
+				std::cout << "Optimization stopped because stopval was reached." << std::endl;
 				break;
 
 			case nlopt::FTOL_REACHED:
-				std::cerr << "Optimization stopped because ftol_rel or ftol_abs was reached." << std::endl;
+				std::cout << "Optimization stopped because ftol_rel or ftol_abs was reached." << std::endl;
 				break;
 
 			case nlopt::XTOL_REACHED:
-				std::cerr << "Optimization stopped because xtol_rel or xtol_abs was reached." << std::endl;
+				std::cout << "Optimization stopped because xtol_rel or xtol_abs was reached." << std::endl;
 				break;
 
 			case nlopt::MAXEVAL_REACHED:
-				std::cerr << "Optimization stopped because maxeval was reached." << std::endl;
+				std::cout << "Optimization stopped because maxeval was reached." << std::endl;
 				break;
 
 			case nlopt::MAXTIME_REACHED:
-				std::cerr << "Optimization stopped because maxtime was reached." << std::endl;	
+				std::cout << "Optimization stopped because maxtime was reached." << std::endl;	
 				break;
 
 			default:
-				std::cerr << "Other reason: " << static_cast<unsigned int>(result) << std::endl;	
+				std::cout << "Other reason: " << static_cast<unsigned int>(result) << std::endl;	
 				break;
 			}
-			std::cerr << "Final log-likelihood value: " << maxl << std::endl;
+			std::cout << "Final log-likelihood value: " << maxl << std::endl;
 			printVar(mVar);
 		}
 	}
 	catch(const nlopt::forced_stop&)
 	{
-		if(mTrace) std::cerr << "Optimization stopped because LRT not satisfied" << std::endl;
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
 		return DBL_MAX;
 	}
 	catch(const nlopt::roundoff_limited&)

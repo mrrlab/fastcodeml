@@ -60,7 +60,7 @@ void alignedFree(void* aPtr)
 #if 0
 
 // The following headers contain stuff that main() uses.
-#include <iostream>  // For std::cerr
+#include <iostream>  // For std::cout
 #include <ostream>   // For std::endl
 #include <vector>    // For std::vector
 #include "AlignedAllocator.h"
@@ -69,31 +69,31 @@ int main()
 {
     using namespace std;
 
-    cerr << "Constructing l:" << endl;
+    cout << "Constructing l:" << endl;
 
     vector<double, AlignedAllocator<double, 8> > l;
 	l.reserve(10);
-    cerr << endl << "l.push_back(1729):" << endl;
+    cout << endl << "l.push_back(1729):" << endl;
 
     l.push_back(1729.);
 
-    cerr << endl << "l.push_back(2161):" << endl;
+    cout << endl << "l.push_back(2161):" << endl;
 
     l.push_back(2161.);
 
-    cerr << endl;
+    cout << endl;
 	double* p = &l[0];
 	int x = reinterpret_cast<int>(p);
-	cerr << "Aligned on 16: " << x%16 << endl;
-	cerr << "Aligned on 8:  " << x%8 << endl;
-	cerr << "Aligned on 4:  " << x%4 << endl;
-    cerr << endl;
+	cout << "Aligned on 16: " << x%16 << endl;
+	cout << "Aligned on 8:  " << x%8 << endl;
+	cout << "Aligned on 4:  " << x%4 << endl;
+    cout << endl;
 
     for (vector<double, AlignedAllocator<double, 8> >::const_iterator i = l.begin(); i != l.end(); ++i) {
-        cerr << "Element: " << *i << endl;
+        cout << "Element: " << *i << endl;
     }
 
-    cerr << endl << "Destroying l:" << endl;
+    cout << endl << "Destroying l:" << endl;
 }
 #endif
 

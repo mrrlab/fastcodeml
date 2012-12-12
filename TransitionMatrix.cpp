@@ -368,13 +368,13 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	if(lwork > lfwork)
 	{
 		work = new double[lwork];
-		//std::cerr << "Optimal work:  " << lwork << " (" << lfwork << ")" << std::endl;
+		//std::cout << "Optimal work:  " << lwork << " (" << lfwork << ")" << std::endl;
 		
 	}
     if(liwork > lfiwork)
 	{
 		iwork = new int[liwork];
-		//std::cerr << "Optimal iwork: " << liwork << " (" << lfiwork << ")" << std::endl;
+		//std::cout << "Optimal iwork: " << liwork << " (" << lfiwork << ")" << std::endl;
 	}
 #endif
     // Compute eigenvalues and eigenvectors for the full symmetric matrix
@@ -511,7 +511,7 @@ void TransitionMatrix::eigenQREV(void)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
+		std::cout << "Exception in eigensolver: " << e.what() << std::endl;
 		throw;
 	}
 }
@@ -649,7 +649,7 @@ void TransitionMatrix::eigenQREV(void)
 	}
 	catch(std::exception& e)
 	{
-		std::cerr << "Exception in eigensolver: " << e.what() << std::endl;
+		std::cout << "Exception in eigensolver: " << e.what() << std::endl;
 		throw;
 	}
 }
