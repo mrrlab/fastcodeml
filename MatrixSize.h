@@ -11,7 +11,7 @@ static const int N = 61;
 static const int N64 = 64;
 
 /// Max number of possible tree traversals for each cycle (4).
-/// This is also the number of codon classes
+/// This is also the number of codon classes.
 ///
 static const int Nt = 4;
 

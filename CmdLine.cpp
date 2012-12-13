@@ -159,7 +159,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NOT_REDUCE,		"-nr",					SO_NONE,	"Do not reduce forest by merging common subtrees" },
 		{ OPT_NOT_REDUCE,		"--no-reduce",			SO_NONE,	"" },
 		{ OPT_TIMES_FROM_FILE,	"-l",					SO_NONE,	"Initial branch lengths from tree file" },
-		{ OPT_TIMES_FROM_FILE,	"--times-from-file",	SO_NONE,	"" },
+		{ OPT_TIMES_FROM_FILE,	"--lengths-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_STEP,			"-o",					SO_NONE,	"Only the initial step is performed (no maximization)" },
 		{ OPT_ONE_STEP,			"--initial-step",		SO_NONE,	"" },
 		{ OPT_COMP_TIMES,		"-c",					SO_REQ_SEP,	"Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree" },
@@ -196,7 +196,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	};
 	
 	// Setup the usage string
-	const char* usage_msg = "FastCodeML [options] tree_file gene_file";
+	const char* usage_msg = "FastCodeML [options] tree_file alignment_file";
 
     // Declare our options parser, pass in the arguments from main as well as our array of valid options.
     CSimpleOpt args(aCnt, aVal, parser_options, SO_O_NOSLASH);
@@ -347,7 +347,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		// Falltrough
 
 	case 1:
-		std::cout << "Missing GENE file" << std::endl << std::endl;
+		std::cout << "Missing PHYLIP CODON ALIGNMENT file" << std::endl << std::endl;
 		std::cout << "Usage:" << std::endl;
 		std::cout << "    " << usage_msg << std::endl << std::endl;
 		mCmdLineImpl->showHelp(parser_options);

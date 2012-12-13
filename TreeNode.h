@@ -141,7 +141,7 @@ public:
 	///
 	TreeNode* getChild(unsigned int aIdx) const
 	{
-		if(aIdx >= mChildrenList.size()) return NULL;
+		if(aIdx >= static_cast<unsigned int>(mChildrenList.size())) return NULL;
 		return mChildrenList[aIdx];
 	}
 
