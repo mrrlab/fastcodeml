@@ -78,16 +78,35 @@ void WriteResults::outputResults(void)
 			const std::vector<unsigned int>& site = ipss->second.first;
 			const std::vector<double>& prob       = ipss->second.second;
 
+			const std::vector<size_t>& idx = orderSites(site);
+
 			size_t ns = site.size();
 			for(size_t s=0; s < ns; ++s)
 			{
+				size_t i = idx[s];
 				out << "PositiveSelectionSite for branch: " << std::setw(4) << branch;
-				out << "  Site: " << std::setw(6) << site[s] + 1 << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[s] << std::endl;
+				out << "  Site: " << std::setw(6) << site[i] + 1 << "  Prob: " << std::setw(9) << std::setprecision(6) << std::fixed << prob[i] << std::endl;
 			}
 		}
 	}
 
 	out.close();
+}
+
+const std::vector<size_t>& WriteResults::orderSites(const std::vector<unsigned int>& aSites) const
+{
+	// Fill the map with pairs(site, its index)
+	std::multimap<unsigned int, size_t> ordered_map;
+	size_t end(aSites.size());
+	for(size_t i=0; i < end; ++i) ordered_map.insert(std::pair<unsigned int, size_t>(aSites[i], i));
+
+	// Take the list of indices after ordering the list of sites
+	mSiteOrder.clear();
+	std::multimap<unsigned int, size_t>::const_iterator im(ordered_map.begin());
+	std::multimap<unsigned int, size_t>::const_iterator endm(ordered_map.end());
+	for(; im != endm; ++im)  mSiteOrder.push_back(im->second);
+
+	return mSiteOrder;
 }
 
 void WriteResults::saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothesis)

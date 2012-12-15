@@ -407,6 +407,11 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 	// Access the mapping from internal to original site numbers
 	const std::multimap<size_t, size_t>& internal_to_original_site = mForest.getSitesMappingToOriginal();
 
+	// To order the sites
+	std::multimap<size_t, size_t> ordered_map;
+	std::vector<double> probs;
+	size_t current_idx = 0;
+
 	// For all sites
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -420,22 +425,34 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 				std::cout << "Printing positive sel sites for branch " << aFgBranch << std::endl;
 				print_title = false;
 			}
-			
-			// Set significance
-			const char* sig;
-			if(prob > TWO_STARS_PROB)     sig = "**";
-			else if(prob > ONE_STAR_PROB) sig = "*";
-			else                          sig = "";
 
-			// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
+			// Save site number and probability after mapping the site number to the original value
 			std::pair<std::multimap<size_t, size_t>::const_iterator,std::multimap<size_t, size_t>::const_iterator> ret(internal_to_original_site.equal_range(site));
 			std::multimap<size_t, size_t>::const_iterator it(ret.first);
 			const std::multimap<size_t, size_t>::const_iterator end(ret.second);
 			for(; it != end; ++it)
 			{
-				std::cout << std::setw(6) << it->second + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+				ordered_map.insert(std::pair<size_t, size_t>(it->second, current_idx));
+				probs.push_back(prob);
+				++current_idx;
 			}
 		}
+	}
+
+	// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
+	std::multimap<size_t, size_t>::const_iterator im(ordered_map.begin());
+	std::multimap<size_t, size_t>::const_iterator endm(ordered_map.end());
+	for(; im != endm; ++im)
+	{
+		double prob = probs[im->second];
+
+		// Set significance
+		const char* sig;
+		if(prob > TWO_STARS_PROB)     sig = "**";
+		else if(prob > ONE_STAR_PROB) sig = "*";
+		else                          sig = "";
+
+		std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 	}
 }
 

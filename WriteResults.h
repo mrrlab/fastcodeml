@@ -57,11 +57,20 @@ public:
 	///
 	bool isWriteResultsEnabled(void) const { return mFilename != NULL; }
 
+	/// Returns the correct index order to have the sites printed in the correct order.
+	///
+	/// @param[in] aSites The vector of site numbers
+	///
+	/// @return The list of indices that gives the sites in the correct order.
+	///
+	const std::vector<size_t>& orderSites(const std::vector<unsigned int>& aSites) const;
+
 private:
 	const char*					mFilename;			///< The file to which the results should be written. If null, no printing appear
 	std::map<size_t, double>	mLnL[2];			///< The log-likelihood for the given fg branch and for the two hypothesis
 	std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double> > >
 								mPositiveSelSites;	///< The sites under positive selection and the corresponding probabilities for a given fg branch
+	mutable std::vector<size_t>	mSiteOrder;			///< The new site+prob order computed by orderSites routine
 };
 
 #endif

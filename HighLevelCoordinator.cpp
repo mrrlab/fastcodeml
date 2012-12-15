@@ -525,11 +525,29 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			WorkTable::ResultSet& branch_results = mWorkTable->mResults[branch];
 			if(branch_results.mPositiveSelSites.empty()) continue;
 
+			// To order the sites
+			std::multimap<size_t, size_t> ordered_map;
+			std::vector<double> probs;
+			size_t current_idx = 0;
+
 			std::cout << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
 			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
 				// Get probability
 				double prob = branch_results.mPositiveSelProbs[pss];
+
+				// Save site and probability to order output by site
+				ordered_map.insert(std::pair<size_t, size_t>(branch_results.mPositiveSelSites[pss], current_idx));
+				probs.push_back(prob);
+				++current_idx;
+			}
+
+			// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
+			std::multimap<size_t, size_t>::const_iterator im(ordered_map.begin());
+			std::multimap<size_t, size_t>::const_iterator endm(ordered_map.end());
+			for(; im != endm; ++im)
+			{
+				double prob = probs[im->second];
 
 				// Set significance
 				const char* sig;
@@ -537,9 +555,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				else if(prob > ONE_STAR_PROB) sig = "*";
 				else                          sig = "";
 
-				// Adjust the site number because it starts from 1 and not zero
-				std::cout << std::setw(6) << branch_results.mPositiveSelSites[pss] + 1 <<
-							 std::fixed << std::setprecision(6) << prob << sig << std::endl;
+				std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
 		}
 	}
