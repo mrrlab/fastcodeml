@@ -3,6 +3,7 @@ module load intel/2013
 module load cmake
 module load boost
 module load mvapich2/1.8.1-intel-wocuda
+module load cuda/4.0
 
 *) Setting environment variables
 export BLAS_LIB_DIR="/apps/castor/intel/mkl/lib/intel64/" #we want to flexible here, hence we do not specify /usr/lib
