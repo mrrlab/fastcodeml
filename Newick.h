@@ -50,6 +50,16 @@ public:
 	///
 	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const;
 
+	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the internal branch number.
+	///
+	/// @param[in] aOut Output stream
+	/// @param[in] aNode The node from which to start. If null starts from the root.
+	/// @param[in] aInternalBranch Internal branch identifier to annotate the current branch.
+	///
+	/// @return The new internal branch id
+	///
+	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0) const;
+
 
 private:
 	/// Load a phylo tree definition from a Newick formatted string.

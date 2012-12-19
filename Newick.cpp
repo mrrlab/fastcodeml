@@ -169,8 +169,6 @@ void Newick::readFile(const char *aFilename)
 	{
         p1 = str.find_first_of('(');
         if(p1 != std::string::npos) break;
-       // p1 = str.find_first_not_of(" \t\r\n");
-       // if(p1 != std::string::npos && str[p1] == '(') break;
 	}
 	in.close();
 	if(p1 == std::string::npos)
@@ -276,3 +274,44 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 	}
 }
 
+
+int Newick::printTreeAnnotated(std::ostream& aOut, TreeNode *aNode, int aInternalBranch) const
+{
+	TreeNode *m;
+	unsigned int idx;
+	int internal_branch_idx = aInternalBranch;
+
+	// Special case for the root
+	if(!aNode)
+	{
+		aOut << std::endl << "Annotated Newick tree (*N mark the internal branch N)" << std::endl;
+		aOut << '(';
+		for(idx=0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx)
+		{
+			if(idx > 0) aOut << ',';
+			internal_branch_idx = printTreeAnnotated(aOut, m, internal_branch_idx);
+		}
+		aOut << ')';
+		mTreeRoot.printNode();
+		aOut << ';' << std::endl;
+	}
+	else if(aNode->isLeaf())
+	{
+		aNode->printNode();
+	}
+	else
+	{
+		internal_branch_idx = aInternalBranch+1;
+		aOut << '(';
+		for(idx=0; (m = aNode->getChild(idx)) != NULL; ++idx)
+		{
+			if(idx > 0) aOut << ',';
+			internal_branch_idx = printTreeAnnotated(aOut, m, internal_branch_idx);
+		}
+		aOut << ')';
+		aNode->printNode();
+		aOut << '*' << aInternalBranch;
+	}
+
+	return internal_branch_idx;
+}

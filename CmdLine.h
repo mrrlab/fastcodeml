@@ -35,7 +35,7 @@ public:
 		mExtraDebug(0),
 		mIgnoreFreq(false),
 		mDoNotReduceForest(false),
-		mTimesFromFile(false),
+		mBranchLengthsFromFile(false),
 		mNoMaximization(false),
 		mTrace(false),
 		mForceSerial(false),
@@ -78,7 +78,7 @@ public:
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
 	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
-	bool			mTimesFromFile;			///< The initial value of the branch lengths is taken from the phylo tree file
+	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
 	bool			mForceSerial;			///< Disable all parallelism

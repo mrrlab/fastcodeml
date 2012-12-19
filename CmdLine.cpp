@@ -266,7 +266,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_TIMES_FROM_FILE:
-			mTimesFromFile = true;
+			mBranchLengthsFromFile = true;
 			break;
 
 		case OPT_ONE_STEP:

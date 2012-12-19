@@ -656,8 +656,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_H0:
 			{
 			// Initialize maximizer
-			if(aCmdLine.mInitFromParams)		h0.initFromTreeAndParams();
-			else if(aCmdLine.mTimesFromFile)	h0.initFromTree();
+			if(aCmdLine.mInitFromParams)				h0.initFromTreeAndParams();
+			else if(aCmdLine.mBranchLengthsFromFile)	h0.initFromTree();
 
 			// Get the lnl from the corresponding H1 step if any
 			double threshold = (job[2] > 0) ? values_double[0]-THRESHOLD_FOR_LRT : 0.;
@@ -676,8 +676,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_H1:
 			{
 			// Initialize maximizer
-			if(aCmdLine.mInitFromParams)		h1.initFromTreeAndParams();
-			else if(aCmdLine.mTimesFromFile)	h1.initFromTree();
+			if(aCmdLine.mInitFromParams)				h1.initFromTreeAndParams();
+			else if(aCmdLine.mBranchLengthsFromFile)	h1.initFromTree();
 
 			// Compute H1
 			double lnl = h1(static_cast<size_t>(job[1]));

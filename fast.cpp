@@ -101,7 +101,7 @@ int main(int aRgc, char **aRgv)
 		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
 		if(cmd.mInitH0fromH1)						std::cout << "Starting val.:  From H1" << std::endl;
 		else if(cmd.mInitFromParams)				std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
-		else if(cmd.mTimesFromFile)					std::cout << "Starting val.:  Times from tree file" << std::endl;
+		else if(cmd.mBranchLengthsFromFile)			std::cout << "Starting val.:  Times from tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cout << "Maximization:   No" << std::endl;
 		if(cmd.mTrace)								std::cout << "Trace:          On" << std::endl;
 		if(cmd.mCleanData)							std::cout << "Clean data:     On" << std::endl;
@@ -188,7 +188,10 @@ int main(int aRgc, char **aRgv)
 	msa.checkNameCoherence(tree.getSpecies());
 
 	// If times from file then check for null branch lengths for any leaf
-	if(cmd.mTimesFromFile) tree.checkNullBranchLengths();
+	if(cmd.mBranchLengthsFromFile) tree.checkNullBranchLengths();
+
+	// Print the tree with the numbering of internal branches
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) tree.printTreeAnnotated(std::cout);
 
 	// Load the forest
 	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
@@ -308,8 +311,8 @@ int main(int aRgc, char **aRgv)
 		double lnl1 = 0.;
 		if(cmd.mComputeHypothesis != 0)
 		{
-			if(cmd.mInitFromParams)			h1.initFromTreeAndParams();
-			else if(cmd.mTimesFromFile)		h1.initFromTree();
+			if(cmd.mInitFromParams)				h1.initFromTreeAndParams();
+			else if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
 
@@ -321,9 +324,9 @@ int main(int aRgc, char **aRgv)
 		double lnl0 = 0.;
 		if(cmd.mComputeHypothesis != 1)
 		{
-			if(cmd.mInitH0fromH1)			h0.initFromResult(h1.getVariables());
-			else if(cmd.mInitFromParams)	h0.initFromTreeAndParams();
-			else if(cmd.mTimesFromFile)		h0.initFromTree();
+			if(cmd.mInitH0fromH1)				h0.initFromResult(h1.getVariables());
+			else if(cmd.mInitFromParams)		h0.initFromTreeAndParams();
+			else if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
 
 			lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
 
