@@ -160,6 +160,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NOT_REDUCE,		"--no-reduce",			SO_NONE,	"" },
 		{ OPT_TIMES_FROM_FILE,	"-l",					SO_NONE,	"Initial branch lengths from tree file" },
 		{ OPT_TIMES_FROM_FILE,	"--lengths-from-file",	SO_NONE,	"" },
+		{ OPT_TIMES_FROM_FILE,	"--times-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_STEP,			"-o",					SO_NONE,	"Only the initial step is performed (no maximization)" },
 		{ OPT_ONE_STEP,			"--initial-step",		SO_NONE,	"" },
 		{ OPT_COMP_TIMES,		"-c",					SO_REQ_SEP,	"Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree" },

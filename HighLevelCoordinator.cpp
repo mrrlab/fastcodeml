@@ -125,6 +125,13 @@ struct HighLevelCoordinator::WorkTable
 	/// @exception FastCodeMLFatal If found jobs still pending
 	///
 	void checkAllJobsDone(void) const;
+
+	/// Print completed branches.
+	/// This routine should be called after markJobFinished().
+	///
+	/// @param[in] aIdx  The identifier of the finished job (it is branch*JOBS_PER_BRANCH+job_type) as returned by markJobFinished().
+	///
+	void printFinishedBranch(int aIdx) const;
 };
 
 
@@ -225,6 +232,20 @@ int HighLevelCoordinator::WorkTable::markJobFinished(int aRank)
 	throw FastCodeMLFatal("No job found in markJobFinished");
 }
 
+
+void HighLevelCoordinator::WorkTable::printFinishedBranch(int aIdx) const
+{
+	int branch = aIdx / JOBS_PER_BRANCH;
+	int i = branch*JOBS_PER_BRANCH;
+	if(mJobStatus[i+0] == JOB_COMPLETED && mJobStatus[i+1] == JOB_COMPLETED)
+	{
+		// If the previous results do not pass the LRT or H0 has been interrupted, then skip the BEB computation
+		if(mJobStatus[i+2] == JOB_COMPLETED || mResults[branch].mLnl[0] == DBL_MAX || !BranchSiteModel::performLRT(mResults[branch].mLnl[0], mResults[branch].mLnl[1]))
+		{
+			std::cout << "Branch " << std::setw(3) << branch << " completed" << std::endl;
+		}
+	}
+}
 
 
 void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
@@ -377,8 +398,17 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			// Save for the results file (if has been computed)
 			if(lnl < DBL_MAX) aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
 
+			// If request print a work completed message
+			if(mVerbose >= VERBOSE_INFO_OUTPUT) mWorkTable->printFinishedBranch(idx);
+
 			// Output a status message
-			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE)
+			{
+				if(lnl < DBL_MAX)
+					std::cout << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
+				else
+					std::cout << std::fixed << std::setprecision(8) << "Lnl: NA for H" << h << " from worker " << worker << std::endl;
+			}
 			}
 			break;
 
@@ -417,6 +447,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				}
 				aOutputResults.savePositiveSelSites(static_cast<size_t>(branch), sites, mWorkTable->mResults[branch].mPositiveSelProbs);
 			}
+
+			// If request print a work completed message
+			if(mVerbose >= VERBOSE_INFO_OUTPUT) mWorkTable->printFinishedBranch(idx);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
@@ -496,13 +529,19 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
 		if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
 		{
-			std::cout << "  Lnl H0: " << std::setw(12) << "NA";
+			std::cout << "  Lnl H0: " << std::setw(24) << "NA";
 		}
 		else
 		{
-			std::cout << "  Lnl H0: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
+			std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
 		}
-		std::cout << "  Lnl H1: " << std::setw(12) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1] << std::endl;
+		std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
+
+		if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
+			std::cout << "  LRT: " << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+		else
+			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+		std::cout << std::endl;
 	}
 
 	// Check if at least one site is under positive selection
