@@ -19,12 +19,13 @@ public:
 	///
 	/// @param[in] aModel				The pointer to the hypothesis class that will be used
 	/// @param[in] aTrace				Trace or not the optimizer progress
+	/// @param[in] aVerbose				The verbose level
 	/// @param[in] aLowerBound			Lower limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aDeltaForGradient	Delta used to compue the gradient
 	/// @param[in] aRelativeError		Relative error to stop computation
 	///
-	Ming2(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError) :
+	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError) :
 			mModel(aModel),
 			mTrace(aTrace),
 			mTraceFun(false),
@@ -32,8 +33,9 @@ public:
 			mUpperBound(aUpperBound),
 			mDeltaForGradient(aDeltaForGradient),
 			mRelativeError(aRelativeError),
+			mVerbose(aVerbose),
 			mAlwaysCenter(false),
-			mNoisy(0) {}
+			mNoisy((aTrace && aVerbose > 0) ? 9 : 0) {}
 
 	/// Do the minimization of: aModel->computeLikelihood(x, n, mTraceFun);
 	///
@@ -139,6 +141,7 @@ private:
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	double						mDeltaForGradient;	///< This is the original Small_Diff value
 	double						mRelativeError;		///< The relative error at which the computation stops
+	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
 
 private:
 	/// The following variables are from the original code
