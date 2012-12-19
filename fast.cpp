@@ -355,6 +355,14 @@ int main(int aRgc, char **aRgv)
 				h1.printFinalVars(std::cout);
 				std::cout << std::endl;
 			}
+			if(cmd.mComputeHypothesis > 1)
+			{
+				if(lnl0 < DBL_MAX)
+					std::cout << "LRT: " << std::setprecision(15) << std::fixed << lnl1 - lnl0 << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+				else
+					std::cout << "LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+				std::cout << std::endl;
+			}
 		}
 
 		// If requested set the time in the forest and export to a graph visualization tool
