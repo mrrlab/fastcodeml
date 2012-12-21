@@ -188,7 +188,22 @@ int main(int aRgc, char **aRgv)
 	msa.checkNameCoherence(tree.getSpecies());
 
 	// If times from file then check for null branch lengths for any leaf
-	if(cmd.mBranchLengthsFromFile) tree.checkNullBranchLengths();
+	if(cmd.mBranchLengthsFromFile)
+	{
+		int zero_on_leaf_cnt = 0;
+		int zero_on_int_cnt  = 0;
+		tree.countNullBranchLengths(zero_on_leaf_cnt, zero_on_int_cnt);
+
+		if(zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0)
+		{
+			std::cout << "Found Null or missing branch length in tree file. On leaves: " << zero_on_leaf_cnt << "  on internal branches: " << zero_on_int_cnt << std::endl;
+		}
+
+		if(zero_on_leaf_cnt > 0)
+		{
+			throw FastCodeMLFatal("Null or missing branch length in tree file");
+		}
+	}
 
 	// Print the tree with the numbering of internal branches
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) tree.printTreeAnnotated(std::cout);

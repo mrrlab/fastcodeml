@@ -102,11 +102,11 @@ public:
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///
+	/// @param[in,out] aOnLeafCnt The count of leaf branches with length zero (should be zeroed before first call)
+	/// @param[in,out] aOnIntCnt The count of internal branches with length zero (should be zeroed before first call)
 	/// @param[in] aTreeNode The node from which to start checking the tree. If not present starts from the root.
 	///
-	/// @exception FastCodeMLFatal If any leaf has null branch length associated
-	///
-	void checkNullBranchLengths(const TreeNode* aTreeNode=NULL) const;
+	void countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const TreeNode* aTreeNode=NULL) const;
 
 
 protected:
