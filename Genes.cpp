@@ -67,8 +67,13 @@ void Genes::setLeaveProb(double* aLeaveProbVect, double aProb) const
 	{
 		throw FastCodeMLFatal("Invalid codon found in setLeaveProb.");
 	}
+	else if(mCurrentPositions.size() == 1)
+	{
+		aLeaveProbVect[mCurrentPositions[0]] = aProb;
+	}
 	else
 	{
+		aProb /= static_cast<double>(mCurrentPositions.size());
 		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = aProb;
 	}
 }
