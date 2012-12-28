@@ -187,8 +187,13 @@ void Newick::readFile(const char *aFilename)
 		throw FastCodeMLFatal(o);
 	}
 
+	// Clean blanks (the grammar cannot cope with them and I don't know why)
+	std::string tmp = str.substr(p1, p2-p1+1);
+	tmp.erase(std::remove_if(tmp.begin(), tmp.end(), ::isspace), tmp.end());
+
 	// Pass the tree part to the parser
-	loadTreeFromString(str.substr(p1, p2-p1+1));
+	//loadTreeFromString(str.substr(p1, p2-p1+1));
+	loadTreeFromString(tmp);
 }
 
 
