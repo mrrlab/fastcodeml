@@ -132,6 +132,14 @@ struct HighLevelCoordinator::WorkTable
 	/// @param[in] aIdx  The identifier of the finished job (it is branch*JOBS_PER_BRANCH+job_type) as returned by markJobFinished().
 	///
 	void printFinishedBranch(int aIdx) const;
+
+	/// Print the optimized variables.
+	///
+	/// @param[in] aBranch The branch to be printed.
+	/// @param[in] aHyp The hypothesis results to be printed
+	/// @param[in] aOut The stream on which the print should be done.
+	///
+	void printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut=std::cout) const;
 };
 
 
@@ -261,6 +269,86 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 	}
 	
 	if(any_error) throw FastCodeMLFatal();
+}
+
+void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut) const
+{
+	aOut << "Optimized variables for H" << aHyp << " for fg branch " << aBranch << std::endl;
+
+	// To nicely format num branch lengths per line
+	static const unsigned int VARS_PER_LINE = 8;
+	unsigned int count_per_line = 0;
+	static const std::streamsize VARS_PRECISION = 7;
+	static const std::streamsize VARS_WIDTH     = 11;
+	
+	// Write the data with an uniform precision
+	std::streamsize prec = aOut.precision(VARS_PRECISION);
+	aOut.setf(std::ios::fixed, std::ios::floatfield);
+
+	// Print all variables formatted to be readable
+	int num_times = static_cast<int>(mResults[aBranch].mHxVariables[aHyp].size()) - ((aHyp) ? 7 : 4); // for H1 is 5 - 2 scale factors
+	double v0 = 0;
+	std::vector<double>::const_iterator ix(mResults[aBranch].mHxVariables[aHyp].begin());
+	//const std::vector<double>::const_iterator end(mResults[aBranch].mHxVariables[aHyp].end());
+	//for(int k = -static_cast<int>(num_times); ix != end; ++ix,++k)
+	for(int k = -static_cast<int>(num_times); k < (aHyp ? 5 : 4); ++ix,++k)
+	{
+		switch(k)
+		{
+		case 0:
+			if(count_per_line) aOut << std::endl;
+			v0 = *ix;
+			break;
+		case 1:
+			{
+				double p[4];
+				//getProportions(v0, *ix, p);
+#ifdef USE_ORIGINAL_PROPORTIONS
+				p[0] = exp(v0);
+				p[1] = exp(*ix);
+				double tot = p[0] + p[1] + 1;
+				p[0] /= tot;
+				p[1] /= tot;
+				tot = p[0] + p[1];
+
+				p[2] = (1. - tot)*p[0]/tot;
+				p[3] = (1. - tot)*p[1]/tot;
+#else
+				p[0] = v0*(*ix);
+				p[1] = v0*(1.-(*ix));
+				p[2] = (1.-v0)*(*ix);
+				p[3] = (1.-v0)*(1.-(*ix));
+#endif
+
+				aOut <<   "p0:"  << std::setw(VARS_WIDTH) << p[0];
+				aOut << "  p1:"  << std::setw(VARS_WIDTH) << p[1];
+				aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
+				aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
+				aOut << std::endl;
+			}
+			break;
+		case 2:
+			aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
+			break;
+		case 3:
+			aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
+			break;
+		case 4:
+			aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+			break;
+		default:
+			aOut << std::setw(VARS_WIDTH) << *ix;
+			++count_per_line;
+			if(count_per_line == VARS_PER_LINE)
+			{
+				count_per_line = 0;
+				aOut << std::endl;
+			}
+			break;
+		}
+	}
+	aOut << std::endl;
+	aOut.precision(prec);
 }
 
 
@@ -407,7 +495,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				if(lnl < DBL_MAX)
 					std::cout << std::fixed << std::setprecision(8) << "Lnl: " << lnl << " for H" << h << " from worker " << worker << std::endl;
 				else
-					std::cout << std::fixed << std::setprecision(8) << "Lnl: NA for H" << h << " from worker " << worker << std::endl;
+					std::cout << std::fixed << "Lnl: NA for H" << h << " from worker " << worker << std::endl;
 			}
 			}
 			break;
@@ -521,7 +609,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 	// Save results in the results file for later processing
 	aOutputResults.outputResults();
 
-	// Print likelihoods
+	// Print likelihoods (and variables)
 	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
 	std::cout << std::endl;
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
@@ -541,6 +629,10 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			std::cout << "  LRT: " << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 		else
 			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		if(mWorkTable->mResults[branch].mLnl[0] != DBL_MAX) mWorkTable->printVariables(branch, 0, std::cout);
+		mWorkTable->printVariables(branch, 1, std::cout);
 		std::cout << std::endl;
 	}
 
