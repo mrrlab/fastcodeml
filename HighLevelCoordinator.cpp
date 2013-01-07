@@ -626,7 +626,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
 
 		if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
-			std::cout << "  LRT: " << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+			std::cout << "  LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 		else
 			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
 		std::cout << std::endl;
