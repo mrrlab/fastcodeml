@@ -149,12 +149,52 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	// Inizialize codons multiplicity
 	std::vector<unsigned int> codon_multiplicity(ncodons, 1);
 
+	// Count ambiguous positions
+	int num_ambiguous = 0;
+	for(j=0; j < ncodons; ++j)
+	{
+		bool ambiguous = false;
+		for(i=0; i < nspecies; ++i)
+		{
+			const char *p = mDnaGene[i].c_str();
+			const std::vector<int>& pos = getPositions(&p[3*j]);
+			size_t len = pos.size();
+
+			if(len > 1) ambiguous = true;
+		}
+		if(ambiguous) ++num_ambiguous;
+	}
+
+	// Count and remove gaps
+	int num_gaps = 0;
+	for(j=0; j < ncodons; ++j)
+	{
+		for(i=0; i < nspecies; ++i)
+		{
+			const char *p = mDnaGene[i].c_str();
+			const std::vector<int>& pos = getPositions(&p[3*j]);
+			size_t len = pos.size();
+
+			if(len > 0 && len < 61) break; 
+		}
+		if(i == nspecies)
+		{
+			if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+			{
+				std::cout << "Gap at codon " << j << std::endl;
+			}
+			codon_multiplicity[j] = 0;
+			++num_gaps;
+		}
+	}
+
 	// Remove invalid codons
 	for(i=0; i < nspecies; ++i)
     {
 		const char *p = mDnaGene[i].c_str();
 		for(j=0; j < ncodons; ++j)
 		{
+			if(codon_multiplicity[j] == 0) continue;
 			if(!validCodon(&p[3*j], aCleanData)) codon_multiplicity[j] = 0;
 		}
 	}
@@ -170,6 +210,10 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 		std::cout << "Num. species: " << std::setw(6) << nspecies << std::endl;
 		std::cout << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
 		std::cout << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
+		if(num_ambiguous) std::cout 
+                  << "Ambiguous:    " << std::setw(6) << num_ambiguous << "/" << ncodons << std::endl;
+		if(num_gaps) std::cout
+				  << "Gaps removed: " << std::setw(6) << num_gaps << std::endl;
 	}
 
 	// Prepare the mapping from program sites back to original sites
