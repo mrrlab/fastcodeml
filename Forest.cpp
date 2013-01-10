@@ -135,39 +135,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Save the new to original site number map
 	mSitesMappingToOriginal = aGenes.getSitesMappingToOriginal();
-	
-#if 0
-	// Set mapping from original to reduced
-	mSitesMappingFromOriginal.resize(aGenes.getOriginalNumSites(), std::numeric_limits<size_t>::max());
-	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
-	{
-		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret(mSitesMappingToOriginal.equal_range(j));
-
-		std::multimap<size_t, size_t>::iterator it(ret.first);
-		const std::multimap<size_t, size_t>::iterator end(ret.second);
-		for(; it != end; ++it) mSitesMappingFromOriginal[it->second] = j;
-	}
-
-	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
-	{
-		std::multimap<size_t, size_t>::iterator it;
-		std::pair<std::multimap<size_t, size_t>::iterator,std::multimap<size_t, size_t>::iterator> ret = mSitesMappingToOriginal.equal_range(j);
-
-		std::cout << std::setw(5) << j;
-		for(it=ret.first; it != ret.second; ++it)
-		{
-			std::cout << std::setw(5) << it->second;
-		}
-		std::cout << std::endl;
-	}
-	for(size_t j=0; j < aGenes.getOriginalNumSites(); ++j)
-	{
-		if(mSitesMappingFromOriginal[j] == std::numeric_limits<size_t>::max())
-			std::cout << std::setw(5) << j << std::setw(5) << "-" << std::endl;
-		else
-			std::cout << std::setw(5) << j << std::setw(5) << mSitesMappingFromOriginal[j] << std::endl;
-	}
-#endif
 
 #ifdef NEW_LIKELIHOOD
 	postLoad();
