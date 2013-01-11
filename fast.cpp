@@ -546,7 +546,7 @@ Usage:
 -nr  --no-reduce (no argument)
         Do not reduce forest by merging common subtrees
 
--l  --lenghts-from-file (no argument)
+-l  --lengths-from-file (no argument)
         Initial branch lengths from tree file
 
 -o  --initial-step (no argument)
