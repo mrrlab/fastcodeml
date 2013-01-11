@@ -278,6 +278,10 @@ int main(int aRgc, char **aRgv)
 	const size_t marked_branch = forest.getMarkedInternalBranch();
 
 	// Check if the request make sense
+	if(num_branches == 0)
+	{
+		throw FastCodeMLFatal("No internal branches present. Quitting");
+	}
 	if(cmd.mBranchFromFile && marked_branch >= num_branches)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl; 
@@ -287,7 +291,7 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
 	}
 
-	// Compute branch to compute (or switch to the entire range of branches)
+	// Compute which branch to compute (or switch to the entire range of branches)
 	if(cmd.mBranchFromFile && marked_branch < num_branches)
 	{
 		// Branch from file and valid
