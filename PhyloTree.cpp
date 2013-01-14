@@ -177,3 +177,16 @@ void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const Tr
 		countNullBranchLengths(aOnLeafCnt, aOnIntCnt, m);
 	}
 }
+
+void PhyloTree::checkRootBranches(void) const
+{
+	TreeNode *m;
+	unsigned int cnt = 0;
+	unsigned int cnt_leaves = 0;
+	for(; (m = mTreeRoot.getChild(cnt)) != NULL; ++cnt)
+	{
+		if(m->isLeaf()) ++cnt_leaves;
+	}
+
+	std::cout << std::endl << "Root has " << cnt << " children of which " << cnt_leaves << " are leaves" << std::endl;
+}

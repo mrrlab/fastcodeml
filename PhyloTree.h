@@ -108,6 +108,10 @@ public:
 	///
 	void countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const TreeNode* aTreeNode=NULL) const;
 
+	/// Verify if the root of the tree is well formed for the analysis.
+	/// Currently it prints the number of branches emanating from the tree root and how many of them are leaves.
+	///
+	void checkRootBranches(void) const;
 
 protected:
 

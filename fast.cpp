@@ -187,6 +187,9 @@ int main(int aRgc, char **aRgv)
 	// Check coherence between the two files
 	msa.checkNameCoherence(tree.getSpecies());
 
+	// Check root (TBD)
+	tree.checkRootBranches();
+
 	// If times from file then check for null branch lengths for any leaf
 	if(cmd.mBranchLengthsFromFile)
 	{
