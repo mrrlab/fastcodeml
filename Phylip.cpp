@@ -61,7 +61,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
         if(str.empty()) continue;
 		size_t p1 = str.find_first_not_of(" \t\r");
 		if(p1 == std::string::npos) continue;
-		size_t p2 = str.find_first_of(" \t", p1);
+		size_t p2 = str.find_first_of(" \t\r", p1);
 
 		std::string s;
 		s.assign(str, p1, p2-p1);

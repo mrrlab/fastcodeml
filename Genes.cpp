@@ -114,8 +114,8 @@ void Genes::checkNameCoherence(const std::vector<std::string>& aNames) const
 	for(; is1 != end1; ++is1)
 	{
 		bool found = false;
-		std::vector<std::string>::const_iterator is2=mDnaSpecies.begin();
-		const std::vector<std::string>::const_iterator end2=mDnaSpecies.end();
+		std::vector<std::string>::const_iterator is2(mDnaSpecies.begin());
+		const std::vector<std::string>::const_iterator end2(mDnaSpecies.end());
 		for(; is2 != end2; ++is2)
 		{
 			if(*is1 == *is2) {found = true; break;}

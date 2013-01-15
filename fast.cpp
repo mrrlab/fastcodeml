@@ -189,6 +189,7 @@ int main(int aRgc, char **aRgv)
 
 	// Check root (TBD)
 	tree.checkRootBranches();
+	//throw FastCodeMLSuccess();
 
 	// If times from file then check for null branch lengths for any leaf
 	if(cmd.mBranchLengthsFromFile)
