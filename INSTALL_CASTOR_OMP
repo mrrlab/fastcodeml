@@ -1,4 +1,5 @@
 #!/bin/bash
+# This is the same script as for the sequential version, just apply USE_OMP when using ccmake!
 # Build FastcodeML on castor, sequential version; use ccmake and assure that OMP and MPI are switched off!!
 #One working library path is:
 #echo $LD_LIBRARY_PATH
