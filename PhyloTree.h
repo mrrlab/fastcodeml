@@ -111,6 +111,8 @@ public:
 	/// Verify if the root of the tree is well formed for the analysis.
 	/// Currently it prints the number of branches emanating from the tree root and how many of them are leaves.
 	///
+	/// @exception FastCodeMLFatal Root has only one branch or points only to leaves.
+	///
 	void checkRootBranches(void) const;
 
 protected:

@@ -149,22 +149,6 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	// Inizialize codons multiplicity
 	std::vector<unsigned int> codon_multiplicity(ncodons, 1);
 
-	// Count ambiguous positions
-	int num_ambiguous = 0;
-	for(j=0; j < ncodons; ++j)
-	{
-		bool ambiguous = false;
-		for(i=0; i < nspecies; ++i)
-		{
-			const char *p = mDnaGene[i].c_str();
-			const std::vector<int>& pos = getPositions(&p[3*j]);
-			size_t len = pos.size();
-
-			if(len > 1) ambiguous = true;
-		}
-		if(ambiguous) ++num_ambiguous;
-	}
-
 	// Count and remove gaps
 	int num_gaps = 0;
 	for(j=0; j < ncodons; ++j)
@@ -175,17 +159,46 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 			const std::vector<int>& pos = getPositions(&p[3*j]);
 			size_t len = pos.size();
 
-			if(len > 0 && len < 61) break; 
+			// Stop if an invalid codon is found
+			if(len == 0)
+			{
+				std::ostringstream o;
+				o << "Invalid codon at site " << j+1 << " for specie " << i+1;
+				throw FastCodeMLFatal(o);
+			}
+
+			// It is a gap if the codon is completely ambiguous
+			if(len < 61) break; 
 		}
 		if(i == nspecies)
 		{
 			if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 			{
-				std::cout << "Gap at codon " << j << std::endl;
+				std::cout << "Gap at codon " << j+1 << std::endl;
 			}
 			codon_multiplicity[j] = 0;
 			++num_gaps;
 		}
+	}
+
+	// Count ambiguous positions
+	int num_ambiguous = 0;
+	for(j=0; j < ncodons; ++j)
+	{
+		// Don't check gaps
+		if(codon_multiplicity[j] == 0) continue;
+
+		bool ambiguous = false;
+		for(i=0; i < nspecies; ++i)
+		{
+			const char *p = mDnaGene[i].c_str();
+			const std::vector<int>& pos = getPositions(&p[3*j]);
+			size_t len = pos.size();
+
+			// This is an ambiguous codon
+			if(len > 1) ambiguous = true;
+		}
+		if(ambiguous) ++num_ambiguous;
 	}
 
 	// Remove invalid codons

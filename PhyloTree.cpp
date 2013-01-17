@@ -2,6 +2,7 @@
 #include <fstream>
 #include "PhyloTree.h"
 #include "Exceptions.h"
+#include "VerbosityLevels.h"
 
 PhyloTree::~PhyloTree()
 {
@@ -181,12 +182,21 @@ void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const Tr
 void PhyloTree::checkRootBranches(void) const
 {
 	TreeNode *m;
-	unsigned int cnt = 0;
-	unsigned int cnt_leaves = 0;
-	for(; (m = mTreeRoot.getChild(cnt)) != NULL; ++cnt)
+	unsigned int cnt_root_branches = 0;
+	unsigned int cnt_root_leaves   = 0;
+	for(; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL; ++cnt_root_branches)
 	{
-		if(m->isLeaf()) ++cnt_leaves;
+		if(m->isLeaf()) ++cnt_root_leaves;
 	}
 
-	std::cout << std::endl << "Root has " << cnt << " children of which " << cnt_leaves << " are leaves" << std::endl;
+	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+	{
+		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
+	}
+
+	// if it is an invalid tree then raise exception
+	if(cnt_root_branches < 2) throw FastCodeMLFatal("Root has only one branch. Invalid tree. Quitting.");
+
+	// if it is an invalid tree then raise exception
+	if(cnt_root_branches == cnt_root_leaves) throw FastCodeMLFatal("Root points only to leaves. Invalid tree. Quitting.");
 }
