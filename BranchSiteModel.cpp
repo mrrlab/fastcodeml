@@ -985,10 +985,17 @@ private:
 		{
 			double eh = mDeltaForGradient * (vars_working_copy[i]+1.);
 
+			// If it is going over the upper limit reverse the delta
 			vars_working_copy[i] += eh;
-			if(vars_working_copy[i] >= mUpper[i]) {vars_working_copy[i] -= 2*eh; eh = -eh;}
-
-			delta[i] = eh;
+			if(vars_working_copy[i] >= mUpper[i])
+			{
+				vars_working_copy[i] -= 2*eh;
+				delta[i] = -eh;
+			}
+			else
+			{
+				delta[i] = eh;
+			}
 		}
 
 		// Compute the partial derivative of the likelihood function for each (modified) branch length

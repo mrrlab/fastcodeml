@@ -245,10 +245,10 @@ void HighLevelCoordinator::WorkTable::printFinishedBranch(int aIdx) const
 {
 	int branch = aIdx / JOBS_PER_BRANCH;
 	int i = branch*JOBS_PER_BRANCH;
-	if(mJobStatus[i+0] == JOB_COMPLETED && mJobStatus[i+1] == JOB_COMPLETED)
+	if(mJobStatus[i+JOB_H0] == JOB_COMPLETED && mJobStatus[i+JOB_H1] == JOB_COMPLETED)
 	{
 		// If the previous results do not pass the LRT or H0 has been interrupted, then skip the BEB computation
-		if(mJobStatus[i+2] == JOB_COMPLETED || mResults[branch].mLnl[0] == DBL_MAX || !BranchSiteModel::performLRT(mResults[branch].mLnl[0], mResults[branch].mLnl[1]))
+		if(mJobStatus[i+JOB_BEB] == JOB_COMPLETED || mResults[branch].mLnl[0] == DBL_MAX || !BranchSiteModel::performLRT(mResults[branch].mLnl[0], mResults[branch].mLnl[1]))
 		{
 			std::cout << "Branch " << std::setw(3) << branch << " completed" << std::endl;
 		}
@@ -259,7 +259,7 @@ void HighLevelCoordinator::WorkTable::printFinishedBranch(int aIdx) const
 void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 {
 	bool any_error = false;
-	for(unsigned int i=0; i < mJobStatus.size(); ++i)
+	for(size_t i=0; i < mJobStatus.size(); ++i)
 	{
 		if(mJobStatus[i] != JOB_COMPLETED && mJobStatus[i] != JOB_SKIP)
 		{
@@ -286,11 +286,9 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
 
 	// Print all variables formatted to be readable
-	int num_times = static_cast<int>(mResults[aBranch].mHxVariables[aHyp].size()) - ((aHyp) ? 7 : 4); // for H1 is 5 - 2 scale factors
+	int num_times = static_cast<int>(mResults[aBranch].mHxVariables[aHyp].size()) - ((aHyp) ? 7 : 4); // for H1 is 5 + 2 scale factors
 	double v0 = 0;
 	std::vector<double>::const_iterator ix(mResults[aBranch].mHxVariables[aHyp].begin());
-	//const std::vector<double>::const_iterator end(mResults[aBranch].mHxVariables[aHyp].end());
-	//for(int k = -static_cast<int>(num_times); ix != end; ++ix,++k)
 	for(int k = -static_cast<int>(num_times); k < (aHyp ? 5 : 4); ++ix,++k)
 	{
 		switch(k)
@@ -302,7 +300,6 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 		case 1:
 			{
 				double p[4];
-				//getProportions(v0, *ix, p);
 #ifdef USE_ORIGINAL_PROPORTIONS
 				p[0] = exp(v0);
 				p[1] = exp(*ix);
@@ -548,7 +545,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 			throw FastCodeMLFatal("Invalid job request in doMaster");
 		}
 
-		// Send work packet or shutdown request (job[1] is the fg branch, job[2] the length of the additional data)
+		// Send work packet or shutdown request (job[0] is the step to be done, job[1] is the fg branch, job[2] the length of the additional data)
 		int job[3];
 		mWorkTable->getNextJob(job, worker);
 		MPI_Send(static_cast<void*>(job), 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
@@ -598,7 +595,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		if(job[0] == JOB_SHUTDOWN)
 		{
 			--num_workers;
-			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "Workers remaining " << num_workers << std::endl;
+			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "Workers remaining: " << num_workers << std::endl;
 			if(num_workers == 0) break;
 		}
 	}
