@@ -3,7 +3,6 @@
 #define FASTCODEMLEXCEPTIONS_H
 
 #include <stdexcept>
-#include <string>
 #include <sstream>
 
 /// Fatal error in FastCodeML.

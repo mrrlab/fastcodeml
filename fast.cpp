@@ -95,7 +95,11 @@ int main(int aRgc, char **aRgv)
 													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
 		if(cmd.mSeed)								std::cout << "Seed:           " << cmd.mSeed << std::endl;
 		if(cmd.mBranchFromFile)						std::cout << "Branch:         From tree file" << std::endl;
-		else if(cmd.mBranch != UINT_MAX)			std::cout << "Branch:         " << cmd.mBranch << std::endl;
+		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchStart == cmd.mBranchEnd)
+			                                        std::cout << "Branch:         " << cmd.mBranchStart << std::endl;
+		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
+			                                        std::cout << "Branches:       " << cmd.mBranchStart << "-end" << std::endl;
+		else                                        std::cout << "Branches:       " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
 		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
 		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
@@ -275,44 +279,9 @@ int main(int aRgc, char **aRgv)
 	// Initialize the output results file (if the argument is null, no file is created)
 	WriteResults output_results(cmd.mResultsFile);
 
-	// Compute the range of branches to compute
+	// Compute the range of branches to mark as foreground
 	size_t branch_start, branch_end;
-	const size_t num_branches  = forest.getNumInternalBranches();
-	const size_t marked_branch = forest.getMarkedInternalBranch();
-
-	// Check if the request make sense
-	if(num_branches == 0)
-	{
-		throw FastCodeMLFatal("No internal branches present. Quitting.");
-	}
-	if(cmd.mBranchFromFile && marked_branch >= num_branches)
-	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl; 
-	}
-	else if(cmd.mBranch >= num_branches && cmd.mBranch < UINT_MAX)
-	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
-	}
-
-	// Compute which branch to process (or switch to the entire range of branches)
-	if(cmd.mBranchFromFile && marked_branch < num_branches)
-	{
-		// Branch from file and valid
-		branch_start = marked_branch;
-		branch_end   = marked_branch+1;
-	}
-	else if(cmd.mBranch < num_branches)
-	{
-		// Branch explicitely requested on the command line and valid
-		branch_start = static_cast<size_t>(cmd.mBranch);
-		branch_end   = branch_start+1;
-	}
-	else
-	{
-		// Do all internal branches
-		branch_start = 0;
-		branch_end   = num_branches;
-	}
+	forest.getBranchRange(cmd, branch_start, branch_end);
 
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
@@ -325,7 +294,7 @@ int main(int aRgc, char **aRgv)
 	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
 	// For all requested internal branches
-	for(size_t fg_branch=branch_start; fg_branch < branch_end; ++fg_branch)
+	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch " << fg_branch << std::endl;
 
@@ -515,15 +484,15 @@ int main(int aRgc, char **aRgv)
 ///
 /// The null pointer should be written as NULL, not 0 to make clear its purpose.
 ///
-/// @page cmd_page Command Line Switches
-///
-/// Here is a quick list of the valid command line switches for FastCodeML.
-///
-///@verbatim
-/*
+
+/**
+@page cmd_page Command Line Switches
+Here is a quick list of the valid command line switches for FastCodeML.
+
+@verbatim
 
 Usage:
-    FastCodeML [options] tree_file gene_file
+    FastCodeML [options] tree_file alignment_file
 
 -d  --debug  -v  --verbose (required argument)
         Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
@@ -538,10 +507,16 @@ Usage:
         Random number generator seed (0 < seed < 1000000000)
 
 -b  --branch (required argument)
-        Do only this branch as foreground branch
+        Do only this branch as foreground branch (count from 0)
+
+-bs  --branch-start (required argument)
+        Start computing from this branch as foreground one (count from 0) (default: first one)
+
+-be  --branch-end (required argument)
+        End computing at this branch as foreground one (count from 0) (default: last one)
 
 -i  --ignore-freq (no argument)
-        Ignore computed codon frequency and set all to 1/61
+        Ignore computed codon frequency and set all of them to 1/61
 
 -e  --export (required argument)
         Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
@@ -549,7 +524,7 @@ Usage:
 -nr  --no-reduce (no argument)
         Do not reduce forest by merging common subtrees
 
--l  --lengths-from-file (no argument)
+-l  --lengths-from-file  --times-from-file (no argument)
         Initial branch lengths from tree file
 
 -o  --initial-step (no argument)
@@ -602,6 +577,7 @@ Usage:
 
 @endverbatim
 */
+
 /// @page vampir_page Using Vampir for profiling
 /// On Linux we use VampirTrace to collect profile data and Vampir to display the results (http://www.vampir.eu/).
 ///

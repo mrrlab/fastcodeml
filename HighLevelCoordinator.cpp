@@ -140,6 +140,13 @@ struct HighLevelCoordinator::WorkTable
 	/// @param[in] aOut The stream on which the print should be done.
 	///
 	void printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut=std::cout) const;
+	
+	/// Mark as job to be skipped branches outside the given range
+	///
+	/// @param[in] aBranchStart The first branch to be processed
+	/// @param[in] aBranchEnd The last branch to be processed
+	///
+	void skipOutsideRange(size_t aBranchStart, size_t aBranchEnd);
 };
 
 
@@ -269,6 +276,19 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 	}
 	
 	if(any_error) throw FastCodeMLFatal();
+}
+
+void HighLevelCoordinator::WorkTable::skipOutsideRange(size_t aBranchStart, size_t aBranchEnd)
+{
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+	{
+		// Don't touch jobs in the range
+		if(branch >= aBranchStart && branch <= aBranchEnd) continue;
+
+		mJobStatus[branch*JOBS_PER_BRANCH+JOB_H0]  = JOB_SKIP;
+		mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1]  = JOB_SKIP;
+		mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] = JOB_SKIP;
+	}
 }
 
 void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut) const
@@ -401,13 +421,13 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 	// Start the jobs
 	if(mRank == MASTER_JOB)
 	{
-		// If users set the fg branch tell them it is ignored
-		if((aCmdLine.mBranchFromFile || aCmdLine.mBranch != UINT_MAX) && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cout << "Cannot specify fg branch if run under MPI. Ignoring." << std::endl;
-
 		// If the user asks for one hypothesis only
 		if(aCmdLine.mComputeHypothesis < 2 && mVerbose >= VERBOSE_INFO_OUTPUT)
 			std::cout << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
+
+		// Compute the range of branches to mark as foreground
+		size_t branch_start, branch_end;
+		bool do_all = aForest.getBranchRange(aCmdLine, branch_start, branch_end);
 
 		// Initialize structures
 		mVerbose = aCmdLine.mVerboseLevel;
@@ -420,6 +440,9 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 		// In the master initialize the work table
 		delete mWorkTable;
 		mWorkTable = new WorkTable(mNumInternalBranches);
+
+		// If the range don't cover all the branches, mark the jobs to skip
+		if(!do_all) mWorkTable->skipOutsideRange(branch_start, branch_end);
 
 		// Prepare the results file output
 		WriteResults output_results(aCmdLine.mResultsFile);
@@ -611,6 +634,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 	std::cout << std::endl;
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
+		// Skip branches that were not computed
+		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
+
 		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
 		if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
 		{
@@ -633,32 +659,35 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 		std::cout << std::endl;
 	}
 
-	// Check if at least one site is under positive selection
-	bool has_positive_selection_sites = false;
+	// Check if there are sites under positive selection
+	std::vector<size_t> branch_with_pos_selection;
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
+		// Skip branches that were not computed
+		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
+
 		if(!mWorkTable->mResults[branch].mPositiveSelSites.empty())
 		{
-			has_positive_selection_sites = true;
-			break;
+			branch_with_pos_selection.push_back(branch);
 		}
 	}
 
 	// If there are print the site and corresponding probability
-	if(has_positive_selection_sites)
+	if(!branch_with_pos_selection.empty())
 	{
 		std::cout << std::endl << "Positive selection sites" << std::endl;
-		for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+		std::vector<size_t>::const_iterator ib(branch_with_pos_selection.begin());
+		std::vector<size_t>::const_iterator end(branch_with_pos_selection.end());
+		for(; ib != end; ++ib)
 		{
-			WorkTable::ResultSet& branch_results = mWorkTable->mResults[branch];
-			if(branch_results.mPositiveSelSites.empty()) continue;
+			WorkTable::ResultSet& branch_results = mWorkTable->mResults[*ib];
 
 			// To order the sites
 			std::multimap<size_t, size_t> ordered_map;
 			std::vector<double> probs;
 			size_t current_idx = 0;
 
-			std::cout << "Branch: "   << std::fixed << std::setw(3) << branch << std::endl;
+			std::cout << "Branch: "   << std::fixed << std::setw(3) << *ib << std::endl;
 			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
 				// Get probability

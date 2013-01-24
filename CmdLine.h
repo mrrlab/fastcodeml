@@ -28,7 +28,8 @@ public:
 		mResultsFile(NULL),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
-		mBranch(UINT_MAX),
+		mBranchStart(UINT_MAX),
+		mBranchEnd(UINT_MAX),
 		mExportComputedTimes(UINT_MAX),
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
@@ -71,7 +72,8 @@ public:
 	const char*		mResultsFile;			///< File to which the results should be written
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
-	unsigned int	mBranch;				///< Do only this branch. The numbering starts at 0 (UINT_MAX means run all branches)
+	unsigned int	mBranchStart;			///< Compute from this branch. The numbering starts at 0 (UINT_MAX means run all branches)
+	unsigned int	mBranchEnd;				///< Compute to this branch. The numbering starts at 0 (UINT_MAX means run all branches). It is >= mBranchStart
 	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use

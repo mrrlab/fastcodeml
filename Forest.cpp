@@ -261,6 +261,77 @@ void Forest::postLoad(void)
 }
 #endif
 
+bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd) const
+{
+	const size_t num_branches  = getNumInternalBranches();
+	const size_t marked_branch = getMarkedInternalBranch();
+
+	// Check if the request make sense
+	if(num_branches == 0)
+	{
+		throw FastCodeMLFatal("No internal branches present. Quitting.");
+	}
+
+	// By default do all branches
+	bool do_all = true;
+
+	// Adjust the number of branches to compute
+	if(aCmdLine.mBranchFromFile)
+	{
+		// Branch from file, verify if valid
+		if(marked_branch >= num_branches)
+		{
+			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl;
+			aBranchStart = 0;
+			aBranchEnd   = num_branches-1;
+		}
+		else
+		{
+			aBranchStart = marked_branch;
+			aBranchEnd   = marked_branch;
+			do_all = false;
+		}
+	}
+	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >= num_branches)
+	{
+		// Invalid start value, ignoring, do all branches
+		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
+		aBranchStart = 0;
+		aBranchEnd   = num_branches-1;
+	}
+	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd == UINT_MAX)
+	{
+		// Only start branch set. Do from it to the end.
+		aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
+		aBranchEnd   = num_branches-1;
+		if(aBranchStart > 0) do_all = false;
+	}
+	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd < UINT_MAX)
+	{
+		// Both start and end branch (already tested start <= end)
+		aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
+		if(aCmdLine.mBranchEnd >= num_branches)
+		{
+			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid end branch requested. Ignoring" << std::endl; 
+			aBranchEnd = num_branches-1;
+			if(aBranchStart > 0) do_all = false;
+		}
+		else
+		{
+			aBranchEnd = static_cast<size_t>(aCmdLine.mBranchEnd);
+			if(aBranchStart > 0 && aBranchEnd < num_branches-1) do_all = false;
+		}
+	}
+	else
+	{
+		// No limit set, do all branches
+		aBranchStart = 0;
+		aBranchEnd   = num_branches-1;
+	}
+
+	return do_all;
+}
+
 void Forest::reduceSubtrees(void)
 {
 	// Setup dependency vectors

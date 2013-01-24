@@ -115,6 +115,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_HELP,
 		OPT_SEED,
 		OPT_BRANCH,
+		OPT_BRANCH_START,
+		OPT_BRANCH_END,
 		OPT_IGNORE_FREQ,
 		OPT_EXPORT,
 		OPT_NOT_REDUCE,
@@ -150,9 +152,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_HELP,				"--help",				SO_NONE,    "" },
 		{ OPT_SEED,				"-s",					SO_REQ_SEP, "Random number generator seed (0 < seed < 1000000000)" },
 		{ OPT_SEED,				"--seed",				SO_REQ_SEP, "" },
-		{ OPT_BRANCH,			"-b",					SO_REQ_SEP, "Do only this branch as foreground branch" },
+		{ OPT_BRANCH,			"-b",					SO_REQ_SEP, "Do only this branch as foreground branch (count from 0)" },
 		{ OPT_BRANCH,			"--branch",				SO_REQ_SEP, "" },
-		{ OPT_IGNORE_FREQ,		"-i",					SO_NONE,	"Ignore computed codon frequency and set all to 1/61" },
+		{ OPT_BRANCH_START,		"-bs",					SO_REQ_SEP, "Start computing from this branch as foreground one (count from 0) (default: first one)" },
+		{ OPT_BRANCH_START,		"--branch-start",		SO_REQ_SEP, "" },
+		{ OPT_BRANCH_END,		"-be",					SO_REQ_SEP, "End computing at this branch as foreground one (count from 0) (default: last one)" },
+		{ OPT_BRANCH_END,		"--branch-end",			SO_REQ_SEP, "" },
+		{ OPT_IGNORE_FREQ,		"-i",					SO_NONE,	"Ignore computed codon frequency and set all of them to 1/61" },
 		{ OPT_IGNORE_FREQ,		"--ignore-freq",		SO_NONE,	"" },
 		{ OPT_EXPORT,			"-e",					SO_REQ_SEP,	"Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)" },
 		{ OPT_EXPORT,			"--export",				SO_REQ_SEP,	"" },
@@ -250,7 +256,19 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		case OPT_BRANCH:
 			tmpi = atoi(args.OptionArg());
 			if(tmpi < 0) throw FastCodeMLFatal("Invalid branch value");
-			mBranch = static_cast<unsigned int>(tmpi);
+			mBranchStart = mBranchEnd = static_cast<unsigned int>(tmpi);
+			break;
+
+		case OPT_BRANCH_START:
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid start branch value");
+			mBranchStart = static_cast<unsigned int>(tmpi);
+			break;
+
+		case OPT_BRANCH_END:
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0) throw FastCodeMLFatal("Invalid end branch value");
+			mBranchEnd = static_cast<unsigned int>(tmpi);
 			break;
 
 		case OPT_IGNORE_FREQ:
@@ -365,5 +383,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis < 2) mInitH0fromH1 = false;
 	if(mComputeHypothesis == 0 && mExportComputedTimes < 2) mExportComputedTimes = 0;
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
+	if(mBranchStart == UINT_MAX && mBranchEnd < UINT_MAX) mBranchStart = 0;
+	if(mBranchStart > mBranchEnd) throw FastCodeMLFatal("Start branch after end branch. Quitting.");
 }
 

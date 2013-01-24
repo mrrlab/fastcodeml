@@ -21,6 +21,7 @@
 #include "DAGScheduler.h"
 #endif
 #include "TreeAndSetsDependencies.h"
+#include "CmdLine.h"
 
 // Global scaling factor (uncomment the define only if the scaling factor is different from one)
 //#define USE_GLOBAL_SCALING
@@ -86,6 +87,18 @@ public:
 	/// @return The output stream
 	///
 	friend std::ostream& operator<< (std::ostream& aOut, const Forest& aForest);
+
+	/// Get the first and last branches to be marked as foreground.
+	///
+	/// @param[in] aCmdLine The parameters from the command line of the main program
+	/// @param[out] aBranchStart The first branch to be marked as foreground
+	/// @param[out] aBranchEnd The last branch to be marked as foreground
+	///
+	/// @return True if all branches are selected
+	///
+	/// @exception FastCodeMLFatal Invalid range from command line
+	///
+	bool getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd) const;
 
 	/// Reduce common subtrees on the whole forest.
 	///
