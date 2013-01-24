@@ -55,19 +55,14 @@
 ///          The absolute error tolerance for the eigenvalues.
 ///          An approximate eigenvalue is accepted as converged
 ///          when it is determined to lie in an interval [a,b]
-///          of width less than or equal to
-///
-///                  ABSTOL + EPS *   max( |a|,|b| ) ,
-///
+///          of width less than or equal to ABSTOL + EPS *   max( |a|,|b| ),
 ///          where EPS is the machine precision.  If ABSTOL is less than
 ///          or equal to zero, then  EPS*|T|  will be used in its place,
 ///          where |T| is the 1-norm of the tridiagonal matrix obtained
 ///          by reducing A to tridiagonal form.
-///
 ///          See "Computing Small Singular Values of Bidiagonal Matrices
 ///          with Guaranteed High Relative Accuracy," by Demmel and
 ///          Kahan, LAPACK Working Note #3.
-///
 ///          If high relative accuracy is important, set ABSTOL to
 ///          DLAMCH( 'Safe minimum' ).  Doing so will guarantee that
 ///          eigenvalues are computed to high relative accuracy when
@@ -106,8 +101,7 @@
 ///          The support of the eigenvectors in Z, i.e., the indices
 ///          indicating the nonzero elements in Z. The i-th eigenvector
 ///          is nonzero only in elements ISUPPZ( 2*i-1 ) through
-///          ISUPPZ( 2*i ).
-///********* Implemented only for RANGE = 'A' or 'I' and IU - IL = N - 1
+///          ISUPPZ( 2*i ). Implemented only for RANGE = 'A' or 'I' and IU - IL = N - 1
 ///
 ///  @param[out] work    (workspace/output) DOUBLE PRECISION array, dimension (MAX(1,LWORK))
 ///          On exit, if INFO = 0, WORK(1) returns the optimal LWORK.
@@ -117,7 +111,6 @@
 ///          For optimal efficiency, LWORK >= (NB+6)*N,
 ///          where NB is the max of the blocksize for DSYTRD and DORMTR
 ///          returned by ILAENV.
-///
 ///          If LWORK = -1, then a workspace query is assumed; the routine
 ///          only calculates the optimal size of the WORK array, returns
 ///          this value as the first entry of the WORK array, and no error
@@ -128,7 +121,6 @@
 ///
 ///  @param[in] liwork  (input) INTEGER
 ///          The dimension of the array IWORK.  LIWORK >= max(1,10*N).
-///
 ///          If LIWORK = -1, then a workspace query is assumed; the
 ///          routine only calculates the optimal size of the IWORK array,
 ///          returns this value as the first entry of the IWORK array, and
@@ -209,8 +201,7 @@ extern "C" void dsyevr_(const char *jobz,
 ///	  @param[out] w       (output) DOUBLE PRECISION array, dimension (N)
 ///	          If INFO = 0, the eigenvalues in ascending order.
 ///	
-///	  @param[out] work    (workspace/output) DOUBLE PRECISION array,
-///	                                         dimension (LWORK)
+///	  @param[out] work    (workspace/output) DOUBLE PRECISION array, dimension (LWORK)
 ///	          On exit, if INFO = 0, WORK(1) returns the optimal LWORK.
 ///	
 ///	  @param[in] lwork   (input) INTEGER
@@ -218,7 +209,6 @@ extern "C" void dsyevr_(const char *jobz,
 ///	          If N <= 1,               LWORK must be at least 1.
 ///	          If JOBZ = 'N' and N > 1, LWORK must be at least 2*N+1.
 ///	          If JOBZ = 'V' and N > 1, LWORK must be at least 1 + 6*N + 2*N**2.
-///	
 ///	          If LWORK = -1, then a workspace query is assumed; the routine
 ///	          only calculates the optimal sizes of the WORK and IWORK
 ///	          arrays, returns these values as the first entries of the WORK
@@ -233,7 +223,6 @@ extern "C" void dsyevr_(const char *jobz,
 ///	          If N <= 1,                LIWORK must be at least 1.
 ///	          If JOBZ  = 'N' and N > 1, LIWORK must be at least 1.
 ///	          If JOBZ  = 'V' and N > 1, LIWORK must be at least 3 + 5*N.
-///	
 ///	          If LIWORK = -1, then a workspace query is assumed; the
 ///	          routine only calculates the optimal sizes of the WORK and
 ///	          IWORK arrays, returns these values as the first entries of
@@ -264,5 +253,4 @@ extern "C" void dsyevd_(const char *jobz,
                         int *info);
 
 #endif
-
 

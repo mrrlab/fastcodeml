@@ -31,38 +31,23 @@
 extern "C" { 
 #endif
 
-///  DSYRK  performs one of the symmetric rank k operations
-///
-///     C := alpha*A*A**T + beta*C,
-///
-///  or
-///
-///     C := alpha*A**T*A + beta*C,
-///
+/// DSYRK  performs one of the symmetric rank k operations
+/// C := alpha*A*A**T + beta*C, or C := alpha*A**T*A + beta*C,
 /// where alpha and beta are scalars, C is an n by n symmetric matrix
 /// and A is an n by k matrix in the first case and a k by n matrix
 /// in the second case.
 ///
-/// Arguments
-/// ==========
-///
 /// @param[in] uplo On entry, UPLO specifies whether the upper or lower
 /// triangular part of the array C is to be referenced as
 /// follows:
-///
 /// UPLO = 'U' or 'u' Only the upper triangular part of C
 /// is to be referenced.
-///
 /// UPLO = 'L' or 'l' Only the lower triangular part of C
 /// is to be referenced.
 ///
-/// @param[in] trans On entry, TRANS specifies the operation to be performed as
-/// follows:
-///
+/// @param[in] trans On entry, TRANS specifies the operation to be performed as follows:
 /// TRANS = 'N' or 'n' C := alpha*A*A**T + beta*C.
-///
 /// TRANS = 'T' or 't' C := alpha*A**T*A + beta*C.
-///
 /// TRANS = 'C' or 'c' C := alpha*A**T*A + beta*C.
 ///
 /// @param[in] n On entry, N specifies the order of the matrix C. N must be
@@ -103,8 +88,7 @@ extern "C" {
 /// lower triangular part of the updated matrix.
 ///
 /// @param[in] ldc On entry, LDC specifies the first dimension of C as declared
-/// in the calling (sub) program. LDC must be at least
-/// max( 1, n ).
+/// in the calling (sub) program. LDC must be at least max(1, n).
 ///
 void dsyrk_(const char *uplo,
 				const char *trans,
@@ -117,23 +101,15 @@ void dsyrk_(const char *uplo,
 				double *c,
 				const int *ldc);
 
-///  DSYMV  performs the matrix-vector operation
-///
-///     y := alpha*A*x + beta*y,
-///
+///  DSYMV  performs the matrix-vector operation: y := alpha*A*x + beta*y
 ///  where alpha and beta are scalars, x and y are n element vectors and
 ///  A is an n by n symmetric matrix.
-///
-///  Arguments
-///  ==========
 ///
 ///  @param[in] uplo On entry, UPLO specifies whether the upper or lower
 ///           triangular part of the array A is to be referenced as
 ///           follows:
-///
 ///              UPLO = 'U' or 'u'   Only the upper triangular part of A
 ///                                  is to be referenced.
-///
 ///              UPLO = 'L' or 'l'   Only the lower triangular part of A
 ///                                  is to be referenced.
 ///
@@ -188,16 +164,12 @@ void dsymv_(const char *uplo,
 				const int *incy);
 
 
-///  DSYMM  performs one of the matrix-matrix operations
+/// DSYMM  performs one of the matrix-matrix operations
 ///
-///     C := alpha*A*B + beta*C,
+///  C := alpha*A*B + beta*C  or  C := alpha*B*A + beta*C
 ///
-///  or
-///
-///     C := alpha*B*A + beta*C,
-///
-///  where alpha and beta are scalars,  A is a symmetric matrix and  B and
-///  C are  m by n matrices.
+///  where alpha and beta are scalars, A is a symmetric matrix and B and
+///  C are m by n matrices.
 ///
 ///  Arguments
 ///  ==========
@@ -205,24 +177,18 @@ void dsymv_(const char *uplo,
 ///  @param[in] side
 ///           On entry,  SIDE  specifies whether  the  symmetric matrix  A
 ///           appears on the  left or right  in the  operation as follows:
-///
 ///              SIDE = 'L' or 'l'   C := alpha*A*B + beta*C,
-///
 ///              SIDE = 'R' or 'r'   C := alpha*B*A + beta*C,
 ///
 ///  @param[in] uplo
-///           On  entry,   UPLO  specifies  whether  the  upper  or  lower
-///           triangular  part  of  the  symmetric  matrix   A  is  to  be
+///           On entry, UPLO specifies whether the upper or lower
+///           triangular part of the symmetric matrix  A is to be
 ///           referenced as follows:
-///
-///              UPLO = 'U' or 'u'   Only the upper triangular part of the
-///                                  symmetric matrix is to be referenced.
-///
-///              UPLO = 'L' or 'l'   Only the lower triangular part of the
-///                                  symmetric matrix is to be referenced.
+///           UPLO = 'U' or 'u'  Only the upper triangular part of the symmetric matrix is to be referenced.
+///           UPLO = 'L' or 'l'  Only the lower triangular part of the symmetric matrix is to be referenced.
 ///
 ///  @param[in] m
-///           On entry,  M  specifies the number of rows of the matrix  C.
+///           On entry, M specifies the number of rows of the matrix  C.
 ///           M must be at least zero.
 ///
 ///  @param[in] n
@@ -334,15 +300,11 @@ double dnrm2_(const int *n,
 
 
 /// Scales a double precision vector.
+/// DSCAL scales a double precision vector with a double precision scalar.
+/// DSCAL scales the vector x of length n and increment incx  by  the  constant alpha.
 ///
-///       DSCAL scales a double precision vector with a double precision scalar.
-///       DSCAL scales the vector x of length n and increment incx  by  the  constant alpha.
-///
-///       This routine performs the following vector operation:
-///
-///                 x <-- alpha x
-///
-///       where alpha is a double precision scalar, and x is a double precision vector.
+/// This routine performs the following vector operation:  x <-- alpha x
+/// where alpha is a double precision scalar, and x is a double precision vector.
 ///
 /// @param[in] n  Number of elements in the vector.
 ///         If n <= 0, this routine returns without computation.
@@ -363,12 +325,11 @@ void dscal_(const int *n,
 }
 #endif
 
-/// Constants used by blas and lapack routines.
-///
-static const	int		I0 = 0;		///< Integer zero.
-static const	int		I1 = 1;		///< Integer one.
-static const	double	D0 = 0.;	///< Float double zero.
-static const	double	D1 = 1.;	///< Float double one.
+// Constants used by blas and lapack routines
+static const int	I0 = 0;		///< Integer zero.
+static const int	I1 = 1;		///< Integer one.
+static const double	D0 = 0.;	///< Float double zero.
+static const double	D1 = 1.;	///< Float double one.
 
 #endif
 
