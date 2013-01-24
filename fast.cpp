@@ -381,7 +381,7 @@ int main(int aRgc, char **aRgv)
 			fe.exportForest(cmd.mGraphFile, fg_branch);
 		}
 
-		// If the two hypothesis are computed, one has not been stopped and the run passes the LRT, then compute the BEB
+		// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
 		if(cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX && BranchSiteModel::performLRT(lnl0, lnl1))
 		{
 			// Get the scale values from the latest optimized h1.
@@ -489,6 +489,8 @@ int main(int aRgc, char **aRgv)
 @page cmd_page Command Line Switches
 Here is a quick list of the valid command line switches for FastCodeML.
 
+The input `tree_file` is in %Newick format with the file containing only one tree. The `alignment_file` instead is in %Phylip format.
+
 @verbatim
 
 Usage:
@@ -588,7 +590,7 @@ Usage:
 /// Run CMAKE and configure.
 ///
 /// Then define CMAKE_CXX_FLAGS as: -vt:mt -vt:noopari
-/// If you want to trace also the OpenMP calls then channge it to: -vt:mt -vt:preprocess -DVTRACE
+/// If you want to trace also the OpenMP calls then change it to: -vt:mt -vt:preprocess -DVTRACE
 ///
 /// Then proceed as usual to build the executable.
 ///

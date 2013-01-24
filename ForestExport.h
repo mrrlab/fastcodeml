@@ -6,7 +6,7 @@
 class Forest;
 
 /// Export the phylogenetic tree's forest.
-/// This class encapsulates all the routines needed to export in textual form the the forest of phylogenetic trees.
+/// This class encapsulates all the routines needed to export in textual form the forest of phylogenetic trees.
 /// It is a friend class of Forest.
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)

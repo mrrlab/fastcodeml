@@ -26,7 +26,7 @@ public:
 	/// @param[in,out] aRgc Pointer to the number of arguments
 	/// @param[in,out] aRgv Pointer to the arguments' list
 	///
-	/// @exception FastCodeMLFatal MPI Failed to initalize
+	/// @exception FastCodeMLFatal MPI Failed to initialize
 	/// @exception FastCodeMLSuccess To terminate unused worker processes
 	///
 	HighLevelCoordinator(int* aRgc, char*** aRgv);

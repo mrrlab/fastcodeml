@@ -30,12 +30,12 @@ public:
 
 	/// Prepare the dependency list.
 	///
-	/// @param[in] aNumSets How many sets (that is parallel visit to the forest) should this dependency list cover. For esample H0: 3 codon classes; H1: 4 codon classes
+	/// @param[in] aNumSets How many sets (that is parallel visit to the forest) should this dependency list cover. For example H0: 3 codon classes; H1: 4 codon classes
 	/// @param[in] aNoParallel True if no dependencies needed to be setup
 	///
 	void computeDependencies(unsigned int aNumSets, bool aNoParallel);
 
-	/// Optimize the dependy list.
+	/// Optimize the dependency list.
 	///
 	void optimizeDependencies(void);
 
@@ -56,7 +56,7 @@ private:
 	///
 	/// @param[in] aGreedy If set move the trees as far as possible, otherwise move them to the first useful pot.
 	///
-	/// @return True if the redistribuition has been successful
+	/// @return True if the redistribution has been successful
 	///
 	bool balanceDependenciesClassesAndTrees(bool aGreedy);
 
@@ -104,7 +104,7 @@ private:
 	TreeAndSetsDependencies& operator=(const TreeAndSetsDependencies& /*aObj*/);
 
 private:
-	const Forest&				mForest;						///< The forest for which dependencies should be clculated
+	const Forest&				mForest;						///< The forest for which dependencies should be calculated
 	ListDependencies			mDependenciesClassesAndTrees;	///< The groups of dependencies between trees
 	bool						mNoParallel;					///< Set if the execution is sequential, so no tree dependencies needed
 	unsigned int				mVerbose;						///< The verbose level

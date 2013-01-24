@@ -90,17 +90,17 @@ public:
 		mNodeStatus[aBranch * mNumSites + aSite] = aReusedSite;
 	}
 
-	/// Prints (on stderr) for each branch the first and last valid positions and the valid entries in this range).
+	/// Prints (on cout) for each branch the first and last valid positions and the valid entries in this range.
 	///
 	/// @exception FastCodeMLFatal No SITE_EXISTS in mNodePresent at branch
 	///
 	void printCountGoodElements(void) const;
 
-	/// Prints (on stderr) the visit sequence of branches.
+	/// Prints (on cout) the visit sequence of branches.
 	///
 	void printBranchVisitSequence(void) const;
 
-	/// Prints (on sterr) for each branch and each site if it is valid, if it is not present and if takes the value from another site
+	/// Prints (on cout) for each branch and each site if it is valid, if it is not present and if takes the value from another site
 	///
 	void printNodeStatus(void) const;
 

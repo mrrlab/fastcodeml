@@ -183,7 +183,7 @@ public:
 	///
 	size_t getMarkedInternalBranch(void) const {return mMarkedInternalBranch;}
 
-	/// Get site multeplicity values.
+	/// Get site multiplicity values.
 	///
 	/// @return Reference to the array of site multiplicities
 	///
@@ -375,7 +375,7 @@ private:
 #ifdef USE_DAG
 	DAGScheduler mDAG;		///< DAG Scheduler
 #endif
-	unsigned int					mVerbose;					///< If greather than zero prints more info
+	unsigned int					mVerbose;					///< If greater than zero prints more info
 	std::multimap<size_t, size_t>	mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
 };
 

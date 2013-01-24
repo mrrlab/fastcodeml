@@ -14,7 +14,7 @@
 //// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
-/// Common routines for testing the two hypothesis (H0 and H1).
+/// Common routines for testing the two hypotheses (H0 and H1).
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-23 (initial version)
@@ -175,7 +175,7 @@ public:
 	///
 	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > THRESHOLD_FOR_LRT;}
 	
-	/// Get site multeplicity values.
+	/// Get site multiplicity values.
 	///
 	/// @return Reference to the array of site multiplicities
 	///
@@ -234,7 +234,7 @@ protected:
 private:
 	/// Set upper and lower limits for the maximization domain
 	///
-	/// @param[in] aNumTimes Number of times (ie branch lengths)
+	/// @param[in] aNumTimes Number of times (i.e.\ branch lengths)
 	/// @param[in] aNumVariables Number of other variables (4 for H0, 5 for H1)
 	///
 	void setLimits(size_t aNumTimes, size_t aNumVariables);
@@ -249,7 +249,7 @@ private:
 	///
 	enum OptimAlgoIdentifier
 	{
-		OPTIM_LD_LBFGS		= 0,	///< Same optimizer as CodeML
+		OPTIM_LD_LBFGS		= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
 		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
 		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
 		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
@@ -292,7 +292,7 @@ public:
 
 
 private:
-	/// Disabled assignment operator to avoid warning on Windows
+	/// Disabled assignment operator to avoid warnings on Windows
 	///
 	/// @fn BranchSiteModel& operator=(const BranchSiteModel& aObj)
 	///
@@ -394,7 +394,7 @@ public:
 
 
 private:
-	/// Disabled assignment operator to avoid warning on Windows
+	/// Disabled assignment operator to avoid warnings on Windows
 	///
 	/// @fn BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& aObj)
 	///

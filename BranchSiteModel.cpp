@@ -35,7 +35,7 @@ void BranchSiteModel::printFinalVars(std::ostream& aOut) const
 	static const std::streamsize VARS_PRECISION = 7;
 	static const std::streamsize VARS_WIDTH     = 11;
 	
-	// Write the data with an uniform precision
+	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
 
@@ -89,7 +89,7 @@ void BranchSiteModel::printFinalVars(std::ostream& aOut) const
 
 void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, std::ostream& aOut) const
 {
-	// Write the data with an uniform precision
+	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(7);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
 
@@ -438,7 +438,7 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	if(changed_w0) mPrevOmega0 = omega0;
 	if(changed_k)  mPrevK      = kappa;
 
-	// Fill the matrices and compute their eigen decomposition.
+	// Fill the matrices and compute their eigendecomposition.
 	if(changed_k)
 	{
 #ifdef _MSC_VER
@@ -739,7 +739,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	if(changed_w2) mPrevOmega2 = omega2;
 	if(changed_k)  mPrevK      = kappa;
 
-	// Fill the matrices and compute their eigen decomposition.
+	// Fill the matrices and compute their eigendecomposition.
 	if(changed_k)
 	{
 #ifdef _MSC_VER
@@ -950,17 +950,17 @@ public:
 	///
 	/// @return The evaluated function
 	///
-	/// @exception nlopt::forced_stop To force halt the maximization because LRT it is already not satisfied
+	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
 	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		// Compute the function at the requested point
 		double f0 = mModel->computeLikelihood(aVars, mTrace);
 
-		// Stop optimization if value is greather or equal to threshold
+		// Stop optimization if value is greater or equal to threshold
 		if(mStopIfBigger && f0 >= mThreshold) throw nlopt::forced_stop();
 
-		// Compute gradient if requested
+		// If requested compute the gradient 
 		if(!aGrad.empty()) computeGradient(f0, aVars, aGrad);
 
 		return f0;
@@ -1131,7 +1131,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		break;
 
 	default:
-		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line");
+		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line.");
 	}
 
 	// Initialize bounds and termination criteria
@@ -1194,7 +1194,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	catch(const nlopt::roundoff_limited&)
 	{
-		throw FastCodeMLFatal("Exception in computation:Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+		throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
 	}
 	catch(const std::runtime_error&)
 	{
@@ -1222,20 +1222,20 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 /// The vector containing the independent variables has the following layout
 ///
 /// @section blen_sect Branch lengths
-/// The first mNumTimes positions contain the branch lengths. The index varies from 0 to mNumTimes-1.
+/// The first `mNumTimes` positions contain the branch lengths. The index varies from `0` to `mNumTimes-1`.
 ///
 /// @section v0_sect Combined proportions v0
-/// The v0 (p0+p1) value is at index mNumTimes+0
+/// The `v0 = (p0+p1)` value is at index `mNumTimes+0`
 ///
 /// @section v1_sect Combined proportions v1
-/// The v1 (p0/(p0+p1)) value is at index mNumTimes+1
+/// The `v1 = (p0/(p0+p1))` value is at index `mNumTimes+1`
 ///
 /// @section w0_sect Omega 0
-/// The w0 value is at index mNumTimes+2
+/// The `w0` value is at index `mNumTimes+2`
 ///
 /// @section k_sect  Kappa
-/// The k value is at index mNumTimes+3
+/// The `k` value is at index `mNumTimes+3`
 ///
 /// @section w2_sect Omega 2
-/// The w2 value (if present) is at index mNumTimes+4
+/// The `w2` value (if present) is at index `mNumTimes+4`
 ///

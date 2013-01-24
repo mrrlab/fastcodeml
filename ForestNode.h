@@ -43,7 +43,7 @@ struct ForestNode
 	unsigned char				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
 	unsigned char				mChildrenCount;				///< Number of children of this node
 	short						mLeafCodon;					///< On a leaf set to the corresponding codon number, otherwise -1
-	unsigned int				mBranchId;					///< An unique index to access the branch length array (starts from zero at the first non-root node)
+	unsigned int				mBranchId;					///< A unique index to access the branch length array (starts from zero at the first non-root node)
 	unsigned int				mOwnTree;					///< Per tree identifier
 	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD

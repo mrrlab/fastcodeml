@@ -112,7 +112,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 			omega_fg_is_one = false; omega_bg_is_one = true;
 		}
 
-		// Fill the matrices and compute their eigen decomposition.
+		// Fill the matrices and compute their eigendecomposition.
 #ifdef _MSC_VER
 		#pragma omp parallel sections default(none) shared(omega_fg, omega_bg, kappa, q_fg, q_bg, omega_fg_is_one, omega_bg_is_one)
 #else

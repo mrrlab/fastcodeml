@@ -6,7 +6,7 @@
 /// Alignment must be power of 2 (1,2,4,8,16...)
 ///
 /// @param[in] aSize The size (in bytes) of the block to be allocated
-/// @param[in] aAlignment The alingment requested (must be power of 2)
+/// @param[in] aAlignment The alignment requested (must be a power of 2)
 ///
 /// @return Pointer to the allocated area
 ///

@@ -23,8 +23,7 @@
 
 static void EigenSort(double d[], double U[], int n)
 {
-    /* this sorts the eigen values d[] and rearrange the (right) eigen vectors U[]
-    */
+    // This sorts the eigenvalues d[] and rearrange the (right) eigen vectors U[]
     int k, j, i;
     double p;
 
@@ -174,11 +173,11 @@ static void HouseholderRealSym(double a[], int n, double d[], double e[])
 
 static int EigenTridagQLImplicit(double d[], double e[], int n, double z[])
 {
-    /* This finds the eigen solution of a tridiagonal matrix represented by d and e.
+    /* This finds the eigensolution of a tridiagonal matrix represented by d and e.
        d[] is the diagonal (eigenvalues), e[] is the off-diagonal
-       z[n*n]: as input should have the identity matrix to get the eigen solution of the
+       z[n*n]: as input should have the identity matrix to get the eigensolution of the
        tridiagonal matrix, or the output from HouseholderRealSym() to get the
-       eigen solution to the original real symmetric matrix.
+       eigensolution to the original real symmetric matrix.
        z[n*n]: has the orthogonal matrix as output
 
        Adapted from routine tqli in Numerical Recipes in C, with reference to
@@ -302,7 +301,7 @@ static int EigenTridagQLImplicit(double d[], double e[], int n, double z[])
 
 void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* aWork)
 {
-    /* This finds the eigen solution of a real symmetrical matrix aU[aDim*aDim]. In return,
+    /* This finds the eigensolution of a real symmetrical matrix aU[aDim*aDim]. In return,
        aU has the right vectors and aR has the eigenvalues.
        aWork[n] is the working space.
        The matrix is first reduced to a tridiagonal matrix using HouseholderRealSym(),
@@ -408,7 +407,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 void TransitionMatrix::eigenQREV(void)
 {
 	  /*
-       This finds the eigen solution of the rate matrix Q for a time-reversible
+       This finds the eigensolution of the rate matrix Q for a time-reversible
        Markov process, using the algorithm for a real symmetric matrix.
        Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
        where S is symmetrical, all elements of pi are positive, and U*V = I.
@@ -424,7 +423,7 @@ void TransitionMatrix::eigenQREV(void)
 	try {
     if(mNumGoodFreq == N)
     {
-		// The S matrix is defined as Q = S*Pi
+		// The S matrix is defined as Q = S*pi
 		// Due to the fact that each Q row should sum to zero, the S diagonal values are so adjusted.
 		// But also to save multiplications the S diagonal elements are already multiplied by the corresponding codon frequency
 		// Also the eigensolver use only half the matrix. So S is filled only for half.
@@ -520,7 +519,7 @@ void TransitionMatrix::eigenQREV(void)
 void TransitionMatrix::eigenQREV(void)
 {
 	/*
-       This finds the eigen solution of the rate matrix Q for a time-reversible
+       This finds the eigensolution of the rate matrix Q for a time-reversible
        Markov process, using the algorithm for a real symmetric matrix.
        Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
        where S is symmetrical, all elements of pi are positive, and U*V = I.

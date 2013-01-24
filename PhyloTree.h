@@ -80,7 +80,7 @@ public:
 	/// @param[out] aForestNode The ForestNode that becomes the root of the cloned tree
 	/// @param[in] aTreeId The tree running id.
 	/// @param[in] aNumSites Total number of sites. Needed to assign pointers to aProbVectors.
-	/// @param[in] aProbVectors Contiguos storage for the probability vectors for each branch (ignored if NEW_LIKELIHOOD defined).
+	/// @param[in] aProbVectors Contiguous storage for the probability vectors for each branch (ignored if NEW_LIKELIHOOD defined).
 	/// @param[in] aTreeNode The node from which to start the cloning in the tree. If not present starts from the root
 	/// @param[in] aNodeId The node running id. For the root it is UINT_MAX.
 	///

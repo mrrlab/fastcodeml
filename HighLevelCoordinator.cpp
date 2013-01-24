@@ -301,7 +301,7 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 	static const std::streamsize VARS_PRECISION = 7;
 	static const std::streamsize VARS_WIDTH     = 11;
 	
-	// Write the data with an uniform precision
+	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
 
@@ -384,7 +384,7 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 	int mpi_status = MPI_Init_thread(aRgc, aRgv, requested, &provided);
 	if(mpi_status != MPI_SUCCESS)
 	{
-		throw FastCodeMLFatal("MPI Failed to initalize");
+		throw FastCodeMLFatal("MPI Failed to initialize");
 	}
 	else if(requested > MPI_THREAD_SINGLE && provided < MPI_THREAD_FUNNELED)
 	{

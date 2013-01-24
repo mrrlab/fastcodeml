@@ -18,7 +18,7 @@
 #include "blas.h"
 #endif
 
-/// The transition matrix plus its eigen decomposition.
+/// The transition matrix plus its eigendecomposition.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-02-23 (initial version)
@@ -201,7 +201,7 @@ private:
 protected:
 	// Order suggested by icc to improve locality
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
-	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
+	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
 #ifdef FORCE_IDENTITY_MATRIX 
 	double ALIGN64	mIdentity[N*N];	///< Pre-filled identify matix
@@ -211,7 +211,7 @@ protected:
 #ifndef USE_LAPACK
 	double ALIGN64	mQ[N*N];		///< The Q matrix
 #else
-	double ALIGN64	mS[N*N];		///< The S matrix (remember Q = S*Pi)
+	double ALIGN64	mS[N*N];		///< The S matrix (remember Q = S*pi)
 #endif
 	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order
 	const double*	mCodonFreq;		///< Experimental codon frequencies
@@ -256,12 +256,12 @@ public:
 
 private:
 	double			mSavedScale;		///< Saved matrix scale value
-	double ALIGN64	mSavedV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the autovectors)
+	double ALIGN64	mSavedV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
 	double ALIGN64	mSavedU[N*N];		///< The left adjusted eigenvectors matrix
 #ifndef USE_LAPACK
 	double ALIGN64	mSavedQ[N*N];		///< The Q matrix
 #else
-	double ALIGN64	mSavedS[N*N];		///< The S matrix (remember Q = S*Pi)
+	double ALIGN64	mSavedS[N*N];		///< The S matrix (remember Q = S*pi)
 #endif
 	double ALIGN64	mSavedD[N];			///< The matrix eigenvalues stored in reverse order
 	

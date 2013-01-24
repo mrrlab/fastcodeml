@@ -69,8 +69,8 @@ public:
 
 	/// Bayes Empirical Bayes (BEB) test.
 	///
-	/// @param[in] aVars   The variables otimized at the end of H1 run
-	/// @param[in] aFgBranch The foreground branch under test
+	/// @param[in] aVars The variables optimized at the end of the H1 run.
+	/// @param[in] aFgBranch The foreground branch under test.
 	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
 	void computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales);
@@ -104,9 +104,9 @@ private:
 	///   site class 2b:     w1=1   w2        10
 	///@endverbatim
 	///
-	/// @param[in] aVars  The variables otimized at the end of H1 run
-	/// @param[in] aSiteMultiplicity  The site multiplicity vector
-	/// @param[in] aFgBranch  The foreground branch under test
+	/// @param[in] aVars  The variables optimized at the end of the H1 run.
+	/// @param[in] aSiteMultiplicity  The site multiplicity vector.
+	/// @param[in] aFgBranch  The foreground branch under test.
 	/// @param[in] aScales  The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
 	/// @return The computed scale.
@@ -124,14 +124,14 @@ private:
 	/// aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the 
 	/// centroid in the ij-th small triangle. aProbX and aProbY each takes on 2*BEB_N1D-1 possible values.
 	///
-	/// @param[out] aProbX The p0 value on the X axis of the triangular grid
-	/// @param[out] aProbY The p1 value on the Y axis of the triangular grid
+	/// @param[out] aProbX The p0 value on the X axis of the triangular grid.
+	/// @param[out] aProbY The p1 value on the Y axis of the triangular grid.
 	/// @param[in] aTriangleIdx The index inside the triangular grid.
 	///
 	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx);
 
 private:
-	/// Disabled assignment operator to avoid warning on Windows.
+	/// Disabled assignment operator to avoid warnings on Windows.
 	///
 	/// @fn BayesTest& operator=(const BayesTest& aObj)
 	///
@@ -151,7 +151,7 @@ private:
 	Forest&					mForest;						///< The forest.
 	size_t					mNumSites;						///< Number of sites.
 	std::vector<double>		mSiteClassProb;					///< Probability of a site to pertain to a given class (one row per class (4 classes), one column per site).
-	unsigned int			mVerbose;						///< If greather than zero prints more info
+	unsigned int			mVerbose;						///< If greater than zero prints more info
 	std::vector<double>		mPriors;						///< Computed priors (each points to a list, one for each site)
 	TreeAndSetsDependencies	mDependencies;					///< Dependency list for likelihood computation
 	ProbabilityMatrixSetBEB	mBEBset;						///< Probability matrix set to be used for likelihood computation

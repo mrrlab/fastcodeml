@@ -23,7 +23,7 @@ public:
 	static ParseParameters* getInstance(void);
 
 	/// Change value to a given parameter.
-	/// The argumenti is a string: name=value or name:value where the name is in (w0, k, p0, p1, w2) and the value is a double value
+	/// The argument is a string: name=value or name:value where the name is in (w0, k, p0, p1, w2) and the value is a double numerical value
 	///
 	/// @param[in] aParamValuePair The string to be parsed for name and value
 	///

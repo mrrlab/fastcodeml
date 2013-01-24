@@ -22,7 +22,7 @@ public:
 	/// @param[in] aVerbose				The verbose level
 	/// @param[in] aLowerBound			Lower limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
-	/// @param[in] aDeltaForGradient	Delta used to compue the gradient
+	/// @param[in] aDeltaForGradient	Delta used to compute the gradient
 	/// @param[in] aRelativeError		Relative error to stop computation
 	///
 	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError) :
@@ -122,7 +122,7 @@ private:
 	///
 	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n);
 
-	/// Disabled assignment operator to avoid warning on Windows
+	/// Disabled assignment operator to avoid warnings on Windows
 	///
 	/// @fn Ming2& operator=(const Ming2& aObj)
 	///

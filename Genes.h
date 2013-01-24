@@ -100,7 +100,7 @@ public:
 
 
 private:
-	/// Convert givend codon in the codons positions after expanding ambiguous characters.
+	/// Convert given codon in the corresponding codons positions after expanding ambiguous characters.
 	/// The valid letter are TGKCYSBAWRDMHVN and U that is mapped to T and - that is mapped to N.
 	/// The full list can be found on http://en.wikipedia.org/wiki/Nucleic_acid_notation
 	///
@@ -112,7 +112,7 @@ private:
 
 	/// Test if the three letters of the argument represent a valid codon.
 	///
-	/// @param[in] aCodon String of three letters repesenting the codon (not null terminated)
+	/// @param[in] aCodon String of three letters representing the codon (not null terminated)
 	/// @param[in] aRemoveAmbiguous If true only TCAG codons are valid, else also ambiguous one are valid
 	///
 	/// @return True if codon is a valid codon
@@ -137,8 +137,8 @@ private:
 
 	/// Compare two codons.
 	///
-	/// @param[in] aCodon1 First codon to be compared (three charactes, no need for zero termination)
-	/// @param[in] aCodon2 Second codon to be compared (three charactes, no need for zero termination)
+	/// @param[in] aCodon1 First codon to be compared (three characters, no need for zero termination)
+	/// @param[in] aCodon2 Second codon to be compared (three characters, no need for zero termination)
 	///
 	/// @return True if the codons are valid, equal or if ambiguous expand to the same set of positions.
 	///

@@ -255,7 +255,7 @@ public:
 	/// Set the matrices for branch aBranch from the return value of a getChangedMatrices routine
 	///
 	/// @param[in] aBranch The branch for which the matrices are to be accessed
-	/// @param[in] aMatricesPtr array of pointers as returned by the etChangedMatrices routine
+	/// @param[in] aMatricesPtr array of pointers as returned by the getChangedMatrices routine
 	///
 	void setMatrices(size_t aBranch, const double** aMatricesPtr);
 
@@ -331,7 +331,7 @@ public:
 	/// Set the matrices for branch aBranch from the return value of a getChangedMatrices routine
 	///
 	/// @param[in] aBranch The branch for which the matrices are to be accessed
-	/// @param[in] aMatricesPtr array of pointers as returned by gthe etChangedMatrices routine
+	/// @param[in] aMatricesPtr array of pointers as returned by the getChangedMatrices routine
 	///
 	void setMatrices(size_t aBranch, const double** aMatricesPtr);
 

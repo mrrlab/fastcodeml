@@ -113,7 +113,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Set the number of internal branches
 	mNumInternalBranches = mNumBranches - num_leaves;
 
-	// Set the site multeplicity
+	// Set the site multiplicity
 	mSiteMultiplicity.assign(mult.begin(), mult.end());
 
 	// Set the codon frequencies and related values needed for the eigensolver
@@ -198,7 +198,7 @@ void Forest::postLoad(void)
 	}
 #endif
 
-	// Try to balance the tree (ie move leaves to fill underfull levels)
+	// Try to balance the tree (i.e.\ move leaves to fill underfull levels)
 	for(bool found=true; found;)
 	{
 		// Find the level with the maximum number of leaves
