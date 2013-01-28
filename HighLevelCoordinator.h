@@ -61,10 +61,11 @@ private:
 	/// The master coordination job
 	///
 	/// @param[in] aOutputResults To collect and output results to a results file
+	/// @param[in] aCmdLine The parameters from the command line of the main program
 	///
 	/// @exception FastCodeMLFatal Invalid job request found
 	///
-	void doMaster(WriteResults& aOutputResults);
+	void doMaster(WriteResults& aOutputResults, const CmdLine& aCmdLine);
 
 	/// The worker high level loop
 	///

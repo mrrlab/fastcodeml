@@ -62,7 +62,7 @@ protected:
 		  mOnlyInitialStep(aOnlyInitialStep),
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
-		  mInitType(INIT_TYPE_NONE),
+		  mInitStatus(INIT_NONE),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
 		  mNumVariables(aNumVariables),
 		  mExtraDebug(aExtraDebug),
@@ -261,27 +261,28 @@ private:
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
 
-	/// Valid values for the mInitType variable depicting from where the variables have been initialized.
+	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.
 	///
 	enum InitVarStatus
 	{
-		INIT_TYPE_NONE,			///< All variables to optimize should be initialized
-		INIT_TYPE_TIMES,		///< All variables to optimize should be initialized except times
-		INIT_TYPE_RES_4,		///< All variables to optimize should be initialized except times, w0, k, v1, v2
-		INIT_TYPE_RES_5			///< All variables to optimize have been initialized
+		INIT_NONE=0,		///< All variables to optimize should be initialized
+		INIT_TIMES=1,		///< All variables to optimize should be initialized except times
+		INIT_PARAMS_H0=2,
+		INIT_PARAM_W2=4,
+		INIT_PARAMS=6		///< All variables to optimize should be initialized except w0, w2, k, p0, p1
 	};
 
 public:
-	/// Initialize the times from the input phylogenetic tree
+	/// Initialize the times from the input phylogenetic tree.
 	///
 	void initFromTree(void);
 
-	/// Initialize the times from the input phylogenetic tree and set the other values to hardcoded constants with P0=1 and P1=0.
+	/// Set the other parameters values to hardcoded constants.
 	/// This routine could be used in place of initFromTree()
 	///
 	/// @exception FastCodeMLFatal Invalid p0 and p1 values
 	///
-	void initFromTreeAndParams(void);
+	void initFromParams(void);
 
 	/// Initialize variables from a previous optimization result
 	///
@@ -317,7 +318,7 @@ protected:
 	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
 	bool						mTrace;				///< Enable maximization tracing
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
-	InitVarStatus				mInitType;			///< From where the variables have been initialized
+	unsigned int				mInitStatus;		///< Which variables have been initialized
 	unsigned int				mNumTimes;			///< Number of branch lengths values
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing

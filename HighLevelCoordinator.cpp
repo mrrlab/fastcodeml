@@ -103,12 +103,13 @@ struct HighLevelCoordinator::WorkTable
 	///
 	/// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0, JOB_H1, JOB_BEB, JOB_SHUTDOWN);
 	///									  [1] to the fg branch number (or zero for JOB_SHUTDOWN);
-	///                                   [2] zero or the number of variables for a JOB_BEB request
+	///                                   [2] zero or the number of variables for a JOB_BEB or JOB_H0 requests
 	/// @param[in] aRank The current worker rank
+	/// @param[in] aInitFromH1 If true for a H0 request send back also all H1 variables
 	///
 	/// @return True if a job has been assigned, false if the job is JOB_SHUTDOWN
 	///
-	bool getNextJob(int* aJob, int aRank);
+	bool getNextJob(int* aJob, int aRank, bool aInitFromH1=false);
 
 	/// Mark the job assigned to the aRank worker as finished
 	///
@@ -150,7 +151,7 @@ struct HighLevelCoordinator::WorkTable
 };
 
 
-bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
+bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank, bool aInitFromH1)
 {
 	// Assign all H1 jobs
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
@@ -175,7 +176,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank)
 		{
 			aJob[0] = JOB_H0;
 			aJob[1] = static_cast<int>(branch);
-			aJob[2] = 1; // Send the lnl of the corresponding H1 step
+			aJob[2] = (aInitFromH1) ? static_cast<int>(mResults[branch].mHxVariables[1].size())+1 : 1; // Send the lnl of the corresponding H1 step or mResults[branch].mHxVariables[1]
 			mJobStatus[idx] = JOB_ASSIGNED;
 			mWorkList[idx]  = aRank;
 			return true;
@@ -448,7 +449,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 		WriteResults output_results(aCmdLine.mResultsFile);
 
 		// In the master process initialize the master
-		doMaster(output_results);
+		doMaster(output_results, aCmdLine);
 	}
 	else
 	{
@@ -461,7 +462,7 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 }
 
 
-void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
+void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine& aCmdLine)
 {
 	// Push work to free workers
 	unsigned int num_workers = 0;
@@ -570,7 +571,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 
 		// Send work packet or shutdown request (job[0] is the step to be done, job[1] is the fg branch, job[2] the length of the additional data)
 		int job[3];
-		mWorkTable->getNextJob(job, worker);
+		mWorkTable->getNextJob(job, worker, aCmdLine.mInitH0fromH1);
 		MPI_Send(static_cast<void*>(job), 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 
 		// For BEB send the variables from H1; for H0 send the lnl value from corresponding H1
@@ -585,8 +586,17 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults)
 				break;
 
 			case JOB_H0:
-				v = &(mWorkTable->mResults[job[1]].mLnl[1]);
-				MPI_Send(static_cast<void*>(v), 1, MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+				if(job[2] == 1)
+				{
+					v = &(mWorkTable->mResults[job[1]].mLnl[1]);
+				}
+				else
+				{
+					results_double.assign(mWorkTable->mResults[job[1]].mHxVariables[1].begin(), mWorkTable->mResults[job[1]].mHxVariables[1].end());
+					results_double.push_back(mWorkTable->mResults[job[1]].mLnl[1]);
+					v = &results_double[0];
+				}
+				MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 				break;
 			}
 		}
@@ -774,11 +784,15 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_H0:
 			{
 			// Initialize maximizer
-			if(aCmdLine.mInitFromParams)				h0.initFromTreeAndParams();
-			else if(aCmdLine.mBranchLengthsFromFile)	h0.initFromTree();
+			if(aCmdLine.mInitH0fromH1 && job[2] > 1) h0.initFromResult(values_double, static_cast<unsigned int>(values_double.size())-1);
+			else
+			{
+				if(aCmdLine.mInitFromParams)		h0.initFromParams();
+				if(aCmdLine.mBranchLengthsFromFile)	h0.initFromTree();
+			}
 
 			// Get the lnl from the corresponding H1 step if any
-			double threshold = (job[2] > 0) ? values_double[0]-THRESHOLD_FOR_LRT : 0.;
+			double threshold = (job[2] > 0) ? values_double.back()-THRESHOLD_FOR_LRT : 0.;
 
 			// Compute H0
 			double lnl = h0(static_cast<size_t>(job[1]), aCmdLine.mStopIfNotLRT && job[2] > 0, threshold);
@@ -794,8 +808,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_H1:
 			{
 			// Initialize maximizer
-			if(aCmdLine.mInitFromParams)				h1.initFromTreeAndParams();
-			else if(aCmdLine.mBranchLengthsFromFile)	h1.initFromTree();
+			if(aCmdLine.mInitFromParams)		h1.initFromParams();
+			if(aCmdLine.mBranchLengthsFromFile)	h1.initFromTree();
 
 			// Compute H1
 			double lnl = h1(static_cast<size_t>(job[1]));

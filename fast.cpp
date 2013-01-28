@@ -99,12 +99,15 @@ int main(int aRgc, char **aRgv)
 			                                        std::cout << "Branch:         " << cmd.mBranchStart << std::endl;
 		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
 			                                        std::cout << "Branches:       " << cmd.mBranchStart << "-end" << std::endl;
-		else                                        std::cout << "Branches:       " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
+		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
+													std::cout << "Branches:       " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
 		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
 		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
 		if(cmd.mInitH0fromH1)						std::cout << "Starting val.:  From H1" << std::endl;
-		else if(cmd.mInitFromParams)				std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
+		else if(cmd.mInitFromParams && cmd.mBranchLengthsFromFile)
+													std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
+		else if(cmd.mInitFromParams)				std::cout << "Starting val.:  Params from const (see below)" << std::endl;
 		else if(cmd.mBranchLengthsFromFile)			std::cout << "Starting val.:  Times from tree file" << std::endl;
 		if(cmd.mNoMaximization)						std::cout << "Maximization:   No" << std::endl;
 		if(cmd.mTrace)								std::cout << "Trace:          On" << std::endl;
@@ -302,8 +305,8 @@ int main(int aRgc, char **aRgv)
 		double lnl1 = 0.;
 		if(cmd.mComputeHypothesis != 0)
 		{
-			if(cmd.mInitFromParams)				h1.initFromTreeAndParams();
-			else if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
+			if(cmd.mInitFromParams)			h1.initFromParams();
+			if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
 
@@ -316,8 +319,11 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mComputeHypothesis != 1)
 		{
 			if(cmd.mInitH0fromH1)				h0.initFromResult(h1.getVariables());
-			else if(cmd.mInitFromParams)		h0.initFromTreeAndParams();
-			else if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+			else
+			{
+				if(cmd.mInitFromParams)			h0.initFromParams();
+				if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+			}
 
 			lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
 

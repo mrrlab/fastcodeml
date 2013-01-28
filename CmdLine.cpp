@@ -332,6 +332,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_INIT_DEFAULT:
+			mBranchLengthsFromFile = true;
 			mInitFromParams = true;
 			break;
 
