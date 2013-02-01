@@ -171,7 +171,12 @@ int main(int aRgc, char **aRgv)
 	}
 
 	// Initialize the random number generator (0 means it is not set on the command line)
+#ifdef USE_MPI
+	// Insure that each MPI process starts with a different seed
+	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL)) + static_cast<unsigned int>(hlc.getRank()) * 1000;
+#else
 	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));
+#endif
 	srand(cmd.mSeed);
 
 	// Start a timer (to measure serial part over parallel one)
@@ -426,7 +431,8 @@ int main(int aRgc, char **aRgv)
 	}
 	catch(const FastCodeMLFatal& e)
 	{
-		std::cout << std::endl << e.what() << std::endl << std::endl;
+		// If a message associated (i.e. no empty string), display it
+		if(e.what()[0]) std::cout << std::endl << e.what() << std::endl << std::endl;
 		return 1;
 	}
 	catch(const FastCodeMLMemoryError& e)

@@ -276,7 +276,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 		}
 	}
 	
-	if(any_error) throw FastCodeMLFatal();
+	if(any_error) {std::cout << std::endl; throw FastCodeMLFatal();}
 }
 
 void HighLevelCoordinator::WorkTable::skipOutsideRange(size_t aBranchStart, size_t aBranchEnd)

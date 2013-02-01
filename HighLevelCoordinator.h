@@ -56,6 +56,11 @@ public:
 	///
 	int  numJobs(void) const {return mSize;}
 
+	/// Return the current process rank.
+	///
+	/// @return The current process rank.
+	///
+	int getRank(void) const {return mRank;}
 
 private:
 	/// The master coordination job

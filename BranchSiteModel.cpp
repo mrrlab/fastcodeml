@@ -915,7 +915,7 @@ public:
 	///
 	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient, size_t aNumMatrixParams, bool aStopIfBigger, double aThreshold)
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
-					    mTotalNumVariables(aUpper.size()), mNumMatrixParams(aNumMatrixParams),
+					    mTotalNumVariables(aUpper.size()), mNumBranchLengths(aUpper.size() - aNumMatrixParams),
 						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
 						{}
 
@@ -957,6 +957,7 @@ public:
 
 
 private:
+#if 1
 	/// Compute the function gradient
 	///
 	/// @param[in] aPointValue The value of the function at aVars
@@ -965,12 +966,12 @@ private:
 	///
 	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
-		std::vector<double> vars_working_copy = aVars;
-		std::vector<double> delta(mTotalNumVariables-mNumMatrixParams);
+		std::vector<double> vars_working_copy(aVars);
+		std::vector<double> delta(mNumBranchLengths);
 
 		// Modify all the branch lengths and compute the corresponding delta
 		size_t i = 0;
-		for(; i < (mTotalNumVariables-mNumMatrixParams); ++i)
+		for(; i < mNumBranchLengths; ++i)
 		{
 			double eh = mDeltaForGradient * (vars_working_copy[i]+1.);
 
@@ -988,7 +989,7 @@ private:
 		}
 
 		// Compute the partial derivative of the likelihood function for each (modified) branch length
-		for(i=0; i < (mTotalNumVariables-mNumMatrixParams); ++i)
+		for(i=0; i < mNumBranchLengths; ++i)
 		{
 			const double f1 = mModel->computeLikelihoodForGradient(vars_working_copy, false, i);
 
@@ -1015,7 +1016,34 @@ private:
 			vars_working_copy[i] = aVars[i];
 		}
 	}
+#else
+	/// Compute the function gradient (original method)
+	///
+	/// @param[in] aPointValue The value of the function at aVars
+	/// @param[in] aVars Variables to be optimized
+	/// @param[out] aGrad Gradient values computed
+	///
+	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
+	{
+		std::vector<double> vars_working_copy(aVars);
+		for(size_t i=0; i < mTotalNumVariables; ++i)
+		{
+#ifdef USE_ORIGINAL_PROPORTIONS
+			double eh = mDeltaForGradient * (fabs(aVars[i])+1.);
+#else
+			double eh = mDeltaForGradient * (aVars[i]+1.);
+#endif
+			vars_working_copy[i] += eh;
+			if(vars_working_copy[i] >= mUpper[i]) {vars_working_copy[i] -= 2*eh; eh = -eh;}
 
+			const double f1 = mModel->computeLikelihood(vars_working_copy, false);
+
+			aGrad[i] = (f1-aPointValue)/eh;
+
+			vars_working_copy[i] = aVars[i];
+		}
+	}
+#endif
 
 private:
 	BranchSiteModel*	mModel;				///< Pointer to the model to be evaluated
@@ -1023,7 +1051,7 @@ private:
 	std::vector<double>	mUpper;				///< Upper limit of the variables to constrain the interval on which the gradient should be computed
 	double				mDeltaForGradient;	///< The variable increment to compute gradient
 	size_t				mTotalNumVariables;	///< Total number of variables to be used to compute gradient
-	size_t				mNumMatrixParams;	///< Number of variables besides the branch lengths
+	size_t				mNumBranchLengths;	///< Number of branch lengths (total number of variables to be used to compute gradient minus matrix params)
 	bool				mStopIfBigger;		///< If true stop optimization as soon as function value is above mThreshold
 	double				mThreshold;			///< Threshold value to stop optimization
 };
