@@ -17,12 +17,6 @@
 #include <mkl_vml_functions.h>
 #endif
 
-// Global scaling factor (uncomment the define only if the scaling factor is different from one)
-#define USE_GLOBAL_SCALING
-#ifdef USE_GLOBAL_SCALING
-static const double GLOBAL_SCALING_FACTOR = 4.25;
-#endif
-
 /// Set of probability matrices for all branches of a tree.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -132,10 +126,6 @@ public:
 			break;
 		}
 
-#ifdef USE_GLOBAL_SCALING
-		for(int i=0; i < N; ++i) aGout[i] *= GLOBAL_SCALING_FACTOR;
-#endif
-
 		// The element wise multiplication has been moved up one level
 		//#if !defined(BUNDLE_ELEMENT_WISE_MULT)
 		//		elementWiseMult(aGout, mInvCodonFreq);
@@ -143,11 +133,7 @@ public:
 #else
 		for(int r=0; r < N; ++r)
 		{
-#ifdef USE_GLOBAL_SCALING
-			aGout[r] = mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+aCodon]*GLOBAL_SCALING_FACTOR;
-#else
 			aGout[r] = mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+aCodon];
-#endif
 		}
 #endif
 	}

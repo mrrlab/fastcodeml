@@ -53,7 +53,7 @@ OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" 
 SET(   USE_LIKELIHOOD_METHOD	"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
+OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" OFF)
 
 
 # Search for OpenMP support
@@ -124,6 +124,9 @@ if(USE_IDENTITY_MATRIX)
 	add_definitions(-DFORCE_IDENTITY_MATRIX)
 endif(USE_IDENTITY_MATRIX)
 
+if(USE_CPV_SCALING)
+	add_definitions(-DUSE_CPV_SCALING)
+endif(USE_CPV_SCALING)
 
 # Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
@@ -159,7 +162,7 @@ include_directories(${INCLUDE_DIR_NLOPT})
 
 
 ###########################################################
-# Set options for the various platforms
+# Set options for the various CSCS platforms
 if($ENV{HOST} MATCHES "matterhorn")
 
 	add_definitions(-DBOOST_NO_CWCTYPE)
@@ -216,6 +219,8 @@ if($ENV{HOST} MATCHES "eiger")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
 endif($ENV{HOST} MATCHES "eiger")
+
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
 
 ###########################################################
 

@@ -536,9 +536,6 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void)
 			std::cout << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
-#ifdef USE_GLOBAL_SCALING
-	lnl -= mGlobalScale;
-#endif
 
 	return lnl;
 }
@@ -871,9 +868,6 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 			std::cout << std::fixed << std::setw(14) << x*mult[site] << std::endl;
 		}
 	}
-#ifdef USE_GLOBAL_SCALING
-	lnl -= mGlobalScale;
-#endif
 
 	return lnl;
 }

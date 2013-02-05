@@ -10,6 +10,7 @@
 #include "Genes.h"
 #include "Exceptions.h"
 #include "VerbosityLevels.h"
+#include "MatrixSize.h"
 
 
 Genes::~Genes()
@@ -76,6 +77,10 @@ void Genes::setLeaveProb(double* aLeaveProbVect, double aProb) const
 		aProb /= static_cast<double>(mCurrentPositions.size());
 		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = aProb;
 	}
+#ifdef USE_CPV_SCALING
+	// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
+	aLeaveProbVect[N] = 1.0;
+#endif
 }
 
 void Genes::updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const

@@ -87,19 +87,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 			// Set leaves probability vector (Nt copies)
 			// Beware, the arrays should be already zeroed
 #ifdef NEW_LIKELIHOOD
-
-#ifdef USE_GLOBAL_SCALING	
-			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb(&mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)], GLOBAL_SCALING_FACTOR);
-#else
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb(&mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)]);
-#endif
-#else
-
-#ifdef USE_GLOBAL_SCALING	
-			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set], GLOBAL_SCALING_FACTOR);
 #else
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set]);
-#endif
 #endif
 
 			// Count codons
@@ -955,6 +945,13 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
 		break;
 	}
+
+#ifdef USE_CPV_SCALING
+	double w[N];
+	memcpy(w, anode_prob, N*sizeof(double));
+	double len = normalizeVector(w);
+	std::cout << "*** " << std::setw(3) << aNode->mBranchId+1 << ' ' << std::scientific << std::setprecision(4) << len << std::endl;
+#endif
 #endif
 
 	return anode_prob;

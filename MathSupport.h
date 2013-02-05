@@ -116,5 +116,25 @@ inline bool isDifferent(double aFirst, double aSecond)
 	return (diff > TOL || diff < -TOL);
 }
 
+#ifdef USE_CPV_SCALING
+
+/// Normalize a vector (length 61).
+///
+/// @param[in,out] aVector The vector to be scaled
+///
+/// @return The length of the vector
+///
+inline double normalizeVector(double* RESTRICT aVector)
+{
+	double norm = dnrm2_(&N, aVector, &I1);
+	double inv_norm = 1./norm;
+
+	dscal_(&N, &inv_norm, aVector, &I1);
+
+	return norm;
+}
+#endif
+
+
 #endif
 

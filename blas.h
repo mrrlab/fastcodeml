@@ -268,6 +268,7 @@ void dsymm_(const char *side,
 				double *c,
 				const int *ldc);
 
+
 /// Forms the dot product of two vectors.
 ///
 /// @param[in] n Vector length
@@ -283,6 +284,7 @@ double ddot_(const int *n,
 				const int *incx,
 				const double *dy,
 				const int *incy);
+
 
 /// Computes the Euclidean norm of a vector.
 /// 
@@ -306,15 +308,13 @@ double dnrm2_(const int *n,
 /// This routine performs the following vector operation:  x <-- alpha x
 /// where alpha is a double precision scalar, and x is a double precision vector.
 ///
-/// @param[in] n  Number of elements in the vector.
-///         If n <= 0, this routine returns without computation.
+/// @param[in] n  Number of elements in the vector. If n <= 0, this routine returns without computation.
 ///
 /// @param[in]  alpha   The scaling value.
 ///
 /// @param[in,out]  x Array of dimension (n-1) * |incx| + 1. Vector to be scaled.
 ///
-/// @param[in]  incx Increment between elements of x.
-///         If incx = 0, the results will be unpredictable.
+/// @param[in]  incx Increment between elements of x. If incx = 0, the results will be unpredictable.
 ///
 void dscal_(const int *n,
 			const double *alpha,

@@ -74,14 +74,6 @@ protected:
 		  mRelativeError(aRelativeError)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables));
-
-#ifdef USE_GLOBAL_SCALING
-		const size_t num_sites = mForest.getNumSites();
-		const std::vector<double>& mult = mForest.getSiteMultiplicity();
-		double total_mult = 0.;
-		for(size_t site=0; site < num_sites; ++site) total_mult += mult[site];
-		mGlobalScale = (mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR)*total_mult;
-#endif
 	}
 
 	/// Destructor.
@@ -322,9 +314,6 @@ protected:
 	double						mBgScale;			///< The computed background branches scale
 	double						mMaxLnL;			///< Maximum value of LnL found during optimization
 	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
-#ifdef USE_GLOBAL_SCALING
-	double						mGlobalScale;
-#endif
 	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
 	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
 	bool						mTrace;				///< Enable maximization tracing
