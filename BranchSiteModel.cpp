@@ -510,9 +510,6 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void)
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	double* likelihoods = &mLikelihoods[0];
-#ifdef USE_GLOBAL_SCALING
-	double scale = 0;
-#endif
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -527,12 +524,9 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void)
 		x = likelihoods[2*num_sites+site];
 		if(x > 0) p += p2a*x;
 
-		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
-#ifdef USE_GLOBAL_SCALING
-		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
-#endif
+
 		if(mExtraDebug > 1)
 		{
 			std::cout << std::setw(4) << site << ' ';
@@ -543,7 +537,7 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void)
 		}
 	}
 #ifdef USE_GLOBAL_SCALING
-	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
+	lnl -= mGlobalScale;
 #endif
 
 	return lnl;
@@ -846,9 +840,6 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 	const std::vector<double>& mult = mForest.getSiteMultiplicity();
 	double lnl = 0;
 	double* likelihoods = &mLikelihoods[0];
-#ifdef USE_GLOBAL_SCALING
-	double scale = 0;
-#endif
 	for(size_t site=0; site < num_sites; ++site)
 	{
 		// The following computation is split to avoid negative values
@@ -867,13 +858,9 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 		x = likelihoods[3*num_sites+site];
 		if(x > 0) p += p2b*x;
 
-		//x = (p > 0) ? log(p)-(mForest.getNumBranches()-mForest.getNumInternalBranches())*log(GLOBAL_SCALING_FACTOR) : mMaxLnL-100000;
-		//lnl += x*mult[site];
 		x = (p > 0) ? log(p) : mMaxLnL-100000;
 		lnl += x*mult[site];
-#ifdef USE_GLOBAL_SCALING
-		scale += mult[site]*(mForest.getNumBranches()-mForest.getNumInternalBranches());
-#endif
+
 		if(mExtraDebug > 1)
 		{
 			std::cout << std::setw(4) << site << ' ';
@@ -885,7 +872,7 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 		}
 	}
 #ifdef USE_GLOBAL_SCALING
-	lnl -= scale*log(GLOBAL_SCALING_FACTOR);
+	lnl -= mGlobalScale;
 #endif
 
 	return lnl;
@@ -957,7 +944,6 @@ public:
 
 
 private:
-#if 1
 	/// Compute the function gradient
 	///
 	/// @param[in] aPointValue The value of the function at aVars
@@ -1016,7 +1002,8 @@ private:
 			vars_working_copy[i] = aVars[i];
 		}
 	}
-#else
+
+#if 0
 	/// Compute the function gradient (original method)
 	///
 	/// @param[in] aPointValue The value of the function at aVars

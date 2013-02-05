@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
@@ -648,7 +649,11 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
 
 		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
-		if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
+		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  Lnl H0: " << std::setw(24) << "Inf";
+		}
+		else if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
 		{
 			std::cout << "  Lnl H0: " << std::setw(24) << "NA";
 		}
@@ -656,16 +661,26 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 		{
 			std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
 		}
-		std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
-
-		if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
+		if(mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  Lnl H1: " << std::setw(24) << "Inf";
+		}
+		else
+		{
+			std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
+		}
+		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity() || mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  LRT: " << std::setw(24) << "*Invalid*";
+		}
+		else if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
 			std::cout << "  LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 		else
 			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
 		std::cout << std::endl;
 		std::cout << std::endl;
-		if(mWorkTable->mResults[branch].mLnl[0] != DBL_MAX) mWorkTable->printVariables(branch, 0, std::cout);
-		mWorkTable->printVariables(branch, 1, std::cout);
+		if(mWorkTable->mResults[branch].mLnl[0] != std::numeric_limits<double>::infinity() && mWorkTable->mResults[branch].mLnl[0] != DBL_MAX) mWorkTable->printVariables(branch, 0, std::cout);
+		if(mWorkTable->mResults[branch].mLnl[1] != std::numeric_limits<double>::infinity()) mWorkTable->printVariables(branch, 1, std::cout);
 		std::cout << std::endl;
 	}
 

@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <limits>
 #include "CmdLine.h"
 #include "Newick.h"
 #include "Phylip.h"
@@ -101,6 +102,7 @@ int main(int aRgc, char **aRgv)
 			                                        std::cout << "Branches:       " << cmd.mBranchStart << "-end" << std::endl;
 		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
 													std::cout << "Branches:       " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
+		if(!cmd.mStopIfNotLRT)						std::cout << "H0 pre stop:    No" << std::endl;
 		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
 		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
@@ -211,7 +213,7 @@ int main(int aRgc, char **aRgv)
 
 		if(zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0)
 		{
-			std::cout << "Found Null or missing branch length in tree file. On leaves: " << zero_on_leaf_cnt << "  on internal branches: " << zero_on_int_cnt << std::endl;
+			std::cout << "Found null or missing branch length in tree file. On leaves: " << zero_on_leaf_cnt << "  on internal branches: " << zero_on_int_cnt << std::endl;
 		}
 
 		if(zero_on_leaf_cnt > 0)
@@ -342,27 +344,34 @@ int main(int aRgc, char **aRgv)
 			if(cmd.mComputeHypothesis != 1)
 			{
 				std::cout << "LnL0: ";
-				if(lnl0 < DBL_MAX)
+				if(lnl0 == std::numeric_limits<double>::infinity())
+					std::cout << "**Invalid result**";
+				else if(lnl0 < DBL_MAX)
 					std::cout << std::setprecision(15) << std::fixed << lnl0;
 				else
 					std::cout << "(Doesn't pass LRT, skipping)";
 				std::cout << " Function calls: " << h0.getNumEvaluations() << "   ";
 				std::cout << std::endl << std::endl;
-				h0.printFinalVars(std::cout);
+				if(lnl0 != std::numeric_limits<double>::infinity()) h0.printFinalVars(std::cout);
 				std::cout << std::endl;
 			}
 			if(cmd.mComputeHypothesis != 0)
 			{
 				std::cout << "LnL1: ";
-				std::cout << std::setprecision(15) << std::fixed << lnl1;
+				if(lnl1 == std::numeric_limits<double>::infinity())
+					std::cout << "**Invalid result**";
+				else
+					std::cout << std::setprecision(15) << std::fixed << lnl1;
 				std::cout << " Function calls: " << h1.getNumEvaluations();
 				std::cout << std::endl << std::endl;
-				h1.printFinalVars(std::cout);
+				if(lnl1 != std::numeric_limits<double>::infinity()) h1.printFinalVars(std::cout);
 				std::cout << std::endl;
 			}
 			if(cmd.mComputeHypothesis > 1)
 			{
-				if(lnl0 < DBL_MAX)
+				if(lnl0 == std::numeric_limits<double>::infinity() || lnl1 == std::numeric_limits<double>::infinity())
+					std::cout << "LRT: **Invalid result**";
+				else if(lnl0 < DBL_MAX)
 					std::cout << "LRT: " << std::setprecision(15) << std::fixed << lnl1 - lnl0 << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 				else
 					std::cout << "LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;

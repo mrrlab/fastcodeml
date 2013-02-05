@@ -23,11 +23,6 @@
 #include "TreeAndSetsDependencies.h"
 #include "CmdLine.h"
 
-// Global scaling factor (uncomment the define only if the scaling factor is different from one)
-//#define USE_GLOBAL_SCALING
-#ifdef USE_GLOBAL_SCALING
-static const double GLOBAL_SCALING_FACTOR = 1.0;
-#endif
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
