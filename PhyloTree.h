@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 #include "TreeNode.h"
 #include "ForestNode.h"
 #include "Types.h"

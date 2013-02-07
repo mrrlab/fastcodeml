@@ -62,7 +62,7 @@ long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 	return -code;
 }
 
-void Genes::setLeaveProb(double* aLeaveProbVect, double aProb) const
+void Genes::setLeaveProb(double* aLeaveProbVect) const
 {
 	if(mCurrentPositions.empty())
 	{
@@ -70,13 +70,14 @@ void Genes::setLeaveProb(double* aLeaveProbVect, double aProb) const
 	}
 	else if(mCurrentPositions.size() == 1)
 	{
-		aLeaveProbVect[mCurrentPositions[0]] = aProb;
+		aLeaveProbVect[mCurrentPositions[0]] = 1.;
 	}
 	else
 	{
-		aProb /= static_cast<double>(mCurrentPositions.size());
-		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = aProb;
+		double prob = 1./static_cast<double>(mCurrentPositions.size());
+		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
 	}
+
 #ifdef USE_CPV_SCALING
 	// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
 	aLeaveProbVect[N] = 1.0;

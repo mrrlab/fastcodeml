@@ -2,9 +2,7 @@
 #ifndef FOREST_H
 #define FOREST_H
 
-#include <fstream>
 #include <vector>
-#include <utility>
 #include "PhyloTree.h"
 #include "Genes.h"
 #include "ForestNode.h"

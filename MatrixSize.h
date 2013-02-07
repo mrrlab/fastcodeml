@@ -19,13 +19,16 @@ static const int Nt = 4;
 ///
 static const int MATRIX_SLOT = N*N+3;
 
-/// Slot size for a vector. It should be equal or larger than N+1. Value identified by measurement.
+/// Slot size for a vector. It should be equal or larger than N+1. The slot size value has been identified by measurement.
 /// In the vectors used as CPV the location after the end will contain the CVP norm.
 ///
 #ifdef NEW_LIKELIHOOD
-static const int VECTOR_SLOT = 62;
+#ifdef USE_CPV_SCALING
+#error "Cannot use CPV scaling with new likelihood!"
+#endif
+static const int VECTOR_SLOT = N;
 #else
-static const int VECTOR_SLOT = 66;
+static const int VECTOR_SLOT = N+1+4;
 #endif
 
 /// Alignment to avoid cache line false sharing.

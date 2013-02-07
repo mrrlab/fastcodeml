@@ -146,6 +146,9 @@ int main(int aRgc, char **aRgv)
 #ifdef USE_MPI
 													std::cout << "USE_MPI ";
 #endif
+#ifdef USE_CPV_SCALING
+													std::cout << "USE_CPV_SCALING ";
+#endif
 #ifdef NEW_LIKELIHOOD
 													std::cout << "NEW_LIKELIHOOD ";
 #endif

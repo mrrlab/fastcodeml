@@ -46,11 +46,11 @@ OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
 OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
 if(NOT WIN32)
-OPTION(BUILD_NOT_SHARED   		"Build FastCodeML not shared" OFF)
+	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
 OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF)
 OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" OFF)
-SET(   USE_LIKELIHOOD_METHOD	"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
+SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
 OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" OFF)
@@ -124,28 +124,35 @@ if(USE_IDENTITY_MATRIX)
 	add_definitions(-DFORCE_IDENTITY_MATRIX)
 endif(USE_IDENTITY_MATRIX)
 
-if(USE_CPV_SCALING)
-	add_definitions(-DUSE_CPV_SCALING)
-endif(USE_CPV_SCALING)
-
 # Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
-		add_definitions(-DNON_RECURSIVE_VISIT)
+	add_definitions(-DNON_RECURSIVE_VISIT)
+	unset(USE_CPV_SCALING)
 endif(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
 
 if(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 	add_definitions(-DNEW_LIKELIHOOD)
+	unset(USE_CPV_SCALING)
 endif(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 
 if(USE_LIKELIHOOD_METHOD MATCHES "DAG")
 	add_definitions(-DUSE_DAG)
+	unset(USE_CPV_SCALING)
 endif(USE_LIKELIHOOD_METHOD MATCHES "DAG")
+
+# CPV scaling is valid only for the Original likelihood method
+if(USE_CPV_SCALING)
+	add_definitions(-DUSE_CPV_SCALING)
+endif(USE_CPV_SCALING)
 
 # Set paths
 if(USE_MPI)
 	if(MPI_C_INCLUDE_PATH)
 		include_directories(${MPI_C_INCLUDE_PATH})
 	endif(MPI_C_INCLUDE_PATH)
+	if(MPI_INCLUDE_PATH)
+		include_directories(${MPI_INCLUDE_PATH})
+	endif(MPI_INCLUDE_PATH)
 	if(MPI_LIBRARY)
 		link_directories(${MPI_LIBRARY})
 	endif(MPI_LIBRARY)
@@ -219,8 +226,6 @@ if($ENV{HOST} MATCHES "eiger")
 	endif(CMAKE_COMPILER_IS_GNUCXX)
 
 endif($ENV{HOST} MATCHES "eiger")
-
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
 
 ###########################################################
 

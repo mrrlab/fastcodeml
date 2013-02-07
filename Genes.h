@@ -60,14 +60,13 @@ public:
 	///
 	long long getCodonIdx(std::string aSpecie, size_t aSite) const;
 
-	/// Set the correct positions in the leave probability vector to one.
+	/// Set the correct positions in the leave probability vector to 1/num_positions.
 	///
 	/// @param[out] aLeaveProbVect The leave probability vector to be set.
-	/// @param[in] aProb The probability to be set at the codon positions inside aLeaveProbVect.
 	///
 	/// @exception FastCodeMLFatal If saved codon is invalid.
 	///
-	void setLeaveProb(double* aLeaveProbVect, double aProb=1.0) const;
+	void setLeaveProb(double* aLeaveProbVect) const;
 
 	/// Update codon count in a given array.
 	///

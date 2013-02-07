@@ -14,6 +14,8 @@
 
 #ifdef USE_LAPACK
 #include "blas.h"
+#else
+#include <cmath>
 #endif
 
 //#ifdef USE_MKL_VML
@@ -118,6 +120,7 @@ inline bool isDifferent(double aFirst, double aSecond)
 
 #ifdef USE_CPV_SCALING
 
+
 /// Normalize a vector (length 61).
 ///
 /// @param[in,out] aVector The vector to be scaled
@@ -126,13 +129,21 @@ inline bool isDifferent(double aFirst, double aSecond)
 ///
 inline double normalizeVector(double* RESTRICT aVector)
 {
+#ifdef USE_LAPACK
 	double norm = dnrm2_(&N, aVector, &I1);
 	double inv_norm = 1./norm;
 
 	dscal_(&N, &inv_norm, aVector, &I1);
+#else
+	double norm = 0.;
+	for(int i=0; i < N; ++i) norm += aVector[i]*aVector[i];
+	norm = sqrt(norm);
+	for(int i=0; i < N; ++i) aVector[i] /= norm;
+#endif
 
 	return norm;
 }
+
 #endif
 
 

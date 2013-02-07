@@ -91,7 +91,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 #else
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set]);
 #endif
-
 			// Count codons
 			aGenes.updateCodonCount(codon_count, mult[site]);
 		}
@@ -851,7 +850,11 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 
 				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
 
+#ifdef USE_CPV_SCALING
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g)*g[N];
+#else
 				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+#endif
 			}
 		}
 	}
@@ -883,14 +886,27 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 				if(first)
 				{
 					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, anode_prob);
+#ifdef USE_CPV_SCALING
+					anode_prob[N] = normalizeVector(anode_prob);
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+1)*sizeof(double));
+#else
 					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
+#endif
 					first = false;
 				}
 				else
 				{
+#ifdef USE_CPV_SCALING
+					double ALIGN64 temp[N+1];
+#else
 					double ALIGN64 temp[N];
+#endif
 					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
 					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, x);
+#ifdef USE_CPV_SCALING
+					x[N] = normalizeVector(x);
+					anode_prob[N] *= x[N];
+#endif
 					elementWiseMult(anode_prob, x);
 				}
 			}
@@ -898,15 +914,30 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 			{
 				if(first)
 				{
-					aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalkerTC(m, aSet, aSetIdx), anode_prob);
+					double* g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+					aSet.doTransition(aSetIdx, branch_id, g, anode_prob);
+#ifdef USE_CPV_SCALING
+					anode_prob[N] = normalizeVector(anode_prob)*g[N];
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+1)*sizeof(double));
+#else
 					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
+#endif
 					first = false;
 				}
 				else
 				{
+#ifdef USE_CPV_SCALING
+					double ALIGN64 temp[N+1];
+#else
 					double ALIGN64 temp[N];
+#endif
 					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
-					aSet.doTransition(aSetIdx, branch_id, computeLikelihoodsWalkerTC(m, aSet, aSetIdx), x);
+					double* g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+					aSet.doTransition(aSetIdx, branch_id, g, x);
+#ifdef USE_CPV_SCALING
+					x[N] = (normalizeVector(x)*g[N]);
+					anode_prob[N] *= x[N];
+#endif
 					elementWiseMult(anode_prob, x);
 				}
 			}
@@ -915,11 +946,18 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 		{
 			if(first)
 			{
+#ifdef USE_CPV_SCALING
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, (N+1)*sizeof(double));
+#else
 				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
+#endif
 				first = false;
 			}
 			else
 			{
+#ifdef USE_CPV_SCALING
+				anode_prob[N] *= anode_other_tree_prob[VECTOR_SLOT*aSetIdx+N];
+#endif
 				elementWiseMult(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx);
 			}
 		}
@@ -945,13 +983,6 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
 		break;
 	}
-
-#ifdef USE_CPV_SCALING
-	double w[N];
-	memcpy(w, anode_prob, N*sizeof(double));
-	double len = normalizeVector(w);
-	std::cout << "*** " << std::setw(3) << aNode->mBranchId+1 << ' ' << std::scientific << std::setprecision(4) << len << std::endl;
-#endif
 #endif
 
 	return anode_prob;

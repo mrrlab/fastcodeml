@@ -64,7 +64,7 @@ struct ForestNode
 	///
 	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(NULL), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
-				   , mFirstChild(false), mChildIdx(0),
+				   , mFirstChild(false), mChildIdx(0)
 #endif		  
 	{
 #ifndef NEW_LIKELIHOOD
