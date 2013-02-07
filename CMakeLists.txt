@@ -53,7 +53,7 @@ OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" 
 SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
-OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" OFF)
+OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" ON)
 
 
 # Search for OpenMP support
@@ -127,17 +127,17 @@ endif(USE_IDENTITY_MATRIX)
 # Select on method to compute likelihood
 if(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
 	add_definitions(-DNON_RECURSIVE_VISIT)
-	unset(USE_CPV_SCALING)
+	set(USE_CPV_SCALING OFF)
 endif(USE_LIKELIHOOD_METHOD MATCHES "NonRecursive")
 
 if(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 	add_definitions(-DNEW_LIKELIHOOD)
-	unset(USE_CPV_SCALING)
+	set(USE_CPV_SCALING OFF)
 endif(USE_LIKELIHOOD_METHOD MATCHES "FatVector")
 
 if(USE_LIKELIHOOD_METHOD MATCHES "DAG")
 	add_definitions(-DUSE_DAG)
-	unset(USE_CPV_SCALING)
+	set(USE_CPV_SCALING OFF)
 endif(USE_LIKELIHOOD_METHOD MATCHES "DAG")
 
 # CPV scaling is valid only for the Original likelihood method
