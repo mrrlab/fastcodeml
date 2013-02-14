@@ -193,6 +193,14 @@ public:
 	///
 	void getScales(std::vector<double>& aScales) const {aScales.resize(2); aScales[0] = mBgScale; aScales[1] = mFgScale;}
 
+	/// Verify if the code entered on command line is valid.
+	///
+	/// @param[in] aOptimizationAlgo The code set on the command line.
+	///
+	/// @exception FastCodeMLFatal IInvalid optimization algorithm identifier on the command line.
+	///
+	static void verifyOptimizerAlgo(unsigned int aOptimizationAlgo);
+
 protected:
 	/// Compute the four site proportions from the two values in the optimization variables
 	///

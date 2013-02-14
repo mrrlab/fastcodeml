@@ -184,6 +184,9 @@ int main(int aRgc, char **aRgv)
 #endif
 	srand(cmd.mSeed);
 
+	// Verify the optimizer algorithm selected on the command line
+	if(!cmd.mNoMaximization) BranchSiteModel::verifyOptimizerAlgo(cmd.mOptimizationAlgo);
+
 	// Start a timer (to measure serial part over parallel one)
 	Timer timer;
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
@@ -575,7 +578,7 @@ Usage:
         Start H0 optimization from H1 results
 
 -m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML) (default: 0)
+        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 0)
 
 -sd  --small-diff (required argument)
         Delta used in gradient computation (default: 1.49e-8)

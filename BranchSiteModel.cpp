@@ -872,6 +872,24 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void)
 	return lnl;
 }
 
+void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
+{
+	switch(aOptimizationAlgo)
+	{
+	case OPTIM_LD_MING2:
+	case OPTIM_LD_LBFGS:
+	case OPTIM_LD_VAR1:
+	case OPTIM_LD_VAR2:
+	case OPTIM_LD_SLSQP:
+	case OPTIM_LN_BOBYQA:
+	case OPTIM_MLSL_LDS:
+		return;
+
+	default:
+		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line.");
+	}
+}
+
 
 /// Adapter class to pass the routine to the optimizer.
 ///
@@ -1119,8 +1137,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	case OPTIM_MLSL_LDS:
 		opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumTimes+mNumVariables));
 		{
-		// For global optimization put a timeout of one hour
-		opt->set_maxtime(60*60);
+		// For global optimization put a timeout of one day
+		opt->set_maxtime(24*60*60);
 
 		// This algorithm requires a local optimizer, add it
 		nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
