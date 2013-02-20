@@ -149,6 +149,12 @@ struct HighLevelCoordinator::WorkTable
 	/// @param[in] aBranchEnd The last branch to be processed
 	///
 	void skipOutsideRange(size_t aBranchStart, size_t aBranchEnd);
+
+	/// Skip the not-requested hypothesis.
+	///
+	/// @param[in] aHypothesisToDo The hypothesis that should be computed. If different from 0 or 1 do nothing.
+	///
+	void skipOtherHypothesis(unsigned int aHypothesisToDo);
 };
 
 
@@ -293,6 +299,25 @@ void HighLevelCoordinator::WorkTable::skipOutsideRange(size_t aBranchStart, size
 	}
 }
 
+void HighLevelCoordinator::WorkTable::skipOtherHypothesis(unsigned int aHypothesisToDo)
+{
+	// Check if only one hypothesis should be computed
+	JobType h;
+	switch(aHypothesisToDo)
+	{
+	case 0: h = JOB_H1; break;
+	case 1: h = JOB_H0; break;
+	default: return;
+	}
+
+	// Skip the other computation and BEB
+	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
+	{
+		mJobStatus[branch*JOBS_PER_BRANCH+h]       = JOB_SKIP;
+		mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] = JOB_SKIP;
+	}
+}
+
 void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut) const
 {
 	aOut << "Optimized variables for H" << aHyp << " for fg branch " << aBranch << std::endl;
@@ -423,10 +448,6 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 	// Start the jobs
 	if(mRank == MASTER_JOB)
 	{
-		// If the user asks for one hypothesis only
-		if(aCmdLine.mComputeHypothesis < 2 && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cout << "Cannot compute only one hypothesis under MPI. Ignoring." << std::endl;
-
 		// Compute the range of branches to mark as foreground
 		size_t branch_start, branch_end;
 		bool do_all = aForest.getBranchRange(aCmdLine, branch_start, branch_end);
@@ -436,8 +457,19 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 		mNumInternalBranches = aForest.getNumInternalBranches();
 
 		// Check if the number of worker is ok
-		if(mSize > static_cast<int>(2*mNumInternalBranches+1) && mVerbose >= VERBOSE_INFO_OUTPUT)
-			std::cout << "Too many MPI jobs: " << mSize-1-2*mNumInternalBranches << " of them will not be used." << std::endl;
+		if(mVerbose >= VERBOSE_INFO_OUTPUT)
+		{
+			// Compute how many MPI processes needed (master + 1 or 2 proc per branch)
+			int nb = static_cast<int>(branch_end - branch_start) + 1;
+			int jobs = (aCmdLine.mComputeHypothesis < 2) ? nb+1 : nb*2+1;
+			int surplus = mSize - jobs;
+
+			// Show if there are too many or too few processes
+			if(surplus > 0)
+				std::cout << "Too many MPI jobs: " << surplus << " of them will not be used." << std::endl;
+			else if(surplus < 0)
+				std::cout << "For top performances " << -surplus << " more MPI jobs needed." << std::endl;
+		}
 
 		// In the master initialize the work table
 		delete mWorkTable;
@@ -445,6 +477,9 @@ bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
 
 		// If the range don't cover all the branches, mark the jobs to skip
 		if(!do_all) mWorkTable->skipOutsideRange(branch_start, branch_end);
+
+		// If only one hypothesis requested skip the other (do nothing if both requested)
+		mWorkTable->skipOtherHypothesis(aCmdLine.mComputeHypothesis);
 
 		// Prepare the results file output
 		WriteResults output_results(aCmdLine.mResultsFile);
