@@ -24,50 +24,12 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 		prior_params[2][i] = w0b0 + (i+0.5)*(w0b1-w0b0)/BEB_N1D;	// w0
 		prior_params[3][i] = w2b0 + (i+0.5)*(w2b1-w2b0)/BEB_N1D;	// w2
 	}
-#if 0
-	//TEST!
-	std::vector<double> aVars   = aVars2;    // After test rename function parameter to aVars
-	std::vector<double> aScales = aScales2;  // After test rename function parameter to aScales
-	FILE *fp = fopen("x.dat", "rb");
-	if(fp)
-	{
-		double x[32];
-		size_t n = fread(x, sizeof(double), 32, fp);
-		for(size_t i=0; i < n-5; ++i) aVars[i] = x[i]; // 0-26 are branch lengths
-		double p0 = exp(x[n-4]);
-		double p1 = exp(x[n-3]); 
-		double tot = p0+p1+1;
-		p0 /= tot;
-		p1 /= tot;
-		aVars[n-5] = p0+p1;							// v0
-		aVars[n-4] = p0/(p0+p1);					// v1
-		aVars[n-3] = x[n-2];						// w0
-		aVars[n-2] = x[n-5];						// k
-		aVars[n-1] = x[n-1];						// w2
-		for(size_t i=0; i < n; ++i) {std::cout << "aVars[" << std::setw(2) << i << "] = " << aVars[i] << std::endl;}
-		fclose(fp);
-
-		//TEST! force the scale factors
-		std::cout << "(computed) FG: " << aScales2[1] << "  BG: " << aScales2[0] << std::endl;
-		if(n == 13)
-		{
-			aScales[1] = 1./0.001651;
-			aScales[0] = 1./0.950097;
-		}
-		else
-		{
-			aScales[1] = 1./5.833284036955;
-			aScales[0] = 1./5.834837576257;
-		}
-		std::cout << "(forced)   FG: " << aScales[1]  << "  BG: " << aScales[0] << std::endl;
-	}
-#endif
 
 	// Omega for foreground and background branches (the bools are for optimization)
 	double omega_fg;
 	double omega_bg;
-	bool omega_fg_is_one;
-	bool omega_bg_is_one;
+	bool   omega_fg_is_one;
+	bool   omega_bg_is_one;
 
 	// Get the optimized kappa from the last H1 computation (that is, I know the kappa is the forth value after the branch lengths)
 	size_t kappa_idx = mForest.getNumBranches() - 1 + 4;
@@ -169,30 +131,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 		}
 		scale += fh*aSiteMultiplicity[site];
 	}
-#if 0
-	//TEST!
-	int cml_to_fast[20] = {31, 33, 34, 39, 23, 37, 24, 28, 35, 25, 38, 36, 20, 22, 29, 21, 27, 30, 32, 26};
 
-	fp = fopen("fhK.dat", "rb");
-	if(fp)
-	{
-		std::vector<double> prio(mPriors.size());
-		fread(&prio[0], sizeof(double), mPriors.size(), fp);
-
-		std::cout << std::setw(4) << "idx" << std::setw(20) << "CodeML";
-		std::cout                          << std::setw(20) << "FastCodeML" <<  "  (num. sites:" << mNumSites << ')' << std::endl;
-		for(size_t i=0; i < mPriors.size(); ++i)
-		{
-			int idx = (mNumSites == 20) ? cml_to_fast[i%20]-20+i-i%20 : i;
-
-			double perc = (prio[idx]-mPriors[i])/mPriors[i];
-			std::cout << std::fixed << std::setw(4) << i << std::setw(20) << std::setprecision(12) << prio[idx];
-			std::cout << std::fixed                      << std::setw(20) << std::setprecision(12) << mPriors[i];
-			std::cout << std::fixed                      << std::setw(20) << std::setprecision(3) << perc << std::endl;
-		}
-		fclose(fp);
-	}
-#endif
 	return scale;
 }
 
