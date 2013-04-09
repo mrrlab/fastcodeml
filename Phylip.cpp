@@ -82,7 +82,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 				s.append(str, p1, p2-p1);
 			}
 			if(s.size() >= nbasis) break;
-			getline(in, str);
+			if(!getline(in, str)) break;
 			p2 = 0;
 		}
         aSequences.push_back(s);
@@ -93,7 +93,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	if(nspecies != aSpecies.size())
 	{
 		std::ostringstream o;
-		o << "File \"" << aFilename << "\" has number of species mismatch";
+		o << "File \"" << aFilename << "\" has number of species mismatch (or is malformed)";
 		throw FastCodeMLFatal(o);
 	}
 
