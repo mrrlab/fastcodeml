@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.0)
 project(FastCodeML)
 
+set (CMAKE_BUILD_TYPE Debug)
+
 # Source code
 set(SRCS
 	fast.cpp
