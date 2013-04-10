@@ -24,8 +24,10 @@ public:
 	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aDeltaForGradient	Delta used to compute the gradient
 	/// @param[in] aRelativeError		Relative error to stop computation
+	/// @param[in] aStopIfBigger		If true stop computation as soon as value is over aThreshold
+	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
 	///
-	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError) :
+	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError, bool aStopIfBigger, double aThreshold) :
 			mModel(aModel),
 			mTrace(aTrace),
 			mTraceFun(false),
@@ -34,6 +36,8 @@ public:
 			mDeltaForGradient(aDeltaForGradient),
 			mRelativeError(aRelativeError),
 			mVerbose(aVerbose),
+			mStopIfBigger(aStopIfBigger),
+			mThreshold(-aThreshold),
 			mAlwaysCenter(false),
 			mNoisy((aTrace && aVerbose > 0) ? 9 : 0) {}
 
@@ -60,6 +64,8 @@ private:
 	/// @param[in] n Number of variables
 	///
 	/// @return Optimization status (-1 check convergence; 0 success; 1 fail)
+	///
+	///	@exception const char* If the optimization is stop in advance because LRT not satisfied
 	///
 	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n);
 
@@ -142,6 +148,8 @@ private:
 	double						mDeltaForGradient;	///< This is the original Small_Diff value
 	double						mRelativeError;		///< The relative error at which the computation stops
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
+	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
+	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
 
 private:
 	/// The following variables are from the original code
