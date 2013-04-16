@@ -12,6 +12,8 @@
 #include "VerbosityLevels.h"
 #include "MatrixSize.h"
 
+// Define to check the treatment of full ambiguous codon as in CodeML
+#define AMBIGUOUS_ALL_ONE
 
 Genes::~Genes()
 {
@@ -92,13 +94,19 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 
 void Genes::updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const
 {
-	if(mCurrentPositions.empty())
+	size_t cnt = mCurrentPositions.size();
+	if(cnt == 0)
 	{
 		throw FastCodeMLFatal("Invalid codon found in updateCodonCount.");
 	}
+#ifdef AMBIGUOUS_ALL_ONE
+	else if(cnt == 61)
+	{
+	}
+#endif
 	else
 	{
-		for(size_t i=0; i < mCurrentPositions.size(); ++i) aCodonCounts[mCurrentPositions[i]] += aSiteMultiplicity;
+		for(size_t i=0; i < cnt; ++i) aCodonCounts[mCurrentPositions[i]] += aSiteMultiplicity;
 	}
 }
 
@@ -154,7 +162,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	if(ncodons >= std::numeric_limits<size_t>::max()/10U)
 	{
 		std::ostringstream o;
-		o << "File \"" << aFilename << "\" has too many basis. Max " << std::numeric_limits<size_t>::max()/10U;
+		o << "File \"" << aFilename << "\" has too many basis. Max " << 3*std::numeric_limits<size_t>::max()/10U;
 		throw FastCodeMLFatal(o);
 	}
 
