@@ -72,6 +72,12 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 	{
 		aLeaveProbVect[mCurrentPositions[0]] = 1.;
 	}
+#ifdef AMBIGUOUS_ALL_ONE
+	else if(mCurrentPositions.size() == 61)
+	{
+		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = 1.;
+	}
+#endif
 	else
 	{
 		double prob = 1./static_cast<double>(mCurrentPositions.size());
