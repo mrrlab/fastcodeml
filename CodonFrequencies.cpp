@@ -2,7 +2,7 @@
 #include <cstring>
 #include "CodonFrequencies.h"
 
-#define CHECK_ALGO
+//#define CHECK_ALGO
 #ifdef CHECK_ALGO
 #include <iostream>
 #include <iomanip>
