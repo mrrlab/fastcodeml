@@ -120,7 +120,6 @@ inline bool isDifferent(double aFirst, double aSecond)
 
 #ifdef USE_CPV_SCALING
 
-
 /// Normalize a vector (length 61).
 ///
 /// @param[in,out] aVector The vector to be scaled
@@ -140,7 +139,6 @@ inline double normalizeVector(double* RESTRICT aVector)
 	norm = sqrt(norm);
 	for(int i=0; i < N; ++i) aVector[i] /= norm;
 #endif
-
 	return norm;
 }
 

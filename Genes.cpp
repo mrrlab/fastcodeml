@@ -66,24 +66,33 @@ long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 
 void Genes::setLeaveProb(double* aLeaveProbVect) const
 {
-	if(mCurrentPositions.empty())
+	size_t cnt = mCurrentPositions.size();
+	if(cnt == 0)
 	{
 		throw FastCodeMLFatal("Invalid codon found in setLeaveProb.");
 	}
-	else if(mCurrentPositions.size() == 1)
+	else if(cnt == 1)
 	{
 		aLeaveProbVect[mCurrentPositions[0]] = 1.;
 	}
 #ifdef AMBIGUOUS_ALL_ONE
-	else if(mCurrentPositions.size() == 61)
+	else if(cnt == 61)
 	{
-		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = 1.;
+#ifdef USE_CPV_SCALING
+		for(size_t i=0; i < 61; ++i) aLeaveProbVect[i] = 1./61.;
+
+		// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
+		aLeaveProbVect[N] = 61.0;
+		return;
+#else
+		for(size_t i=0; i < 61; ++i) aLeaveProbVect[i] = 1.;
+#endif
 	}
 #endif
 	else
 	{
-		double prob = 1./static_cast<double>(mCurrentPositions.size());
-		for(size_t i=0; i < mCurrentPositions.size(); ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
+		double prob = 1./static_cast<double>(cnt);
+		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
 	}
 
 #ifdef USE_CPV_SCALING

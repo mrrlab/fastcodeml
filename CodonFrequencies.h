@@ -73,8 +73,8 @@ public:
 			else
 			{
 				mGoodCodon.reset(k);
-				mCodonFreqInv[k]  = DBL_MAX;
-				mCodonFreqInv2[k] = DBL_MAX;
+				mCodonFreqInv[k]  = 0.; // To have zero in non valid positions so vector norm does not diverge
+				mCodonFreqInv2[k] = 0.;
 			}
 		}
 	}

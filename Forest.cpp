@@ -935,7 +935,7 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 					double* g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
 					aSet.doTransition(aSetIdx, branch_id, g, x);
 #ifdef USE_CPV_SCALING
-					x[N] = (normalizeVector(x)*g[N]);
+					x[N] = normalizeVector(x)*g[N];
 					anode_prob[N] *= x[N];
 #endif
 					elementWiseMult(anode_prob, x);
