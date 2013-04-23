@@ -2,7 +2,7 @@
 #include <cstring>
 #include "CodonFrequencies.h"
 
-//#define CHECK_ALGO
+#define CHECK_ALGO
 #ifdef CHECK_ALGO
 #include <iostream>
 #include <iomanip>
@@ -68,7 +68,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<unsigned int>& 
 #ifdef CHECK_ALGO
 	for(k=0; k < 12; ++k)
 	{
-		std::cout << std::fixed << std::setprecision(8) << std::setw(12) << fb3x4sg[k];
+		std::cout << std::fixed << std::setprecision(5) << std::setw(12) << fb3x4sg[k];
 		if(k % 4 == 3) std::cout << std::endl;
 	}
 	std::cout << std::endl;

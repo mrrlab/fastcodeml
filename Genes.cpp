@@ -109,14 +109,16 @@ void Genes::updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned i
 		throw FastCodeMLFatal("Invalid codon found in updateCodonCount.");
 	}
 #ifdef AMBIGUOUS_ALL_ONE
-	else if(cnt == 61)
+	else if(cnt == 1)
 	{
+		aCodonCounts[mCurrentPositions[0]] += aSiteMultiplicity;
 	}
-#endif
+#else
 	else
 	{
 		for(size_t i=0; i < cnt; ++i) aCodonCounts[mCurrentPositions[i]] += aSiteMultiplicity;
 	}
+#endif
 }
 
 bool Genes::compareCodons(const char* aCodon1, const char* aCodon2) const
