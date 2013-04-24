@@ -68,14 +68,16 @@ public:
 	///
 	void setLeaveProb(double* aLeaveProbVect) const;
 
-	/// Update codon count in a given array.
+	/// Save codons in a given array for later count.
+	/// For each codon the aCodon array contains one more vector that starts with the aSiteMultiplicity value followed by the codon positions
+	/// that is, one position for non-ambiguous codons, 2 to 61 for ambiguous codons.
 	///
-	/// @param[in,out] aCodonCounts Counts for each codon type.
+	/// @param[in,out] aCodons Codon positions and multiplicity.
 	/// @param[in] aSiteMultiplicity The multiplicity of the given site.
 	///
 	/// @exception FastCodeMLFatal If saved codon is invalid.
 	///
-	void updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const;
+	void saveCodonsForCount(std::vector<std::vector<unsigned int> >& aCodons, unsigned int aSiteMultiplicity) const;
 
 	/// Check coherence between tree and genes.
 	///
@@ -96,6 +98,12 @@ public:
 	/// @return The number of sites in the loaded gene file.
 	///
 	size_t getOriginalNumSites(void) const {return mOriginalNumSites;}
+
+	/// Get the number of species in the loaded MSA.
+	///
+	/// @return The number of species in the loaded gene file.
+	///
+	size_t getNumSpecies(void) const {return mDnaSpecies.size();}
 
 
 private:

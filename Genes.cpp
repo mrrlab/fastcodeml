@@ -66,6 +66,8 @@ long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 
 void Genes::setLeaveProb(double* aLeaveProbVect) const
 {
+	// This extra location aLeaveProbVect[N] will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
+
 	size_t cnt = mCurrentPositions.size();
 	if(cnt == 0)
 	{
@@ -74,51 +76,53 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 	else if(cnt == 1)
 	{
 		aLeaveProbVect[mCurrentPositions[0]] = 1.;
+
+#ifdef USE_CPV_SCALING
+		aLeaveProbVect[N] = 1.0;
+#endif
 	}
 #ifdef AMBIGUOUS_ALL_ONE
-	else if(cnt == 61)
+	else
 	{
 #ifdef USE_CPV_SCALING
-		for(size_t i=0; i < 61; ++i) aLeaveProbVect[i] = 1./61.;
+		double prob = 1./static_cast<double>(cnt);
+		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
 
 		// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
-		aLeaveProbVect[N] = 61.0;
-		return;
+		aLeaveProbVect[N] = static_cast<double>(cnt);
 #else
-		for(size_t i=0; i < 61; ++i) aLeaveProbVect[i] = 1.;
+		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[i] = 1.;
 #endif
 	}
-#endif
+#else
 	else
 	{
 		double prob = 1./static_cast<double>(cnt);
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
-	}
 
 #ifdef USE_CPV_SCALING
-	// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
-	aLeaveProbVect[N] = 1.0;
+		aLeaveProbVect[N] = 1.0;
 #endif
+	}
+#endif
+
 }
 
-void Genes::updateCodonCount(std::vector<unsigned int>& aCodonCounts, unsigned int aSiteMultiplicity) const
+
+void Genes::saveCodonsForCount(std::vector<std::vector<unsigned int> >& aCodons, unsigned int aSiteMultiplicity) const
 {
+	// Check if valid translation of the codon
 	size_t cnt = mCurrentPositions.size();
-	if(cnt == 0)
-	{
-		throw FastCodeMLFatal("Invalid codon found in updateCodonCount.");
-	}
-#ifdef AMBIGUOUS_ALL_ONE
-	else if(cnt == 1)
-	{
-		aCodonCounts[mCurrentPositions[0]] += aSiteMultiplicity;
-	}
-#else
-	else
-	{
-		for(size_t i=0; i < cnt; ++i) aCodonCounts[mCurrentPositions[i]] += aSiteMultiplicity;
-	}
-#endif
+	if(cnt == 0) throw FastCodeMLFatal("Invalid codon found in saveCodonsForCount.");
+
+	// Save the corresponding site multeplicity followed by the codon positions
+	std::vector<unsigned int> v;
+	v.reserve(cnt+1);
+	v.push_back(aSiteMultiplicity);
+	for(size_t i=0; i < cnt; ++i) v.push_back(static_cast<unsigned int>(mCurrentPositions[i]));
+
+	// Add the new array to the array of arrays in output
+	aCodons.push_back(v);
 }
 
 bool Genes::compareCodons(const char* aCodon1, const char* aCodon2) const

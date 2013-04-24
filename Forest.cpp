@@ -40,8 +40,9 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	mNumSites = aGenes.getNumSites();
 	const std::vector<unsigned int>& mult = aGenes.getSiteMultiplicity();
 
-	// Initialize the count of codon types
-	std::vector<unsigned int> codon_count(N, 0);
+	// Initialize the codon info list
+	std::vector<std::vector<unsigned int> > codons_info;
+	codons_info.reserve(mNumSites*aGenes.getNumSpecies());
 
 	// Initialize the array of all probability vectors to be all zeros
 	mProbs.assign(mNumSites*(mNumBranches+1)*Nt*VECTOR_SLOT, 0.0);
@@ -91,8 +92,8 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 #else
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set]);
 #endif
-			// Count codons
-			aGenes.updateCodonCount(codon_count, mult[site]);
+			// Save codons for later count
+			aGenes.saveCodonsForCount(codons_info, mult[site]);
 		}
 
 		// Combine the subtrees signatures going up to the root
@@ -107,7 +108,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
-	cf->setCodonFrequencies(codon_count, aCodonFrequencyModel);
+	cf->setCodonFrequencies(codons_info, aCodonFrequencyModel);
 	mCodonFreq     = cf->getCodonFrequencies();
 	mInvCodonFreq  = cf->getInvCodonFrequencies();
 	mInv2CodonFreq = cf->getCodonFreqInv2();

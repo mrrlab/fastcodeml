@@ -38,46 +38,12 @@ public:
 
 	/// Compute the codon frequencies from the codon count
 	///
-	/// @param[in] aCodonCount Count of codons of a certain type
+	/// @param[in] aCodons Codon positions and multiplicity.
 	/// @param[in] aModel Codon frequency model to use
 	///
-	void setCodonFrequencies(const std::vector<unsigned int>& aCodonCount, CodonFrequencyModel aModel)
-	{
-		// Compute mCodonFrequencies based on the selected model
-		switch(aModel)
-		{
-		default:
-		case CODON_FREQ_MODEL_UNIF:
-			mCodonFrequencies.assign(N, 1./static_cast<double>(N));
-			break;
-
-		case CODON_FREQ_MODEL_F3X4:
-			setCodonFrequenciesF3x4(aCodonCount);
-			break;
-		}
-
-		// Support values needed for the eigensolver
-		mNumGoodCodons = 0;
-		for(size_t k=0; k < static_cast<size_t>(N); ++k)
-		{
-			mCodonFreqSqrt[k] = sqrt(mCodonFrequencies[k]);
-
-			// Count the number of valid codons
-			if(mCodonFrequencies[k] > GOOD_CODON_THRESHOLD)
-			{
-				mGoodCodon.set(k);
-				++mNumGoodCodons;
-				mCodonFreqInv[k]  = 1./mCodonFrequencies[k];
-				mCodonFreqInv2[k] = mCodonFreqInv[k]*mCodonFreqInv[k];
-			}
-			else
-			{
-				mGoodCodon.reset(k);
-				mCodonFreqInv[k]  = 0.; // To have zero in non valid positions so vector norm does not diverge
-				mCodonFreqInv2[k] = 0.;
-			}
-		}
-	}
+	/// @exception FastCodeMLFatal If invalid codon frequency model requested
+	///
+	void setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel);
 
 	/// Return a pointer to the codon frequencies array
 	///
@@ -120,7 +86,14 @@ private:
 	///
 	/// @param[in] aCodonCount The count of each codon occurrences
 	///
-	void setCodonFrequenciesF3x4(const std::vector<unsigned int>& aCodonCount);
+	void setCodonFrequenciesF3x4(const std::vector<double>& aCodonCount);
+
+	/// Compute the new codon count using codon frequencies to resolve ambiguities.
+	///
+	/// @param[in] aCodons Codon positions and multiplicity.
+	/// @param[in,out] aCodonCount The count of each codon occurrences.
+	///
+	void updateCodonCount(const std::vector<std::vector<unsigned int> >& aCodons, std::vector<double>& aCodonCount) const;
 
 	/// Convert the codon number in the 1 to 64 range to 1 to 61
 	///
