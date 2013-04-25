@@ -1,13 +1,15 @@
 
+#include <iostream>
+#include <iomanip>
 #include <cstring>
 #include "CodonFrequencies.h"
 #include "Exceptions.h"
 
-#define CHECK_ALGO
-#ifdef CHECK_ALGO
-#include <iostream>
-#include <iomanip>
-#endif
+/// Max number of iterations to resolve codon frequencies in presence of ambiguous codons.
+static const int    CODON_FREQ_MAX_ITER  = 20;
+
+/// Max cumulative difference between an iteration and the next to stop iterations to resolve codon frequencies in presence of ambiguous codons.
+static const double CODON_FREQ_MAX_ERROR = 1e-12;
 
 CodonFrequencies* CodonFrequencies::mInstance = NULL;
 
@@ -17,7 +19,7 @@ CodonFrequencies* CodonFrequencies::getInstance(void)
 	return mInstance;
 }
 
-void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel)
+void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel, bool aShowMessages)
 {
 	// Compute mCodonFrequencies based on the selected model
 	if(aModel == CODON_FREQ_MODEL_F3X4)
@@ -27,13 +29,13 @@ void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigne
 		bool no_ambiguous_codons = true;
 		for(size_t i=0; i < cnt; ++i) if(aCodons[i].size() > 2) {no_ambiguous_codons = false; break;}
 
-		// Compute the usual way if no ambiguities
+		// Compute the usual way if no ambiguities (count multiplied by site multiplicity)
 		if(no_ambiguous_codons)
 		{
 			std::vector<double> codon_count(N, 0.);
 			for(size_t i=0; i < cnt; ++i) codon_count[aCodons[i][1]] += static_cast<double>(aCodons[i][0]);
 
-			setCodonFrequenciesF3x4(codon_count);
+			setCodonFrequenciesF3x4(codon_count, aShowMessages);
 		}
 		else
 		{
@@ -42,10 +44,10 @@ void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigne
 			for(size_t i=0; i < cnt; ++i) if(aCodons[i].size() == 2) codon_count[aCodons[i][1]] += static_cast<double>(aCodons[i][0]);
 
 			// Compute a first mCodonFrequencies array
-			setCodonFrequenciesF3x4(codon_count);
+			setCodonFrequenciesF3x4(codon_count, false);
 
 			// Iterate till the values does not change
-			for(int k=0; k < 20; ++k)
+			for(int k=0; k < CODON_FREQ_MAX_ITER; ++k)
 			{
 				// Save the previous value
 				SSEAlignedDoubleVector prev_codon_freq(mCodonFrequencies);
@@ -54,15 +56,15 @@ void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigne
 				updateCodonCount(aCodons, codon_count);
 
 				// Recompute the frequencies
-				setCodonFrequenciesF3x4(codon_count);
+				setCodonFrequenciesF3x4(codon_count, aShowMessages);
 
-				// If the frequencies values do not change, stop
+				// Compute cumulative change over previous value
 				double err = 0.;
 				for(int h=0; h < N; ++h) err += fabs(prev_codon_freq[h] - mCodonFrequencies[h]);
-#ifdef CHECK_ALGO
-				std::cout << "mCodonFrequencies change after iter " << k << " = " << std::scientific << err << std::fixed << std::endl;
-#endif
-				if(err < 1e-12) break;
+				if(aShowMessages) std::cout << "  mCodonFrequencies change after iteration " << k << " = " << std::scientific << err << std::fixed << std::endl << std::endl;
+
+				// If the frequencies values do not change, stop
+				if(err < CODON_FREQ_MAX_ERROR) break;
 			}
 		}
 	}
@@ -107,7 +109,7 @@ void CodonFrequencies::updateCodonCount(const std::vector<std::vector<unsigned i
 	size_t cnt = aCodons.size();
 	for(size_t i=0; i < cnt; ++i) 
 	{
-		//if no ambiguities count as usual
+		//if no ambiguities count as usual (add site multiplicity)
 		if(aCodons[i].size() == 2)
 		{
 			aCodonCount[aCodons[i][1]] += static_cast<double>(aCodons[i][0]);
@@ -136,21 +138,22 @@ int CodonFrequencies::codon64to61(int aId64) const
 }
 
 
-void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodonCount)
+void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodonCount, bool aShowMessages)
 {
 	int k, j;
 
-#ifdef CHECK_ALGO
-	// Print the table of codon counts
-	for(k=0; k < N64; ++k)
+	if(aShowMessages)
 	{
-		int id = codon64to61(k);
-		if(id < 0) std::cout << std::setw(8) << 0;
-		else       std::cout << std::setw(8) << std::setprecision(3) << aCodonCount[id];
-		if(k % 4 == 3) std::cout << std::endl;
+		// Print the table of codon counts
+		for(k=0; k < N64; ++k)
+		{
+			int id = codon64to61(k);
+			if(id < 0) std::cout << std::setw(8) << 0;
+			else       std::cout << std::setw(8) << std::setprecision(3) << std::fixed << aCodonCount[id];
+			if(k % 4 == 3) std::cout << std::endl;
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-#endif
 
 	// Compute the 3x4 table
 	double fb3x4sg[12];
@@ -174,14 +177,15 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodon
 		for(k=0; k < 4; ++k) fb3x4sg[j*4+k] /= t;
     }
 
-#ifdef CHECK_ALGO
-	for(k=0; k < 12; ++k)
+	if(aShowMessages)
 	{
-		std::cout << std::fixed << std::setprecision(5) << std::setw(12) << fb3x4sg[k];
-		if(k % 4 == 3) std::cout << std::endl;
+		for(k=0; k < 12; ++k)
+		{
+			std::cout << std::fixed << std::setprecision(5) << std::setw(12) << fb3x4sg[k];
+			if(k % 4 == 3) std::cout << std::endl;
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-#endif
 
 	// Compute codon frequency from the 3x4 table
 	for(k=0; k < N64; ++k)
@@ -195,14 +199,15 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodon
 	for(k=0; k < N; ++k) t += mCodonFrequencies[k];
 	for(k=0; k < N; ++k) mCodonFrequencies[k] /= t;
 
-#ifdef CHECK_ALGO
-	for(k=0; k < N64; ++k)
+	if(aShowMessages)
 	{
-		int kk = codon64to61(k);
-		double v = (kk < 0) ? 0.0 : mCodonFrequencies[kk];
-		std::cout << std::fixed << std::setprecision(8) << std::setw(12) << v;
-		if(k % 4 == 3) std::cout << std::endl;
+		for(k=0; k < N64; ++k)
+		{
+			int kk = codon64to61(k);
+			double v = (kk < 0) ? 0.0 : mCodonFrequencies[kk];
+			std::cout << std::fixed << std::setprecision(8) << std::setw(12) << v;
+			if(k % 4 == 3) std::cout << std::endl;
+		}
 	}
-#endif
 }
 

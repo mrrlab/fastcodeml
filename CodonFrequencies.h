@@ -40,10 +40,11 @@ public:
 	///
 	/// @param[in] aCodons Codon positions and multiplicity.
 	/// @param[in] aModel Codon frequency model to use
+	/// @param[in] aShowMessages If true show messages related to codon frequencies computation
 	///
 	/// @exception FastCodeMLFatal If invalid codon frequency model requested
 	///
-	void setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel);
+	void setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel, bool aShowMessages);
 
 	/// Return a pointer to the codon frequencies array
 	///
@@ -85,8 +86,9 @@ private:
 	/// Set codon frequencies according to the F3x4 model
 	///
 	/// @param[in] aCodonCount The count of each codon occurrences
+	/// @param[in] aShowMessages If true show messages related to codon frequencies computation
 	///
-	void setCodonFrequenciesF3x4(const std::vector<double>& aCodonCount);
+	void setCodonFrequenciesF3x4(const std::vector<double>& aCodonCount, bool aShowMessages);
 
 	/// Compute the new codon count using codon frequencies to resolve ambiguities.
 	///

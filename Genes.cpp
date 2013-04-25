@@ -12,9 +12,6 @@
 #include "VerbosityLevels.h"
 #include "MatrixSize.h"
 
-// Define to check the treatment of full ambiguous codon as in CodeML
-#define AMBIGUOUS_ALL_ONE
-
 Genes::~Genes()
 {
 	mDnaSpecies.clear();		
@@ -81,31 +78,17 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 		aLeaveProbVect[N] = 1.0;
 #endif
 	}
-#ifdef AMBIGUOUS_ALL_ONE
 	else
 	{
 #ifdef USE_CPV_SCALING
 		double prob = 1./static_cast<double>(cnt);
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
 
-		// This extra location will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
-		aLeaveProbVect[N] = static_cast<double>(cnt);
+		aLeaveProbVect[N] = static_cast<double>(cnt); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
 #else
-		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[i] = 1.;
+		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[i] = 1.; // Set to 1./cnt to have the CPV initialized to all 1/cnt instead of 1
 #endif
 	}
-#else
-	else
-	{
-		double prob = 1./static_cast<double>(cnt);
-		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
-
-#ifdef USE_CPV_SCALING
-		aLeaveProbVect[N] = 1.0;
-#endif
-	}
-#endif
-
 }
 
 
