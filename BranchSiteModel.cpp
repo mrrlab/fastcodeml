@@ -165,7 +165,7 @@ void BranchSiteModel::initFromTree(void)
 	mForest.setTimesFromLengths(mVar);
 
 	// Ask for initialization completion
-	mInitStatus |= INIT_TIMES;
+	mInitStatus |= INIT_TIMES|INIT_TIMES_FROM_FILE;
 }
 
 
@@ -227,39 +227,78 @@ void BranchSiteModel::initVariables(void)
 	// Initialize time
 	if((mInitStatus & INIT_TIMES) != INIT_TIMES)
 	{
-		for(i=0; i < mNumTimes; ++i) mVar[i] = 0.01 + 0.1 * randFrom0to1();	// T
+		for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
 	}
 
 	// Initialize w0, k, v1, v2
 	if((mInitStatus & INIT_PARAMS_H0) != INIT_PARAMS_H0)
 	{
+		if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+		{
 #ifdef USE_ORIGINAL_PROPORTIONS
-		mVar[mNumTimes+0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
-		mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+			mVar[mNumTimes+0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
+			mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
 #else
-		mVar[mNumTimes+0] = randFrom0to1();									// p0+p1
-		mVar[mNumTimes+1] = randFrom0to1();									// p0/(p0+p1)
+			double x0 =  exp(1.0 + 0.2 * randFrom0to1());
+			double x1 =  exp(0.0 + 0.2 * randFrom0to1());
+			double tot = x0 + x1 + 1.0;
+			double p0 = x0/tot;
+			double p1 = x1/tot;
+
+			mVar[mNumTimes+0] = p0+p1;											// p0+p1
+			mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-		mVar[mNumTimes+2] = 0.05 + 0.8 * randFrom0to1();					// w0
-		mVar[mNumTimes+3] = 0.2  + 2.1 * randFrom0to1();					// k
+			mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();						// w0
+			mVar[mNumTimes+3] = 0.4;											// k
+		}
+		else
+		{
+#ifdef USE_ORIGINAL_PROPORTIONS
+			mVar[mNumTimes+0] = 0.5  +       randFrom0to1();					// x0 -> p0
+			mVar[mNumTimes+1] = 0.5  +       randFrom0to1();					// x1 -> p1
+#else
+			double x0 =  exp(1.0 + 0.2 * randFrom0to1());
+			double x1 =  exp(0.0 + 0.2 * randFrom0to1());
+			double tot = x0 + x1 + 1.0;
+			double p0 = x0/tot;
+			double p1 = x1/tot;
+
+			mVar[mNumTimes+0] = p0+p1;											// p0+p1
+			mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
+#endif
+			mVar[mNumTimes+2] = 0.5  +       randFrom0to1();					// w0
+			mVar[mNumTimes+3] = 0.5  +       randFrom0to1();					// k
+		}
 	}
 
 	// Initialize w2 if needed
 	if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
 	{
-		mVar[mNumTimes+4] = 1.001 + 0.149 * randFrom0to1();					// w2
+		if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+		{
+			mVar[mNumTimes+4] = 0.5 +       randFrom0to1();						// w2
+		}
+		else
+		{
+			mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
+		}
 	}
 
 	// Re-initialize the next time
 	mInitStatus = INIT_NONE;
 
-	// Check the initial values to be inside the domain (otherwise clamp them to the domain)
+	// Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
 	unsigned int nv = mNumTimes+mNumVariables;
 	for(i=0; i < nv; ++i)
-	{
-		if(mVar[i] < mLowerBound[i])      mVar[i] = mLowerBound[i];
-		else if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i];
-	}
+    {
+        if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
+        if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
+    }
+	for(i=0; i < nv; ++i)
+    {
+        if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
+        if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+    }
 }
 
 
