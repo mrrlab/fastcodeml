@@ -215,7 +215,7 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
 	// Ask for initialization completion
 	if(aValidLen == mNumTimes)        mInitStatus = INIT_TIMES;
-	else if(aValidLen == mNumTimes+4) mInitStatus = INIT_TIMES|INIT_PARAMS_H0;
+	else if(aValidLen == mNumTimes+4) mInitStatus = INIT_TIMES|INIT_PARAMS_H1;
 	else                              mInitStatus = INIT_TIMES|INIT_PARAMS;
 }
 
@@ -231,7 +231,7 @@ void BranchSiteModel::initVariables(void)
 	}
 
 	// Initialize w0, k, v1, v2
-	if((mInitStatus & INIT_PARAMS_H0) != INIT_PARAMS_H0)
+	if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
 	{
 		if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 		{

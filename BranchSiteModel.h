@@ -275,7 +275,7 @@ private:
 	{
 		INIT_NONE=0,		///< All variables to optimize should be initialized
 		INIT_TIMES=1,		///< All variables to optimize should be initialized except times
-		INIT_PARAMS_H0=2,
+		INIT_PARAMS_H1=2,
 		INIT_PARAM_W2=4,
 		INIT_PARAMS=6,		///< All variables to optimize should be initialized except w0, w2, k, p0, p1
 		INIT_TIMES_FROM_FILE=8
