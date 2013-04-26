@@ -257,8 +257,8 @@ void BranchSiteModel::initVariables(void)
 			mVar[mNumTimes+0] = 0.5  +       randFrom0to1();					// x0 -> p0
 			mVar[mNumTimes+1] = 0.5  +       randFrom0to1();					// x1 -> p1
 #else
-			double x0 =  exp(1.0 + 0.2 * randFrom0to1());
-			double x1 =  exp(0.0 + 0.2 * randFrom0to1());
+			double x0 =  exp(0.5 + randFrom0to1());
+			double x1 =  exp(0.5 + randFrom0to1());
 			double tot = x0 + x1 + 1.0;
 			double p0 = x0/tot;
 			double p1 = x1/tot;
