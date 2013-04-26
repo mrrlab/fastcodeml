@@ -181,14 +181,15 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 		// Check if the optimization can be stopped in advance due to LRT non satisfied
 		if(mStopIfBigger && *f < mThreshold) throw "LRT";
 
-        if (fout)
+        if(fout)
         {
             fprintf(fout, "\n%3d %7.4f %13.6f  x: ", iround, sizep0, f0);
-            for(j=0; j < n; ++j) fprintf(fout, "%8.6f  ", x0[i]);
+            for(j=0; j < n; ++j) fprintf(fout, "%8.6f  ", x0[j]);
+			fprintf(fout, "\n");
             fflush(fout);
         }
 
-        for (i = 0, zero(p, n); i < nfree; i++)
+        for(i = 0, zero(p, n); i < nfree; i++)
             for(j=0; j < nfree; ++j)
 				p[ix[i]] -= H[i * nfree + j] * g0[ix[j]];
 

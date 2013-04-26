@@ -148,8 +148,8 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodon
 		for(k=0; k < N64; ++k)
 		{
 			int id = codon64to61(k);
-			if(id < 0) std::cout << std::setw(8) << 0;
-			else       std::cout << std::setw(8) << std::setprecision(3) << std::fixed << aCodonCount[id];
+			if(id < 0) std::cout << std::setw(12) << 0;
+			else       std::cout << std::setw(12) << std::setprecision(3) << std::fixed << aCodonCount[id];
 			if(k % 4 == 3) std::cout << std::endl;
 		}
 		std::cout << std::endl;

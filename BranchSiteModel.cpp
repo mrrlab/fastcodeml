@@ -98,6 +98,7 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 
 	// Print all variables formatted to be readable
 	double v0 = 0;
+	int per_linea = 0;
 	std::vector<double>::const_iterator ix(aVars.begin());
 	const std::vector<double>::const_iterator end(aVars.end());
 	for(int k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
@@ -128,6 +129,8 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 			break;
 		default:
 			aOut << *ix << ' ';
+			++per_linea;
+			if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea = 0;}
 			break;
 		}
 	}
