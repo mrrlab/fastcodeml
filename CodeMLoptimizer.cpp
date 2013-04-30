@@ -179,7 +179,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
     for(iround = 0; iround < MAX_ITERATIONS; ++iround)
     {
 		// Check if the optimization can be stopped in advance due to LRT non satisfied
-		if(mStopIfBigger && *f < mThreshold) throw "LRT";
+		if(mStopIfBigger && *f < mThreshold) throw FastCodeMLSuccess();
 
         if(fout)
         {

@@ -65,7 +65,7 @@ private:
 	///
 	/// @return Optimization status (-1 check convergence; 0 success; 1 fail)
 	///
-	///	@exception const char* If the optimization is stop in advance because LRT not satisfied
+	///	@exception FastCodeMLSuccess If the optimization is stop in advance because LRT not satisfied
 	///
 	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n);
 

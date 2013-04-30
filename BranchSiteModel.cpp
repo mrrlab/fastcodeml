@@ -1140,7 +1140,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			}
 			return maxl;
 		}
-		catch(const char*)
+		catch(FastCodeMLSuccess&)
 		{
 			if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
 			return DBL_MAX;
