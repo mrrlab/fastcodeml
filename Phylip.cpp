@@ -32,7 +32,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	while(str.empty());
 
 	// From the first line extract number of species and nmber of basis
-	long unsigned int nspecies, nbasis;
+	unsigned long nspecies, nbasis;
 	char *endptr;
 	const char *next = str.c_str();
 	nspecies = strtol(next, &endptr, 10);

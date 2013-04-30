@@ -34,6 +34,7 @@ public:
 
 /// Early successful termination exception.
 /// It does not signal a fatal error, but something like having printed the help.
+/// Signals also the early termination of a maximization due to LRT no more satisfied.
 ///
 class FastCodeMLSuccess : public std::exception
 {

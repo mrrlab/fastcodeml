@@ -58,7 +58,7 @@ enum JobRequestType
 };
 
 /// Scaling value for transforming probabilities into integers for transmission
-static const double PROB_SCALING = 1e9;
+static const double PROB_SCALING = 1.0e9;
 
 /// For each internal branch there are three jobs to be executed: H0, H1 and BEB
 static const int JOBS_PER_BRANCH = 3;
@@ -577,7 +577,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			{
 				int site = results_integer[2*i+0];
 				mWorkTable->mResults[branch].mPositiveSelSites.push_back(site);
-				double prob = static_cast<double>(results_integer[2*i+1])/static_cast<double>(PROB_SCALING);
+				double prob = static_cast<double>(results_integer[2*i+1])/PROB_SCALING;
 				mWorkTable->mResults[branch].mPositiveSelProbs.push_back(prob);
 			}
 
