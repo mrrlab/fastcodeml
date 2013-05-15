@@ -273,12 +273,12 @@ private:
 	///
 	enum InitVarStatus
 	{
-		INIT_NONE=0,		///< All variables to optimize should be initialized
-		INIT_TIMES=1,		///< All variables to optimize should be initialized except times
-		INIT_PARAMS_H1=2,
-		INIT_PARAM_W2=4,
-		INIT_PARAMS=6,		///< All variables to optimize should be initialized except w0, w2, k, p0, p1
-		INIT_TIMES_FROM_FILE=8
+		INIT_NONE=0,			///< No variable has been initialized
+		INIT_TIMES=1,			///< Branch lenghts have been initialized
+		INIT_PARAMS_H1=2,		///< v0, v1 (or x0, x1), w0, k have been initialized (usually from H1 results)
+		INIT_PARAM_W2=4,		///< w2 has been initialized
+		INIT_PARAMS=6,			///< w0, w2, k, v0, v1 (or x0, x1) have been initialized (it is INIT_PARAMS_H1 | INIT_PARAM_W2)
+		INIT_TIMES_FROM_FILE=8	///< The times come from the tree file
 	};
 
 public:
@@ -295,10 +295,10 @@ public:
 
 	/// Initialize variables from a previous optimization result
 	///
-	/// @param[in] aPreviousResult A previous result from another model (obtained by getVariables())
+	/// @param[in] aPreviousResult A previous result from another model (normally obtained by getVariables())
 	/// @param[in] aValidLen If set gives how many values to take from aPreviousResult
 	///
-	void initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen=0);
+	void initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen=0u);
 
 
 private:

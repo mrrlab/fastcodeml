@@ -185,8 +185,8 @@ void BranchSiteModel::initFromParams(void)
 	double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
 	if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
-	mVar[mNumTimes+0] = log(p0);											// x0 -> p0
-	mVar[mNumTimes+1] = log(p1);											// x1 -> p1
+	mVar[mNumTimes+0] = log(p0);											// p0 -> x0
+	mVar[mNumTimes+1] = log(p1);											// p1 -> x1
 #else
 	if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 	mVar[mNumTimes+0] = p0+p1;												// p0+p1
@@ -203,7 +203,7 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 	// Adjust the length to be copied
 	if(aValidLen == 0) aValidLen = static_cast<unsigned int>(aPreviousResult.size());
 
-	// Too long, cut. Too short, ignore. 
+	// Too long, cut. Too short, ignore. Remember H0 has 4 variables.
 	if(aValidLen > mNumTimes+mNumVariables) aValidLen = mNumTimes+mNumVariables;
 	else if(aValidLen < mNumTimes)
 	{
@@ -227,13 +227,13 @@ void BranchSiteModel::initVariables(void)
 {
 	unsigned int i;
 
-	// Initialize time
+	// Initialize times (if not already initialized)
 	if((mInitStatus & INIT_TIMES) != INIT_TIMES)
 	{
 		for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
 	}
 
-	// Initialize w0, k, v1, v2
+	// Initialize w0, k, v1, v2 (if not already initialized)
 	if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
 	{
 		if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
@@ -247,6 +247,7 @@ void BranchSiteModel::initVariables(void)
 			double tot = x0 + x1 + 1.0;
 			double p0 = x0/tot;
 			double p1 = x1/tot;
+			if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
 			mVar[mNumTimes+0] = p0+p1;											// p0+p1
 			mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -265,6 +266,7 @@ void BranchSiteModel::initVariables(void)
 			double tot = x0 + x1 + 1.0;
 			double p0 = x0/tot;
 			double p1 = x1/tot;
+			if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
 			mVar[mNumTimes+0] = p0+p1;											// p0+p1
 			mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -291,17 +293,21 @@ void BranchSiteModel::initVariables(void)
 	mInitStatus = INIT_NONE;
 
 	// Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
-	unsigned int nv = mNumTimes+mNumVariables;
-	for(i=0; i < nv; ++i)
-    {
-        if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
-        if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
-    }
-	for(i=0; i < nv; ++i)
-    {
-        if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
-        if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
-    }
+	// Don't clamp the results if they came from H1
+	if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+	{
+		unsigned int nv = mNumTimes+mNumVariables;
+		for(i=0; i < nv; ++i)
+		{
+			if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
+			if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
+		}
+		for(i=0; i < nv; ++i)
+		{
+			if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
+			if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+		}
+	}
 }
 
 

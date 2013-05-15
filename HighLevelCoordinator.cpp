@@ -834,7 +834,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 		case JOB_H0:
 			{
 			// Initialize maximizer
-			if(aCmdLine.mInitH0fromH1 && job[2] > 1) h0.initFromResult(values_double, static_cast<unsigned int>(values_double.size())-1);
+			if(aCmdLine.mInitH0fromH1 && job[2] > 1) h0.initFromResult(values_double, static_cast<unsigned int>(values_double.size())-1u);
 			else
 			{
 				if(aCmdLine.mInitFromParams)		h0.initFromParams();
