@@ -119,6 +119,7 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mGraphFile && cmd.mExportComputedTimes != UINT_MAX)
 													std::cout << "Graph times:    From H" << cmd.mExportComputedTimes << std::endl;
 		if(!cmd.mNoMaximization)					std::cout << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
+		if(cmd.mMaxIterations != MAX_ITERATIONS)	std::cout << "Max iterations: " << cmd.mMaxIterations << std::endl;
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
 													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
 		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
@@ -603,6 +604,9 @@ Usage:
 
 -ps  --no-pre-stop (no argument)
         Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
+
+-mi  --max-iterations (required argument)
+        Maximum number of iterations for the maximizer (default: 10000)
 
 @endverbatim
 */

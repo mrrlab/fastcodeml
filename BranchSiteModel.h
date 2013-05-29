@@ -38,6 +38,7 @@ protected:
 	/// @param[in] aNoParallel If true no parallel execution support is setup
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
+	/// @param[in] aMaxIterations Maximum number of iterations for the maximization
 	///
 	BranchSiteModel(Forest&      aForest,
 					size_t       aNumBranches,
@@ -51,7 +52,8 @@ protected:
 					double       aRelativeError,
 					bool	     aNoParallel,
 					unsigned int aVerbose,
-					unsigned int aExtraDebug)
+					unsigned int aExtraDebug,
+					unsigned int aMaxIterations)
 		: mForest(aForest),
 		  mVar(aNumBranches+aNumVariables),
 		  mFgScale(0.0),
@@ -68,6 +70,7 @@ protected:
 		  mExtraDebug(aExtraDebug),
 		  mVerbose(aVerbose),
 		  mNumEvaluations(0),
+		  mMaxIterations(aMaxIterations),
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
 		  mSeed(aSeed),
@@ -333,6 +336,7 @@ protected:
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing
 	unsigned int				mVerbose;			///< Parameter for extra development testing
 	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
+	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
 	bool						mNoParallel;		///< True if no preparation for multithreading should be done
 
@@ -362,7 +366,8 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest, aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug),
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
 	{
@@ -452,7 +457,8 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest, aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug),
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
 	{

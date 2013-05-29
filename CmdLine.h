@@ -5,6 +5,11 @@
 #include <climits>
 #include "VerbosityLevels.h"
 
+/// The default maximum number of optimization steps.
+///
+static const unsigned int MAX_ITERATIONS=10000;
+
+
 /// Parse the command line flags.
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -34,6 +39,7 @@ public:
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(0),
 		mExtraDebug(0),
+		mMaxIterations(MAX_ITERATIONS),
 		mIgnoreFreq(false),
 		mDoNotReduceForest(false),
 		mBranchLengthsFromFile(false),
@@ -78,6 +84,7 @@ public:
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
+	unsigned int	mMaxIterations;			///< Maximum number of iterations for the maximization
 	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file

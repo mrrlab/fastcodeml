@@ -136,7 +136,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_REL_ERROR,
 		OPT_OUT_RESULTS,
 		OPT_CLEAN_DATA,
-		OPT_NO_PRE_STOP
+		OPT_NO_PRE_STOP,
+		OPT_MAX_ITER
 	};
 
 	// Then the definitions of each command line option
@@ -199,6 +200,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_CLEAN_DATA,		"--clean-data",			SO_NONE,	"" },
 		{ OPT_NO_PRE_STOP,		"-ps",					SO_NONE,	"Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)" },
 		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
+		{ OPT_MAX_ITER,			"-mi",					SO_REQ_SEP,	"Maximum number of iterations for the maximizer (default: 10000)" },
+		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
 	
@@ -355,6 +358,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_NO_PRE_STOP:
 			mStopIfNotLRT = false;
+			break;
+
+		case OPT_MAX_ITER:
+			tmpi = atoi(args.OptionArg());
+			if(tmpi <= 0) throw FastCodeMLFatal("Invalid max number of iterations. Should be > 0");
+			mMaxIterations = static_cast<unsigned int>(tmpi);
 			break;
 		}
 	}

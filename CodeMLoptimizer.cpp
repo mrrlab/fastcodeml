@@ -58,10 +58,6 @@ static inline double distance(const double* RESTRICT x, const double* RESTRICT y
 	return sqrt(t);
 }
 
-/// The number of maximal optimization steps (was variable 'maxround')
-///
-static const int MAX_ITERATIONS=10000;
-
 
 double Ming2::minimizeFunction(std::vector<double>& aVars)
 {
@@ -176,10 +172,10 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 
     identityMatrix(H, nfree);
 
-    for(iround = 0; iround < MAX_ITERATIONS; ++iround)
+    for(iround = 0; iround < mMaxIterations; ++iround)
     {
 		// Check if the optimization can be stopped in advance due to LRT non satisfied
-		if(mStopIfBigger && *f < mThreshold) throw FastCodeMLSuccess();
+		if(mStopIfBigger && *f < mThreshold) throw FastCodeMLEarlyStopLRT();
 
         if(fout)
         {
@@ -232,7 +228,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             {
                 if(mAlwaysCenter)
                 {
-                    iround = MAX_ITERATIONS;
+                    iround = mMaxIterations;
                     break;
                 }
                 else
@@ -383,7 +379,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
             v += y[i] * s[i];
         }
 
-        if (fabs(v) < small)
+        if(fabs(v) < small)
         {
             identityMatrix(H, nfree);
             fail = 1;
@@ -393,22 +389,23 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 		for(i=0; i < nfree; ++i)
 			for(j=0; j < nfree; ++j)
 				H[i*nfree + j] += ((1 + w / v) * s[i] * s[j] - z[i] * s[j] - s[i] * z[j]) / v;
-    }				/* for (iround,MAX_ITERATIONS)  */
+
+    } // end of for(iround, mMaxIterations)
 
     /* try to remove this after updating LineSearch2() */
     //*f = (*fun) (x, n);	++mNumFunCall;
 	*f = -mModel->computeLikelihood(x, n, mTraceFun);
 
-    if (mNoisy > 2)
+    if(mNoisy > 2)
     {
         printf("\n");
     }
 
-    if (iround == MAX_ITERATIONS)
+    if(iround == mMaxIterations)
     {
         if (fout)
         {
-            fprintf(fout, "\ncheck convergence!\n");
+            fprintf(fout, "\ncheck convergence! (max number of iterations reached)\n");
         }
 
         return -1;

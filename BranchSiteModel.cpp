@@ -960,7 +960,8 @@ public:
 	/// @param[in] aStopIfBigger If true stop computation as soon as value is over aThreshold
 	/// @param[in] aThreshold The threshold at which the maximization should be stopped
 	///
-	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient, size_t aNumMatrixParams, bool aStopIfBigger, double aThreshold)
+	MaximizerFunction(BranchSiteModel* aModel, bool aTrace, const std::vector<double>& aUpper, double aDeltaForGradient, size_t aNumMatrixParams,
+		              bool aStopIfBigger, double aThreshold)
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
 					    mTotalNumVariables(aUpper.size()), mNumBranchLengths(aUpper.size() - aNumMatrixParams),
 						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
@@ -1133,7 +1134,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		try
 		{
 			// Create the optimizer (instead of mRelativeError is used the fixed value from CodeML)
-			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold);
+			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
 
 			// Do the maximization
 			double maxl = optim.minimizeFunction(mVar);
@@ -1146,7 +1147,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			}
 			return maxl;
 		}
-		catch(FastCodeMLSuccess&)
+		catch(FastCodeMLEarlyStopLRT&)
 		{
 			if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
 			return DBL_MAX;
@@ -1216,6 +1217,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
 
 		nlopt::result result = opt->optimize(mVar, maxl);
 

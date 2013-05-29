@@ -26,8 +26,10 @@ public:
 	/// @param[in] aRelativeError		Relative error to stop computation
 	/// @param[in] aStopIfBigger		If true stop computation as soon as value is over aThreshold
 	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
+	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	///
-	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound, const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError, bool aStopIfBigger, double aThreshold) :
+	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound,
+		  const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError, bool aStopIfBigger, double aThreshold, int aMaxIterations) :
 			mModel(aModel),
 			mTrace(aTrace),
 			mTraceFun(false),
@@ -38,6 +40,7 @@ public:
 			mVerbose(aVerbose),
 			mStopIfBigger(aStopIfBigger),
 			mThreshold(-aThreshold),
+			mMaxIterations(aMaxIterations),
 			mAlwaysCenter(false),
 			mNoisy((aTrace && aVerbose > 0) ? 9 : 0) {}
 
@@ -65,7 +68,7 @@ private:
 	///
 	/// @return Optimization status (-1 check convergence; 0 success; 1 fail)
 	///
-	///	@exception FastCodeMLSuccess If the optimization is stop in advance because LRT not satisfied
+	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
 	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n);
 
@@ -150,6 +153,7 @@ private:
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
+	int							mMaxIterations;		///< Maximum number of iterations for the maximization
 
 private:
 	/// The following variables are from the original code

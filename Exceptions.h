@@ -34,7 +34,6 @@ public:
 
 /// Early successful termination exception.
 /// It does not signal a fatal error, but something like having printed the help.
-/// Signals also the early termination of a maximization due to LRT no more satisfied.
 ///
 class FastCodeMLSuccess : public std::exception
 {
@@ -44,6 +43,20 @@ public:
 	FastCodeMLSuccess() : exception()
 	{}
 };
+
+
+/// Early termination due to LRT not satisfied exception.
+/// It does not signal a fatal error, but that the optimization stopped because LRT cannot be satisfied.
+///
+class FastCodeMLEarlyStopLRT : public std::exception
+{
+public:
+	/// Early successful termination exception.
+	///
+	FastCodeMLEarlyStopLRT() : exception()
+	{}
+};
+
 
 /// Memory error in FastCodeML.
 /// The message explains the reason in detail.
