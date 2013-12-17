@@ -27,7 +27,7 @@
 static const double VERY_LOW_LIKELIHOOD = -1e14;
 
 
-void BranchSiteModel::printFinalVars(std::ostream& aOut) const
+std::string BranchSiteModel::printFinalVars(std::ostream& aOut) const
 {
 	// To nicely format num branch lengths per line
 	static const unsigned int VARS_PER_LINE = 8;
@@ -38,6 +38,10 @@ void BranchSiteModel::printFinalVars(std::ostream& aOut) const
 	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
+
+    std::ostringstream oss;
+    std::streamsize precS = oss.precision(VARS_PRECISION);
+    oss.setf(std::ios::fixed, std::ios::floatfield);
 
 	// Print all variables formatted to be readable
 	double v0 = 0;
@@ -61,30 +65,57 @@ void BranchSiteModel::printFinalVars(std::ostream& aOut) const
 				aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
 				aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
 				aOut << std::endl;
+
+				oss << std::endl;
+				oss <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
+				oss << "  p1:" << std::setw(VARS_WIDTH) << p[1];
+				oss << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
+				oss << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
+				oss << std::endl;
 			}
 			break;
 		case 2:
 			aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
+
+			oss << "w0:" << std::setw(VARS_WIDTH) << *ix;
+
 			break;
 		case 3:
 			aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
+
+			oss << "  k: " << std::setw(VARS_WIDTH) << *ix;
+
 			break;
 		case 4:
 			aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+
+			oss << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+
 			break;
 		default:
 			aOut << std::setw(VARS_WIDTH) << *ix;
+
+			oss << std::setw(VARS_WIDTH) << *ix;
+
 			++count_per_line;
 			if(count_per_line == VARS_PER_LINE)
 			{
 				count_per_line = 0;
 				aOut << std::endl;
+
+				oss << std::endl;
 			}
 			break;
 		}
 	}
 	aOut << std::endl;
 	aOut.precision(prec);
+
+	oss << std::endl;
+	oss.precision(precS);
+
+    std::string s = oss.str();
+    return s;
 }
 
 void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, std::ostream& aOut) const

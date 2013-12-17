@@ -68,7 +68,7 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		const char* type = "";
 		switch(aParserOptions[i].nArgType)
 		{
-		case SO_NONE:   
+		case SO_NONE:
 			type = "(no argument)";
 			break;
 
@@ -124,7 +124,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_ONE_STEP,
 		OPT_COMP_TIMES,
 		OPT_TRACE,
-		OPT_FORCE_SERIAL,
+		OPT_NUM_THREADS,
+//		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H0_FROM_H1,
@@ -174,8 +175,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_COMP_TIMES,		"--export-comp-times",	SO_REQ_SEP,	"" },
 		{ OPT_TRACE,			"-r",					SO_NONE,	"Trace the maximization run" },
 		{ OPT_TRACE,			"--trace",				SO_NONE,	"" },
-		{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
-		{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
+		{ OPT_NUM_THREADS,		"-nt",					SO_REQ_SEP,	"Number of threads (1 for non parallel execution)" },
+		{ OPT_NUM_THREADS,		"--number-of-threads",	SO_REQ_SEP,	"" },
+		//{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
+		//{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
 		{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
 		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
@@ -204,7 +207,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
 		SO_END_OF_OPTIONS
 	};
-	
+
 	// Setup the usage string
 	const char* usage_msg = "FastCodeML [options] tree_file alignment_file";
 
@@ -303,9 +306,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mTrace = true;
 			break;
 
-		case OPT_FORCE_SERIAL:
+/*		case OPT_FORCE_SERIAL:
 			mForceSerial = true;
-			break;
+			break;*/
 
 		case OPT_BRANCH_FROM_FILE:
 			mBranchFromFile = true;
@@ -364,6 +367,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			tmpi = atoi(args.OptionArg());
 			if(tmpi <= 0) throw FastCodeMLFatal("Invalid max number of iterations. Should be > 0");
 			mMaxIterations = static_cast<unsigned int>(tmpi);
+			break;
+
+		case OPT_NUM_THREADS:
+            mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
+          /*  if (mNumThreads == 1)
+                mForceSerial = true;*/
+            if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
 			break;
 		}
 	}

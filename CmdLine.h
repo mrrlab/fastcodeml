@@ -5,6 +5,10 @@
 #include <climits>
 #include "VerbosityLevels.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /// The default maximum number of optimization steps.
 ///
 static const unsigned int MAX_ITERATIONS=10000;
@@ -24,7 +28,7 @@ public:
 	///
 	/// Here are set the default values for the command line settable parameters
 	///
-	CmdLine() : 
+	CmdLine() :
 		mDeltaValueForGradient(0.0),
 		mRelativeError(1e-3),
 		mTreeFile(NULL),
@@ -45,6 +49,11 @@ public:
 		mBranchLengthsFromFile(false),
 		mNoMaximization(false),
 		mTrace(false),
+#ifdef _OPENMP
+		mNumThreads(omp_get_max_threads()),
+#else
+        mNumThreads(1),
+#endif
 		mForceSerial(false),
 		mBranchFromFile(false),
 		mInitH0fromH1(false),
@@ -96,6 +105,7 @@ public:
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
+	unsigned int	mNumThreads;			///< Number of threads (if 1 the parallelization is disabled)
 
 private:
 	struct CmdLineImpl;

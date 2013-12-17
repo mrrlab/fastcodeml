@@ -41,10 +41,10 @@ endif(Boost_FOUND)
 
 
 # Get the configuration switches
-OPTION(USE_LAPACK         		"Use BLAS/LAPACK" ON)
+OPTION(USE_LAPACK         		"Use BLAS/LAPACK" OFF)
 OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
-OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
+OPTION(USE_MPI            		"Use MPI for high level parallelization" ON)
 if(NOT WIN32)
 	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
@@ -87,7 +87,7 @@ set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "LAPACK lib dir")
 set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir")
 set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
 set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
-set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')") 
+set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')")
 
 
 # Set compiler switches
@@ -167,68 +167,14 @@ endif(USE_LAPACK)
 link_directories(${LINK_DIR_NLOPT})
 include_directories(${INCLUDE_DIR_NLOPT})
 
-
-###########################################################
-# Set options for the various CSCS platforms
-if($ENV{HOST} MATCHES "matterhorn")
-
-	add_definitions(-DBOOST_NO_CWCTYPE)
-	add_definitions(-xmt2)
-	add_definitions(-exceptions)
-	add_definitions(-pl ${CMAKE_CURRENT_BINARY_DIR}/fast.pl)
-
-	set(EXTRA_LIBS "m")
-
-endif($ENV{HOST} MATCHES "matterhorn")
-
-###########################################################
-if($ENV{HOST} MATCHES "julier")
-
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl -restrict" CACHE "Flags used by the compiler during all build types" STRING)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -xSSE4.2 -fstrict-aliasing -Wstrict-aliasing -fomit-frame-pointer -unroll -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
-
-endif($ENV{HOST} MATCHES "julier")
-
-###########################################################
-if($ENV{HOST} MATCHES "rosa")
-
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mkl" CACHE "Linker options" STRING)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -restrict -mkl" CACHE "Flags used by the compiler during all build types" STRING)
-	set(CMAKE_CXX_FLAGS_RELEASE "-fast -DNDEBUG -unroll-aggressive -simd -use-Intel-optimized-headers -fomit-frame-pointer -finline-functions" CACHE "Flags used by the compiler during release build" STRING)
-
-endif($ENV{HOST} MATCHES "rosa")
-
-###########################################################
-if($ENV{HOST} MATCHES "eiger")
-
-	#Set g++ specific compiler settings
-	if(CMAKE_COMPILER_IS_GNUCXX)
-
-		#slow, but suitable for debugging
-		if(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-			set(CMAKE_CXX_FLAGS_DEBUG "-g -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
-			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -Wno-unused-result -Wno-write-strings -g -pg -fcheck-data-deps")
-			#  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g -pg -fcheck-data-deps" CACHE STRING "Debug mode options")
-		endif(NOT ${CMAKE_CXX_FLAGS_DEBUG} MATCHES "-Wextra")
-
-		# fast; -fomit-frame-pointer and -finline-functions not needed, automatically set by -O3; -O4 or higher not supported by gcc;
-		# -funroll-loops might be useful, but can sometimes make the code slower (see man gcc). We suppress warnings regarding unused results.
-		# -O3 -Wall -std=c++98 -Wextra -pedantic -ffast-math -mtune=native -minline-stringops-dynamically -Wno-unused-result -funroll-loops -funsafe-loop-optimizations -Wunsafe-loop-optimizations"
-
-		if(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-			set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fstrict-aliasing -Wstrict-aliasing -std=c++98 -Wextra -ffast-math -msse2 -mtune=native -minline-stringops-dynamically -funroll-loops -fbuiltin" CACHE "Release mode options" STRING)
-		endif(NOT ${CMAKE_CXX_FLAGS_RELEASE} MATCHES "-minline-stringops-dynamically")
-
-		#if(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
-			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O1" CACHE "Release mode linker options" STRING)
-		#endif(NOT ${CMAKE_EXE_LINKER_FLAGS_RELEASE} MATCHES "Wl")
-	endif(CMAKE_COMPILER_IS_GNUCXX)
-
-endif($ENV{HOST} MATCHES "eiger")
-
 ###########################################################
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_BUILD_TYPE DEBUG)
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -error -pg -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -g -pg -O0 -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused")
+
+###########################################################
 
 # Executable
 add_executable(fast ${SRCS})
@@ -245,15 +191,4 @@ if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})
 endif(MPI_LIBRARY)
 
-
-# Make documentation
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
-   set(DOXY_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
-  endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
-
-  add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${DOXY_CONFIG})
-endif(DOXYGEN_FOUND)
 

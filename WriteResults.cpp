@@ -12,6 +12,8 @@ void WriteResults::outputResults(void)
 
 	// Range of branches to be output (for H0 and H1)
 	std::map<size_t, double>::const_iterator im;
+	std::map<size_t, std::string>::const_iterator ims;
+
 	size_t min_branch = std::numeric_limits<size_t>::max();
 	size_t max_branch = 0;
 	for(im = mLnL[0].begin(); im != mLnL[0].end(); ++im)
@@ -41,17 +43,20 @@ void WriteResults::outputResults(void)
 	// Write the log-likelihood values (if a value is not present, write NA)
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
-		out << "Branch: " << std::setw(4) << branch << "  LnL0: ";
+		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "  LnL0: ";
 
 		// Prints LnL for H0 if present
 		im = mLnL[0].find(branch);
 		if(im == mLnL[0].end())
 		{
-			out << std::setw(22) << "NA";
+			out << std::setw(22) << "NA"<< std::endl<<std::endl;
 		}
 		else
 		{
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
+
+            ims = mParamStr[0].find(branch);
+            out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 
@@ -64,6 +69,9 @@ void WriteResults::outputResults(void)
 		else
 		{
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
+
+            ims = mParamStr[1].find(branch);
+            out << std::endl<< std::fixed  <<"Branch lengths:" <<ims->second << std::endl;
 		}
 		out << std::endl;
 	}
@@ -128,5 +136,17 @@ void WriteResults::savePositiveSelSites(size_t aFgBranch, const std::vector<unsi
 
 	// Save the positive selection sites and corresponding probabilities for later printing
 	mPositiveSelSites[aFgBranch] = std::make_pair(aPositiveSelSites, aPositiveSelSitesProb);
+}
+
+void WriteResults::saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis)
+{
+	// If no file set, then do nothing
+	if(!mFilename) return;
+
+	// Sanity check
+	if(aHypothesis > 1) return;
+
+	// Save the likelihood for later printing
+	mParamStr[aHypothesis][aFgBranch] = aParamStr;
 }
 

@@ -1,7 +1,7 @@
 /// @mainpage FastCodeML
 ///
 /// @section intro_sect Introduction
-/// 
+///
 /// FastCodeML is a rewrite of CodeML based directly on the pseudocode document.
 /// It incorporates various parallelization strategies to be able to exploit modern HPC machines architecture.
 /// For this reason there are various parts of the code that can be selected at compile time or run time to experiment with various, possible solutions.
@@ -9,7 +9,7 @@
 /// @section contacts_sect Contacts
 ///
 /// Contact us if you want more information on the project, want to collaborate or suggest new ideas.
-/// 
+///
 ///- Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National Supercomputing Centre (CSCS) - Switzerland
 ///- The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group - Mainly based in University of Lausanne - Switzerland
 ///
@@ -71,6 +71,25 @@ int main(int aRgc, char **aRgv)
 	// Adjust and report the number of threads that will be used
 #ifdef _OPENMP
 	int num_threads = omp_get_max_threads();
+    //std::cout<<"max num of thr: "<< num_threads <<std::endl;
+
+     if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= num_threads))
+        num_threads = cmd.mNumThreads;
+    // std::cout<<"num of thr: "<< num_threads <<std::endl;
+
+     omp_set_num_threads(num_threads);
+    /*if (num_threads < 2)
+        cmd.mForceSerial = true;
+     else
+        cmd.mForceSerial = false;*/
+#else
+	cmd.mNumThreads=1;
+	int num_threads = 1;
+	cmd.mForceSerial = true;
+#endif
+
+/*#ifdef _OPENMP
+	int num_threads = omp_get_max_threads();
 	if(num_threads < 2 || cmd.mForceSerial)
 	{
 		cmd.mForceSerial = true;
@@ -80,7 +99,7 @@ int main(int aRgc, char **aRgv)
 #else
 	cmd.mForceSerial = true;
 	int num_threads = 1;
-#endif
+#endif*/
 
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
@@ -245,7 +264,7 @@ int main(int aRgc, char **aRgv)
 #ifndef NEW_LIKELIHOOD
 		forest.addAggressiveReduction();
 #endif
-		forest.cleanReductionWorkingData();		
+		forest.cleanReductionWorkingData();
 #ifdef NEW_LIKELIHOOD
 		forest.prepareNewReduction();
 #endif
@@ -359,7 +378,12 @@ int main(int aRgc, char **aRgv)
 					std::cout << "(Doesn't pass LRT, skipping)";
 				std::cout << " Function calls: " << h0.getNumEvaluations() << "   ";
 				std::cout << std::endl << std::endl;
-				if(lnl0 != std::numeric_limits<double>::infinity()) h0.printFinalVars(std::cout);
+				if(lnl0 != std::numeric_limits<double>::infinity())
+				{
+                    std::string s0 = h0.printFinalVars(std::cout);
+                    //std::cout<<"EDW0: "<< s0 <<std::endl;
+                    output_results.saveParameters(fg_branch, s0, 0);
+				}
 				std::cout << std::endl;
 			}
 			if(cmd.mComputeHypothesis != 0)
@@ -371,7 +395,12 @@ int main(int aRgc, char **aRgv)
 					std::cout << std::setprecision(15) << std::fixed << lnl1;
 				std::cout << " Function calls: " << h1.getNumEvaluations();
 				std::cout << std::endl << std::endl;
-				if(lnl1 != std::numeric_limits<double>::infinity()) h1.printFinalVars(std::cout);
+				if(lnl1 != std::numeric_limits<double>::infinity())
+				{
+				    std::string s1= h1.printFinalVars(std::cout);
+				    //std::cout<<"EDW1: "<< s1 <<std::endl;
+				    output_results.saveParameters(fg_branch, s1, 1);
+				}
 				std::cout << std::endl;
 			}
 			if(cmd.mComputeHypothesis > 1)
@@ -508,7 +537,7 @@ int main(int aRgc, char **aRgv)
 /// @section misc_sect Miscellaneous rules
 /// In case of error main should return 1.
 ///
-/// Array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int. 
+/// Array sizes and corresponding indexes should be size_t. The remaining counters should be unsigned int.
 ///
 /// The null pointer should be written as NULL, not 0 to make clear its purpose.
 ///
@@ -566,8 +595,8 @@ Usage:
 -r  --trace (no argument)
         Trace the maximization run
 
--np  --no-parallel (no argument)
-        Don't use parallel execution
+-nt  --number-of-threads (required argument)
+        Number of threads (1 for non parallel execution)
 
 -bf  --branch-from-file (no argument)
         Do only the branch marked in the file as foreground branch

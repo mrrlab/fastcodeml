@@ -100,7 +100,7 @@ public:
 	///
 	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	void printFinalVars(std::ostream& aOut=std::cout) const;
+	std::string printFinalVars(std::ostream& aOut=std::cout) const;
 
 	/// Compute the maximum likelihood for the given forest
 	///
