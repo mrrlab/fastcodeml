@@ -142,7 +142,8 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
 													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
 		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
-
+        if(cmd.mNumThreads)                         std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
+       // if(cmd.mFixedBranchLength)                        std::cerr << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
 		if(num_threads > 1)
 		{
@@ -608,7 +609,7 @@ Usage:
         Start H0 optimization from H1 results
 
 -m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 0)
+        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)
 
 -sd  --small-diff (required argument)
         Delta used in gradient computation (default: 1.49e-8)

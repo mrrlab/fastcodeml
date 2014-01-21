@@ -194,6 +194,10 @@ void PhyloTree::checkRootBranches(void) const
 		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 	}
 
+    if (cnt_root_branches == 2)
+    {
+        std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
+    }
 	// if it is an invalid tree then raise exception
 	if(cnt_root_branches < 2) throw FastCodeMLFatal("Root has only one branch. Invalid tree. Quitting.");
 

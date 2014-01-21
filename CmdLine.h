@@ -41,7 +41,7 @@ public:
 		mBranchEnd(UINT_MAX),
 		mExportComputedTimes(UINT_MAX),
 		mComputeHypothesis(UINT_MAX),
-		mOptimizationAlgo(0),
+		mOptimizationAlgo(22),
 		mExtraDebug(0),
 		mMaxIterations(MAX_ITERATIONS),
 		mIgnoreFreq(false),
