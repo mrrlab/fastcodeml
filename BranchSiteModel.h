@@ -53,9 +53,10 @@ protected:
 					bool	     aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
-					unsigned int aMaxIterations)
+					unsigned int aMaxIterations,
+					bool aFixedBranchLength)
 		: mForest(aForest),
-		  mVar(aNumBranches+aNumVariables),
+		  mVar(aFixedBranchLength ? aNumVariables : aNumBranches+aNumVariables), //mVar(aNumBranches+aNumVariables),
 		  mFgScale(0.0),
 		  mBgScale(0.0),
 		  mMaxLnL(-DBL_MAX),
@@ -74,9 +75,11 @@ protected:
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
 		  mSeed(aSeed),
-		  mRelativeError(aRelativeError)
+		  mRelativeError(aRelativeError),
+		  mFixedBranchLength(aFixedBranchLength),
+		  mBranches(aNumBranches)
 	{
-		setLimits(aNumBranches, static_cast<size_t>(aNumVariables));
+		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}
 
 	/// Destructor.
@@ -177,7 +180,7 @@ public:
 	///	@return True if the test is passed
 	///
 	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > THRESHOLD_FOR_LRT;}
-	
+
 	/// Get site multiplicity values.
 	///
 	/// @return Reference to the array of site multiplicities
@@ -247,8 +250,9 @@ private:
 	///
 	/// @param[in] aNumTimes Number of times (i.e.\ branch lengths)
 	/// @param[in] aNumVariables Number of other variables (4 for H0, 5 for H1)
+	/// @param[in] aFixedBranch
 	///
-	void setLimits(size_t aNumTimes, size_t aNumVariables);
+	void setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength);
 
 	/// Generate a double random number between 0 and 1
 	///
@@ -339,6 +343,8 @@ protected:
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
 	bool						mNoParallel;		///< True if no preparation for multithreading should be done
+    bool                       mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
+    std::vector<double>		mBranches;          ///< Variable with the branch lengths
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -367,7 +373,7 @@ public:
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations),
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
 	{
@@ -458,7 +464,7 @@ public:
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations),
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
 	{

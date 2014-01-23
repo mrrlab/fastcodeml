@@ -60,7 +60,8 @@ public:
 		mInitFromParams(false),
 		mCleanData(false),
 		mStopIfNotLRT(true),
-		mCmdLineImpl(NULL)
+		mCmdLineImpl(NULL),
+        mFixedBranchLength(false)
 	{}
 
 	/// Destructor.
@@ -106,6 +107,7 @@ public:
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
 	unsigned int	mNumThreads;			///< Number of threads (if 1 the parallelization is disabled)
+    bool           mFixedBranchLength;           ///<fixed branch lengths
 
 private:
 	struct CmdLineImpl;
