@@ -18,7 +18,7 @@ static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-23 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class BranchSiteModel
 {
@@ -357,7 +357,7 @@ private:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-23 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 ///
 class BranchSiteModelNullHyp : public BranchSiteModel
@@ -448,7 +448,7 @@ private:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-23 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 ///
 class BranchSiteModelAltHyp : public BranchSiteModel

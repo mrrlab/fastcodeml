@@ -41,7 +41,7 @@ public:
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///  @date 2010-12-22 (initial version)
-///  @version 1.0
+///  @version 1.1
 ///
 class BayesTest
 {
@@ -74,7 +74,7 @@ public:
 	/// @param[in] aScales The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
 	void computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales);
-	
+
 	/// Print the sites under positive selection.
 	///
 	/// @param[in] aFgBranch Identifier of the branch marked as foreground branch
@@ -89,9 +89,9 @@ public:
 	void extractPositiveSelSites(std::vector<unsigned int>& aPositiveSelSites, std::vector<double>& aPositiveSelSitesProb) const;
 
 private:
-	/// This sets up the grid (mPara[][]) according to the priors.  
-	/// It calculates the probability of data at each site given w: f(f_h|w).  
-	/// This is calculated using the branch model (NSsites = 0 model = 2), with 
+	/// This sets up the grid (mPara[][]) according to the priors.
+	/// It calculates the probability of data at each site given w: f(f_h|w).
+	/// This is calculated using the branch model (NSsites = 0 model = 2), with
 	/// BayesEB=2 used to force the use of the correct scale factors in GetPMatBranch().
 	///
 	///@verbatim
@@ -113,15 +113,15 @@ private:
 	///
 	double getGridParams(const std::vector<double>& aVars, const std::vector<double>& aSiteMultiplicity, size_t aFgBranch, const std::vector<double>& aScales);
 
-	/// This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for 
+	/// This gives the indices (ix, iy) and the coordinates (aProbX, aProbY, 1-aProbX-aProbY) for
 	/// the aTriangleIdx-th triangle, with aTriangleIdx from 0, 1, ..., BEB_N1D*BEB_N1D-1.
 	///
-	/// The ternary graph (0-1 on each axis) is partitioned into BEB_N1D*BEB_N1D equal-sized triangles.  
+	/// The ternary graph (0-1 on each axis) is partitioned into BEB_N1D*BEB_N1D equal-sized triangles.
 	/// In the first row (ix=0), there is one triangle (iy=0);
 	/// In the second row (ix=1), there are 3 triangles (iy=0,1,2);
 	/// In the i-th row (ix=i), there are 2*i+1 triangles (iy=0,1,...,2*i).
 	///
-	/// aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the 
+	/// aProbX rises when ix goes up, but aProbY decreases when iy increases.  (aProbX, aProbY) is the
 	/// centroid in the ij-th small triangle. aProbX and aProbY each takes on 2*BEB_N1D-1 possible values.
 	///
 	/// @param[out] aProbX The p0 value on the X axis of the triangular grid.

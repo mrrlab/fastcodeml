@@ -11,7 +11,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-09-31 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class FatVectorTransform
 {
@@ -53,7 +53,7 @@ public:
 		mReuseCmds.clear();
 		mNoTransformations = false;
 	}
-	
+
 	/// Initialize the class instance so can be used if no subtree pruning is present
 	///
 	/// @param[in] aNumBranches Number of branches

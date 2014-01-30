@@ -15,7 +15,7 @@
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///  @date 2010-12-22 (initial version)
-///  @version 1.0
+///  @version 1.1
 ///
 template <typename T, size_t A> class AlignedAllocator
 {
@@ -45,7 +45,7 @@ public:
         // The following has been carefully written to be independent of
         // the definition of size_t and to avoid signed/unsigned warnings.
         return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T);
-    } 
+    }
 
 	/// Internal definition for AlignedAllocator.
     /// The following must be the same for all allocators.

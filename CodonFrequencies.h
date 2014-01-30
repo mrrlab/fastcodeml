@@ -17,7 +17,7 @@ static const double GOOD_CODON_THRESHOLD = 1e-100;
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-10-24 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class CodonFrequencies
 {
@@ -48,19 +48,19 @@ public:
 
 	/// Return a pointer to the codon frequencies array
 	///
-	/// @return Pointer to the codon frequencies array 
+	/// @return Pointer to the codon frequencies array
 	///
 	const double* getCodonFrequencies(void) const {return &mCodonFrequencies[0];}
 
 	/// Return a pointer to the codon square root of frequencies array
 	///
-	/// @return Pointer to the codon square root of frequencies array 
+	/// @return Pointer to the codon square root of frequencies array
 	///
 	const double* getSqrtCodonFrequencies(void) const {return &mCodonFreqSqrt[0];}
 
 	/// Return a pointer to the codon array of inverse of frequencies
 	///
-	/// @return Pointer to the codon inverse of frequencies array 
+	/// @return Pointer to the codon inverse of frequencies array
 	///
 	const double* getInvCodonFrequencies(void) const {return &mCodonFreqInv[0];}
 
@@ -78,7 +78,7 @@ public:
 
 	/// Return a pointer to the codon array of inverse frequencies at the n power
 	///
-	/// @return Pointer to the codon inverse of frequencies at the n power array 
+	/// @return Pointer to the codon inverse of frequencies at the n power array
 	///
 	const double* getCodonFreqInv2(void) const {return &mCodonFreqInv2[0];}
 

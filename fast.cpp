@@ -45,7 +45,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-22 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
@@ -54,6 +54,8 @@ int main(int aRgc, char **aRgv)
 {
 	try
 	{
+
+    const char* version="1.1.0";
 #ifdef USE_MKL_VML
 	// If used, intitialize the MKL VML library
 	vmlSetMode(VML_HA|VML_DOUBLE_CONSISTENT);
@@ -105,7 +107,8 @@ int main(int aRgc, char **aRgv)
 	// Shutdown messages from all MPI processes except the master
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
-
+    //<<"* * * * * * * * * * *"<<
+    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{

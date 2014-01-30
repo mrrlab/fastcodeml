@@ -22,7 +22,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-02-15 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class Newick : public PhyloTree
 {

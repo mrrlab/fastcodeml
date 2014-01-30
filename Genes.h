@@ -10,7 +10,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-12-22 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class Genes
 {

@@ -206,7 +206,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
 		{ OPT_MAX_ITER,			"-mi",					SO_REQ_SEP,	"Maximum number of iterations for the maximizer (default: 10000)" },
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
-        {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the branches is fixed (only for KCM and algorithms LBFGS and SLSQP)"},
+        {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the brances is fixed"},
 		{OPT_BRANCH_LENGTH,      "--branch-lengths-fixed", SO_NONE,    ""},
 		SO_END_OF_OPTIONS
 	};

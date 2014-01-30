@@ -22,7 +22,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-02-23 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class TransitionMatrix
 {
@@ -36,7 +36,7 @@ public:
 		memset(mS, 0, N*N*sizeof(double));
 #else
 		memset(mQ, 0, N*N*sizeof(double));
-#endif		
+#endif
 		// Initialize the codons' frequencies
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
 		mCodonFreq = cf->getCodonFrequencies();
@@ -124,7 +124,7 @@ public:
 		// Remember, the eigenvalues are stored in reverse order
         for(int j=0; j < N-1; )
         {
-            tmp[j] = tm*mD[N-1-j]; ++j; 
+            tmp[j] = tm*mD[N-1-j]; ++j;
             tmp[j] = tm*mD[N-1-j]; ++j;
             tmp[j] = tm*mD[N-1-j]; ++j;
             tmp[j] = tm*mD[N-1-j]; ++j;
@@ -203,7 +203,7 @@ protected:
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
 	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
 	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
-#ifdef FORCE_IDENTITY_MATRIX 
+#ifdef FORCE_IDENTITY_MATRIX
 	double ALIGN64	mIdentity[N*N];	///< Pre-filled identify matix
 #endif
 	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
@@ -216,7 +216,7 @@ protected:
 	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order
 	const double*	mCodonFreq;		///< Experimental codon frequencies
 	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
-	
+
 #ifdef _MSC_VER
     #pragma warning(pop)
 #endif
@@ -227,7 +227,7 @@ protected:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-09-07 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class CheckpointableTransitionMatrix : public TransitionMatrix
 {
@@ -235,7 +235,7 @@ public:
 	/// Constructor.
 	///
 	CheckpointableTransitionMatrix() : TransitionMatrix(), mSavedScale(1.) {}
-	
+
 	/// Save a checkpoint of the matrices
 	///
 	/// @param[in] aScale The matrix scale to be saved
@@ -264,7 +264,7 @@ private:
 	double ALIGN64	mSavedS[N*N];		///< The S matrix (remember Q = S*pi)
 #endif
 	double ALIGN64	mSavedD[N];			///< The matrix eigenvalues stored in reverse order
-	
+
 #ifdef _MSC_VER
     #pragma warning(pop)
 #endif

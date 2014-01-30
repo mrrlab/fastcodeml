@@ -27,7 +27,7 @@
 ///
 ///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///  @date 2011-02-23 (initial version)
-///  @version 1.0
+///  @version 1.1
 ///
 class Forest
 {
@@ -48,7 +48,7 @@ public:
 		mNodeNames.clear();
 		mBranchLengths.clear();
 		mProbs.clear();
-		mSiteMultiplicity.clear();		
+		mSiteMultiplicity.clear();
 		mTableInternalToBranchID.clear();
 #ifdef NEW_LIKELIHOOD
 		mProbsOut.clear();
@@ -59,7 +59,7 @@ public:
 		mVisitTreeParents.clear();
 #endif
 	}
-	
+
 	/// Build the forest and reduces the subtrees.
 	///
 	/// @param[in] aTree The phylogenetic tree
@@ -297,8 +297,8 @@ private:
 	///
 	void prepareNonRecursiveVisitWalker(ForestNode* aNode,
 										ForestNode* aParentNode,
-										unsigned int aSite, 
-										std::vector<ForestNode*>& aVisitList, 
+										unsigned int aSite,
+										std::vector<ForestNode*>& aVisitList,
 										std::vector<ForestNode*>& aParentList);
 
 	/// Walker for the computation of tree likelihood
@@ -339,7 +339,7 @@ private:
 #ifdef NEW_LIKELIHOOD
 
 	/// New loglikelihood computation support
-		
+
 	/// The mProbs and mProbsOut layout
 	///
 	/// [site0][site1][site2]...  [site0][site1][site2]...               each is VECTOR_SLOT bytes long (for which only the first N are significant)

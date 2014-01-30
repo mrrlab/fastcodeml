@@ -10,7 +10,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS) based on code from Ziheng Yang CodeML.
 ///     @date 2012-01-11 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class Ming2
 {

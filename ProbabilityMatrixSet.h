@@ -21,7 +21,7 @@
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-04-05 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class ProbabilityMatrixSet
 {
@@ -66,7 +66,7 @@ public:
 	///
 	/// @param[in] aFgBranch Number of the foreground branch (as branch number not as internal branch number!)
 	///
-	void initializeFgBranch(unsigned int aFgBranch) {mFgBranch = static_cast<int>(aFgBranch);} 
+	void initializeFgBranch(unsigned int aFgBranch) {mFgBranch = static_cast<int>(aFgBranch);}
 
 #ifndef NEW_LIKELIHOOD
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
@@ -151,7 +151,7 @@ public:
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, int aNumSites, const double* aMin, double* aMout) const
 	{
 #ifdef USE_LAPACK
-	
+
 	dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aMin, &VECTOR_SLOT, &D0, aMout, &VECTOR_SLOT);
 
 #ifdef USE_MKL_VML
@@ -197,7 +197,7 @@ protected:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-09-07 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class ProbabilityMatrixSetH0 : public ProbabilityMatrixSet
 {
@@ -215,7 +215,7 @@ public:
 	void initializeSet(unsigned int aFgBranch);
 
 	/// Compute the three sets of matrices for the H0 hypothesis.
-	/// The sets are (these are the bg and fg matrices): 
+	/// The sets are (these are the bg and fg matrices):
 	/// - set 0: w0, w0
 	/// - set 1: w1, w1
 	/// - set 2: w0, w1
@@ -270,7 +270,7 @@ private:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-09-07 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class ProbabilityMatrixSetH1 : public ProbabilityMatrixSet
 {
@@ -288,7 +288,7 @@ public:
 	void initializeSet(unsigned int aFgBranch);
 
 	/// Compute the four sets of matrices for the H1 hypothesis.
-	/// The sets are (these are the bg and fg matrices): 
+	/// The sets are (these are the bg and fg matrices):
 	/// - set 0: w0, w0
 	/// - set 1: w1, w1
 	/// - set 2: w0, w2
@@ -307,7 +307,7 @@ public:
 							double aSbg,
 							double aSfg,
 						    const std::vector<double>& aParams);
-	
+
 	/// Restore the previous value for the aBranch matrices.
 	///
 	/// @param[in] aBranch Branch for which the matrices should be restored
@@ -347,7 +347,7 @@ private:
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2012-09-20 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class ProbabilityMatrixSetBEB : public ProbabilityMatrixSet
 {
@@ -365,7 +365,7 @@ public:
 	}
 
 	/// Compute the sets of matrices for the BEB computation.
-	/// The sets are (these are the bg and fg matrices): 
+	/// The sets are (these are the bg and fg matrices):
 	/// - set 0: w0, w0
 	/// - set 1: w1, w1
 	/// - set 2: w0, w2

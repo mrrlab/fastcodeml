@@ -6,11 +6,11 @@
 #include <vector>
 #include "MatrixSize.h"
 
-/// Phylogenetic tree node representation 
+/// Phylogenetic tree node representation
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2010-08-31 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 class TreeNode
 {
@@ -49,7 +49,7 @@ public:
 	/// @return The node itself
 	///
 	TreeNode& operator=(const TreeNode& aNode)
-	{	
+	{
 		// Make sure not same object
 		if(this != &aNode)
 		{
@@ -130,7 +130,7 @@ public:
 	/// Check if the node is a leaf.
 	///
 	/// @return True if the node has no descendants
-	///	
+	///
 	bool isLeaf(void) const {return mChildrenList.empty();}
 
 	/// Return one of the node children.

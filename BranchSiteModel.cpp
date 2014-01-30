@@ -1568,7 +1568,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///     @date 2011-01-13 (initial version)
-///     @version 1.0
+///     @version 1.1
 ///
 ///
 class MaximizerFunction

@@ -18,7 +18,7 @@ static const unsigned char ALL_CHILDREN_SAME_TREE = 0xFF;
 ///
 ///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///   @date 2011-11-08 (initial version)
-///   @version 1.0
+///   @version 1.1
 ///
 struct ForestNodeSupport
 {
@@ -34,7 +34,7 @@ struct ForestNodeSupport
 ///
 ///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
 ///   @date 2011-02-23 (initial version)
-///   @version 1.0
+///   @version 1.1
 ///
 struct ForestNode
 {
@@ -65,7 +65,7 @@ struct ForestNode
 	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(NULL), mInternalNodeId(0)
 #ifdef NON_RECURSIVE_VISIT
 				   , mFirstChild(false), mChildIdx(0)
-#endif		  
+#endif
 	{
 #ifndef NEW_LIKELIHOOD
 		memset(mProb, 0, Nt*sizeof(double*));
@@ -256,7 +256,7 @@ struct ForestNode
 
 		// Print the name
 		aOut << '<' << ((mBranchId  != UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
-	
+
 		// Print the ID
 		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << '|' << mLeafCodon << ") ";
 		else                            aOut << '('                    << '|' << mBranchId << '|' << mLeafCodon << ") ";
@@ -346,7 +346,7 @@ struct ForestNode
 				cnt += 1;
 			}
 		}
-	
+
 		return cnt;
 	}
 
@@ -386,7 +386,7 @@ struct ForestNode
 				cost += aCostPtr;
 			}
 		}
-	
+
 		return cost;
 	}
 
