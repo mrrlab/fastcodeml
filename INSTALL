@@ -1,6 +1,6 @@
 Requirements to generate the executable:
 * C++ compiler, e.g. GCC 4
-* CMake 2.6 (including ccmake) or later recommended, although compilation possible without
+* CMake 2.8.0 (including ccmake) or later recommended, although compilation possible without
 * Boost::Spirit, see http://boost-spirit.com/home/
 * Reasonably new BLAS implementation (e.g. OpenBLAS, Goto2, ACML, MKL); packages from various Linux distributions can be used, but this deteriorates performance; recommended: OpenBLAS (http://xianyi.github.io/OpenBLAS/) or Intel MKL
 * Reasonably new LAPACK library (e.g. original LAPACK or ACML, MKL); packages from various Linux distributions can be used, but this deteriorates performance
