@@ -7,6 +7,9 @@
 #include "Exceptions.h"
 #include "ParseParameters.h"
 
+
+extern const char* version;
+
 /// Implementation of the CmdLine class.
 ///
 struct CmdLine::CmdLineImpl
@@ -251,6 +254,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		default:
 		case OPT_HELP:
+            std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 			std::cout << "Usage:" << std::endl;
 			std::cout << "    " << usage_msg << std::endl << std::endl;
 			mCmdLineImpl->showHelp(parser_options);
@@ -391,10 +395,12 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	{
 	case 0:
 		std::cout << "Missing NEWICK TREE file" << std::endl;
+		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 		// Falltrough
 
 	case 1:
 		std::cout << "Missing PHYLIP CODON ALIGNMENT file" << std::endl << std::endl;
+		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 		std::cout << "Usage:" << std::endl;
 		std::cout << "    " << usage_msg << std::endl << std::endl;
 		mCmdLineImpl->showHelp(parser_options);
