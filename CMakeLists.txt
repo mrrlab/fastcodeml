@@ -168,11 +168,12 @@ link_directories(${LINK_DIR_NLOPT})
 include_directories(${INCLUDE_DIR_NLOPT})
 
 ###########################################################
+if(NOT WIN32)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_BUILD_TYPE DEBUG)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 #set(CMAKE_CXX_FLAGS_DEBUG "-g -error -pg -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -g -pg -O0 -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -g -pg -O0 -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused")
+endif(NOT WIN32)
 
 ###########################################################
 

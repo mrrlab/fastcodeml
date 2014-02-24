@@ -38,8 +38,7 @@ struct NewickGrammar : public grammar<NewickGrammar>
 
             full_label = no_node_d[ch_p('#')] >> marker | label >> !(no_node_d[ch_p('#')] >> marker);
 
-            //label = leaf_node_d[alpha_p >> *(alnum_p|'.'|'_')];
-            label = leaf_node_d[alnum_p >> *(alnum_p|'.'|'_')];
+            label = leaf_node_d[alnum_p >> *(alnum_p|'.'|'_'|'|')];
 
             marker = leaf_node_d[+alnum_p];
         }
