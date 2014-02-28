@@ -16,6 +16,6 @@ p0:  0.4817192  p1:  0.5182808  p2a:  0.0000000  p2b:  0.0000000
 w0:  0.0000010  k:   5.1561778
 ===
 
-Please always use optimisation method "-m22" on the command line, as the other optimisers are still under investigation and not discussed in the paper.
+Please always use optimisation method "-m 22" on the command line, as the other optimisers are still under investigation and not discussed in the paper.
 
 Read INSTALL for installation instructions!
