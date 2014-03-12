@@ -4,7 +4,7 @@
 rm -rf CMakeFiles/ CMakeCache.txt Makefile cmake_install.cmake fast.unstripped fast
 dos2unix CMakeLists.txt
 
-# Set variables used at compile time, assume Vital-IT installation pathes
+# Set variables used at compile time, assume Vital-IT installation paths
 export PATH=/software/bin${PATH:+:$PATH}
 export BLAS_LIB_DIR="/software/Utility/OpenBLAS/0.2.5/lib"
 export LAPACK_LIB_DIR="/software/Utility/OpenBLAS/0.2.5/include"
