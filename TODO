@@ -1,0 +1,18 @@
+- Unit Tests (a general test suite)
+- More details in INSTALL file
+  to help users!!!
+- Add an option to deal with different genetic code
+  and maybe user own genetic code file
+- Display estimated tree (not only branch lengths) in default
+  output
+- Promote FastCodeML in Bio* packages:
+  BioPerl, BioPython, BioJava, BioRuby
+
+
+Open questions:
+- Test if FastCodeML can avoid leaf computation
+- Test what FastCodeML does with branch around root (pseudoroot)?
+  Does it comput only one of them in rooted tree case?
+- How to force H0 computation if H1 is not significative?
+- dos2unix all files?
+
