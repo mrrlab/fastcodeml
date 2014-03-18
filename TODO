@@ -1,6 +1,8 @@
 - Unit Tests (a general test suite)
 - More details in INSTALL file
   to help users!!!
+- Do a complete FastCodeML run on Primates to compare it
+  large scale with Primate SlimCodeml run
 - Add an option to deal with different genetic code
   and maybe user own genetic code file
 - Display estimated tree (not only branch lengths) in default
