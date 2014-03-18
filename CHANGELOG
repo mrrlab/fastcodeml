@@ -1,6 +1,6 @@
 FastCodeML 1.1.0:
 - Few corrections to accept pipe character also in sequence names
-- New option to fixed branch lenghts (-bl)
+- New option to fixed branch lengths (-bl)
 - New option fo manage easily number of threads (-nt)
 - Codeml optimizer is by default (-m 22)
 - Show branch lengths in default output
