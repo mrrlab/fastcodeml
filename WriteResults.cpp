@@ -57,8 +57,7 @@ void WriteResults::outputResults(void)
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 
             ims = mParamStr[0].find(branch);
-
-			out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
+            out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 
@@ -73,7 +72,7 @@ void WriteResults::outputResults(void)
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 
             ims = mParamStr[1].find(branch);
-            out << std::endl<< std::fixed  <<"Branch lengths:" << ims->second << std::endl;
+            out << std::endl<< std::fixed  <<"Branch lengths:" <<ims->second << std::endl;
 		}
 		out << std::endl;
 	}
