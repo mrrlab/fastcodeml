@@ -376,15 +376,8 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
     if(mFixedBranchLength)
     {
-                // Too long, cut. Too short, ignore. Remember H0 has 4 variables.
-        if(aValidLen > mNumVariables) aValidLen = mNumVariables;
-        else if(aValidLen < 0)
-        {
-            mInitStatus = INIT_NONE;
-            return;
-        }
-        else if(aValidLen < 4) aValidLen = 0;
 
+        aValidLen = mNumVariables;
         // Copy the requested values
         mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+static_cast<size_t>(aValidLen));
         mVar.resize(static_cast<size_t>(mNumVariables));

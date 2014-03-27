@@ -77,33 +77,25 @@ int main(int aRgc, char **aRgv)
 	int num_threads = omp_get_max_threads();
     //std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
-     if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= num_threads))
-        num_threads = cmd.mNumThreads;
-    // std::cout<<"num of thr: "<< num_threads <<std::endl;
-
-     omp_set_num_threads(num_threads);
-    /*if (num_threads < 2)
+    if(num_threads < 2 || cmd.mForceSerial || cmd.mNumThreads == 1)
+    {
         cmd.mForceSerial = true;
-     else
-        cmd.mForceSerial = false;*/
+        num_threads = 1;
+
+    }
+    else if((cmd.mNumThreads >1)&&(cmd.mNumThreads <= num_threads))
+    {
+            num_threads = cmd.mNumThreads;
+    }
+
+    // std::cout<<"num of thr: "<< num_threads <<std::endl;
+     omp_set_num_threads(num_threads);
+
 #else
 	cmd.mNumThreads=1;
 	int num_threads = 1;
 	cmd.mForceSerial = true;
 #endif
-
-/*#ifdef _OPENMP
-	int num_threads = omp_get_max_threads();
-	if(num_threads < 2 || cmd.mForceSerial)
-	{
-		cmd.mForceSerial = true;
-		num_threads = 1;
-		omp_set_num_threads(1);
-	}
-#else
-	cmd.mForceSerial = true;
-	int num_threads = 1;
-#endif*/
 
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
@@ -218,7 +210,7 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Create the forest
-	Forest forest(cmd.mVerboseLevel);
+	Forest forest(cmd.mVerboseLevel/*, cmd.mOnlyInternalBranchFG*/);
 
 	// Enclose file loading into a block so temporary structures could be deleted when no more needed
 	{
@@ -603,6 +595,9 @@ Usage:
 
 -nt  --number-of-threads (required argument)
         Number of threads (1 for non parallel execution)
+
+-np   --no-parallel (no argument)
+        Don't use parallel execution
 
 -bf  --branch-from-file (no argument)
         Do only the branch marked in the file as foreground branch

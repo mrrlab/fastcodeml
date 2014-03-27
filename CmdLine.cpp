@@ -128,7 +128,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_COMP_TIMES,
 		OPT_TRACE,
 		OPT_NUM_THREADS,
-//		OPT_FORCE_SERIAL,
+		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H0_FROM_H1,
@@ -142,7 +142,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_CLEAN_DATA,
 		OPT_NO_PRE_STOP,
 		OPT_MAX_ITER,
-		OPT_BRANCH_LENGTH
+		OPT_BRANCH_LENGTH,
+	//	OPT_FG_BRANCHES
 	};
 
 	// Then the definitions of each command line option
@@ -181,8 +182,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_TRACE,			"--trace",				SO_NONE,	"" },
 		{ OPT_NUM_THREADS,		"-nt",					SO_REQ_SEP,	"Number of threads (1 for non parallel execution)" },
 		{ OPT_NUM_THREADS,		"--number-of-threads",	SO_REQ_SEP,	"" },
-		//{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
-		//{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
+		{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
+		{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
 		{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
 		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
@@ -209,8 +210,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
 		{ OPT_MAX_ITER,			"-mi",					SO_REQ_SEP,	"Maximum number of iterations for the maximizer (default: 10000)" },
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
-        {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the branches is fixed"},
+        {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the brances is fixed"},
 		{OPT_BRANCH_LENGTH,      "--branch-lengths-fixed", SO_NONE,    ""},
+		//{OPT_ALL_BRANCHES,        "-ab",                 SO_NONE,    "Do all the branches as foreground branch (by default it does only the internal branches)"},
+		//{OPT_ALL_BRANCHES,        "--all-branches", SO_NONE,    ""},
 		SO_END_OF_OPTIONS
 	};
 
@@ -313,9 +316,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mTrace = true;
 			break;
 
-/*		case OPT_FORCE_SERIAL:
+		case OPT_FORCE_SERIAL:
 			mForceSerial = true;
-			break;*/
+			break;
 
 		case OPT_BRANCH_FROM_FILE:
 			mBranchFromFile = true;
@@ -378,14 +381,17 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_NUM_THREADS:
             mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
-          /*  if (mNumThreads == 1)
-                mForceSerial = true;*/
+           if (mNumThreads == 1)
+                mForceSerial = true;
             if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
 			break;
 
         case OPT_BRANCH_LENGTH:
             mFixedBranchLength = true;
             mBranchLengthsFromFile = true;
+            break;
+        /*case OPT_ALL_BRANCHES:
+            mAllBranchesFG = true;*/
             break;
 		}
 	}
