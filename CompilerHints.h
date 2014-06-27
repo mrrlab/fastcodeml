@@ -39,6 +39,15 @@
 #define RESTRICT
 //#define PURE
 
+#elif defined(__xlC__)
+#define ALIGN64
+#define RESTRICT
+
+#elif defined(__xlc__)
+#define ALIGN64
+#define RESTRICT
+
+
 #else
 #warning "Unknown compiler detected"
 #define ALIGN64

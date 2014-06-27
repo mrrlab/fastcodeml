@@ -42,6 +42,8 @@ void WriteResults::outputResults(void)
 	}
 
 	// Write the log-likelihood values (if a value is not present, write NA)
+	
+
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
 		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "  LnL0: ";
@@ -55,9 +57,10 @@ void WriteResults::outputResults(void)
 		else
 		{
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
-
-            ims = mParamStr[0].find(branch);
-            out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
+			
+			ims = mParamStr[0].find(branch);
+			// This output does not work on BG/Q.
+                        //out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 

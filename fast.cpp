@@ -50,7 +50,7 @@
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
 ///
-const char* version="1.1.0";
+const char* version="1.2.0";
 
 
 int main(int aRgc, char **aRgv)
@@ -77,36 +77,48 @@ int main(int aRgc, char **aRgv)
 	int num_threads = omp_get_max_threads();
     //std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
-    if(num_threads < 2 || cmd.mForceSerial || cmd.mNumThreads == 1)
-    {
-        cmd.mForceSerial = true;
-        num_threads = 1;
-
-    }
-    else if((cmd.mNumThreads >1)&&(cmd.mNumThreads <= num_threads))
-    {
-            num_threads = cmd.mNumThreads;
-    }
-
+     if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= (unsigned int)num_threads))
+        num_threads = cmd.mNumThreads;
     // std::cout<<"num of thr: "<< num_threads <<std::endl;
-     omp_set_num_threads(num_threads);
 
+     omp_set_num_threads(num_threads);
+    /*if (num_threads < 2)
+        cmd.mForceSerial = true;
+     else
+        cmd.mForceSerial = false;*/
 #else
 	cmd.mNumThreads=1;
 	int num_threads = 1;
 	cmd.mForceSerial = true;
 #endif
 
+/*#ifdef _OPENMP
+	int num_threads = omp_get_max_threads();
+	if(num_threads < 2 || cmd.mForceSerial)
+	{
+		cmd.mForceSerial = true;
+		num_threads = 1;
+		omp_set_num_threads(1);
+	}
+#else
+	cmd.mForceSerial = true;
+	int num_threads = 1;
+#endif*/
+
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
-    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+//    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-													std::cout << std::endl;
+	
+		std::cout << "------------------------------------" << std::endl;
+		std::cout << "FastCodeML V"<<version << std::endl;
+		std::cout << "------------------------------------"<<std::endl;
+		std::cout << std::endl;
 													std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
 													std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
 													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
@@ -210,7 +222,7 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
 	// Create the forest
-	Forest forest(cmd.mVerboseLevel/*, cmd.mOnlyInternalBranchFG*/);
+	Forest forest(cmd.mVerboseLevel);
 
 	// Enclose file loading into a block so temporary structures could be deleted when no more needed
 	{
@@ -595,9 +607,6 @@ Usage:
 
 -nt  --number-of-threads (required argument)
         Number of threads (1 for non parallel execution)
-
--np   --no-parallel (no argument)
-        Don't use parallel execution
 
 -bf  --branch-from-file (no argument)
         Do only the branch marked in the file as foreground branch

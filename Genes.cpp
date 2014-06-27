@@ -285,6 +285,8 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 		std::cout << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
 		int multi_codons = static_cast<int>(std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1)));
 		std::cout << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
+                std::cout << std::endl<<"------------------------------------"<<std::endl;
+
 	}
 	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
 	{

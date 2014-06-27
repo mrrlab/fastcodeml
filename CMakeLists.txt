@@ -30,8 +30,8 @@ set(SRCS
 )
 
 
-# Search for Boost version 1.42 minimum
-set(Boost_ADDITIONAL_VERSIONS "1.42" "1.42.0")
+# Search for Boost version 1.55 minimum
+set(Boost_ADDITIONAL_VERSIONS "1.42" "1.42.0" "1.55")
 find_package(Boost 1.42)
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})

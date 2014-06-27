@@ -29,11 +29,16 @@
 
 #ifdef _BGQ_COMPILER
 #define dsyevr_ dsyevr
+#define ddot_ ddot
+#define dnrm2_ dnrm2
+#define dscal_ dscal
+#define dsyrk_ dsyrk
+#define dsymv_ dsymv
 #endif
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" { 
 #endif
 
 /// DSYRK  performs one of the symmetric rank k operations
@@ -292,15 +297,15 @@ double ddot_(const int *n,
 
 
 /// Computes the Euclidean norm of a vector.
-///
+/// 
 /// DNRM2 computes the Euclidean (L2) norm of a double precision real vector
 ///
 /// @param[in]      n  Number of elements in the operand vector.
 /// @param[in]      dx  Array of dimension (n-1) * |incx| + 1. Array x contains the operand vector.
 /// @param[in]      incx  Increment between elements of x.
-///
+/// 
 /// @return Resulting Euclidean norm.
-///
+/// 
 double dnrm2_(const int *n,
 				const double *dx,
 				const int *incx);

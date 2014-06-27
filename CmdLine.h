@@ -23,6 +23,8 @@ static const unsigned int MAX_ITERATIONS=10000;
 ///
 class CmdLine
 {
+
+
 public:
 	/// Constructor.
 	///
@@ -60,9 +62,10 @@ public:
 		mInitFromParams(false),
 		mCleanData(false),
 		mStopIfNotLRT(true),
-		mCmdLineImpl(NULL),
-        mFixedBranchLength(false)//,
-     //   mAllBranchesFG(false)
+//		mCmdLineImpl(NULL),
+        	mFixedBranchLength(false),
+                mCmdLineImpl(NULL)
+
 	{}
 
 	/// Destructor.
@@ -78,6 +81,8 @@ public:
 	/// @exception FastCodeMLSuccess After showing help to exit the application
 	///
 	void parseCmdLine(int aCnt, char **aVal);
+
+
 
 
 public:
@@ -101,15 +106,16 @@ public:
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
+        unsigned int    	mNumThreads;                    ///< Number of threads (if 1 the parallelization is disabled)
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
-	unsigned int	mNumThreads;			///< Number of threads (if 1 the parallelization is disabled)
-    bool           mFixedBranchLength;     ///<Fixed branch lengths
-   // bool           mAllBranchesFG;  ///<Only internal branches as FG barnches
+    	bool          		 mFixedBranchLength;           ///<fixed branch lengths
+
+
 
 private:
 	struct CmdLineImpl;

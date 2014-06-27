@@ -74,10 +74,12 @@ protected:
 		  mMaxIterations(aMaxIterations),
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
-		  mSeed(aSeed),
-		  mRelativeError(aRelativeError),
+//		  mSeed(aSeed),
+//		  mRelativeError(aRelativeError),
 		  mFixedBranchLength(aFixedBranchLength),
-		  mBranches(aNumBranches)
+		  mBranches(aNumBranches),
+                  mSeed(aSeed),
+                  mRelativeError(aRelativeError)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}

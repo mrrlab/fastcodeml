@@ -285,7 +285,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >= num_branches)
 	{
 		// Invalid start value, ignoring, do all branches
-		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl;
+		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
 		aBranchStart = 0;
 		aBranchEnd   = num_branches-1;
 	}
@@ -302,7 +302,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 		aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
 		if(aCmdLine.mBranchEnd >= num_branches)
 		{
-			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid end branch requested. Ignoring" << std::endl;
+			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid end branch requested. Ignoring" << std::endl; 
 			aBranchEnd = num_branches-1;
 			if(aBranchStart > 0) do_all = false;
 		}
@@ -622,7 +622,7 @@ void Forest::addAggressiveReduction(ForestNode* aNode)
 
 
 #ifdef NON_RECURSIVE_VISIT
-
+	
 void Forest::prepareNonRecursiveVisit(void)
 {
 	// Clean the list for non-recursive visit to the trees. Clear also the list of respective parents
@@ -673,7 +673,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 	// Store the nodes in the visit order except the root that should not be visited
 	// Store also the respective parent node
 	if(aParentNode)
-	{
+	{	
 		aVisitList.push_back(aNode);
 		aParentList.push_back(aParentNode);
 	}

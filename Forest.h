@@ -36,10 +36,9 @@ public:
 	///
 	/// @param[in] aVerbose The verbosity level
 	///
-	explicit Forest(unsigned int aVerbose=0/*,
-                    bool aOnlyInternalBranchFG=false*/)
+	explicit Forest(unsigned int aVerbose=0)
 							: mNumSites(0), mCodonFreq(NULL), mInvCodonFreq(NULL), mInv2CodonFreq(NULL),
-							  mNumBranches(0), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX), mVerbose(aVerbose)/*, mOnlyInternalBranchFG(aOnlyInternalBranchFG)*/ {}
+							  mNumBranches(0), mNumInternalBranches(0), mMarkedInternalBranch(UINT_MAX), mVerbose(aVerbose) {}
 
 	/// Destructor
 	///
@@ -371,11 +370,6 @@ private:
 #endif
 	unsigned int					mVerbose;					///< If greater than zero prints more info
 	std::multimap<size_t, size_t>	mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
-
-
-/*protected:
-    bool        mAllBranchesFG;     ///< Only internal branches to be processed*/
-
 };
 
 #endif
