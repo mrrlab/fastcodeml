@@ -2,8 +2,8 @@
 #include <iostream>
 #include <climits>
 #include <vector>
+#include <dirent.h>
 #include "CmdLine.h"
-#include "simpleopt/SimpleOpt.h"
 #include "Exceptions.h"
 #include "ParseParameters.h"
 
@@ -128,7 +128,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_COMP_TIMES,
 		OPT_TRACE,
 		OPT_NUM_THREADS,
-//		OPT_FORCE_SERIAL,
 		OPT_BRANCH_FROM_FILE,
 		OPT_ONE_HYP_ONLY,
 		OPT_INIT_H0_FROM_H1,
@@ -142,7 +141,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_CLEAN_DATA,
 		OPT_NO_PRE_STOP,
 		OPT_MAX_ITER,
-		OPT_BRANCH_LENGTH
+		OPT_BRANCH_LENGTH,
+		OPT_MULTIPLE_MODE,
 	};
 
 	// Then the definitions of each command line option
@@ -166,7 +166,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_BRANCH_END,		"--branch-end",			SO_REQ_SEP, "" },
 		{ OPT_IGNORE_FREQ,		"-i",					SO_NONE,	"Ignore computed codon frequency and set all of them to 1/61" },
 		{ OPT_IGNORE_FREQ,		"--ignore-freq",		SO_NONE,	"" },
-		{ OPT_EXPORT,			"-e",					SO_REQ_SEP,	"Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)" },
+		{ OPT_EXPORT,			"-e",					SO_REQ_SEP,	"Export forest in GML format (if %03d or @03d is present, one is created for each fg branch). Switch is NOT honoured if -mult is specified." },
 		{ OPT_EXPORT,			"--export",				SO_REQ_SEP,	"" },
 		{ OPT_NOT_REDUCE,		"-nr",					SO_NONE,	"Do not reduce forest by merging common subtrees" },
 		{ OPT_NOT_REDUCE,		"--no-reduce",			SO_NONE,	"" },
@@ -181,9 +181,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_TRACE,			"--trace",				SO_NONE,	"" },
 		{ OPT_NUM_THREADS,		"-nt",					SO_REQ_SEP,	"Number of threads (1 for non parallel execution)" },
 		{ OPT_NUM_THREADS,		"--number-of-threads",	SO_REQ_SEP,	"" },
-		//{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
-		//{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
-		{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
+        { OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
 		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
@@ -211,11 +209,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
         {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the brances is fixed"},
 		{OPT_BRANCH_LENGTH,      "--branch-lengths-fixed", SO_NONE,    ""},
-		SO_END_OF_OPTIONS
+        {OPT_MULTIPLE_MODE,      "-mult",                 SO_NONE,    "Runs on directories of tree (.nwk) & alignment files (.phy) (paired by tree)"},
+		{OPT_MULTIPLE_MODE,      "--multiple-file-pair", SO_NONE,    ""},
+        SO_END_OF_OPTIONS
 	};
 
 	// Setup the usage string
-	const char* usage_msg = "FastCodeML [options] tree_file alignment_file";
+	const char* usage_msg = "FastCodeML [options] tree_file alignment_file OR FastCodeML [options] -mult tree_directory alignment_directory";
 
     // Declare our options parser, pass in the arguments from main as well as our array of valid options.
     CSimpleOpt args(aCnt, aVal, parser_options, SO_O_NOSLASH);
@@ -313,10 +313,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mTrace = true;
 			break;
 
-/*		case OPT_FORCE_SERIAL:
-			mForceSerial = true;
-			break;*/
-
 		case OPT_BRANCH_FROM_FILE:
 			mBranchFromFile = true;
 			break;
@@ -378,8 +374,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		case OPT_NUM_THREADS:
             mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
-          /*  if (mNumThreads == 1)
-                mForceSerial = true;*/
             if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
 			break;
 
@@ -387,30 +381,46 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
             mFixedBranchLength = true;
             mBranchLengthsFromFile = true;
             break;
+
+       case OPT_MULTIPLE_MODE:
+            mMultipleMode = true;
+            break;
+            break;
 		}
 	}
 
-	// Parse the file arguments
-	switch(args.FileCount())
-	{
-	case 0:
-		std::cout << "Missing NEWICK TREE file" << std::endl;
-		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
-		// Falltrough
 
-	case 1:
-		std::cout << "Missing PHYLIP CODON ALIGNMENT file" << std::endl << std::endl;
-		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
-		std::cout << "Usage:" << std::endl;
-		std::cout << "    " << usage_msg << std::endl << std::endl;
-		mCmdLineImpl->showHelp(parser_options);
-		throw FastCodeMLFatal();
+    // Parse the file arguments
+    switch(args.FileCount())
+    {
+    case 0:
+        std::cout << "Missing NEWICK TREE file/directory" << std::endl;
+        std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+        // Falltrough
 
-	default:
-		mTreeFile = args.File(0);
-		mGeneFile = args.File(1);
-		break;
-	}
+    case 1:
+        std::cout << "Missing PHYLIP CODON ALIGNMENT file/directory" << std::endl << std::endl;
+        std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+        std::cout << "Usage:" << std::endl;
+        std::cout << "    " << usage_msg << std::endl << std::endl;
+        mCmdLineImpl->showHelp(parser_options);
+        throw FastCodeMLFatal();
+
+    default:
+        {
+            if (mMultipleMode == false)
+            {
+                mTreeFiles.push_back(args.File(0));
+                mGeneFiles.push_back(args.File(1));
+            }
+            else
+            {
+                // Set in the tree / gene file pairs from the directories.
+                setTreeGeneFilePairs(args);
+            }
+        }
+        break;
+    }
 
 	// Some final checks and settings
 	if(!mGraphFile) mExportComputedTimes = UINT_MAX;
@@ -420,4 +430,193 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mBranchStart == UINT_MAX && mBranchEnd < UINT_MAX) mBranchStart = 0;
 	if(mBranchStart > mBranchEnd) throw FastCodeMLFatal("Start branch after end branch. Quitting.");
 }
+
+void CmdLine::printCmdLine(const int aNumThreads, const int aNumJobs) const
+{
+        std::cout << std::endl;
+        for(size_t ii = 0; ii < mTreeFiles.size(); ii++)
+        {
+            std::cout << "Tree gene pair No. : " << ii+1 << std::endl;
+            std::cout << "Tree file:      " << mTreeFiles[ii] << std::endl;
+            std::cout << "Gene file:      " << mGeneFiles[ii] << std::endl;
+        }
+        std::cout << "Verbose level:  " << mVerboseLevel << " (" << decodeVerboseLevel(mVerboseLevel) << ')' << std::endl;
+		if(mSeed)								std::cout << "Seed:           " << mSeed << std::endl;
+		if(mBranchFromFile)						std::cout << "Branch:         From tree file" << std::endl;
+		else if(mBranchStart != UINT_MAX && mBranchStart == mBranchEnd)
+                                                std::cout << "Branch:         " << mBranchStart << std::endl;
+		else if(mBranchStart != UINT_MAX && mBranchEnd == UINT_MAX)
+                                                std::cout << "Branches:       " << mBranchStart << "-end" << std::endl;
+		else if(mBranchStart != UINT_MAX && mBranchEnd != UINT_MAX)
+                                                std::cout << "Branches:       " << mBranchStart << '-' << mBranchEnd << std::endl;
+		if(!mStopIfNotLRT)						std::cout << "H0 pre stop:    No" << std::endl;
+		if(mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
+		if(mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
+		else									std::cout << "Reduce forest:  Aggressive" << std::endl;
+		if(mInitH0fromH1)						std::cout << "Starting val.:  From H1" << std::endl;
+		else if(mInitFromParams && mBranchLengthsFromFile)
+                                                std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
+		else if(mInitFromParams)				std::cout << "Starting val.:  Params from const (see below)" << std::endl;
+		else if(mBranchLengthsFromFile)			std::cout << "Starting val.:  Times from tree file" << std::endl;
+		if(mNoMaximization)						std::cout << "Maximization:   No" << std::endl;
+		if(mTrace)								std::cout << "Trace:          On" << std::endl;
+		if(mCleanData)							std::cout << "Clean data:     On" << std::endl;
+		else									std::cout << "Clean data:     Off" << std::endl;
+		if(mGraphFile)							std::cout << "Graph file:     " << mGraphFile << std::endl;
+		if(mGraphFile && mExportComputedTimes != UINT_MAX)
+                                                std::cout << "Graph times:    From H" << mExportComputedTimes << std::endl;
+		if(!mNoMaximization)					std::cout << "Optimizer:      " << mOptimizationAlgo << std::endl;
+		if(mMaxIterations != MAX_ITERATIONS)	std::cout << "Max iterations: " << mMaxIterations << std::endl;
+		if(mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << mDeltaValueForGradient << std::endl;
+                                                std::cout << "Relative error: " << mRelativeError << std::endl;
+		if(mResultsFile)						std::cout << "Results file:   " << mResultsFile << std::endl;
+        if(mNumThreads)                         std::cout << "Number of threads: " << mNumThreads << std::endl;
+        if(mFixedBranchLength)                        std::cerr << "Branch lengths are fixed" << std::endl;
+#ifdef _OPENMP
+		if(aNumThreads > 1)
+		{
+													std::cout << "Num. threads:   " << aNumThreads << std::endl
+		                                                      << "Num. cores:     " << omp_get_num_procs() << std::endl;
+		}
+		else
+#endif
+		{
+													std::cout << "Num. threads:   1 serial" << std::endl
+		                                                      << "Num. cores:     1"  << std::endl;
+		}
+#ifdef USE_MPI
+		if(aNumJobs > 2)						std::cout << "Num. MPI proc:  1 (master) + " << aNumJobs-1 << " (workers)" << std::endl;
+		else										std::cout << "Num. MPI proc:  Insufficient, single task execution" << std::endl;
+#endif
+													std::cout << "Compiled with:  ";
+#ifdef _OPENMP
+													std::cout << "USE_OPENMP ";
+#endif
+#ifdef USE_MPI
+													std::cout << "USE_MPI ";
+#endif
+#ifdef USE_CPV_SCALING
+													std::cout << "USE_CPV_SCALING ";
+#endif
+#ifdef NEW_LIKELIHOOD
+													std::cout << "NEW_LIKELIHOOD ";
+#endif
+#ifdef NON_RECURSIVE_VISIT
+													std::cout << "NON_RECURSIVE_VISIT ";
+#endif
+#ifdef USE_DAG
+													std::cout << "USE_DAG ";
+#endif
+#ifdef USE_ORIGINAL_PROPORTIONS
+													std::cout << "USE_ORIGINAL_PROPORTIONS ";
+#endif
+#ifdef USE_LAPACK
+													std::cout << "USE_LAPACK ";
+#endif
+#ifdef USE_MKL_VML
+													std::cout << "USE_MKL_VML";
+#endif
+													std::cout << std::endl << std::endl;
+													if(mInitFromParams)
+													{
+														std::cout << "Param initial values:" << std::endl << std::endl
+																  << ParseParameters::getInstance();
+													}
+}
+
+void
+CmdLine::setTreeGeneFilePairs(const CSimpleOpt &aArgs)
+{
+    std::vector<std::string> newickFiles;
+    std::vector<std::string> geneFiles;
+
+    // Parse the file arguments
+    if(getFilesInDir(aArgs.File(0), std::string(".nwk"), newickFiles))
+    {
+        throw FastCodeMLFatal("Could not open NEWICK directory");
+    }
+    if (getFilesInDir(aArgs.File(1), std::string(".phy"), geneFiles))
+    {
+        throw FastCodeMLFatal("Could not open ALIGNMENT directory");
+    }
+
+    if (newickFiles.size() == 0 || geneFiles.size() == 0)
+    {
+        throw FastCodeMLFatal("0 tree or alignment files in one or more directories.");
+    }
+
+    std::vector<std::string> genesFilesPaired;
+    for (int ii = 0; ii < newickFiles.size(); ii++)
+    {
+        if (!pairGeneFile(newickFiles[ii], geneFiles, genesFilesPaired))
+        {
+            std::ostringstream ss;
+            ss << "No gene file for Newick tree file: " <<
+                newickFiles[ii] << std::endl;
+            throw FastCodeMLFatal(ss);
+        }
+    }
+
+    mTreeFiles.clear();
+    mGeneFiles.clear();
+
+    for (size_t ii = 0; ii < newickFiles.size(); ii++)
+    {
+        std::ostringstream fullNameNewick, fullNameGene;
+        fullNameNewick << aArgs.File(0) << newickFiles[ii];
+        fullNameGene   << aArgs.File(1) << genesFilesPaired[ii];
+
+        mTreeFiles.push_back(fullNameNewick.str());
+        mGeneFiles.push_back(fullNameGene.str());
+    }
+}
+
+bool
+CmdLine::getFilesInDir(
+    const std::string &aDir,
+    const std::string &aExtension,
+    std::vector<std::string> &aNames)
+{
+    aNames.clear();
+
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (aDir.c_str())) != NULL) {
+      // Print all the files and directories within directory
+      while ((ent = readdir (dir)) != NULL) {
+        std::string name = std::string(ent->d_name);
+        if (name.find(aExtension) != std::string::npos) {
+            aNames.push_back(name);
+        }
+      }
+      closedir (dir);
+    } else {
+      // Could not open directory
+      perror ("");
+      return true;
+    }
+    return false;
+}
+
+bool
+CmdLine::pairGeneFile(
+    const std::string &aNewickFile,
+    const std::vector<std::string> &aGenes,
+    std::vector<std::string> &aGenesFilesPaired)
+{
+    std::string newickBase = aNewickFile.substr(0, aNewickFile.length() - 4);
+
+    for (size_t ii = 0; ii < aGenes.size(); ii++)
+    {
+        std::string geneBase = aGenes[ii].substr(0, aGenes[ii].length() - 4);
+        if (newickBase == geneBase)
+        {
+            aGenesFilesPaired.push_back(aGenes[ii]);
+            return(true);
+        }
+    }
+
+    return(false);
+}
+
 

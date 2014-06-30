@@ -37,12 +37,12 @@ public:
 
 	/// Starts the high level parallelization of the FastCodeML application
 	///
-	/// @param[in,out] aForest The filled forest
+	/// @param[in,out] aForests The filled forests
 	/// @param[in] aCmdLine The parameters from the command line of the main program
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
-	bool startWork(Forest& aForest, const CmdLine& aCmdLine);
+	bool startWork(std::vector<Forest*> aForests, const CmdLine& aCmdLine);
 
 	/// Is this process the master one?
 	///
@@ -65,12 +65,11 @@ public:
 private:
 	/// The master coordination job
 	///
-	/// @param[in] aOutputResults To collect and output results to a results file
 	/// @param[in] aCmdLine The parameters from the command line of the main program
 	///
 	/// @exception FastCodeMLFatal Invalid job request found
 	///
-	void doMaster(WriteResults& aOutputResults, const CmdLine& aCmdLine);
+	void doMaster(const CmdLine& aCmdLine);
 
 	/// The worker high level loop
 	///
@@ -81,13 +80,69 @@ private:
 
 
 private:
-	unsigned int		mVerbose;				///< The verbose level
-	int					mRank;					///< Rank of the current process (Master has rank == MASTER_JOB)
-	int					mSize;					///< Number of MPI processes
-	size_t				mNumInternalBranches;	///< Number of internal branches (i.e.\ the ones that can be foreground branch)
+	unsigned int		    mVerbose;				///< The verbose level
+	int					    mRank;					///< Rank of the current process (Master has rank == MASTER_JOB)
+	int					    mSize;					///< Number of MPI processes
 
 	struct WorkTable;
-	WorkTable*			mWorkTable;				///< Management of the work list
+	std::vector<WorkTable*> mWorkTables;            ///< Management of the work list for each forest.
+
+    std::map<int, int>      mWorkerForestIndexMap;  ///< Lookup worker -> forest / worktable
+
+    /// Register forest - adds a work table for master to track this forest.
+	///
+	/// @param[in] aForest  The filled forest
+	/// @param[in] aCmdLine The command line object
+	void registerForest(Forest *aForest, const CmdLine &aCmdLine);
+
+    /// Helper - Worker to forest lookup.
+	///
+	/// @param[in]  aRank
+	/// @return     The index of the forest in aForests as well as the work table that aRank is working on
+	int getForestIndexGivenWorker(int aRank) const;
+
+    /// Initializer - Worker -> forest map.
+	///
+    /// @param[in]     aForests  The forests we are analyzing
+    /// @param[in]     aCmdLine  The command line object
+	void initWorkerForestIndexMap(
+           std::vector<Forest*> aForests,
+           const CmdLine &aCmdLine);
+
+    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
+    /// we have enough processors to treat each branch for H1 separately
+    /// @param[in]     aForests    The forests we are analyzing
+    /// @param[in,out] aCurWorker  current worker count
+    void initWorkerForestIndexMapEnoughProcs(
+           std::vector<Forest*> aForests,
+           size_t *aCurWorker);
+
+    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
+    /// we don't have enough processors to treat each branch for H1 separately
+    /// @param[in]     aNumWorkers number of worker processes (total)
+    /// @param[in]     aForestSize number of forests we are analyzing
+    /// @param[in,out] aCurWorker  current worker count
+    /// @exception FastCodeMLFatal For less processors available than we have tree/gene pairs
+    void initWorkerForestIndexMapTooFewProcs(
+           size_t aNumWorkers,
+           size_t aForestSize,
+           size_t *aCurWorker);
+
+    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
+    /// we have leftover processes to allocate
+    /// @param[in]     aNumWorkers number of worker processes (total)
+    /// @param[in]     aForests    Pointers to the forests we are analyzing
+    /// @param[in,out] aCurWorker  current worker count
+    void initRemainingWorkerForestIndex(
+            size_t aNumWorkers,
+            std::vector<Forest*> aForests,
+            size_t *aCurWorker);
+
+	/// Prints out the results for a given work table
+    ///
+	/// @param[in]  workTable The pointer to the work table to print
+	void printWorkTableResults(WorkTable *aWorkTable) const;
+
 };
 
 

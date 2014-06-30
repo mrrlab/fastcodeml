@@ -4,6 +4,7 @@
 
 #include <climits>
 #include "VerbosityLevels.h"
+#include "simpleopt/SimpleOpt.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -33,8 +34,8 @@ public:
 	CmdLine() :
 		mDeltaValueForGradient(0.0),
 		mRelativeError(1e-3),
-		mTreeFile(NULL),
-		mGeneFile(NULL),
+        mTreeFiles(),
+        mGeneFiles(),
 		mGraphFile(NULL),
 		mResultsFile(NULL),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
@@ -62,10 +63,9 @@ public:
 		mInitFromParams(false),
 		mCleanData(false),
 		mStopIfNotLRT(true),
-//		mCmdLineImpl(NULL),
-        	mFixedBranchLength(false),
-                mCmdLineImpl(NULL)
-
+        mFixedBranchLength(false),
+        mMultipleMode(false),
+		mCmdLineImpl(NULL)
 	{}
 
 	/// Destructor.
@@ -82,15 +82,22 @@ public:
 	///
 	void parseCmdLine(int aCnt, char **aVal);
 
+	/// Print out the command line.
+	///
+    /// @param[in] aNumThreads Number of threads to use in Open MP
+    /// @param[in] aNumJobs    Number of jobs in the hlc object
+	void printCmdLine(const int aNumThreads, const int aNumJobs) const;
 
 
 
 public:
 	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded default value)
 	double			mRelativeError;			///< Relative error to stop maximization
-	const char*		mTreeFile;				///< %Newick tree file name
-	const char*		mGeneFile;				///< %Genes file name
-	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
+    std::vector<
+       std::string> mTreeFiles;            ///<Vector of Newick tree file names>
+    std::vector<
+       std::string> mGeneFiles;            ///<Vector of gene alignment file names - same order as mTreeFiles>
+	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor. Switch not honoured when -mult is specified.
 	const char*		mResultsFile;			///< File to which the results should be written
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
 	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
@@ -106,20 +113,51 @@ public:
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
-        unsigned int    	mNumThreads;                    ///< Number of threads (if 1 the parallelization is disabled)
+    unsigned int    mNumThreads;            ///< Number of threads (if 1 the parallelization is disabled)
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
-    	bool          		 mFixedBranchLength;           ///<fixed branch lengths
+    bool            mFixedBranchLength;     ///<Fixed branch lengths
+    bool            mMultipleMode;          ///<Executes tree/ alignment pairs of files>
 
-
+   // bool           mAllBranchesFG;  ///<Only internal branches as FG barnches
 
 private:
 	struct CmdLineImpl;
 	CmdLineImpl* mCmdLineImpl;				///< Implementation so this structure could be used without other modules be aware of its internals
+
+	/// Sets the tree / gene file pairs.
+	/// Multiple mode principal function.
+	///
+    /// @param[in] aArgs The CSimpleOpt options
+    /// @exception FastCodeMLFatal For non-existent newick / gene directories, or empty directories
+	void setTreeGeneFilePairs(const CSimpleOpt &aArgs);
+
+	/// Gets all the files matching an extension
+	/// Helper function for multiple mode
+	///
+    /// @param[in]  aDir       The directory to read
+    /// @param[in]  aExtension The file extension to get
+    /// @param[in]  aNames     The vector of file names
+	bool getFilesInDir(
+        const std::string &aDir,
+        const std::string &aExtension,
+        std::vector<std::string> &aNames);
+
+	/// Pairs a Newick tree file with an alignment file & adds to paired vector.
+	/// Helper function for multiple mode
+	///
+    /// @param[in]  aNewickFile        The Newick tree file
+    /// @param[in]  aGenes             The genes file
+    /// @param[in]  aGenesFilesPaired  The paired gene files
+    bool pairGeneFile(
+        const std::string &aNewickFile,
+        const std::vector<std::string> &aGenes,
+        std::vector<std::string> &aGenesFilesPaired);
+
 };
 
 #endif

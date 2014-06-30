@@ -265,7 +265,6 @@ public:
 	///
 	void getEffortPerSite(std::vector<unsigned int>& aEfforts, unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const;
 
-
 private:
 	/// Reduce the common subtree between two (sub)trees
 	///
@@ -370,6 +369,26 @@ private:
 #endif
 	unsigned int					mVerbose;					///< If greater than zero prints more info
 	std::multimap<size_t, size_t>	mSitesMappingToOriginal;	///< Map reduced site num. to list of corresponding original sites.
+
+    // Assignment operator is blocked.
+    Forest& operator=(const Forest &other);
+
+    // Blocking copy constructor.
+    Forest(const Forest &other);
+
+/*protected:
+    bool        mAllBranchesFG;     ///< Only internal branches to be processed*/
+
+};
+
+struct SortForests
+{
+	/// Comparison operator for sorting forests by number of internal branches.
+	///
+	/// @return true when a > b i.e. a has more internal branches than b.
+	/// @param[in] a Forest a pointer
+	/// @param[in] b Forest b pointer
+    bool operator() (const Forest *a, const Forest *b) const { return a->getNumInternalBranches() > b->getNumInternalBranches(); }
 };
 
 #endif

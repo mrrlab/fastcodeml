@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <algorithm>
 #ifndef VTRACE
 #ifdef _OPENMP
 #include <omp.h>
@@ -89,6 +90,7 @@ struct HighLevelCoordinator::WorkTable
 	std::vector<int>		mJobStatus;				///< Corresponding step status
 	std::vector<int>		mWorkList;				///< Who is doing this step
 	std::vector<ResultSet>	mResults;				///< Results for each branchh
+    WriteResults            mWriteResults;          ///< WriteResults object to output to a file.
 
 	/// Constructor
 	///
@@ -98,7 +100,7 @@ struct HighLevelCoordinator::WorkTable
 					mNumInternalBranches(aNumInternalBranches),
 					mJobStatus(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
 					mWorkList(aNumInternalBranches*JOBS_PER_BRANCH, JOB_WAITING),
-					mResults(aNumInternalBranches) {}
+					mResults(aNumInternalBranches), mWriteResults() {}
 
 	/// Get the next job to be executed. If no more jobs then set aJob to shutdown and return false
 	///
@@ -142,7 +144,7 @@ struct HighLevelCoordinator::WorkTable
 	/// @param[in] aOut The stream on which the print should be done.
 	///
 	void printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut=std::cout) const;
-	
+
 	/// Mark as job to be skipped branches outside the given range
 	///
 	/// @param[in] aBranchStart The first branch to be processed
@@ -282,7 +284,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 			any_error = true;
 		}
 	}
-	
+
 	if(any_error) {std::cout << std::endl; throw FastCodeMLFatal();}
 }
 
@@ -327,7 +329,7 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 	unsigned int count_per_line = 0;
 	static const std::streamsize VARS_PRECISION = 7;
 	static const std::streamsize VARS_WIDTH     = 11;
-	
+
 	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
@@ -396,7 +398,7 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 }
 
 
-HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(INVALID_RANK), mSize(0), mNumInternalBranches(0), mWorkTable(NULL)
+HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0), mRank(INVALID_RANK), mSize(0), mWorkTables(), mWorkerForestIndexMap(std::map<int,int>())
 {
 #ifdef _OPENMP
 #ifdef VTRACE
@@ -433,72 +435,57 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 	}
 }
 
-
 HighLevelCoordinator::~HighLevelCoordinator()
 {
-	delete mWorkTable;
+    for (size_t ii = 0; ii < mWorkTables.size(); ii++)
+    {
+        if (mWorkTables[ii] != NULL)
+        {
+            delete(mWorkTables[ii]);
+            mWorkTables[ii] = NULL;
+        }
+    }
+    mWorkTables.clear();
 	MPI_Finalize();
 }
 
-bool HighLevelCoordinator::startWork(Forest& aForest, const CmdLine& aCmdLine)
+bool HighLevelCoordinator::startWork(
+     std::vector<Forest*> aForests,
+     const CmdLine& aCmdLine)
 {
 	// You need more than 2 MPI process to take advantage of it. Otherwise run as single process, OpenMP only.
 	if(mSize < 3) return false;
 
+    // Set verbosity level.
+	mVerbose = aCmdLine.mVerboseLevel;
+
+	// Initialize our worker -> forest map.
+	initWorkerForestIndexMap(aForests, aCmdLine);
+
 	// Start the jobs
 	if(mRank == MASTER_JOB)
 	{
-		// Compute the range of branches to mark as foreground
-		size_t branch_start, branch_end;
-		bool do_all = aForest.getBranchRange(aCmdLine, branch_start, branch_end);
-
-		// Initialize structures
-		mVerbose = aCmdLine.mVerboseLevel;
-		mNumInternalBranches = aForest.getNumInternalBranches();
-
-		// Check if the number of worker is ok
-		if(mVerbose >= VERBOSE_INFO_OUTPUT)
-		{
-			// Compute how many MPI processes needed (master + 1 or 2 proc per branch)
-			int nb = static_cast<int>(branch_end - branch_start) + 1;
-			int jobs = (aCmdLine.mComputeHypothesis < 2) ? nb+1 : nb*2+1;
-			int surplus = mSize - jobs;
-
-			// Show if there are too many or too few processes
-			if(surplus > 0)
-				std::cout << "Too many MPI jobs: " << surplus << " of them will not be used." << std::endl;
-			else if(surplus < 0)
-				std::cout << "For top performances " << -surplus << " more MPI jobs needed." << std::endl;
-		}
-
-		// In the master initialize the work table
-		delete mWorkTable;
-		mWorkTable = new WorkTable(mNumInternalBranches);
-
-		// If the range don't cover all the branches, mark the jobs to skip
-		if(!do_all) mWorkTable->skipOutsideRange(branch_start, branch_end);
-
-		// If only one hypothesis requested skip the other (do nothing if both requested)
-		mWorkTable->skipOtherHypothesis(aCmdLine.mComputeHypothesis);
-
-		// Prepare the results file output
-		WriteResults output_results(aCmdLine.mResultsFile);
+	    // Register the forests by building corresponding worktables.
+	    for (size_t ii = 0; ii < aForests.size(); ii++)
+        {
+            registerForest(aForests[ii], aCmdLine);
+        }
 
 		// In the master process initialize the master
-		doMaster(output_results, aCmdLine);
+		doMaster(aCmdLine);
 	}
 	else
 	{
 		// Start a worker
-		doWorker(aForest, aCmdLine);
+		int index = getForestIndexGivenWorker(mRank);
+		doWorker(*(aForests[index]), aCmdLine);
 	}
 
 	// All done
 	return true;
 }
 
-
-void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine& aCmdLine)
+void HighLevelCoordinator::doMaster(const CmdLine& aCmdLine)
 {
 	// Push work to free workers
 	unsigned int num_workers = 0;
@@ -515,6 +502,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 		MPI_Recv(static_cast<void*>(job_request), 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
 		int worker = status.MPI_SOURCE;
 
+		int index            = getForestIndexGivenWorker(worker);
+		WorkTable *workTable = mWorkTables[index];
+
 		// Act on the request (job_request[0] values are from the JobRequestType enum, [1] is the response length)
 		switch(job_request[0])
 		{
@@ -530,21 +520,21 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			MPI_Recv(static_cast<void*>(&results_double[0]), job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 
 			// Mark the step as done (and compute branch and hypothesis)
-			int idx    = mWorkTable->markJobFinished(worker);
+			int idx    = workTable->markJobFinished(worker);
 			int branch = idx / JOBS_PER_BRANCH;
 			int h      = idx % JOBS_PER_BRANCH;
 
 			// Save all results (lnl + all variables)
 			// For H1 there are also the two scale values at the end of variables for BEB computation
 			double lnl = results_double[job_request[1]-1];
-			mWorkTable->mResults[branch].mLnl[h] = lnl;
-			mWorkTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
+			workTable->mResults[branch].mLnl[h] = lnl;
+			workTable->mResults[branch].mHxVariables[h].assign(results_double.begin(), results_double.end()-1);
 
 			// Save for the results file (if has been computed)
-			if(lnl < DBL_MAX) aOutputResults.saveLnL(static_cast<size_t>(branch), lnl, h);
+			if(lnl < DBL_MAX) workTable->mWriteResults.saveLnL(static_cast<size_t>(branch), lnl, h);
 
 			// If request print a work completed message
-			if(mVerbose >= VERBOSE_INFO_OUTPUT) mWorkTable->printFinishedBranch(idx);
+			if(mVerbose >= VERBOSE_INFO_OUTPUT) workTable->printFinishedBranch(idx);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MPI_TRACE)
@@ -567,18 +557,18 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			}
 
 			// Mark the step as done (and compute branch)
-			int idx    = mWorkTable->markJobFinished(worker);
+			int idx    = workTable->markJobFinished(worker);
 			int branch = idx / JOBS_PER_BRANCH;
 
 			// Save all results (positive selection sites and corresponding probability)
-			mWorkTable->mResults[branch].mPositiveSelSites.clear();
-			mWorkTable->mResults[branch].mPositiveSelProbs.clear();
+			workTable->mResults[branch].mPositiveSelSites.clear();
+			workTable->mResults[branch].mPositiveSelProbs.clear();
 			for(int i=0; i < job_request[1]/2; ++i)
 			{
 				int site = results_integer[2*i+0];
-				mWorkTable->mResults[branch].mPositiveSelSites.push_back(site);
+				workTable->mResults[branch].mPositiveSelSites.push_back(site);
 				double prob = static_cast<double>(results_integer[2*i+1])/PROB_SCALING;
-				mWorkTable->mResults[branch].mPositiveSelProbs.push_back(prob);
+				workTable->mResults[branch].mPositiveSelProbs.push_back(prob);
 			}
 
 			// If there are sites under positive selection, save them for the results file
@@ -590,11 +580,11 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 					unsigned int u = static_cast<unsigned int>(results_integer[2*i+0]);
 					sites.push_back(u);
 				}
-				aOutputResults.savePositiveSelSites(static_cast<size_t>(branch), sites, mWorkTable->mResults[branch].mPositiveSelProbs);
+				workTable->mWriteResults.savePositiveSelSites(static_cast<size_t>(branch), sites, workTable->mResults[branch].mPositiveSelProbs);
 			}
 
 			// If request print a work completed message
-			if(mVerbose >= VERBOSE_INFO_OUTPUT) mWorkTable->printFinishedBranch(idx);
+			if(mVerbose >= VERBOSE_INFO_OUTPUT) workTable->printFinishedBranch(idx);
 
 			// Output a status message
 			if(mVerbose >= VERBOSE_MPI_TRACE) std::cout << "BEB num of results: " << job_request[1]/2 << " from worker " << worker << std::endl;
@@ -607,7 +597,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 
 		// Send work packet or shutdown request (job[0] is the step to be done, job[1] is the fg branch, job[2] the length of the additional data)
 		int job[3];
-		mWorkTable->getNextJob(job, worker, aCmdLine.mInitH0fromH1);
+		workTable->getNextJob(job, worker, aCmdLine.mInitH0fromH1);
 		MPI_Send(static_cast<void*>(job), 3, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 
 		// For BEB send the variables from H1; for H0 send the lnl value from corresponding H1
@@ -617,19 +607,19 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			switch(job[0])
 			{
 			case JOB_BEB:
-				v = &(mWorkTable->mResults[job[1]].mHxVariables[1][0]);
+				v = &(workTable->mResults[job[1]].mHxVariables[1][0]);
 				MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
 				break;
 
 			case JOB_H0:
 				if(job[2] == 1)
 				{
-					v = &(mWorkTable->mResults[job[1]].mLnl[1]);
+					v = &(workTable->mResults[job[1]].mLnl[1]);
 				}
 				else
 				{
-					results_double.assign(mWorkTable->mResults[job[1]].mHxVariables[1].begin(), mWorkTable->mResults[job[1]].mHxVariables[1].end());
-					results_double.push_back(mWorkTable->mResults[job[1]].mLnl[1]);
+					results_double.assign(workTable->mResults[job[1]].mHxVariables[1].begin(), workTable->mResults[job[1]].mHxVariables[1].end());
+					results_double.push_back(workTable->mResults[job[1]].mLnl[1]);
 					v = &results_double[0];
 				}
 				MPI_Send(static_cast<void*>(v), job[2], MPI_DOUBLE, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
@@ -669,122 +659,31 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 		}
 	}
 
-	// Verify all jobs have been done
-	mWorkTable->checkAllJobsDone();
+    std::ostringstream results;
+    for (size_t ii = 0; ii < mWorkTables.size(); ii++)
+    {
+        // Work tables are are guaranteed to be ordered as in aCmdLine.mTreeFiles
+        // because they are added in the same order as aForest in init.
+        std::ostringstream name;
+        std::string tree_file(aCmdLine.mTreeFiles[ii]);
+        std::string alignment_file(aCmdLine.mGeneFiles[ii]);
+        name << std::endl
+                << "Tree file :      " <<  tree_file << std::endl
+                << "Alignment file : " << alignment_file << std::endl;
+        if (aCmdLine.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << name.str() << std::endl;
+        printWorkTableResults(mWorkTables[ii]);
 
-	// Save results in the results file for later processing
-	aOutputResults.outputResults();
-
-	// Print likelihoods (and variables)
-	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
-	std::cout << std::endl;
-	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
-	{
-		// Skip branches that were not computed
-		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
-
-		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
-		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity())
-		{
-			std::cout << "  Lnl H0: " << std::setw(24) << "Inf";
-		}
-		else if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
-		{
-			std::cout << "  Lnl H0: " << std::setw(24) << "NA";
-		}
-		else
-		{
-			std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
-		}
-		if(mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
-		{
-			std::cout << "  Lnl H1: " << std::setw(24) << "Inf";
-		}
-		else
-		{
-			std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
-		}
-		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity() || mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
-		{
-			std::cout << "  LRT: " << std::setw(24) << "*Invalid*";
-		}
-		else if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
-			std::cout << "  LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
-		else
-			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		if(mWorkTable->mResults[branch].mLnl[0] != std::numeric_limits<double>::infinity() && mWorkTable->mResults[branch].mLnl[0] != DBL_MAX) mWorkTable->printVariables(branch, 0, std::cout);
-		if(mWorkTable->mResults[branch].mLnl[1] != std::numeric_limits<double>::infinity()) mWorkTable->printVariables(branch, 1, std::cout);
-		std::cout << std::endl;
-	}
-
-	// Check if there are sites under positive selection
-	std::vector<size_t> branch_with_pos_selection;
-	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
-	{
-		// Skip branches that were not computed
-		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
-
-		if(!mWorkTable->mResults[branch].mPositiveSelSites.empty())
-		{
-			branch_with_pos_selection.push_back(branch);
-		}
-	}
-
-	// If there are print the site and corresponding probability
-	if(!branch_with_pos_selection.empty())
-	{
-		std::cout << std::endl << "Positive selection sites" << std::endl;
-		std::vector<size_t>::const_iterator ib(branch_with_pos_selection.begin());
-		std::vector<size_t>::const_iterator end(branch_with_pos_selection.end());
-		for(; ib != end; ++ib)
-		{
-			WorkTable::ResultSet& branch_results = mWorkTable->mResults[*ib];
-
-			// To order the sites
-			std::multimap<size_t, size_t> ordered_map;
-			std::vector<double> probs;
-			size_t current_idx = 0;
-
-			std::cout << "Branch: "   << std::fixed << std::setw(3) << *ib << std::endl;
-			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
-			{
-				// Get probability
-				double prob = branch_results.mPositiveSelProbs[pss];
-
-				// Save site and probability to order output by site
-				ordered_map.insert(std::pair<size_t, size_t>(branch_results.mPositiveSelSites[pss], current_idx));
-				probs.push_back(prob);
-				++current_idx;
-			}
-
-			// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
-			std::multimap<size_t, size_t>::const_iterator im(ordered_map.begin());
-			std::multimap<size_t, size_t>::const_iterator endm(ordered_map.end());
-			for(; im != endm; ++im)
-			{
-				double prob = probs[im->second];
-
-				// Set significance
-				const char* sig;
-				if(prob > TWO_STARS_PROB)     sig = "**";
-				else if(prob > ONE_STAR_PROB) sig = "*";
-				else                          sig = "";
-
-				std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
-			}
-		}
-	}
-}
-
+        results << name.str() << mWorkTables[ii]->mWriteResults.outputResultsToString();
+    }
+    WriteResults::outputResultsToFile(aCmdLine.mResultsFile, results.str());
+} // doMaster
 
 void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 {
 	// Initialize the two hypothesis
 	BranchSiteModelNullHyp h0(aForest, aCmdLine);
 	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
-		
+
 	// Initialize the BEB (no verbose at all)
 	BayesTest beb(aForest, 0, aCmdLine.mDoNotReduceForest);
 
@@ -846,7 +745,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 			// Compute H0
 			double lnl = h0(static_cast<size_t>(job[1]), aCmdLine.mStopIfNotLRT && job[2] > 0, threshold);
-	
+
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);
 			values_double.push_back(lnl);
@@ -913,3 +812,307 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 #endif
 
+
+void HighLevelCoordinator::registerForest(
+    Forest *aForest,
+    const CmdLine &aCmdLine)
+{
+    // Compute the range of branches to mark as foreground
+    size_t branch_start, branch_end;
+    bool do_all = aForest->getBranchRange(aCmdLine, branch_start, branch_end);
+
+    // Initialize structures
+    size_t num_internal_branches = aForest->getNumInternalBranches();
+
+    // Check if the number of worker is ok
+    if(mVerbose >= VERBOSE_INFO_OUTPUT && !aCmdLine.mMultipleMode)
+    {
+        // Compute how many MPI processes needed (master + 1 or 2 proc per branch)
+        int nb = static_cast<int>(branch_end - branch_start) + 1;
+        int jobs = (aCmdLine.mComputeHypothesis < 2) ? nb+1 : nb*2+1;
+        int surplus = mSize - jobs;
+
+        // Show if there are too many or too few processes
+        if(surplus > 0)
+            std::cout << "Too many MPI jobs: " << surplus << " of them will not be used." << std::endl;
+        else if(surplus < 0)
+            std::cout << "For top performances " << -surplus << " more MPI jobs needed." << std::endl;
+    }
+
+    // In the master initialize the work table
+    WorkTable *workTable = new WorkTable(num_internal_branches);
+
+    // If the range don't cover all the branches, mark the jobs to skip
+    if(!do_all) workTable->skipOutsideRange(branch_start, branch_end);
+
+    // If only one hypothesis requested skip the other (do nothing if both requested)
+    workTable->skipOtherHypothesis(aCmdLine.mComputeHypothesis);
+
+    //Add the work table to our list of work tables (1:1 with vector of forests, above).
+    mWorkTables.push_back(workTable);
+} // registerForest
+
+
+void
+HighLevelCoordinator::initWorkerForestIndexMap(
+   std::vector<Forest*> aForests,
+   const CmdLine &aCmdLine)
+{
+    size_t num_workers             = mSize - 1; // we know mSize >= 3.
+    size_t total_internal_branches = 0;
+
+    for (size_t ii = 0; ii < aForests.size(); ii++)
+    {
+        total_internal_branches += aForests[ii]->getNumInternalBranches();
+    }
+
+    // If we are just treating one forest, all workers are allocated to this forest.
+    // Allocate workers to the map, the mapping is worker -> forest so start from 1.
+    if (!aCmdLine.mMultipleMode)
+    {
+        for (int ii = 1; ii <= num_workers; ii++)
+        {
+            mWorkerForestIndexMap[ii] = 0;
+        }
+        return; // done here.
+    }
+
+    if (mVerbose >= VERBOSE_INFO_OUTPUT)
+    {
+        std::cout << "Need " << total_internal_branches << " workers. " <<
+          " Have " << num_workers << " workers." << std::endl;
+    }
+
+    size_t cur_worker = 0;
+
+    // Do we have enough processes to be able to treat each forest "optimally"?
+    if (total_internal_branches <= num_workers)
+    {
+        initWorkerForestIndexMapEnoughProcs(aForests, &cur_worker);
+    }
+    else
+    {
+        // We don't have enough processes.
+        initWorkerForestIndexMapTooFewProcs(num_workers, aForests.size(), &cur_worker);
+    }
+
+    if (cur_worker == num_workers) return;
+
+    if (mVerbose >= VERBOSE_INFO_OUTPUT)
+    {
+        std::cout << "Allocating " << (int)num_workers - (int)cur_worker << " more workers."
+            << std::endl;
+    }
+    // Allocate the remaining workers to forests.
+    cur_worker+=1;
+
+    initRemainingWorkerForestIndex(num_workers, aForests, &cur_worker);
+} // initWorkerForestIndexMap
+
+void
+HighLevelCoordinator::initWorkerForestIndexMapEnoughProcs(
+       std::vector<Forest*> aForests,
+       size_t *aCurWorker)
+{
+    // Allocate num workers proportial to num internal branches, for each forest.
+    for (size_t ii = 0; ii < aForests.size(); ii++)
+    {
+        Forest *cur_forest = aForests[ii];
+        for (size_t jj = 0; jj < cur_forest->getNumInternalBranches(); jj++)
+        {
+            // Increment allocated workers by 1.
+            *aCurWorker += 1;
+            mWorkerForestIndexMap[*aCurWorker]=ii;
+        }
+    }
+}
+
+void
+HighLevelCoordinator::initWorkerForestIndexMapTooFewProcs(
+           size_t aNumWorkers,
+           size_t aForestSize,
+           size_t *aCurWorker)
+{
+    // Warn, then allocate floor(aNumWorkers/aForests.size()) processes per forest.
+    // If the latter is = 0, halt.
+    size_t worker_per_forest = (size_t) (floor((double)aNumWorkers / aForestSize));
+    if (worker_per_forest == 0)
+    {
+        throw FastCodeMLFatal("Not enough MPI processes to analyze tree/gene pairs. Halting.");
+    }
+    if (mVerbose >= VERBOSE_INFO_OUTPUT)
+    {
+        std::cout << "WARNING: Insufficient number of MPI processes, "
+          << "allocating equal number to each forest." <<std::endl;
+    }
+
+    for (size_t ii = 0; ii < aForestSize; ii++)
+    {
+        for (size_t jj = 0; jj < worker_per_forest; jj++)
+        {
+            // Increment allocated workers by 1.
+            *aCurWorker += 1;
+            mWorkerForestIndexMap[*aCurWorker]=ii;
+        }
+    }
+} // initWorkerForestIndexMapTooFewProcs
+
+void
+HighLevelCoordinator::initRemainingWorkerForestIndex(
+    size_t aNumWorkers,
+    std::vector<Forest*> aForests,
+    size_t *aCurWorker)
+{
+    std::sort(aForests.begin(), aForests.end(), SortForests());
+
+    if (mVerbose >= VERBOSE_INFO_OUTPUT)
+    {
+        std::cout << "Forest priority for more workers: " << std::endl;
+        for (size_t ii = 0 ; ii < aForests.size(); ii++){
+            std::cout << "Forest ii: " << ii << " - branches - " << aForests[ii]->getNumInternalBranches() << std::endl;
+        }
+    }
+
+    while(*aCurWorker <= aNumWorkers)
+    {
+        for (int ii = 0; ii < aForests.size(); ii++)
+        {
+            mWorkerForestIndexMap[*aCurWorker]=ii;
+            *aCurWorker+=1;
+            if (*aCurWorker > aNumWorkers)
+            {
+                break;
+            }
+        }
+    }
+}
+
+int
+HighLevelCoordinator::getForestIndexGivenWorker(
+   int aRank) const
+{
+    std::map<int, int>::const_iterator cit = mWorkerForestIndexMap.find(aRank);
+
+    const int NO_FOREST_INDEX = -1;
+    int f = NO_FOREST_INDEX;
+    if(cit != mWorkerForestIndexMap.end())
+    {
+        f = cit->second;
+    }
+    if (f==NO_FOREST_INDEX)
+    {
+        throw FastCodeMLFatal("No forest allocated to worker");
+    }
+    return(f);
+}
+
+
+void
+HighLevelCoordinator::printWorkTableResults(
+    WorkTable *aWorkTable) const
+{
+	// Verify all jobs have been done
+	aWorkTable->checkAllJobsDone();
+
+	// Print likelihoods (and variables)
+	if(mVerbose < VERBOSE_ONLY_RESULTS) return;
+	std::cout << std::endl;
+	for(size_t branch=0; branch < aWorkTable->mNumInternalBranches; ++branch)
+	{
+		// Skip branches that were not computed
+		if(aWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
+
+		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
+		if(aWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  Lnl H0: " << std::setw(24) << "Inf";
+		}
+		else if(aWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
+		{
+			std::cout << "  Lnl H0: " << std::setw(24) << "NA";
+		}
+		else
+		{
+			std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15) << aWorkTable->mResults[branch].mLnl[0];
+		}
+		if(aWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  Lnl H1: " << std::setw(24) << "Inf";
+		}
+		else
+		{
+			std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << aWorkTable->mResults[branch].mLnl[1];
+		}
+		if(aWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity() || aWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
+		{
+			std::cout << "  LRT: " << std::setw(24) << "*Invalid*";
+		}
+		else if(aWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
+			std::cout << "  LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << aWorkTable->mResults[branch].mLnl[1] - aWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+		else
+			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		if(aWorkTable->mResults[branch].mLnl[0] != std::numeric_limits<double>::infinity() && aWorkTable->mResults[branch].mLnl[0] != DBL_MAX) aWorkTable->printVariables(branch, 0, std::cout);
+		if(aWorkTable->mResults[branch].mLnl[1] != std::numeric_limits<double>::infinity()) aWorkTable->printVariables(branch, 1, std::cout);
+		std::cout << std::endl;
+	}
+
+	// Check if there are sites under positive selection
+	std::vector<size_t> branch_with_pos_selection;
+	for(size_t branch=0; branch < aWorkTable->mNumInternalBranches; ++branch)
+	{
+		// Skip branches that were not computed
+		if(aWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
+
+		if(!aWorkTable->mResults[branch].mPositiveSelSites.empty())
+		{
+			branch_with_pos_selection.push_back(branch);
+		}
+	}
+
+	// If there are print the site and corresponding probability
+	if(!branch_with_pos_selection.empty())
+	{
+		std::cout << std::endl << "Positive selection sites" << std::endl;
+		std::vector<size_t>::const_iterator ib(branch_with_pos_selection.begin());
+		std::vector<size_t>::const_iterator end(branch_with_pos_selection.end());
+		for(; ib != end; ++ib)
+		{
+			WorkTable::ResultSet& branch_results = aWorkTable->mResults[*ib];
+
+			// To order the sites
+			std::multimap<size_t, size_t> ordered_map;
+			std::vector<double> probs;
+			size_t current_idx = 0;
+
+			std::cout << "Branch: "   << std::fixed << std::setw(3) << *ib << std::endl;
+			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
+			{
+				// Get probability
+				double prob = branch_results.mPositiveSelProbs[pss];
+
+				// Save site and probability to order output by site
+				ordered_map.insert(std::pair<size_t, size_t>(branch_results.mPositiveSelSites[pss], current_idx));
+				probs.push_back(prob);
+				++current_idx;
+			}
+
+			// Print site number and probability after mapping the site number to the original value (and changing numbering so it starts from 1 and not zero)
+			std::multimap<size_t, size_t>::const_iterator im(ordered_map.begin());
+			std::multimap<size_t, size_t>::const_iterator endm(ordered_map.end());
+			for(; im != endm; ++im)
+			{
+				double prob = probs[im->second];
+
+				// Set significance
+				const char* sig;
+				if(prob > TWO_STARS_PROB)     sig = "**";
+				else if(prob > ONE_STAR_PROB) sig = "*";
+				else                          sig = "";
+
+				std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
+			}
+		}
+	}
+} //printWorkTableResults

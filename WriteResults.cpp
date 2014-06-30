@@ -3,13 +3,44 @@
 #include <iomanip>
 #include <fstream>
 #include <limits>
+#include <sstream>
 #include "WriteResults.h"
 #include <string>
 
-void WriteResults::outputResults(void)
+void
+WriteResults::outputResultsToFile(
+    const char *aFileName,
+    const std::string &aResults)
 {
 	// If no file set, then do nothing
-	if(!mFilename) return;
+	if(aFileName==0) return;
+
+    if (aResults.length() == 0) return;
+
+	// Open the output file
+	// Open the output file
+	std::ofstream f_out(aFileName, std::ios_base::trunc | std::ios_base::out);
+	if(!f_out.good())
+	{
+		std::cout << "Cannot create results file <" << aFileName << ">" << std::endl;
+		return;
+	}
+
+	f_out << aResults;
+
+	f_out.close();
+}
+
+void WriteResults::outputResults(void)
+{
+	std::string results = outputResultsToString();
+    WriteResults::outputResultsToFile(mFilename, results);
+}
+
+std::string
+WriteResults::outputResultsToString() const
+{
+	std::ostringstream out;
 
 	// Range of branches to be output (for H0 and H1)
 	std::map<size_t, double>::const_iterator im;
@@ -31,19 +62,9 @@ void WriteResults::outputResults(void)
 	}
 
 	// No entries, so do nothing
-	if(min_branch == std::numeric_limits<size_t>::max()) return;
-
-	// Open the output file
-	std::ofstream out(mFilename, std::ios_base::trunc | std::ios_base::out);
-	if(!out.good())
-	{
-		std::cout << "Cannot create results file <" << mFilename << ">" << std::endl;
-		return;
-	}
+	if(min_branch == std::numeric_limits<size_t>::max()) return std::string();
 
 	// Write the log-likelihood values (if a value is not present, write NA)
-	
-
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
 		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "  LnL0: ";
@@ -57,10 +78,11 @@ void WriteResults::outputResults(void)
 		else
 		{
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
-			
-			ims = mParamStr[0].find(branch);
-			// This output does not work on BG/Q.
-                        //out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
+
+            ims = mParamStr[0].find(branch);
+
+            if (ims != mParamStr[0].end())
+			out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 
@@ -75,7 +97,9 @@ void WriteResults::outputResults(void)
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 
             ims = mParamStr[1].find(branch);
-            out << std::endl<< std::fixed  <<"Branch lengths:" <<ims->second << std::endl;
+
+            if (ims != mParamStr[1].end())
+            out << std::endl<< std::fixed  <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << std::endl;
 	}
@@ -102,8 +126,9 @@ void WriteResults::outputResults(void)
 		}
 	}
 
-	out.close();
-}
+	std::string results(out.str());
+	return (results);
+} //outputResultsToString
 
 const std::vector<size_t>& WriteResults::orderSites(const std::vector<unsigned int>& aSites) const
 {
@@ -123,9 +148,6 @@ const std::vector<size_t>& WriteResults::orderSites(const std::vector<unsigned i
 
 void WriteResults::saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothesis)
 {
-	// If no file set, then do nothing
-	if(!mFilename) return;
-
 	// Sanity check
 	if(aHypothesis > 1) return;
 
@@ -135,18 +157,12 @@ void WriteResults::saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothes
 
 void WriteResults::savePositiveSelSites(size_t aFgBranch, const std::vector<unsigned int>& aPositiveSelSites, const std::vector<double>& aPositiveSelSitesProb)
 {
-	// If no file set, then do nothing
-	if(!mFilename) return;
-
 	// Save the positive selection sites and corresponding probabilities for later printing
 	mPositiveSelSites[aFgBranch] = std::make_pair(aPositiveSelSites, aPositiveSelSitesProb);
 }
 
 void WriteResults::saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis)
 {
-	// If no file set, then do nothing
-	if(!mFilename) return;
-
 	// Sanity check
 	if(aHypothesis > 1) return;
 

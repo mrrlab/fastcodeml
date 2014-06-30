@@ -1,3 +1,33 @@
+FastCodeML 1.2.1: 
+(Major) Added functionality to support arbitrary number of pairs of input file pairs with -mult command line switch. Tree files drive the pairing. The advantage here is that we can treat multiple file pairs in parallel rather than bash looping in sequential over all files. Type ./fast -h for details.
+(Minor) Code cleanup, mostly in main, to make more clear its flow and streamline -mult implementation.
+--DETAIL
+-CMakeLists.txt
+	> Added ForestGroup.cpp to compile list
+-CmdLine.cpp / h
+	> Added OPT_MULTIPLE_MODE for run time switch to handline multiple files
+	> Added logic to pull in tree / alignment file pairs.
+	> Added print to std::cout for the command line object
+-Forest.h
+	> Blocked operator= / copy ctor, added functor for sorting forests
+-HighLevelCoordinator.cpp
+	> Added dependency on <algorithm>
+	> Added WriteResults member to WorkTable (this allows us to store results from multiple forests at MPI run time, note the redudancy with the ResultSet object.
+	> Adjusted dtor to remove vector of work tables rather than work table member
+	> Adjusted startWork, doMaster, doWorker to be able to handle multiple forests. 
+	> Cleaned up std::cout by collapsing portion after doMaster main functionality to new function
+	> New member mForestIndexGivenWorker allows us to map between a worker rank and the forest / work table associated with them (requires sveral init functions to set this up). Remaining workers are allocated to the trees with the most number of internal branches.
+	> doMaster : replaced references to mWorkTable with workTable[ii] i.e. work table that the current worker is working on.
+PhyloTree.cpp
+	> Cleaned up console spam by checking mVerbose level
+WriteResults.cpp
+	> Adjusted class to be able to be instantiated without a filename, and still store/retrieve the result sets. Note the redudancy with ResultSet in HighLevelCoordinator.cpp
+	> Fixed bug that caused segfault when outputing results in MPI mode
+fast.cpp
+	> Cleaned up main by moving ~100 line std::cout to CmdLine.cpp.
+	> Adjusted behaviour of single threaded mode to only treat the first of the multiple files indicated, if it gets there and it-s not in MPI mode.
+ForestGroup.cpp /h
+	> New class to encapsulte a group of forests (pairs of input files) and actions on them. This object owns all the pointers in it. It exports non-const pointers to internals but since all dependencies don't implement copy ctor / operator= this is not fixable in the time available. Moved solution of forest in main to be managed by ForestGroup.
 FastCodeML 1.2.0:
 - (Major) BG/Q compatibility (detail below)
 - (Minor) Removal of -np option (now controlled by -nt), cleanup of std::cout in main.

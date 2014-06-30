@@ -27,6 +27,7 @@ set(SRCS
 	DAGScheduler.cpp
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
+	ForestGroup.cpp
 )
 
 
@@ -191,6 +192,5 @@ target_link_libraries(fast ${EXTRA_LIBS})
 if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})
 endif(MPI_LIBRARY)
-
 
 

@@ -100,8 +100,8 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	// Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
-		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)]; 
-		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)]; 
+		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)];
+		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)];
 	}
 #endif
 
@@ -194,7 +194,7 @@ void PhyloTree::checkRootBranches(void) const
 		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 	}
 
-    if (cnt_root_branches == 2)
+    if (cnt_root_branches == 2 && mVerboseLevel >= VERBOSE_INFO_OUTPUT)
     {
         std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
     }

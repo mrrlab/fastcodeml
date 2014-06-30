@@ -22,6 +22,12 @@ public:
 	///
 	explicit WriteResults(const char* aFilename) : mFilename(aFilename) {}
 
+    /// Default contructor
+    ///
+    /// Used when calling without a file name
+    ///
+    WriteResults() : mFilename(NULL) {}
+
 	/// Destructor.
 	///
 	~WriteResults()
@@ -33,7 +39,20 @@ public:
 
 	/// Output the results to the file given
 	///
+	/// @param[in] aFileName The file we are printing to
+	/// @param[in] aResults  The string to print to the file
+    static void outputResultsToFile(
+        const char *aFileName,
+        const std::string &aResults);
+
+	/// Output the results to the file given
+	///
 	void outputResults(void);
+
+	/// Output the results to a string object
+	///
+	/// @return File output as string
+    std::string outputResultsToString() const;
 
 	/// Save the likelihood for later printing.
 	///
@@ -50,12 +69,6 @@ public:
 	/// @param[in] aPositiveSelSitesProb The corresponding probability as computed by the BEB test
 	///
 	void savePositiveSelSites(size_t aFgBranch, const std::vector<unsigned int>& aPositiveSelSites, const std::vector<double>& aPositiveSelSitesProb);
-
-	/// Check if anything will be output at the end.
-	///
-	/// @return True if the output to file is enabled.
-	///
-	bool isWriteResultsEnabled(void) const { return mFilename != NULL; }
 
 	/// Returns the correct index order to have the sites printed in the correct order.
 	///
