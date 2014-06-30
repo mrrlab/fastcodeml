@@ -25,7 +25,6 @@ WriteResults.cpp
 	> Fixed bug that caused segfault when outputing results in MPI mode
 fast.cpp
 	> Cleaned up main by moving ~100 line std::cout to CmdLine.cpp.
-	> Adjusted behaviour of single threaded mode to only treat the first of the multiple files indicated, if it gets there and it-s not in MPI mode.
 ForestGroup.cpp /h
 	> New class to encapsulte a group of forests (pairs of input files) and actions on them. This object owns all the pointers in it. It exports non-const pointers to internals but since all dependencies don't implement copy ctor / operator= this is not fixable in the time available. Moved solution of forest in main to be managed by ForestGroup.
 FastCodeML 1.2.0:
