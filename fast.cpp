@@ -28,6 +28,7 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 #include "BranchSiteModel.h"
+#include "WriteResults.h"
 
 #ifndef VTRACE
 #ifdef _OPENMP
