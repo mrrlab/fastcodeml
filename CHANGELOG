@@ -1,33 +1,70 @@
 FastCodeML 1.2.1: 
-(Major) Added functionality to support arbitrary number of pairs of input file pairs with -mult command line switch. Tree files drive the pairing. The advantage here is that we can treat multiple file pairs in parallel rather than bash looping in sequential over all files. Type ./fast -h for details.
+--CHANGE SUMMARY
+(Major) Added support of arbitrary number of pairs of input file pairs with -mult command line switch. Tree files drive the pairing. The advantage here is that we can treat multiple file pairs in parallel rather than bash looping in sequential over all files. To implement, major re-implementations of main, WorkTable struct, the MPI job definition and tracking, as well as other substantial modifications were required. Type ./fast -h for details on usage. The -mult flag does not honour the graphical output command line switch, and furthermore makes the program at risk of being memory bound (see the MAJOR NOTE for HighLevelCoordinator, below).
 (Minor) Code cleanup, mostly in main, to make more clear its flow and streamline -mult implementation.
 --DETAIL
 -CMakeLists.txt
-	> Added ForestGroup.cpp to compile list
+	> Added ForestGroup.cpp, WorkTable.cpp, Job.cpp to compile list
 -CmdLine.cpp / h
 	> Added OPT_MULTIPLE_MODE for run time switch to handline multiple files
 	> Added logic to pull in tree / alignment file pairs.
 	> Added print to std::cout for the command line object
+	> Added std::cout warning when user requests --graph mode with -mult flag - this command line switch is currently not honoured because the currently implentation of the graph command line switch outputs 4 files per input file (and it not expected that this level of detail would be needed when treating multiple files).
 -Forest.h
 	> Blocked operator= / copy ctor, added functor for sorting forests
+	> loadTreeAndGenes signature updated to return CodonFrequencies* object.
+-Forest.cpp
+	> loadTreeAndGenes returns a ptr allocated on the heap of the codon frequencies objects it builds. This pointer is owned by the ForestGroup object.
+-CodonFrequencies.cpp / h
+	> The class is no longer a singleton. Instances are now created by the forest object in its init routine (loadTreeAndGenes) and passed to the forest group object. The latter object now owns all copies of the codon frequencies object and distributes non-const pointers to its instances (non-const as no copy ctor currently impemented...). Currently, this public export is not used except internally.
 -HighLevelCoordinator.cpp
-	> Added dependency on <algorithm>
-	> Added WriteResults member to WorkTable (this allows us to store results from multiple forests at MPI run time, note the redudancy with the ResultSet object.
-	> Adjusted dtor to remove vector of work tables rather than work table member
-	> Adjusted startWork, doMaster, doWorker to be able to handle multiple forests. 
-	> Cleaned up std::cout by collapsing portion after doMaster main functionality to new function
-	> New member mForestIndexGivenWorker allows us to map between a worker rank and the forest / work table associated with them (requires sveral init functions to set this up). Remaining workers are allocated to the trees with the most number of internal branches.
-	> doMaster : replaced references to mWorkTable with workTable[ii] i.e. work table that the current worker is working on.
+	> Adjusted startWork, doMaster, doWorker to be able to handle multiple forests. This entailed two major changes = 1) Definition of job, job_request to indicate to the master and to the worker respectively the following: the index of the forest we are working on as well as the branch number and the job type. The MPI strategy is unchanged.
+	> Moved WorkTable to separate translation unit. Creation of job object in separate translation unit.
+	> Changed implementation and public exports of WorkTable to use a std::queue, which is more generic and extensible than a std::vector, especially in this case.
+	> Adjusted dtor to remove forest group, which after the call to startWork, is now owned by the coordinator.
+	> Cleaned up std::cout call locations by collapsing portion after doMaster main functionality to new function in work table (recordHypResults and recordBayesResults).
+	> Generalized the check against the number of processors to read out a "leverage" metric, explaining the ratio between the current number of processors and the number of jobs required.
+	> MAJOR NOTE on program limits. The MPI (as well as less dangerously the single threaded) implementation of this code, with the -mult flag specified, are at risk of being memory bounded when treating large numbers of forests. The reason is that each processor currently can work on any forest, and these are created at init time and stored locally. The forest group should be augmented in the future to cache e.g. the last 10 used forests on each processor, but this should be balanced with performance if possible.
+	> Start work requires a pointer to the forest group.
+	> Added dependancy on <algorithm>
+	> Moved MPI trace std::couts to a separate method, for legibility.
 PhyloTree.cpp
-	> Cleaned up console spam by checking mVerbose level
+	> Cleaned up console spam of rooted tree by checking mVerbose level and executing the std::cout call only in the master.
 WriteResults.cpp
 	> Adjusted class to be able to be instantiated without a filename, and still store/retrieve the result sets. Note the redudancy with ResultSet in HighLevelCoordinator.cpp
-	> Fixed bug that caused segfault when outputing results in MPI mode
+	> Fixed bug that caused segfault when outputing results in MPI mode (to do with non-existence of map entries).
 fast.cpp
 	> Cleaned up main by moving ~100 line std::cout to CmdLine.cpp.
+	> Added init of forest group.
+ 	> Collapsed solution of a single forest into method solveForest, in forest group
+	> Main is responsible for destroying the forest group if the code is not operating in single threaded mode - added to end of main deletion of object.
 ForestGroup.cpp /h
-	> New class to encapsulte a group of forests (pairs of input files) and actions on them. This object owns all the pointers in it. It exports non-const pointers to internals but since all dependencies don't implement copy ctor / operator= this is not fixable in the time available. Moved solution of forest in main to be managed by ForestGroup.
+	> New class to encapsulte a group of forests (pairs of input files) and actions on them. This object owns all the pointers in it. It exports non-const pointers to internals but since all dependencies don't implement copy ctor / operator= this is not fixable in the time available to the author.
+	> Moved solution of forest in main to be managed by ForestGroup.
+	> The class is indexed on the position of the forest in it's vector of forest pointer (forest 0 is the first forest in the vector, and so on). 
+	> The class exports non-const pointers to the tools needed to do the analysis, the Null, Alt objects as well as the Bayes test object.
+	> Exports routine to calculate the total number of internal branches we are going to analyze. This is called from the high level coordinator during MPI execution.
+	> Added std::cout to alert user which of the forests is currently being inited. This is needed because otherwise when the output is more verbose than the INFO_OUTPUT, we can't determine which forest is which.
+-BayesTest.h/cpp
+	> The class requires a pointer to the codon frequencies object, which was previously a singleton. Note that this is non-const and the object is owned by ForestGroup object.
+-BranchSiteModel.h
+	> The concrete classes (Null / Alt) require a pointer to the codon frequencies object, which was previously a singleton. Note that this is non-const and the object is owned by the ForestGroup object.
+-TransitionMatrix .h
+	> The class now needs to receive a pointer to the codon frequencies object.
++WorkTable.cpp / h
+	> This object is a re-purposed WorkTable struct. The reason for it´s existence is the same as the latter - we track the MPI jobs. Rather than a vector, the fundamental data type is now a queue. Furthermore, responsiblity for logging results has been moved to this work table object. The only instantiation of this class is currently owned by the HighLevelCoordinator class.
+	> Copies of job object are queued in the WorkTable, pop when slated for execution (getNextJob) and are pushed in when executation is finished (queueNextJob). 
+	> The queue is called static when the user specifies on the command line that he or she wishes only to treat one of the two hypotheses - in this case, queueNextJob does nothing.
+	> The initial state of the queue depends on command line swithes - if one of the two hypotheses is specified, only this one is queued at construct time and the queue is static. Otherwise, the alternative hypothesis is queued first and the queue is non-static.
+	> Note that the std::queue implementation suggested publically exported signatures to change - this is for convenience when manipulating data in the HighLevelCoordinator.
+	> There is no difference to the previous operation, but the current implementation (queue) should be more extensible than the previous (vector) since it more generically represents the operation of the hlc object in main.
++Job.cpp / h
+	> This object represents a job that will be queued for MPI operation in the high level coordinator.
+	> The data types are all int (with the exception of the JobType) because the MPI code sends and receives jobs using an array of ints, and secondarily because there are "uninitialized" flags e.g. INVALID_BRANCH that could be set in this object. 
+	> Copy ctor and operator= were implemented explicitly. It is suggested by the author that this be added to the coding standards in main.
+	> The job type enum was moved to Job.h and exteneded with UNINIT / MAX states in case of iteration.
 FastCodeML 1.2.0:
+--CHANGE SUMMARY 
 - (Major) BG/Q compatibility (detail below)
 - (Minor) Removal of -np option (now controlled by -nt), cleanup of std::cout in main.
 ---DETAIL
@@ -54,6 +91,7 @@ FastCodeML 1.2.0:
 - fast.cpp
 	> Removal of -np option.
 - SETPATHS - example explaining how to set envionment variables per machine.
+
 FastCodeML 1.1.0:
 - Few corrections to accept pipe character also in sequence names
 - New option to fixed branch lengths (-bl)

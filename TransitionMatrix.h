@@ -29,7 +29,7 @@ class TransitionMatrix
 public:
 	/// Constructor.
 	///
-	TransitionMatrix()
+	TransitionMatrix(CodonFrequencies *aCodonFrequencies)
 	{
 		// Initialize Q matrix to all zeroes (so only non-zero values are written)
 #ifdef USE_LAPACK
@@ -38,11 +38,10 @@ public:
 		memset(mQ, 0, N*N*sizeof(double));
 #endif
 		// Initialize the codons' frequencies
-		CodonFrequencies* cf = CodonFrequencies::getInstance();
-		mCodonFreq = cf->getCodonFrequencies();
-		mNumGoodFreq = static_cast<int>(cf->getNumGoodCodons());
-		mSqrtCodonFreq = cf->getSqrtCodonFrequencies();
-		cf->cloneGoodCodonIndicators(mGoodFreq);
+		mCodonFreq = aCodonFrequencies->getCodonFrequencies();
+		mNumGoodFreq = static_cast<int>(aCodonFrequencies->getNumGoodCodons());
+		mSqrtCodonFreq = aCodonFrequencies->getSqrtCodonFrequencies();
+		aCodonFrequencies->cloneGoodCodonIndicators(mGoodFreq);
 
 #ifdef FORCE_IDENTITY_MATRIX
 		// Fill the identity matrix (to be used when time is zero)
@@ -234,7 +233,8 @@ class CheckpointableTransitionMatrix : public TransitionMatrix
 public:
 	/// Constructor.
 	///
-	CheckpointableTransitionMatrix() : TransitionMatrix(), mSavedScale(1.) {}
+	CheckpointableTransitionMatrix(CodonFrequencies *aCodonFrequencies)
+        : TransitionMatrix(aCodonFrequencies), mSavedScale(1.) {}
 
 	/// Save a checkpoint of the matrices
 	///

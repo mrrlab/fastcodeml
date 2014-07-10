@@ -51,7 +51,7 @@ public:
 
 	/// Output the results to a string object
 	///
-	/// @return File output as string
+	/// @return Data output as string
     std::string outputResultsToString() const;
 
 	/// Save the likelihood for later printing.

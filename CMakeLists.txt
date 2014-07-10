@@ -28,6 +28,8 @@ set(SRCS
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
 	ForestGroup.cpp
+	WorkTable.cpp
+	Job.cpp
 )
 
 

@@ -22,11 +22,12 @@ static const double GOOD_CODON_THRESHOLD = 1e-100;
 class CodonFrequencies
 {
 public:
-	/// Return a pointer to the singleton instance
+    /// Constructor
 	///
-	/// @return The pointer to the instance
-	///
-	static CodonFrequencies* getInstance(void);
+	CodonFrequencies() : mCodonFrequencies(N, 1./static_cast<double>(N)), mCodonFreqSqrt(N, 1./sqrt(static_cast<double>(N))), mCodonFreqInv(N, static_cast<double>(N)), mCodonFreqInv2(N, static_cast<double>(N*N)), mNumGoodCodons(N)
+	{
+		mGoodCodon.set();
+	}
 
 	/// Codon empirical frequencies models
 	///
@@ -106,7 +107,6 @@ private:
 	int codon64to61(int aId64) const;
 
 private:
-	static CodonFrequencies*	mInstance;					///< Pointer to the singleton instance
 	SSEAlignedDoubleVector		mCodonFrequencies;			///< Experimental codon frequencies
 	SSEAlignedDoubleVector		mCodonFreqSqrt;				///< Square root of experimental codon frequencies
 	SSEAlignedDoubleVector		mCodonFreqInv;				///< Inverse of experimental codon frequencies (must be aligned for SSE instructions)
@@ -114,13 +114,6 @@ private:
 	std::bitset<N>				mGoodCodon;					///< True if the corresponding codon frequency is not small
 	unsigned int				mNumGoodCodons;				///< Number of codons whose frequency is not zero
 
-protected:
-	/// Protected constructor
-	///
-	CodonFrequencies() : mCodonFrequencies(N, 1./static_cast<double>(N)), mCodonFreqSqrt(N, 1./sqrt(static_cast<double>(N))), mCodonFreqInv(N, static_cast<double>(N)), mCodonFreqInv2(N, static_cast<double>(N*N)), mNumGoodCodons(N)
-	{
-		mGoodCodon.set();
-	}
 };
 
 

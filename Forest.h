@@ -65,10 +65,12 @@ public:
 	/// @param[in] aTree The phylogenetic tree
 	/// @param[in] aGenes The corresponding genes
 	/// @param[in] aCodonFrequencyModel Model to be used to compute the codon empirical frequencies.
+	/// @return    The new codon frequencies object allocated onto the heap. Called from ForestGroup, ownership is claimed there.
 	///
-	/// @exception FastCodeMLFatal Invalid codon found
 	///
-	void loadTreeAndGenes(const PhyloTree& aTree,
+	/// @exception FastCodeMLFatal       Invalid codon found
+	///
+	CodonFrequencies* loadTreeAndGenes(const PhyloTree& aTree,
 						  const Genes& aGenes,
 						  CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel);
 

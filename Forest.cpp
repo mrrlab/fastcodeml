@@ -28,7 +28,8 @@
 const unsigned char ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
 
 
-void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel)
+CodonFrequencies*
+Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel)
 {
 	// Collect global data that refers to the tree and that should not be duplicated on each tree of the forest
 	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, &mMarkedInternalBranch);
@@ -107,11 +108,11 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	mSiteMultiplicity.assign(mult.begin(), mult.end());
 
 	// Set the codon frequencies and related values needed for the eigensolver
-	CodonFrequencies* cf = CodonFrequencies::getInstance();
-	cf->setCodonFrequencies(codons_info, aCodonFrequencyModel, mVerbose >= VERBOSE_INFO_OUTPUT);
-	mCodonFreq     = cf->getCodonFrequencies();
-	mInvCodonFreq  = cf->getInvCodonFrequencies();
-	mInv2CodonFreq = cf->getCodonFreqInv2();
+	CodonFrequencies *codon_frequencies = new CodonFrequencies(); // owned by caller
+	codon_frequencies->setCodonFrequencies(codons_info, aCodonFrequencyModel, mVerbose >= VERBOSE_INFO_OUTPUT);
+	mCodonFreq     = codon_frequencies->getCodonFrequencies();
+	mInvCodonFreq  = codon_frequencies->getInvCodonFrequencies();
+	mInv2CodonFreq = codon_frequencies->getCodonFreqInv2();
 
 	// Set the mapping from internal branch number to branch number (the last tree has no pruned subtrees)
 	std::map<unsigned int, unsigned int> map_internal_to_branchID;
@@ -129,6 +130,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 #ifdef NEW_LIKELIHOOD
 	postLoad();
 #endif
+    return(codon_frequencies);
 }
 
 #ifdef NEW_LIKELIHOOD
@@ -285,7 +287,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >= num_branches)
 	{
 		// Invalid start value, ignoring, do all branches
-		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
+		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl;
 		aBranchStart = 0;
 		aBranchEnd   = num_branches-1;
 	}
@@ -302,7 +304,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 		aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
 		if(aCmdLine.mBranchEnd >= num_branches)
 		{
-			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid end branch requested. Ignoring" << std::endl; 
+			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid end branch requested. Ignoring" << std::endl;
 			aBranchEnd = num_branches-1;
 			if(aBranchStart > 0) do_all = false;
 		}
@@ -622,7 +624,7 @@ void Forest::addAggressiveReduction(ForestNode* aNode)
 
 
 #ifdef NON_RECURSIVE_VISIT
-	
+
 void Forest::prepareNonRecursiveVisit(void)
 {
 	// Clean the list for non-recursive visit to the trees. Clear also the list of respective parents
@@ -673,7 +675,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 	// Store the nodes in the visit order except the root that should not be visited
 	// Store also the respective parent node
 	if(aParentNode)
-	{	
+	{
 		aVisitList.push_back(aNode);
 		aParentList.push_back(aParentNode);
 	}

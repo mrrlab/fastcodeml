@@ -2,9 +2,10 @@
 #ifndef HIGHLEVELCOORDINATOR_H
 #define HIGHLEVELCOORDINATOR_H
 
-#include "Forest.h"
+#include "ForestGroup.h"
 #include "CmdLine.h"
 #include "WriteResults.h"
+#include "WorkTable.h"
 
 /// The rank of the master job
 ///
@@ -37,12 +38,12 @@ public:
 
 	/// Starts the high level parallelization of the FastCodeML application
 	///
-	/// @param[in,out] aForests The filled forests
-	/// @param[in] aCmdLine The parameters from the command line of the main program
+	/// @param[in,out] aForestGroup The filled forest group. This class takes control of the ptr.
+	/// @param[in]     aCmdLine     The parameters from the command line of the main program
 	///
 	/// @return True if the execution can go parallel at this level.
 	///
-	bool startWork(std::vector<Forest*> aForests, const CmdLine& aCmdLine);
+	bool startWork(ForestGroup *aForestGroup, const CmdLine& aCmdLine);
 
 	/// Is this process the master one?
 	///
@@ -73,76 +74,38 @@ private:
 
 	/// The worker high level loop
 	///
-	/// @param[in,out] aForest The filled forest
 	/// @param[in] aCmdLine The parameters from the command line of the main program
 	///
-	void doWorker(Forest& aForest, const CmdLine& aCmdLine);
+	void doWorker(const CmdLine& aCmdLine);
 
+    /// Debug function to print the number of processors and forests we have to treat
+    ///
+    /// @param[in] aCmdLine                  The parameters from the command line of the main program
+    /// @param[in] aTotalNumInternalBranches The total number of internal branches to be analyzed
+    void checkProcCount(const CmdLine &aCmdLine, size_t aTotalNumInternalBranches) const;
 
 private:
 	unsigned int		    mVerbose;				///< The verbose level
 	int					    mRank;					///< Rank of the current process (Master has rank == MASTER_JOB)
 	int					    mSize;					///< Number of MPI processes
 
-	struct WorkTable;
-	std::vector<WorkTable*> mWorkTables;            ///< Management of the work list for each forest.
+	WorkTable              *mWorkTable;             ///< Management of the work list for each forest.
 
-    std::map<int, int>      mWorkerForestIndexMap;  ///< Lookup worker -> forest / worktable
-
-    /// Register forest - adds a work table for master to track this forest.
-	///
-	/// @param[in] aForest  The filled forest
-	/// @param[in] aCmdLine The command line object
-	void registerForest(Forest *aForest, const CmdLine &aCmdLine);
-
-    /// Helper - Worker to forest lookup.
-	///
-	/// @param[in]  aRank
-	/// @return     The index of the forest in aForests as well as the work table that aRank is working on
-	int getForestIndexGivenWorker(int aRank) const;
-
-    /// Initializer - Worker -> forest map.
-	///
-    /// @param[in]     aForests  The forests we are analyzing
-    /// @param[in]     aCmdLine  The command line object
-	void initWorkerForestIndexMap(
-           std::vector<Forest*> aForests,
-           const CmdLine &aCmdLine);
-
-    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
-    /// we have enough processors to treat each branch for H1 separately
-    /// @param[in]     aForests    The forests we are analyzing
-    /// @param[in,out] aCurWorker  current worker count
-    void initWorkerForestIndexMapEnoughProcs(
-           std::vector<Forest*> aForests,
-           size_t *aCurWorker);
-
-    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
-    /// we don't have enough processors to treat each branch for H1 separately
-    /// @param[in]     aNumWorkers number of worker processes (total)
-    /// @param[in]     aForestSize number of forests we are analyzing
-    /// @param[in,out] aCurWorker  current worker count
-    /// @exception FastCodeMLFatal For less processors available than we have tree/gene pairs
-    void initWorkerForestIndexMapTooFewProcs(
-           size_t aNumWorkers,
-           size_t aForestSize,
-           size_t *aCurWorker);
-
-    /// Initializer - Worker -> forest map when cmd.mMultipleMode == T and
-    /// we have leftover processes to allocate
-    /// @param[in]     aNumWorkers number of worker processes (total)
-    /// @param[in]     aForests    Pointers to the forests we are analyzing
-    /// @param[in,out] aCurWorker  current worker count
-    void initRemainingWorkerForestIndex(
-            size_t aNumWorkers,
-            std::vector<Forest*> aForests,
-            size_t *aCurWorker);
+    ForestGroup            *mForestGroup;           ///< The group of forests we are analyzing
 
 	/// Prints out the results for a given work table
     ///
-	/// @param[in]  workTable The pointer to the work table to print
+	/// @param[in]  aWorkTable The pointer to the work table to print
 	void printWorkTableResults(WorkTable *aWorkTable) const;
 
+	/// Traces the MPI calls by outputing the job we sent
+	///
+	/// @param[in]     aJobType     The job type to print
+	/// @param[in]     aBranch      The branch number
+	/// @param[in]     aWorker      The worker number
+    /// @param[in]     aForestIndex The index of the forest in forest group object
+    /// @param[in-out] aOut         The stream to print to
+    void printMPITrace(int aJobType, int aBranch, int aWorker, int aForestIndex, std::ostream &aOut) const;
 };
 
 

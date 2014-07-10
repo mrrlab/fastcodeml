@@ -194,7 +194,7 @@ void PhyloTree::checkRootBranches(void) const
 		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 	}
 
-    if (cnt_root_branches == 2 && mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+    if (cnt_root_branches == 2 && mVerboseLevel >= VERBOSE_ONLY_RESULTS)
     {
         std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
     }

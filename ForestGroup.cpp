@@ -14,8 +14,31 @@ ForestGroup::~ForestGroup()
             delete(mForests[ii]);
             mForests[ii] = NULL;
         }
+        if (mCodonFrequencies[ii] != NULL)
+        {
+            delete(mCodonFrequencies[ii]);
+            mCodonFrequencies[ii] = NULL;
+        }
+        if (mNullHypModels[ii] != NULL)
+        {
+            delete(mNullHypModels[ii]);
+            mNullHypModels[ii]=NULL;
+        }
+        if (mAltHypModels[ii] != NULL)
+        {
+            delete(mAltHypModels[ii]);
+            mAltHypModels[ii]=NULL;
+        }
+        if (mBayesTests[ii] != NULL)
+        {
+            delete(mBayesTests[ii]);
+            mBayesTests[ii]=NULL;
+        }
     }
     mForests.clear();
+    mNullHypModels.clear();
+    mAltHypModels.clear();
+    mBayesTests.clear();
 }
 
 void
@@ -43,11 +66,16 @@ ForestGroup::addForest(
     const char *treeFile,
     const char *geneFile)
 {
+    if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+    {
+            std::cout << std::setw(15) << "Initializing structures for tree at : " << treeFile << std::endl;
+    }
 	// Create the forest
-	Forest *forest = new Forest(cmd.mVerboseLevel/*, cmd.mOnlyInternalBranchFG*/);
+	Forest *forest = new Forest(cmd.mVerboseLevel);
 
-	// Enclose file loading into a block so temporary structures could be deleted when no more needed
-	{
+    // The codon frequencies object  - loadTreeAndGenes will allocate codon frequencies onto heap, we own the structure after the call.
+    CodonFrequencies *codon_frequencies = NULL;
+
 	// Load the multiple sequence alignment (MSA)
 	Phylip msa(cmd.mVerboseLevel);
 	msa.readFile(geneFile, cmd.mCleanData);
@@ -84,8 +112,9 @@ ForestGroup::addForest(
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) tree.printTreeAnnotated(std::cout);
 
 	// Load the forest
-	forest->loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
-	}
+	codon_frequencies = forest->loadTreeAndGenes(tree, msa,
+        cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+    mCodonFrequencies.push_back(codon_frequencies); // now is owned by this structure.
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
@@ -125,6 +154,17 @@ ForestGroup::addForest(
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << *forest;
 
     mForests.push_back(forest);
+
+    // Initialize the two hypothesis
+	BranchSiteModelNullHyp *h0 = new BranchSiteModelNullHyp(*forest, mCodonFrequencies.back(), cmd);
+	BranchSiteModelAltHyp  *h1 = new BranchSiteModelAltHyp(*forest, mCodonFrequencies.back(), cmd);
+
+	// Initialize the BEB (no verbose at all)
+	BayesTest *beb = new BayesTest(*forest, mCodonFrequencies.back(), 0, cmd.mDoNotReduceForest);
+
+	mNullHypModels.push_back(h0);
+	mAltHypModels.push_back(h1);
+	mBayesTests.push_back(beb);
 }
 
 std::vector<Forest*>
@@ -134,17 +174,21 @@ ForestGroup::getForests()
 }
 
 std::string
-ForestGroup::solveForest(Forest &aForest, const CmdLine &aCmdLine,
-    const std::string &aTreeFile, const std::string &aGeneFile)
+ForestGroup::solveForest(Forest &aForest, size_t aForestIndex, const CmdLine &aCmdLine)
 {
+    std::ostringstream os;
+
+    os << std::endl << "Solving tree No. " << mCurrentForestIndex  << std::endl
+        << "Tree file     - " << aCmdLine.mTreeFiles[aForestIndex] << std::endl
+        << "Alignment file- " << aCmdLine.mGeneFiles[aForestIndex] << std::endl;
+
+    mCurrentForestIndex++;
+
     if (aCmdLine.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
     {
-        mCurrentForestIndex++;
-        std::cout << std::endl << "Solving tree No. " << mCurrentForestIndex
-        << std::endl
-        << "Tree file     - " << aTreeFile << std::endl
-        << "Alignment file- " << aGeneFile << std::endl;
+        std::cout << os.str() << std::endl;
     }
+
     // Initialize the output results file (if the argument is null, no file is created)
 	WriteResults output_results;
 
@@ -153,11 +197,11 @@ ForestGroup::solveForest(Forest &aForest, const CmdLine &aCmdLine,
 	aForest.getBranchRange(aCmdLine, branch_start, branch_end);
 
 	// Initialize the models
-	BranchSiteModelNullHyp h0(aForest, aCmdLine);
-	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
+	BranchSiteModelNullHyp &h0  = *(getNullHypothesisTest(aForestIndex));
+	BranchSiteModelAltHyp  &h1  = *(getAltHypothesisTest(aForestIndex));
 
 	// Initialize the test
-	BayesTest beb(aForest, aCmdLine.mVerboseLevel, aCmdLine.mDoNotReduceForest);
+	BayesTest             &beb  = *(getBayesTest(aForestIndex));
 
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
@@ -291,5 +335,21 @@ ForestGroup::solveForest(Forest &aForest, const CmdLine &aCmdLine,
 
 	// Output the results
 	std::string results(output_results.outputResultsToString());
-	return(results);
+	os << results << std::endl;
+	return(os.str());
+}
+
+size_t
+ForestGroup::getTotalNumInternalBranches(const CmdLine &aCmdLine) const
+{
+    size_t total_num_internal_branches(0);
+    for (size_t ii = 0; ii < mForests.size(); ii++)
+    {
+        size_t branch_start, branch_end;
+        mForests[ii]->getBranchRange(aCmdLine, branch_start, branch_end);
+
+        // The + 1 is because we are inclusive on both ends.
+        total_num_internal_branches += (branch_end - branch_start + 1);
+    }
+    return(total_num_internal_branches);
 }

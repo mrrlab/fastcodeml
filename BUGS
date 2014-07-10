@@ -1,2 +1,3 @@
 1. Parameter optimizers other than "-m 22" are untested and might not converge properly.
-2. -nt 1 yields results inconsistent with the test case when specified without MPI
+2. -nt 1 yields results inconsistent with the test case when specified without MPI (as of 1.1.0 - it is possible that this is singleton related).
+3. -be x does not respect command line switch - note the value is unintialized (as of 1.1.0). The do_all parameter doesn´t seem to be set correctly

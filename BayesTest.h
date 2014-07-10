@@ -52,9 +52,11 @@ public:
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aNoReduction If true the dependencies computed are for no reduced forests
 	///
-	explicit BayesTest(Forest& aForest, unsigned int aVerbose=0, bool aNoReduction=true)
-		: mForest(aForest), mNumSites(mForest.getNumSites()), mSiteClassProb(BEB_DIMS*mNumSites),
-		  mVerbose(aVerbose), mPriors(mNumSites*BEB_NUM_CAT), mDependencies(mForest, aVerbose), mBEBset(mForest.getNumBranches())
+	explicit BayesTest(Forest& aForest, CodonFrequencies *aCodonFrequencies,
+          unsigned int aVerbose=0, bool aNoReduction=true)
+		: mForest(aForest), mCodonFrequencies(aCodonFrequencies), mNumSites(mForest.getNumSites()),
+		  mSiteClassProb(BEB_DIMS*mNumSites), mVerbose(aVerbose), mPriors(mNumSites*BEB_NUM_CAT),
+		  mDependencies(mForest, aVerbose), mBEBset(mForest.getNumBranches())
 	{
 		// Create the dependency list for forest likelihood computation
 		mDependencies.computeDependencies(1, aNoReduction);
@@ -155,6 +157,7 @@ private:
 	std::vector<double>		mPriors;						///< Computed priors (each points to a list, one for each site)
 	TreeAndSetsDependencies	mDependencies;					///< Dependency list for likelihood computation
 	ProbabilityMatrixSetBEB	mBEBset;						///< Probability matrix set to be used for likelihood computation
+	CodonFrequencies*       mCodonFrequencies;              ///< Ptr to the codon frequencies. Do not delete - this object is owned by forest group.
 };
 
 #endif

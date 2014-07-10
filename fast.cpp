@@ -91,19 +91,18 @@ int main(int aRgc, char **aRgv)
 	cmd.mForceSerial = true;
 #endif
 
+    std::ostringstream header;
+    header <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------" << std::endl;
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
-	if(hlc.isMaster())  std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+	if(hlc.isMaster())  std::cout << header.str() <<std::endl;
 #else
-    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+    std::cout << header.str() << std::endl;
 #endif
 
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-	{
-	    cmd.printCmdLine(num_threads, num_jobs);
-	}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) cmd.printCmdLine(num_threads, num_jobs);
 
 	// Initialize the random number generator (0 means it is not set on the command line)
 #ifdef USE_MPI
@@ -121,10 +120,8 @@ int main(int aRgc, char **aRgv)
 	Timer timer;
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
-    ForestGroup forestGroup;
-    forestGroup.initForests(cmd);
-
-    std::vector<Forest*> forests(forestGroup.getForests());
+    ForestGroup *forestGroup = new ForestGroup();
+    forestGroup->initForests(cmd);
 
 	// Get the time needed by data preprocessing
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
@@ -132,7 +129,7 @@ int main(int aRgc, char **aRgv)
 #ifdef USE_MPI
 	// Distribute the work. If run under MPI then finish, else return to the standard execution flow
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
-	bool has_run_under_MPI = hlc.startWork(forests, cmd);
+	bool has_run_under_MPI = hlc.startWork(forestGroup, cmd);
 
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(has_run_under_MPI)
@@ -149,21 +146,22 @@ int main(int aRgc, char **aRgv)
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
+    std::vector<Forest*> forests(forestGroup->getForests());
+
     std::ostringstream results;
     for (size_t ii = 0; ii < forests.size(); ii++)
     {
-        std::string tree_file(cmd.mTreeFiles[ii]);
-        std::string alignment_file(cmd.mGeneFiles[ii]);
-        results << std::endl
-                << "Tree file :      " <<  tree_file << std::endl
-                << "Alignment file : " << alignment_file << std::endl
-                << forestGroup.solveForest(*(forests[ii]), cmd, tree_file,
-                        alignment_file);
+        results << forestGroup->solveForest(*(forests[ii]), ii, cmd);
     }
+
 	// Get the time needed by the parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
     WriteResults::outputResultsToFile(cmd.mResultsFile, results.str());
+
+    // Clean up
+    if (forestGroup != NULL) delete(forestGroup);
+    forestGroup = NULL;
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions

@@ -1,0 +1,14 @@
+# This file contains some standard checks to be executed prior to check-in (basic examples)
+
+# Single local
+./fast -m 22 -s 12345 ENSGT00390000016702.Primates.01.002.nwk ENSGT00390000016702.Primates.01.phy > /home/kali/Documents/prod/testing/Fastcodeml-1.2.1b/1.2.1_single_local.txt
+
+# Mpi LOCAL
+/home/kali/Documents/lib/mpi/bin/mpirun -np 4 -host localhost ./fast -m 22 -s 12345 -nt 1 ENSGT00390000016702.Primates.01.002.nwk ENSGT00390000016702.Primates.01.phy > /home/kali/Documents/prod/testing/Fastcodeml-1.2.1b/1.2.1_mpi_local.txt
+
+# MPI mult local
+/home/kali/Documents/lib/mpi/bin/mpirun -np 4 -host localhost ./fast -m 22 -s 12345 -nt 1 -mult /home/kali/Documents/Selectome/tree3new/ /home/kali/Documents/Selectome/alignment/ > /home/kali/Documents/prod/testing/Fastcodeml-1.2.1b/1.2.1_mpi_mult.txt
+
+# single mult local
+./fast -m 22 -s 12345 -mult /home/kali/Documents/Selectome/tree3new/ /home/kali/Documents/Selectome/alignment/ > /home/kali/Documents/prod/testing/Fastcodeml-1.2.1b/1.2.1_single_mult.txt
+

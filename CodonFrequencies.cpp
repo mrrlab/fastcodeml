@@ -11,14 +11,6 @@ static const int    CODON_FREQ_MAX_ITER  = 20;
 /// Max cumulative difference between an iteration and the next to stop iterations to resolve codon frequencies in presence of ambiguous codons.
 static const double CODON_FREQ_MAX_ERROR = 1e-12;
 
-CodonFrequencies* CodonFrequencies::mInstance = NULL;
-
-CodonFrequencies* CodonFrequencies::getInstance(void)
-{
-	if(!mInstance) mInstance = new CodonFrequencies;
-	return mInstance;
-}
-
 void CodonFrequencies::setCodonFrequencies(const std::vector<std::vector<unsigned int> >& aCodons, CodonFrequencyModel aModel, bool aShowMessages)
 {
 	// Compute mCodonFrequencies based on the selected model
@@ -107,7 +99,7 @@ void CodonFrequencies::updateCodonCount(const std::vector<std::vector<unsigned i
 
 	// Count again
 	size_t cnt = aCodons.size();
-	for(size_t i=0; i < cnt; ++i) 
+	for(size_t i=0; i < cnt; ++i)
 	{
 		//if no ambiguities count as usual (add site multiplicity)
 		if(aCodons[i].size() == 2)

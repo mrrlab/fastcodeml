@@ -429,6 +429,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	if(mComputeHypothesis == 1 && mExportComputedTimes < 2) mExportComputedTimes = 1;
 	if(mBranchStart == UINT_MAX && mBranchEnd < UINT_MAX) mBranchStart = 0;
 	if(mBranchStart > mBranchEnd) throw FastCodeMLFatal("Start branch after end branch. Quitting.");
+    if(mGraphFile && mMultipleMode) std::cout << "WARNING: graph files not supported in -mult mode." << std::endl;
 }
 
 void CmdLine::printCmdLine(const int aNumThreads, const int aNumJobs) const
@@ -436,7 +437,7 @@ void CmdLine::printCmdLine(const int aNumThreads, const int aNumJobs) const
         std::cout << std::endl;
         for(size_t ii = 0; ii < mTreeFiles.size(); ii++)
         {
-            std::cout << "Tree gene pair No. : " << ii+1 << std::endl;
+            std::cout << "Tree gene pair No. : " << ii << std::endl;
             std::cout << "Tree file:      " << mTreeFiles[ii] << std::endl;
             std::cout << "Gene file:      " << mGeneFiles[ii] << std::endl;
         }

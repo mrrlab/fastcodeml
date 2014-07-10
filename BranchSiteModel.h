@@ -370,14 +370,15 @@ public:
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
+	BranchSiteModelNullHyp(Forest& aForest, CodonFrequencies *aCodonFrequencies, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
+						  mQw0(aCodonFrequencies), mQ1(aCodonFrequencies),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
+                          mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
 	{
 		// Initialize the dependency set
 		mDependencies.computeDependencies(3, mNoParallel);
@@ -461,13 +462,14 @@ public:
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
+	BranchSiteModelAltHyp(Forest& aForest, CodonFrequencies *aCodonFrequencies, const CmdLine& aCmdLine)
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
+						  mQw0(aCodonFrequencies), mQw2(aCodonFrequencies), mQ1(aCodonFrequencies),
+                          mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
 	{
 		// Initialize the dependency set
