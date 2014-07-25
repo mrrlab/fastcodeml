@@ -1,3 +1,21 @@
+FastCodeML 1.3.0:
+***** WARNING
+***** PROTOTYPE CODE
+***** PROTOTYPE CODE
+***** PROTOTYPE CODE
+
+This code is NOT for production. It is prototype only and currently seems to have at least two major bugs:
+1) Code does not terminate properly (seems like something to do with the MPI at top level conflicting with bottom level MPI.)
+2) Code seems to float a bit with likelihood (not entirely sure the work table hack is functional).
+
+It is strongly suggested by the author to re-write rather than re-use this. The code was written in a couple of hours and has several hard-coded figures that were used as proof of concept.
+
+As it is, the code shows that it is possible to displace the optimizer to the master, rather than leaving it to the worker. The major difference from 1.2.1 is simply that the bulk of the MPI code is sitting in the branch site model rather than in the high level coordinator. The author strongly recommends reading the sister document to this prototype, describing the massively parallel operation of Fast code ML. 
+
+25.07.2014
+
+***** END NOTES RELATING TO PROTOTYPE CODE.
+
 FastCodeML 1.2.1: 
 --CHANGE SUMMARY
 (Major) Added support of arbitrary number of pairs of input file pairs with -mult command line switch. Tree files drive the pairing. The advantage here is that we can treat multiple file pairs in parallel rather than bash looping in sequential over all files. To implement, major re-implementations of main, WorkTable struct, the MPI job definition and tracking, as well as other substantial modifications were required. Type ./fast -h for details on usage. The -mult flag does not honour the graphical output command line switch, and furthermore makes the program at risk of being memory bound (see the MAJOR NOTE for HighLevelCoordinator, below).

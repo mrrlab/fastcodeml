@@ -86,11 +86,16 @@ int main(int aRgc, char **aRgv)
     // std::cout<<"num of thr: "<< num_threads <<std::endl;
 
      omp_set_num_threads(num_threads);
+         HighLevelCoordinator::num_threads = num_threads;
+
 #else
 	cmd.mNumThreads=1;
 	int num_threads = 1;
 	cmd.mForceSerial = true;
+	    HighLevelCoordinator::num_threads = num_threads;
+
 #endif
+
 
     std::ostringstream header;
     header <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------" << std::endl;

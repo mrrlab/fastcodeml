@@ -21,6 +21,70 @@
 #include "TreeAndSetsDependencies.h"
 #include "CmdLine.h"
 
+#include "Job.h"
+#include <queue>
+
+struct WorkTable
+{
+    void getNextJob(int *job, size_t aBlockSize)
+    {
+        if (mJobs[0].empty()
+            && mJobs[1].empty()
+            && mJobs[2].empty()
+            && mJobs[3].empty())
+        {
+            return;
+        }
+
+        for (int ii = 0; ii <= 3; ii++)
+        {
+            if(mJobs[ii].empty())
+            {
+                continue;
+            } else
+            {
+                int jj  = 0;
+                job[16] = ii;
+                while (!mJobs[ii].empty() && jj < aBlockSize)
+                {
+                    //std::cout << mJobs[ii].front().site<< ", " << mJobs[ii].front().set_idx << std::endl;
+                    Job j(mJobs[ii].front());
+                    //std::cout << "writing: " << j.site << std::endl;
+                    job[jj] = j.site;
+                    mJobs[ii].pop();
+
+                    //std::cout << "adding : " << job[jj] << ", " << job[16]  << " " << aBlockSize<< std::endl;
+                    jj++;
+
+                }
+                break;
+            }
+        }
+    }
+
+    static void printJob(int *job)
+    {
+        for (int ii =0 ; ii < 16; ii++)
+        {
+            std::cout << job[ii] << ", ";
+        }
+        std::cout << std::endl;
+    }
+
+    void printLeft() const
+    {
+        for (int ii =0 ; ii < 4; ii++)
+        {
+            std::cout << mJobs[ii].size() << ", ";
+
+        }
+        std::cout << std::endl;
+    }
+
+    std::queue<Job> mJobs[4];
+};
+
+static const int MASTER_JOB = 0;
 
 /// The phylogenetic tree's forest.
 /// This class encapsulates the forest of phylogenetic tree that will be used for computing the tree's maximum likelihood
@@ -123,6 +187,12 @@ public:
 	/// @param[in] aDependencies The dependency list between sets of trees
 	///
 	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
+
+
+	void getLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
+
+    void doLikelihoods(const ProbabilityMatrixSet & aSet);
+
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -381,6 +451,8 @@ private:
 /*protected:
     bool        mAllBranchesFG;     ///< Only internal branches to be processed*/
 
+
+    WorkTable mWorkTable;
 };
 
 struct SortForests
@@ -392,6 +464,16 @@ struct SortForests
 	/// @param[in] b Forest b pointer
     bool operator() (const Forest *a, const Forest *b) const { return a->getNumInternalBranches() > b->getNumInternalBranches(); }
 };
+
+enum MessageType
+{
+	MSG_WORK_REQUEST,		///< Worker asking for a new job to execute
+	MSG_NEW_JOB,			///< New job from the master
+	MSG_GET_RESULTS,			///< Get step results from worker
+	MSG_KICK_OFF,
+	MSG_KILL,
+};
+
 
 #endif
 

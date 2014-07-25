@@ -3,6 +3,7 @@
 #define PROBABILITYMATRIXSET_H
 
 #include <vector>
+#include <iostream>
 #include "MatrixSize.h"
 #include "TransitionMatrix.h"
 #include "AlignedMalloc.h"
@@ -180,6 +181,11 @@ public:
 	}
 #endif
 
+public:
+    void readOutMatrixSpec() const {
+        std::cout << "Number of matrices: " << mNumMatrices << std::endl
+                  << "Number of matrix sets: " << mNumSets << std::endl
+                  << "Foreground branch number " << mFgBranch << std::endl;}
 
 protected:
 	double*			mMatrixSpace;		///< Starts of the matrix storage area

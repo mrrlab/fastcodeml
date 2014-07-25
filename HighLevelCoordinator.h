@@ -2,14 +2,14 @@
 #ifndef HIGHLEVELCOORDINATOR_H
 #define HIGHLEVELCOORDINATOR_H
 
+#include <vector>
+
 #include "ForestGroup.h"
 #include "CmdLine.h"
 #include "WriteResults.h"
 #include "WorkTable.h"
 
-/// The rank of the master job
-///
-static const int MASTER_JOB = 0;
+
 
 /// Coordinator class for high level parallelization.
 /// This class encapsulates MPI usage to parallelize FastCodeML above the maximizer level.
@@ -19,6 +19,11 @@ static const int MASTER_JOB = 0;
 /// @version 1.1
 ///
 
+enum JobRequestType
+{
+	REQ_ANNOUNCE_WORKER,		///< Worker asking for a new job to execute
+	REQ_SITE_RESULT,
+};
 class HighLevelCoordinator
 {
 public:
@@ -61,7 +66,11 @@ public:
 	///
 	/// @return The current process rank.
 	///
-	int getRank(void) const {return mRank;}
+	static int getRank(void) {return mRank;}
+
+	static int setRank(int aRank) { mRank = aRank; }
+
+    static int getSize(void) {return mSize;}
 
 private:
 	/// The master coordination job
@@ -84,12 +93,14 @@ private:
     /// @param[in] aTotalNumInternalBranches The total number of internal branches to be analyzed
     void checkProcCount(const CmdLine &aCmdLine, size_t aTotalNumInternalBranches) const;
 
+public:
+    static int num_threads;
+
 private:
 	unsigned int		    mVerbose;				///< The verbose level
-	int					    mRank;					///< Rank of the current process (Master has rank == MASTER_JOB)
-	int					    mSize;					///< Number of MPI processes
+	static int					    mRank;			///< Rank of the current process (Master has rank == MASTER_JOB)
+	static int					    mSize;			///< Number of MPI processes
 
-	WorkTable              *mWorkTable;             ///< Management of the work list for each forest.
 
     ForestGroup            *mForestGroup;           ///< The group of forests we are analyzing
 
@@ -107,6 +118,20 @@ private:
     /// @param[in-out] aOut         The stream to print to
     void printMPITrace(int aJobType, int aBranch, int aWorker, int aForestIndex, std::ostream &aOut) const;
 };
+
+template <typename T>
+void outputVector(const std::vector<T> &v)
+{
+    for (int ii= 0; ii< v.size(); ii++)
+    {
+        std::cout << v[ii];
+        if (ii != v.size() - 1)
+        {
+            std::cout << std::endl;
+        }
+    }
+}
+
 
 
 #endif

@@ -14,6 +14,9 @@
 //// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
+/// The rank of the master job
+///
+
 /// Common routines for testing the two hypotheses (H0 and H1).
 ///
 ///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
@@ -478,6 +481,8 @@ public:
 		mDependencies.optimizeDependencies();
 		mDependencies.print("TEST FOR H1");
 	}
+
+    void init(size_t aFgBranch);
 
 	/// Compute the alternative hypothesis log likelihood.
 	///

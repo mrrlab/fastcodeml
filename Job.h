@@ -36,50 +36,12 @@ static const int INVALID_BRANCH = -1;
 
 struct Job
 {
-public:
-    /// ctor for Job. Ints are used as the data type for consistency with MPI & invalid indicators
-	/// @param[in] aForestIndex   the index of the forest in ForestGroup
-	/// @param[in] aBranch        the branch this job is regarding
-	/// @param[in] aJobType       the type of job this object represents
-	/// @param[in] aSizeOtherData the size of the other data we need to pass to the worker thread
-	///
-	/// @return True if a job has been assigned, false if the job is JOB_SHUTDOWN
-	///
-    explicit Job(
-      int aForestIndex, int aBranch, JobType aJobType, int aSizeOtherData);
+    unsigned int site;
 
-    /// Setter for size of other data to send to worker
-	/// @param[in] aSizeOtherData the size of the other data to be sent to the work
-    void setSizeOtherData(int aSizeOtherData) { mSizeOtherData = aSizeOtherData; }
-    /// Getter for size of other data to send to worker
-	/// @return   the size of the other data to be sent to the work
-    int getSizeOtherData() const {return mSizeOtherData; }
+    unsigned int set_idx;
+    double val;
 
-    /// Setter for the job type of the process executing the job
-	/// @param[in] aJobType the the job type of the job
-    void setJobType(JobType aJobType) { mJobType = aJobType; }
-    /// Getter for the job type
-	/// @return    the job type
-    JobType getJobType() const {return mJobType; }
+    Job() : site(0), set_idx(0) {}
 
-    /// Getter for the index of the related forest in forest group
-	/// @return    the index of the related forest in forest gorup
-    int getForestIndex() const {return mForestIndex; }
-    /// Getter for the branch
-	/// @return    the branch of the forest we are treating with this job
-    int getBranch() const {return mBranch; }
-
-    friend std::ostream& operator<<(std::ostream &aOut, const Job &aJob);
-
-    Job& operator=(const Job &that);
-    Job(const Job &that);
-
-private:
-    int       mForestIndex;    ///<Index of the forest this job is for in the ForestGroup object.
-    int       mBranch;         ///<Foreground branch this work item is for, in the context of the forest above
-    JobType   mJobType;        ///<The job type of this job
-    int       mSizeOtherData;  ///<The size of the other job data, to be sent in the job definition to the worker
-
-    Job();                    ///<Default construction is not allowed.
 };
 #endif

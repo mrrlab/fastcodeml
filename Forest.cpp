@@ -8,6 +8,8 @@
 #include <cstring>
 #include <cstdio>
 #include <limits>
+#include <mpi.h>
+
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wlong-long"
@@ -23,6 +25,7 @@
 #include "MatrixSize.h"
 #include "CompilerHints.h"
 #include "VerbosityLevels.h"
+#include "HighLevelCoordinator.h"
 
 // Initialize the mask table so the index corresponds to the bit position
 const unsigned char ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80};
@@ -520,11 +523,6 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		const int num_sites = static_cast<int>(inbl->size());
         const int len       = num_sites*num_sets;
 
-#ifdef _MSC_VER
-        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(guided)
-#else
-        #pragma omp parallel for default(shared) schedule(guided)
-#endif
         for(int i=0; i < len; ++i)
         {
             // Compute probability vector along this branch (for the given set) (reordered to give a 2% speedup)
@@ -685,6 +683,7 @@ void Forest::prepareNonRecursiveVisitWalker(ForestNode* aNode, ForestNode* aPare
 
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int aHyp)
 {
+    static int ii = 0 ;
 	// To speedup the inner OpenMP parallel loop, this is precomputed
 	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
 	ForestNode* tmp_roots = &mRoots[0];
@@ -697,11 +696,9 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		const int len = static_cast<int>(ivs->size());
 		const unsigned int* tmp_ivs = &(*ivs)[0];
 
-#ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, aLikelihoods) schedule(static)
-#else
-		#pragma omp parallel for default(shared) schedule(static)
-#endif
+
+
+
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
@@ -822,6 +819,75 @@ void Forest::prepareNewReductionNoReuse(void)
 
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies)
 {
+    static int ii = 0;
+
+	// To speedup the inner OpenMP parallel loop, this is precomputed
+	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
+	const ForestNode* tmp_roots = &mRoots[0];
+	double* likelihoods = &aLikelihoods[0];
+
+	ListDependencies::const_iterator ivs(aDependencies.begin());
+	const ListDependencies::const_iterator end(aDependencies.end());
+	for(; ivs != end; ++ivs)
+	{
+		// Things that do not change in the parallel loop
+		const int len = static_cast<int>(ivs->size());
+		const unsigned int* tmp_ivs = &(*ivs)[0];
+/*
+        // if im the master send out the data!
+        std::vector<double> data;
+        double *v = NULL;
+
+        data.push_back(-17.0);
+        v = &data[0];
+		//dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
+        // need to send the values for the matrix, row by row..
+
+        aSet.readOutMatrixSpec();
+
+        dsymm_("L", "U", &N, &aNumSites, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch],
+           &N, aMin, &VECTOR_SLOT, &D0, aMout, &VECTOR_SLOT);
+
+
+        // send the values
+        if (ii == 0)
+        {
+            MPI_Send(static_cast<void*>(v), data.size(), MPI_DOUBLE, 1, MSG_NEW_JOB, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void*>(v), data.size(), MPI_DOUBLE, 2, MSG_NEW_JOB, MPI_COMM_WORLD);
+            MPI_Send(static_cast<void*>(v), data.size(), MPI_DOUBLE, 3, MSG_NEW_JOB, MPI_COMM_WORLD);
+        }
+
+        throw FastCodeMLFatal("done here.");
+
+        ii++;*/
+
+
+		for(int i=0; i < len; ++i)
+		{
+
+				// Compute likelihood array at the root of one tree (the access order is the fastest)
+				const unsigned int tmp     = tmp_ivs[i];
+				const unsigned int site    = TreeAndSetsDependencies::getSiteNum(tmp);
+				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
+
+				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+
+#ifdef USE_CPV_SCALING
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g)*g[N];
+#else
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+#endif
+
+		}
+	}
+}
+
+
+
+void Forest::getLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies)
+{
+      static int ii = 0;
+
 	// To speedup the inner OpenMP parallel loop, this is precomputed
 	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
 	const ForestNode* tmp_roots = &mRoots[0];
@@ -835,33 +901,213 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		const int len = static_cast<int>(ivs->size());
 		const unsigned int* tmp_ivs = &(*ivs)[0];
 
-#ifdef _MSC_VER
-		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
-#else
-		#pragma omp parallel for default(shared)
-#endif
+        // send out the work
+
 		for(int i=0; i < len; ++i)
 		{
-#ifndef _MSC_VER
-			#pragma omp task untied
-#endif
-			{
+
 				// Compute likelihood array at the root of one tree (the access order is the fastest)
 				const unsigned int tmp     = tmp_ivs[i];
 				const unsigned int site    = TreeAndSetsDependencies::getSiteNum(tmp);
 				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
 
-				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+                // send the work to some worker / receive data from all the workers.
+				// REPLACE THIS CALL.
+				//const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
 
-#ifdef USE_CPV_SCALING
-				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g)*g[N];
-#else
-				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
-#endif
-			}
+                Job j;
+                j.site = site;
+                j.set_idx = set_idx;
+                mWorkTable.mJobs[set_idx].push(j);
+                //std::cout << site << ":" << set_idx << std::endl;
 		}
+
+        //std::cout << "number of jobs is: " << mWorkTable.mJobs.size() << std::endl;
+
+        // Push work to free workers
+        unsigned int num_workers = 0;
+
+        // Prepare variables to hold results from workers
+        std::vector<double> results_double;
+        std::vector<int>    results_integer;
+
+        //std::cout << "master distributing work" << std::endl;
+        for(;;)
+        {
+            // Wait for a request of work packet
+            int job_request[2];
+            MPI_Status status;
+            MPI_Recv(static_cast<void*>(job_request), 2, MPI_INTEGER, MPI_ANY_SOURCE, MSG_WORK_REQUEST, MPI_COMM_WORLD, &status);
+            int worker = status.MPI_SOURCE;
+
+            // Act on the request (job_request[0] values are from the JobRequestType enum, [1] is the response length)
+            switch(job_request[0])
+            {
+            case REQ_ANNOUNCE_WORKER:
+                // This is an initial request for work
+                ++num_workers;
+                //std::cout << "got a worker " << worker << std::endl;
+                break;
+
+            case REQ_SITE_RESULT:
+                {
+                    results_double = std::vector<double>(33, 0.);
+                    MPI_Recv(static_cast<void*>(&results_double[0]), 33, MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
+
+                    unsigned int set_idx = (int)results_double[32];
+
+                    for (int ii = 0; ii < results_double.size() - 1; ii++)
+                    {
+                        unsigned int site = (int)results_double[ii];
+
+                        //std::cout << "got a request " << std::setw(4) << site << ", " << set_idx << ", " << worker << std::endl;
+                        double val = results_double[ii+1];
+                        likelihoods[set_idx*mNumSites+site] = val;
+                    }
+                }
+                break;
+
+            default:
+                throw FastCodeMLFatal("Invalid job request in doMaster");
+            }
+
+            // Send work packet or shutdown request (job[0] is the step to be done, job[1] is the fg branch, job[2] the length of the additional data)
+            int job[17];
+            for (int ii =0; ii<=16; ii++)
+            {
+                job[ii] = -999;
+            }
+
+        //std::cout << "num threads : " << HighLevelCoordinator::num_threads << std::endl;
+            mWorkTable.getNextJob(job, HighLevelCoordinator::num_threads);
+            //std::cout << HighLevelCoordinator::num_threads << std::endl;
+            //throw FastCodeMLFatal("Invalid job request in doMaster");
+            //mWorkTable.printLeft();
+           //std::cout << "sending : ";
+
+           //WorkTable::printJob(job);
+          // std::cout << " to "<< worker << std::endl;
+        // std::cout << "sending work to worker : " << worker << "== " << job[0] << ", " << job[16] << std::endl;
+
+            if (worker == 2)
+            {
+            }
+            MPI_Send(static_cast<void*>(job), 17, MPI_INTEGER, worker, MSG_NEW_JOB, MPI_COMM_WORLD);
+
+            // If no more jobs
+            if(job[0] < -998)
+            {
+                --num_workers;
+                //if(worker == 2) std::cout << "Workers remaining: " << num_workers << " as dropping " << worker << std::endl;
+                //std::cout << "dropping worker : " << worker << std::endl;
+                if(num_workers == 0) break;
+            }
+        }
+
+	}
+			//throw FastCodeMLFatal("Done here. ");
+
+}
+
+
+
+void Forest::doLikelihoods(const ProbabilityMatrixSet &aSet)
+{
+	// This value signals that this is the first work request
+	int job_request[2] = {REQ_ANNOUNCE_WORKER, 0};
+
+	// Variables for communication between master and workers
+	std::vector<double> values_double;
+	std::vector<int>    values_integer;
+	MPI_Status          status;
+
+    int myrank = HighLevelCoordinator::getRank();
+
+	for(;;)
+	{
+        if(myrank == 2)
+        {
+            //std::cout << "waiting for work " << job_request[0] << std::endl;
+        }
+		// Signal that I'm ready for work
+		MPI_Request request;
+		//MPI_Isend(static_cast<void*>(job_request), 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD, &request);
+		MPI_Send(static_cast<void*>(job_request), 2, MPI_INTEGER, MASTER_JOB, MSG_WORK_REQUEST, MPI_COMM_WORLD);
+
+		// If needed (i.e. it is not a worker announcement), send step results
+		switch(job_request[0])
+		{
+		case REQ_SITE_RESULT:
+			MPI_Send(static_cast<void*>(&values_double[0]), values_double.size(), MPI_DOUBLE, MASTER_JOB, MSG_GET_RESULTS, MPI_COMM_WORLD);
+			break;
+		}
+
+		// Receive the job to execute or the shutdown request (job[0] the request; [1] fg branch; [2] optional number of variables)
+		int job[17] = { -999 };
+		MPI_Recv(static_cast<void*>(job), 17, MPI_INTEGER, MASTER_JOB, MSG_NEW_JOB, MPI_COMM_WORLD, &status);
+
+        if (job[0] < -998)
+        {
+            //if(myrank == 2)
+            //std::cout << myrank << "acklowledging kill " << std::endl;
+            break;
+        }
+
+		// Do the work
+		std::vector<int> sites;
+		int SIZE = 16;
+		for (int ii = 0; ii < SIZE; ii++)
+        {
+            if(job[ii] >= 1)
+            {
+                sites.push_back(job[ii]);
+            }
+        }
+
+        unsigned int set_idx = job[16];
+
+        values_double = std::vector<double>(33, 0.);
+        values_double[32] = set_idx;
+
+#ifdef _MSC_VER
+    #pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
+#else
+    #pragma omp parallel for default(shared)
+#endif
+        for (int ii = 0; ii < sites.size(); ii++)
+        {
+             #ifndef _MSC_VER
+                #pragma omp task untied
+            #endif
+            {
+                unsigned int site = sites[ii];
+
+                // To speedup the inner OpenMP parallel loop, this is precomputed
+                // so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
+                const ForestNode* tmp_roots = &mRoots[0];
+
+                const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+
+                double val = 0.;
+                #ifdef USE_CPV_SCALING
+                    val = dot(mCodonFreq, g)*g[N];
+                #else
+                    val = dot(mCodonFreq, g);
+                #endif
+
+
+
+                values_double[ii*2] = (double)site;
+                values_double[ii*2+1] = val;
+            }
+        }
+
+        job_request[0] = REQ_SITE_RESULT;
+
+
 	}
 }
+
 
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
