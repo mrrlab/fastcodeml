@@ -1,3 +1,4 @@
+- Group similar options in help (e.g. options about branch lengths)
 - Unit Tests (a general test suite)
 - More details in INSTALL file
   to help users!!!
