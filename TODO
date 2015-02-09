@@ -1,0 +1,22 @@
+- Group similar options in help (e.g. options about branch lengths)
+- Unit Tests (a general test suite)
+- More details in INSTALL file
+  to help users!!!
+- Do a complete FastCodeML run on Primates to compare it
+  large scale with Primate SlimCodeml run
+- Add an option to deal with different genetic code
+  and maybe user own genetic code file
+- Could we deal with Selenocystein and other "new" Amino acids?
+- Display estimated tree (not only branch lengths) in default
+  output
+- Promote FastCodeML in Bio* packages:
+  BioPerl, BioPython, BioJava, BioRuby
+
+
+Open questions:
+- Test if FastCodeML can avoid leaf computation
+- Test what FastCodeML does with branch around root (pseudoroot)?
+  Does it comput only one of them in rooted tree case?
+- How to force H0 computation if H1 is not significative?
+- dos2unix all files?
+

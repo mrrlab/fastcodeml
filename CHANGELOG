@@ -1,0 +1,44 @@
+FastCodeML 1.2.0:
+- (Major) BG/Q compatibility (detail below)
+- (Minor) Removal of -np option (now controlled by -nt), cleanup of std::cout in main.
+---DETAIL
+- BranchSiteModel.cpp
+	> l.52 int to unsigned int
+	> l379-l386 mFixedBranchLength switch logic (uncommitted change).
+- BranchSiteModel.h 
+	> Init order changed
+- CMakeLists.txt
+	> Boost required at 1.55
+- CmdLine.cpp + .h
+	> Removed OPT_FORCE_SERIAL as command line option (replaced with -nt = 1)
+	> Changed init order
+- CompilerHints.h 
+	> Added #defines for __xlC__
+- Forest.cpp + .h 
+	> Formatting + cleaning constructor and mAllBranchesFG member.
+- Genes.cpp 
+	> Formatting output stream.
+- WriteResults.cpp
+	> Output to cout does not compile on BG/Q - commented out.
+- blas.h
+	> _BGQ_COMPILER #defines
+- fast.cpp
+	> Removal of -np option.
+- SETPATHS - example explaining how to set envionment variables per machine.
+FastCodeML 1.1.0:
+- Few corrections to accept pipe character also in sequence names
+- New option to fixed branch lengths (-bl)
+- New option fo manage easily number of threads (-nt)
+- Codeml optimizer is by default (-m 22)
+- Show branch lengths in default output
+- Show p0/p1/p2a/p2b & w0/kappa in default output
+- Display a warning if tree is rooted
+- Display FastCodemL version
+
+FastCodeML 1.0.1:
+- Added text files for LICENSE etc. Source files remain unchanged.
+- Version 1.0.1 contains additional information files, the sources are
+  unchanged with respect to 1.0.0.
+
+FastCodeML 1.0.0:
+- Initial release
