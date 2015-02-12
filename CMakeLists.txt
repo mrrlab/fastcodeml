@@ -41,7 +41,7 @@ endif(Boost_FOUND)
 
 
 # Get the configuration switches
-OPTION(USE_LAPACK         		"Use BLAS/LAPACK" OFF)
+OPTION(USE_LAPACK         		"Use BLAS/LAPACK" ON)
 OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
 OPTION(USE_MPI            		"Use MPI for high level parallelization" ON)
