@@ -192,5 +192,15 @@ if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})
 endif(MPI_LIBRARY)
 
+# Make documentation
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
+   set(DOXY_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
+  endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile")
+
+  add_custom_target(doc ${DOXYGEN_EXECUTABLE} ${DOXY_CONFIG})
+endif(DOXYGEN_FOUND)
 
 
