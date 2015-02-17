@@ -6,9 +6,8 @@
 #include "simpleopt/SimpleOpt.h"
 #include "Exceptions.h"
 #include "ParseParameters.h"
+#include "Version.h"
 
-
-extern const char* version;
 
 /// Implementation of the CmdLine class.
 ///
@@ -254,7 +253,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		default:
 		case OPT_HELP:
-            std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+            std::cout << "\n------------------\n"
+                      << "FastCodeML V"<< FASTCODEML_VERSION
+                      << "\n------------------\n\n";
 			std::cout << "Usage:" << std::endl;
 			std::cout << "    " << usage_msg << std::endl << std::endl;
 			mCmdLineImpl->showHelp(parser_options);
@@ -394,13 +395,14 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 	switch(args.FileCount())
 	{
 	case 0:
-		std::cout << "Missing NEWICK TREE file" << std::endl;
-		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+		std::cout << "Missing NEWICK TREE file\n";
 		// Falltrough
 
 	case 1:
-		std::cout << "Missing PHYLIP CODON ALIGNMENT file" << std::endl << std::endl;
-		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+		std::cout << "Missing PHYLIP CODON ALIGNMENT file\n";
+		std::cout << "\n------------------\n"
+				  << "FastCodeML V"<< FASTCODEML_VERSION
+				  << "\n------------------\n\n";
 		std::cout << "Usage:" << std::endl;
 		std::cout << "    " << usage_msg << std::endl << std::endl;
 		mCmdLineImpl->showHelp(parser_options);

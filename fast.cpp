@@ -27,6 +27,7 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 #include "WriteResults.h"
+#include "Version.h"
 
 #ifndef VTRACE
 #ifdef _OPENMP
@@ -50,7 +51,7 @@
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
 ///
-const char* version="1.2.0";
+//const char* version="1.2.0";
 
 
 int main(int aRgc, char **aRgv)
@@ -110,15 +111,14 @@ int main(int aRgc, char **aRgv)
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
-//    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 	
-		std::cout << "------------------------------------" << std::endl;
-		std::cout << "FastCodeML V"<<version << std::endl;
-		std::cout << "------------------------------------"<<std::endl;
-		std::cout << std::endl;
+		std::cout << "------------------------------------\n";
+		std::cout << "FastCodeML V" << FASTCODEML_VERSION << "\n";
+		std::cout << "------------------------------------\n\n";
+
 													std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
 													std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
 													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
