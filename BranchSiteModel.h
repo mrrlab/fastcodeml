@@ -39,6 +39,7 @@ protected:
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	/// @param[in] aMaxIterations Maximum number of iterations for the maximization
+	/// @param[in] aFixedBranchLength Does not optimize the branch lengths
 	///
 	BranchSiteModel(Forest&      aForest,
 					size_t       aNumBranches,
@@ -54,7 +55,7 @@ protected:
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
 					unsigned int aMaxIterations,
-					bool aFixedBranchLength)
+					bool         aFixedBranchLength)
 		: mForest(aForest),
 		  mVar(aFixedBranchLength ? aNumVariables : aNumBranches+aNumVariables), //mVar(aNumBranches+aNumVariables),
 		  mFgScale(0.0),

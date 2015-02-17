@@ -181,6 +181,8 @@ public:
 private:
 	/// Compute the eigendecomposition
 	///
+	/// @fn void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork)
+	///
 	/// @param[in,out] aU Matrix to be decomposed on input, Eigenvectors on output
 	/// @param[in] aDim The matrix dimension
 	/// @param[out] aR The eigenvalues

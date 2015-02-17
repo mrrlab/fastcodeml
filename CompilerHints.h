@@ -47,6 +47,10 @@
 #define ALIGN64
 #define RESTRICT
 
+#elif defined(DOXYGEN)
+#define ALIGN64
+#define RESTRICT
+
 
 #else
 #warning "Unknown compiler detected"
