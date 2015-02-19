@@ -279,18 +279,18 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength)
 {
 	// Reserve space
-    if (aFixedBranchLength)
+    if(aFixedBranchLength)
     {
-        mLowerBound.reserve(aNumVariables);	mUpperBound.reserve(aNumVariables); // Reserve space
+        mLowerBound.reserve(aNumVariables);				mUpperBound.reserve(aNumVariables);
     }
     else
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
-        	// Set lower constrains							// Set upper constrains
+       	// Set lower constrains							// Set upper constrains
         mLowerBound.assign(aNumTimes, 0);				mUpperBound.assign(aNumTimes, 50.0);	// T
     }
 
-// Set lower constrains							// Set upper constrains
+	// Set lower constrains							// Set upper constrains
 #ifdef USE_ORIGINAL_PROPORTIONS
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x0 -> p0
 	mLowerBound.push_back(-99.0);					mUpperBound.push_back(99.0);			// x1 -> p1
@@ -346,7 +346,7 @@ void BranchSiteModel::initFromParams(void)
     }
     else
     {
-        	// Initialization as in CodeML (seems)
+       	// Initialization as in CodeML (seems)
         mVar[mNumTimes+2] = params->getParameter("w0");							// w0
         mVar[mNumTimes+3] = params->getParameter("k");							// k
 
@@ -364,7 +364,6 @@ void BranchSiteModel::initFromParams(void)
         if(mNumVariables == 5) mVar[mNumTimes+4] = params->getParameter("w2");	// w2
     }
 
-
 	// The parameters have been initializated
 	mInitStatus |= INIT_PARAMS;
 }
@@ -376,7 +375,7 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
     if(mFixedBranchLength)
     {
-                // Too long, cut. Too short, ignore. Remember H0 has 4 variables.
+		// Too long, cut. Too short, ignore. Remember H0 has 4 variables.
         if(aValidLen > mNumVariables) aValidLen = mNumVariables;
         else if((int)aValidLen < 0)
         {
@@ -435,14 +434,14 @@ void BranchSiteModel::initVariables(void)
                 mVar[0] = p0+p1;											// p0+p1
                 mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-                mVar[2] = 0.2 + 0.1 * randFrom0to1();						// w0
-                mVar[3] = 0.4;											// k
+                mVar[2] = 0.2  + 0.1 * randFrom0to1();						// w0
+                mVar[3] = 0.35 + 0.1 * randFrom0to1();						// k
             }
             else
             {
 #ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[0] = 0.5  +       randFrom0to1();					// x0 -> p0
-                mVar[1] = 0.5  +       randFrom0to1();					// x1 -> p1
+                mVar[0] = 0.5  +       randFrom0to1();						// x0 -> p0
+                mVar[1] = 0.5  +       randFrom0to1();						// x1 -> p1
 #else
                 double x0 =  exp(0.5 + randFrom0to1());
                 double x1 =  exp(0.5 + randFrom0to1());
@@ -453,8 +452,8 @@ void BranchSiteModel::initVariables(void)
                 mVar[0] = p0+p1;											// p0+p1
                 mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-                mVar[2] = 0.5  +       randFrom0to1();					// w0
-                mVar[3] = 0.5  +       randFrom0to1();					// k
+                mVar[2] = 0.2  + 0.6 * randFrom0to1();						// w0
+                mVar[3] = 0.5  +       randFrom0to1();						// k
             }
         }
 
@@ -463,7 +462,7 @@ void BranchSiteModel::initVariables(void)
         {
             if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
             {
-                mVar[4] = 0.5 +       randFrom0to1();						// w2
+                mVar[4] = 1.0 + 0.5 * randFrom0to1();						// w2
             }
             else
             {
@@ -481,17 +480,12 @@ void BranchSiteModel::initVariables(void)
             unsigned int nv = mNumVariables;
             for(i=0; i < nv; ++i)
             {
-                if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
-                if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
-            }
-            for(i=0; i < nv; ++i)
-            {
-                if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
-                if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+                double range = mUpperBound[i]-mLowerBound[i];
+                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
+                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
             }
         }
     }
-
     else
     {
         // Initialize times (if not already initialized)
@@ -518,8 +512,8 @@ void BranchSiteModel::initVariables(void)
                 mVar[mNumTimes+0] = p0+p1;											// p0+p1
                 mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-                mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();						// w0
-                mVar[mNumTimes+3] = 0.4;											// k
+                mVar[mNumTimes+2] = 0.2  + 0.1 * randFrom0to1();						// w0
+                mVar[mNumTimes+3] = 0.35 + 0.1 * randFrom0to1();						// k
             }
             else
             {
@@ -536,7 +530,7 @@ void BranchSiteModel::initVariables(void)
                 mVar[mNumTimes+0] = p0+p1;											// p0+p1
                 mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-                mVar[mNumTimes+2] = 0.5  +       randFrom0to1();					// w0
+                mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();					// w0
                 mVar[mNumTimes+3] = 0.5  +       randFrom0to1();					// k
             }
         }
@@ -546,7 +540,7 @@ void BranchSiteModel::initVariables(void)
         {
             if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
             {
-                mVar[mNumTimes+4] = 0.5 +       randFrom0to1();						// w2
+                mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
             }
             else
             {
@@ -561,20 +555,15 @@ void BranchSiteModel::initVariables(void)
         // Don't clamp the results if they came from H1
         if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
         {
-            unsigned int nv = mNumTimes+mNumVariables;
+            unsigned int nv = mNumVariables;
             for(i=0; i < nv; ++i)
             {
-                if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
-                if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
-            }
-            for(i=0; i < nv; ++i)
-            {
-                if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
-                if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+                double range = mUpperBound[i]-mLowerBound[i];
+                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
+                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
             }
         }
     }
-
 }
 
 
@@ -619,7 +608,7 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
 	// One more function invocation
 	++mNumEvaluations;
 
-    if (mFixedBranchLength)
+    if(mFixedBranchLength)
     {
         // Compute the following values for gradient
         // Save the values to local variables to speedup access
@@ -694,7 +683,6 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
         if(aGradientVar >= mNumTimes)
         {
             // Save the values to local variables to speedup access
-
             const double* params = &aVar[mNumTimes];
             const double  omega0 = params[2];
             const double  kappa  = params[3];
@@ -804,9 +792,8 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
 	// One more function invocation
 	++mNumEvaluations;
 
-
 	// Save the values to local variables to speedup access
-	if (mFixedBranchLength)
+	if(mFixedBranchLength)
 	{
         const double  omega0 = aVar[2];
         const double  kappa  = aVar[3];
@@ -859,8 +846,8 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
         mBgScale = aVar[1]*mScaleQw0 + (1.0-aVar[1])*mScaleQ1;
 #endif
 
-	// Fill the set of Probability Matrices
-	mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mBranches);
+		// Fill the set of Probability Matrices
+		mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mBranches);
 	}
 	else
 	{
@@ -916,11 +903,9 @@ double BranchSiteModelNullHyp::computeLikelihood(const std::vector<double>& aVar
         mBgScale = params[1]*mScaleQw0 + (1.0-params[1])*mScaleQ1;
 #endif
 
-	// Fill the set of Probability Matrices
-	mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
+		// Fill the set of Probability Matrices
+		mSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
     }
-
-
 
 	// Compute likelihoods
 	mForest.computeLikelihoods(mSet, mLikelihoods, mDependencies.getDependencies());
@@ -995,13 +980,13 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(const std::vector<dou
 	// One more function invocation
 	++mNumEvaluations;
 
-    if (mFixedBranchLength)
+    if(mFixedBranchLength)
 	{
         // Compute the following values for gradient only if anything different from branch length has changed
         if(aGradientVar)
         {
-            // Save the values to local variables to speedup access
-           // const double* params = &aVar[mNumTimes];
+			// Save the values to local variables to speedup access
+			// const double* params = &aVar[mNumTimes];
             const double  omega0 = aVar[2];
             const double  omega2 = aVar[4];
             const double  kappa  = aVar[3];
@@ -1277,7 +1262,7 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
 	++mNumEvaluations;
 
 	// Save the values to local variables to speedup access
-	if (mFixedBranchLength)
+	if(mFixedBranchLength)
 	{
         // Save the values to local variables to speedup access
         const double  omega0 = aVar[2];
@@ -1355,7 +1340,6 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
         // Compute all proportions
         getProportions(aVar[0], aVar[1], mProportions);
 
-
         // Compute the scale values
 #ifdef USE_ORIGINAL_PROPORTIONS
         mFgScale = mProportions[0]*mScaleQw0 +
@@ -1368,8 +1352,8 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
         mBgScale = aVar[1]*mScaleQw0+(1.0-aVar[1])*mScaleQ1;
 #endif
 
-	// Fill the set of Probability Matrices
-	mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, mBranches);
+		// Fill the set of Probability Matrices
+		mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, mBranches);
 	}
 	else
 	{
@@ -1460,9 +1444,8 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double>& aVar,
         mBgScale = params[1]*mScaleQw0+(1.0-params[1])*mScaleQ1;
 #endif
 
-
-	// Fill the set of Probability Matrices
-	mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
+		// Fill the set of Probability Matrices
+		mSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
 	}
 
 
@@ -1789,7 +1772,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
         else
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS,   mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
 
             opt->set_vector_storage(20);
             break;
@@ -1798,7 +1781,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LD_VAR1, mNumVariables));
         else
-            opt.reset(new nlopt::opt(nlopt::LD_VAR1,   mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_VAR1, mNumTimes+mNumVariables));
 
 		opt->set_vector_storage(20);
 		break;
@@ -1807,7 +1790,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LD_VAR2, mNumVariables));
         else
-            opt.reset(new nlopt::opt(nlopt::LD_VAR2,   mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_VAR2, mNumTimes+mNumVariables));
 
 		opt->set_vector_storage(20);
 		break;
@@ -1816,7 +1799,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
         else
-		opt.reset(new nlopt::opt(nlopt::LD_SLSQP,   mNumTimes+mNumVariables));
+			opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
 
 		opt->set_vector_storage(20);
 		break;
@@ -1825,7 +1808,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
         else
-            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,  mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_MLSL_LDS:
@@ -1949,6 +1932,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 ///
 /// @section blen_sect Branch lengths
 /// The first `mNumTimes` positions contain the branch lengths. The index varies from `0` to `mNumTimes-1`.
+/// Except if fixed branch lengths is selected. In this case the next variables starts from 0.
 ///
 /// @section v0_sect Combined proportions v0
 /// The `v0 = (p0+p1)` value is at index `mNumTimes+0`
