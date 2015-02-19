@@ -11,7 +11,7 @@
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
 
-//// Value used for the LRT test. It is chisq(.95, df=1)/2
+/// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
 /// Common routines for testing the two hypotheses (H0 and H1).
@@ -253,7 +253,7 @@ private:
 	///
 	/// @param[in] aNumTimes Number of times (i.e.\ branch lengths)
 	/// @param[in] aNumVariables Number of other variables (4 for H0, 5 for H1)
-	/// @param[in] aFixedBranch
+	/// @param[in] aFixedBranchLength Force the branch lengths to be fixed
 	///
 	void setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength);
 
