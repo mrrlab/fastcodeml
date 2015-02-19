@@ -314,10 +314,6 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mTrace = true;
 			break;
 
-/*		case OPT_FORCE_SERIAL:
-			mForceSerial = true;
-			break;*/
-
 		case OPT_BRANCH_FROM_FILE:
 			mBranchFromFile = true;
 			break;
@@ -378,10 +374,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_NUM_THREADS:
-            mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
-          /*  if (mNumThreads == 1)
-                mForceSerial = true;*/
-            if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
+            mNumThreads = static_cast<int>(atoi(args.OptionArg()));
+            if(mNumThreads <= 0) throw FastCodeMLFatal("Invalid number of threads");
 			break;
 
         case OPT_BRANCH_LENGTH:

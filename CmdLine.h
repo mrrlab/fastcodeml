@@ -53,19 +53,18 @@ public:
 		mTrace(false),
 #ifdef _OPENMP
 		mNumThreads(omp_get_max_threads()),
+		mForceSerial(false),
 #else
         mNumThreads(1),
+		mForceSerial(true),
 #endif
-		mForceSerial(false),
 		mBranchFromFile(false),
 		mInitH0fromH1(false),
 		mInitFromParams(false),
 		mCleanData(false),
 		mStopIfNotLRT(true),
-//		mCmdLineImpl(NULL),
-        	mFixedBranchLength(false),
-                mCmdLineImpl(NULL)
-
+        mFixedBranchLength(false),
+        mCmdLineImpl(NULL)
 	{}
 
 	/// Destructor.
@@ -81,7 +80,6 @@ public:
 	/// @exception FastCodeMLSuccess After showing help to exit the application
 	///
 	void parseCmdLine(int aCnt, char **aVal);
-
 
 
 
@@ -106,14 +104,14 @@ public:
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
-        unsigned int    	mNumThreads;                    ///< Number of threads (if 1 the parallelization is disabled)
+    int   			mNumThreads;            ///< Number of threads (if 1 the parallelization is disabled)
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
-    	bool          		 mFixedBranchLength;           ///<fixed branch lengths
+   	bool			mFixedBranchLength;     ///< Force fixed branch lengths
 
 
 

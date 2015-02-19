@@ -51,9 +51,6 @@
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
 ///
-//const char* version="1.2.0";
-
-
 int main(int aRgc, char **aRgv)
 {
 	try
@@ -76,35 +73,14 @@ int main(int aRgc, char **aRgv)
 	// Adjust and report the number of threads that will be used
 #ifdef _OPENMP
 	int num_threads = omp_get_max_threads();
-    //std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
-     if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= (unsigned int)num_threads))
-        num_threads = cmd.mNumThreads;
-    // std::cout<<"num of thr: "<< num_threads <<std::endl;
+    if((cmd.mNumThreads < 1) || (cmd.mNumThreads > num_threads))
+        cmd.mNumThreads = num_threads;
 
-     omp_set_num_threads(num_threads);
-    /*if (num_threads < 2)
-        cmd.mForceSerial = true;
-     else
-        cmd.mForceSerial = false;*/
+    omp_set_num_threads(cmd.mNumThreads);
 #else
-	cmd.mNumThreads=1;
-	int num_threads = 1;
-	cmd.mForceSerial = true;
+	cmd.mNumThreads  = 1;
 #endif
-
-/*#ifdef _OPENMP
-	int num_threads = omp_get_max_threads();
-	if(num_threads < 2 || cmd.mForceSerial)
-	{
-		cmd.mForceSerial = true;
-		num_threads = 1;
-		omp_set_num_threads(1);
-	}
-#else
-	cmd.mForceSerial = true;
-	int num_threads = 1;
-#endif*/
 
 #ifdef USE_MPI
 	// Shutdown messages from all MPI processes except the master
@@ -115,9 +91,9 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
 	
-		std::cout << "------------------------------------\n";
-		std::cout << "FastCodeML V" << FASTCODEML_VERSION << "\n";
-		std::cout << "------------------------------------\n\n";
+													std::cout << "------------------------------------\n";
+													std::cout << "FastCodeML V" << FASTCODEML_VERSION << "\n";
+													std::cout << "------------------------------------\n\n";
 
 													std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
 													std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
@@ -151,12 +127,11 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
 													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
 		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
-        if(cmd.mNumThreads)                         std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
         if(cmd.mFixedBranchLength)                        std::cerr << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
-		if(num_threads > 1)
+		if(cmd.mNumThreads > 1)
 		{
-													std::cout << "Num. threads:   " << num_threads << std::endl
+													std::cout << "Num. threads:   " << cmd.mNumThreads << std::endl
 		                                                      << "Num. cores:     " << omp_get_num_procs() << std::endl;
 		}
 		else
@@ -300,7 +275,7 @@ int main(int aRgc, char **aRgv)
 #endif
 
 	// Get the time needed by data preprocessing
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (preprocessing) ncores: " << std::setw(2) << cmd.mNumThreads << " time: " << timer.get() << std::endl;}
 
 	// Print few statistics
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << forest;
@@ -313,7 +288,7 @@ int main(int aRgc, char **aRgv)
 	// If executed under MPI report the time spent, otherwise stop the timer so it can be restarted around the serial execution
 	if(has_run_under_MPI)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads*(hlc.numJobs()-1)+1 << " time: " << timer.get() << std::endl;}
+		if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << cmd.mNumThreads*(hlc.numJobs()-1)+1 << " time: " << timer.get() << std::endl;}
 		return 0;
 	}
 	else
@@ -472,7 +447,7 @@ int main(int aRgc, char **aRgv)
 	}
 
 	// Get the time needed by the parallel part
-	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
+	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << cmd.mNumThreads << " time: " << timer.get() << std::endl;}
 
 	// Output the results
 	output_results.outputResults();
