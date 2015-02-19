@@ -6,7 +6,14 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wlong-long"
 #endif
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4267) // warning C4267: 'argument' : conversion from 'size_t' to 'unsigned int', possible loss of data
+#endif
 #include <boost/dynamic_bitset.hpp>
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic pop
 #endif
