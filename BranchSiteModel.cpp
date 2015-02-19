@@ -431,7 +431,6 @@ void BranchSiteModel::initVariables(void)
                 double tot = x0 + x1 + 1.0;
                 double p0 = x0/tot;
                 double p1 = x1/tot;
-                if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
                 mVar[0] = p0+p1;											// p0+p1
                 mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -450,7 +449,6 @@ void BranchSiteModel::initVariables(void)
                 double tot = x0 + x1 + 1.0;
                 double p0 = x0/tot;
                 double p1 = x1/tot;
-                if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
                 mVar[0] = p0+p1;											// p0+p1
                 mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -516,7 +514,6 @@ void BranchSiteModel::initVariables(void)
                 double tot = x0 + x1 + 1.0;
                 double p0 = x0/tot;
                 double p1 = x1/tot;
-                if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
                 mVar[mNumTimes+0] = p0+p1;											// p0+p1
                 mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -535,7 +532,6 @@ void BranchSiteModel::initVariables(void)
                 double tot = x0 + x1 + 1.0;
                 double p0 = x0/tot;
                 double p1 = x1/tot;
-                if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
 
                 mVar[mNumTimes+0] = p0+p1;											// p0+p1
                 mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
@@ -677,9 +673,9 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(const std::vector<do
         // Compute the scale values
 #ifdef USE_ORIGINAL_PROPORTIONS
         mFgScale = mProportions[0]*mScaleQw0 +
-                    mProportions[1]*mScaleQ1  +
-                    mProportions[2]*mScaleQ1  +
-                    mProportions[3]*mScaleQ1;
+                   mProportions[1]*mScaleQ1  +
+                   mProportions[2]*mScaleQ1  +
+                   mProportions[3]*mScaleQ1;
         mBgScale = (mProportions[0]*mScaleQw0+mProportions[1]*mScaleQ1)/(mProportions[0]+mProportions[1]);
 #else
         mFgScale = mProportions[0]*mScaleQw0 + (1.0-mProportions[0])*mScaleQ1;
