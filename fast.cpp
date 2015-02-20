@@ -539,7 +539,7 @@ Usage:
     FastCodeML [options] tree_file alignment_file
 
 -d  --debug  -v  --verbose (required argument)
-        Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
+		Verbosity level (0: none; 1: results only; 2: normal info; 3: externded info; 4: MPI trace; 5: more debug; 6: extreme debug) (default: 1)
 
 -q  --quiet (no argument)
         No messages except results

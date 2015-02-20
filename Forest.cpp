@@ -108,7 +108,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
-	cf->setCodonFrequencies(codons_info, aCodonFrequencyModel, mVerbose >= VERBOSE_INFO_OUTPUT);
+	cf->setCodonFrequencies(codons_info, aCodonFrequencyModel, mVerbose >= VERBOSE_MORE_INFO_OUTPUT);
 	mCodonFreq     = cf->getCodonFrequencies();
 	mInvCodonFreq  = cf->getInvCodonFrequencies();
 	mInv2CodonFreq = cf->getCodonFreqInv2();

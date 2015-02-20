@@ -146,7 +146,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 	// Then the definitions of each command line option
 	CSimpleOpt::SOption parser_options[] = {
-		{ OPT_VERBOSE,			"-d",					SO_REQ_SEP, "Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)" },
+		{ OPT_VERBOSE,			"-d",					SO_REQ_SEP, "Verbosity level (0: none; 1: results only; 2: normal info; 3: externded info; 4: MPI trace; 5: more debug; 6: extreme debug) (default: 1)" },
 		{ OPT_VERBOSE,			"--debug",				SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"-v",					SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"--verbose",			SO_REQ_SEP, "" },
