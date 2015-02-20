@@ -272,8 +272,8 @@ private:
 		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
 		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
 
-		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
-
+		OPTIM_LN_COBYLA		= 12,	///< Derivative-free (Constrained Optimization BY Linear Approximations)  
+		
 		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
