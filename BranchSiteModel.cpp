@@ -1535,6 +1535,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_SLSQP:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
+	case OPTIM_LD_MIXED:
 		return;
 
 	default:
@@ -1763,9 +1764,59 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			throw FastCodeMLFatal(o);
 		}
 	}
+	
+	std::auto_ptr<nlopt::opt> opt;
+	
+	
+	// Special case for a mixed optimizer
+	if(mOptAlgo == OPTIM_LD_MIXED)
+	{
+		// first "reduce" quickly the problem with LBFGS
+		if (mFixedBranchLength)
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+        else
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+        opt->set_vector_storage(20);
+        
+        // Initialize bounds and termination criteria
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+		opt->set_ftol_rel(mRelativeError);
+		nlopt::srand(static_cast<unsigned long>(mSeed));
+		
+		// Optimize the function until enough iterations are made
+		double maxl = 0;
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+		opt->set_maxeval(1000);
+		
+		optimize_using_nlopt(opt, maxl);		
+		
+		// finish problem with SLSQP
+		if (mFixedBranchLength)
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+        else
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+        opt->set_vector_storage(20);
+        
+        // Initialize bounds and termination criteria
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+		opt->set_ftol_rel(mRelativeError);
+		nlopt::srand(static_cast<unsigned long>(mSeed));		
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+				
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+		
+		optimize_using_nlopt(opt, maxl);
+		
+		std::cout << "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
 
 	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
-	std::auto_ptr<nlopt::opt> opt;
 	switch(mOptAlgo)
 	{
 	case OPTIM_LD_LBFGS:
@@ -1925,6 +1976,42 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 
 	return maxl;
+}
+
+
+
+void BranchSiteModel::optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl)
+{
+	try
+	{
+		nlopt::result result = aopt->optimize(mVar, amaxl);
+	}
+	catch(const nlopt::forced_stop&)
+	{
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+	}
+	catch(const nlopt::roundoff_limited&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+	}
+	catch(const std::runtime_error&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Generic failure, equivalent to NLOPT_FAILURE.");
+	}
+	catch(const std::invalid_argument&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Invalid arguments (e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etcetera), equivalent to NLOPT_INVALID_ARGS.");
+	}
+	catch(const std::bad_alloc&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Ran out of memory (a memory allocation failed), equivalent to NLOPT_OUT_OF_MEMORY.");
+	}
+	catch(const std::exception& e)
+	{
+		std::ostringstream o;
+		o << "Exception in computation: " << e.what();
+		throw FastCodeMLFatal(o);
+	}
 }
 
 /// @page vars_page Layout of free variables

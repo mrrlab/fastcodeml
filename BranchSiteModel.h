@@ -10,6 +10,8 @@
 #include "ProbabilityMatrixSet.h"
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
+#include "nlopt.hpp"
+#include <memory>
 
 /// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
@@ -272,9 +274,11 @@ private:
 		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
 		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
 
-		OPTIM_LN_COBYLA		= 12,	///< Derivative-free (Constrained Optimization BY Linear Approximations)  
+		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free (BOBYQA)  
 		
 		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
+		
+		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
@@ -290,6 +294,14 @@ private:
 		INIT_PARAMS=6,			///< w0, w2, k, v0, v1 (or x0, x1) have been initialized (it is INIT_PARAMS_H1 | INIT_PARAM_W2)
 		INIT_TIMES_FROM_FILE=8	///< The times come from the tree file
 	};
+	
+	/// optimize calling the nlopt 'optimize function'
+	/// manages all the try/catch
+	///
+	/// @param[in] aopt The optimizer to use, already containing all the parameters
+	/// @param[in/out] amaxl The value of the maximum likelihood
+	///
+	void optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
 
 public:
 	/// Initialize the times from the input phylogenetic tree.
