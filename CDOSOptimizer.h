@@ -97,8 +97,13 @@ private:
 	/// i.e. u1 = (1,0,0,...,0)^T
 	///		 u2 = (0,1,0,...,0)^T 
 	///		 ...
-	///	set working space for the vectors 'q' (see member variable mQ)
+	///
 	void initSearchDirections();
+	
+	/// alocateWorkspace
+	/// alocate the workspace for the QR decomposition
+	/// 
+	void alocateWorkspace();
 
 private:
 	
@@ -108,6 +113,8 @@ private:
 	std::vector<double>			mU;					///< Search directions
 	std::vector<double>			mQ;					///< Orthogonal directions (work space for the QR decomposition)
 	std::vector<double>			mqi;				///< Last orthogonal vector, used to update the search directions
+	std::vector<double>			mSpace;				///< Workspace for the QR decomposition; also used to store the tau variable in QR decomposition
+	int							mlwork;				///< Size of the workspace needed for the QR decomposition
 	double 						mLambda;			///< Step variable
 	
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed

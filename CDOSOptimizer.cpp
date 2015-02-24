@@ -10,36 +10,34 @@ double CDOSOptimizer::maximizeFunction(std::vector<double>& aVars)
 	mN = static_cast<int>(aVars.size());
 	
 	double lnL(0.0);
-	CDOSminimizer(lnL, &aVars[0]);
+	CDOSminimizer(&lnL, &aVars[0]);
 	return -lnL; 
 }
 
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
-int CDOSOptimizer::CDOSminimizer(double& f, double x[])
+int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 {
 	const double minus_one(-1);
-	
+	alocateWorkspace();
+	InitSearchDirections();
 	
 	// stage 1
-	
-	InitSearchDirections();
 	// first conjugate direction is the anti-gradient normalized
 	std::vector<double> gradient;
 	gradient.resize(mN, 0.);
 	// TODO compute the gradient
 	
 #ifdef USE_LAPACK
-	double norm = dnrm2_(&mN, &gradient[0], &I1);
-	double scale = -1./norm;
+	double scale = -1./dnrm2_(&mN, &gradient[0], &I1);
 
 	dscal_(&mN, &scale, &gradient[0], &I1);
 #else
-	double norm = 0.;
-	for(int i=0; i < mN; ++i) norm += gradient[i]*gradient[i];
-	norm = sqrt(norm);
-	for(int i=0; i < mN; ++i) gradient[i] /= -norm;
+	double scale = 0.;
+	for(int i=0; i < mN; ++i) scale += gradient[i]*gradient[i];
+	scale = -1./sqrt(scale);
+	for(int i=0; i < mN; ++i) gradient[i] *= scale;
 #endif
 	
 	memcpy(&mU[0], &gradient[0], mN*sizeof(double));
@@ -48,19 +46,21 @@ int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 	
 	// stage 2
 	double mLambdaS (0.62*mLambda);
+	std::vector<double> y;
+	y.resize(mN);
 	
 	for(int i(1); i<mN; i++)
 	{
-		// QR decomposition to find the next orthogonal shift direction
+		// QR decomposition to find the next orthogonal shift direction mqi
 		QRdecomposition(i);
 		
-		// y = x+lamndaS*mqi
-		memcpy(y, x, mN*sizeof(double));
+		// perform y = x+lamndaS*mqi using blas
+		memcpy(&y[0], &x[0], mN*sizeof(double));
 		daxpy_(&mN, &mlambdaS, &y[0], &I1, &mqi[0]);
 		
 		for(int j(0); j<i; j++)
 		{
-			LineSearch(y, mU[j*mN]);
+			LineSearch(&y[0], &mU[j*mN]);
 		}
 		// update ui
 		// TODO
@@ -69,7 +69,7 @@ int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 	// stage 3 (for non quadratic functions only, which is here the case)
 	
 	// compute the step length
-	daxpy_(&mN, &minus_one,	double *x,	const int *incx, double *y,	const int *incy);
+	//daxpy_(&mN, &minus_one,	double *x,	const int *incx, double *y,	const int *incy);
 	
 	bool stop_condition_reached(false);
 	while(!stop_condition_reached)
@@ -84,39 +84,24 @@ int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
-void QRdecomposition(int width) //TODO use blas
+void QRdecomposition(int width)
 {
-	// copy first the 'width' first vectors of U into Q
-	memcpy(mQ, mU, mN*width*sizeof(double));
+	// copy the 'width' first vectors of U into Q
+	memcpy(&mQ[0], &mU[0], mN*width*sizeof(double));
 	
-	// local variables
-	double s(0.);
+	// size of the space to use
+	const int lwork = mlwork;
+	int info;
 	
-	for(int j(0); j<mN; j++)
-	{
-		s = 0.;
-		for(int i(j); j<width; j++)	{s += square(mQ[j*mN+i]); }
-		s = sqrt(s);
-		double ajj( mQ[(j+1)*mN] );
-		double dj( ajj>0 ? -s : s );
-		double fak( s*(s+fabs(ajj)) );
-		mQ[(j+1)*mN] = ajj - dj;
-		
-		for(int k(j); k<width; k++) {mQ[j*mN+k] /= fak;}
-		for(int i(j+1); i<mN; i++)
-		{
-			s = 0.;
-			for(int k(j); k<width; k++) {s += mQ[j*mN+k] * mQ[i*mN+k];}
-			for(int k(j); k<width; k++) {mQ[i*mN+k] -= mQ[j*mN+k] * s;}
-		}
-	}
-	// compute now the vector qi (position 'width')
-	for(int j(0); j<mN; j++) {mqi[j] = (j==width) ? 1. : 0.;}
-	for(int j(0); j<mN; j++)
-	{			
-		s = (j>=width-1) ? mQ[(width+1)*mN] : 0.;
-		for(int k(j); k<width; k++){mqi[k] += mQ[j*mN+k]*s; }
-	}
+	// use the lapack functions to first decompose mQ
+	dgeqrf(&mN, &width, &mQ[0], &width, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	//TODO: check errors
+	// and then compute the first 'width' vectors of Q
+	dorgqr(&mN, &width, &width, &mQ[0], &width, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	//TODO: check errors
+	
+	// copy the interesting vector in mqi
+	memcpy(&mqi[0], &mQ[mN*width], mN*sizeof(double));
 }
 
 
@@ -132,3 +117,9 @@ void CDOSOptimizer::initSearchDirections()
 	mqi.resize(mN);
 }
 
+// ----------------------------------------------------------------
+void CDOSOptimizer::alocateWorkspace()
+{
+	mlwork = mN*mN;
+	mSpace.resize(mlwork+mN);
+}
