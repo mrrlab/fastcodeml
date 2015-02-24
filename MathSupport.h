@@ -145,5 +145,45 @@ inline double normalizeVector(double* RESTRICT aVector)
 #endif
 
 
+/// swap: swaps two vectors
+///
+/// @params[in,out] x1 first vector
+/// @params[in,out] x2 second vector
+/// @params[in] N size of the vectors
+///
+void swap(double *x1, double *x2, int const& N)
+{
+	double tmp;
+	for(int i(0); i<N; i++)
+	{
+		tmp = x1[i];
+		x1[i] = x2[i];
+		x2[i] = tmp;
+	}
+}
+
+/// distance: distance between two vectors x1 and alpha*x2 using the Euclidian-norm
+///
+/// @params[in] x1 first vector
+/// @params[in] x2 second vector
+/// @params[out] workspace should have size m (m>n)
+/// @params[in] N size of the vectors
+/// @params[in] alpha coefficient 
+///
+/// @return The euclidian norm |x1-alpha*x2|
+///
+double distance(double *x1, double *x2, double *workspace, int const& N, double alpha=-1.)
+{	
+	const int n(N);
+	memcpy(workspace, x1, n*sizeof(double));
+	const double a(alpha);
+	daxpy_(&n, &a, x1, &I1, workspace, &I1);
+	return dnrm2_(&n, workspace, &I1);
+}
+
+
+
+
+
 #endif
 

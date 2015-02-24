@@ -77,12 +77,23 @@ private:
 	int CDOSminimizer(double& f, double x[]);
 	
 	/// LineSearch
-	/// Perform a line search in the u direction
+	/// Perform a line search in the p direction
 	/// 
-	/// @param[in,out] x the variable to be optimized
-	/// @param[in] p the direction of search
-	/// TODO
-	void LineSearch(double x[]), double[] p);
+	/// @params[in,out] y The variable to be optimized
+	/// @params[in] p The direction of search
+	/// @params[in] step The (initial) step value, copy passing 
+	///					so it is not modified
+	/// @params[out] fy the value of the function
+	///
+	void LineSearch(double *y, double *p, double step, double *fy);
+	
+	/// isFeasiblePoint
+	/// check if the point satisfies the constraints
+	///
+	/// @params[in] x the point we consider
+	/// @return true if the point satisfies the constrains, false otherwise
+	/// 
+	bool isFeasiblePoint(double *x) const;
 	
 	/// QRdecomposition
 	/// perform a QR decomposition of the first i vectors u.
@@ -104,6 +115,14 @@ private:
 	/// alocate the workspace for the QR decomposition
 	/// 
 	void alocateWorkspace();
+	
+	/// reduce_step
+	///	reduces the step value when needed, change its size if numIter is too high
+	///
+	/// @params[in,out] step The step size to reduce or change size
+	/// @params[in] numIter The number of iterations we performed
+	///
+	void reduce_step(double& step, int const& numIter) const;
 
 private:
 	
