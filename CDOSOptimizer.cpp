@@ -1,4 +1,6 @@
 #include "CDOSOPtimizer.h"
+#include "blas.h"
+#include "lapack.h"
 
 inline static double square(double a) {return a*a;}
 
@@ -17,13 +19,30 @@ double CDOSOptimizer::maximizeFunction(std::vector<double>& aVars)
 // ----------------------------------------------------------------
 int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 {
+	const double minus_one(-1);
+	
+	
 	// stage 1
 	
 	InitSearchDirections();
 	// first conjugate direction is the anti-gradient normalized
 	std::vector<double> gradient;
 	gradient.resize(mN, 0.);
-	// TODO compute the gradient and rescale it
+	// TODO compute the gradient
+	
+#ifdef USE_LAPACK
+	double norm = dnrm2_(&mN, &gradient[0], &I1);
+	double scale = -1./norm;
+
+	dscal_(&mN, &scale, &gradient[0], &I1);
+#else
+	double norm = 0.;
+	for(int i=0; i < mN; ++i) norm += gradient[i]*gradient[i];
+	norm = sqrt(norm);
+	for(int i=0; i < mN; ++i) gradient[i] /= -norm;
+#endif
+	
+	memcpy(&mU[0], &gradient[0], mN*sizeof(double));
 	
 	LineSearch(x, mU[0]);
 	
@@ -36,6 +55,8 @@ int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 		QRdecomposition(i);
 		
 		// y = x+lamndaS*mqi
+		memcpy(y, x, mN*sizeof(double));
+		daxpy_(&mN, &mlambdaS, &y[0], &I1, &mqi[0]);
 		
 		for(int j(0); j<i; j++)
 		{
@@ -45,14 +66,25 @@ int CDOSOptimizer::CDOSminimizer(double& f, double x[])
 		// TODO
 	}
 	
-	// stage 3
-	// TODO
+	// stage 3 (for non quadratic functions only, which is here the case)
+	
+	// compute the step length
+	daxpy_(&mN, &minus_one,	double *x,	const int *incx, double *y,	const int *incy);
+	
+	bool stop_condition_reached(false);
+	while(!stop_condition_reached)
+	{
+		//TODO
+	}
+	
+	
+	return 0;
 }
 
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
-void QRdecomposition(int width)
+void QRdecomposition(int width) //TODO use blas
 {
 	// copy first the 'width' first vectors of U into Q
 	memcpy(mQ, mU, mN*width*sizeof(double));

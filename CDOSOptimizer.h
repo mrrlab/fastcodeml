@@ -8,6 +8,8 @@
 
 /// CDOSOptimizer class.
 /// derivative free optimizer taken from 
+/// 'Universal derivative-free optimization method with
+///  quadratic convergence', Sergey N. Moiseev, 2011 
 ///
 ///     @author Lucas Amoudruz - EPFL.
 ///     @date 2015-02-23 (initial version)
@@ -95,7 +97,7 @@ private:
 	/// i.e. u1 = (1,0,0,...,0)^T
 	///		 u2 = (0,1,0,...,0)^T 
 	///		 ...
-	///	set space for the vectors 'q' (see member variable mQ)
+	///	set working space for the vectors 'q' (see member variable mQ)
 	void initSearchDirections();
 
 private:

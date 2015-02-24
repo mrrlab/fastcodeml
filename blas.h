@@ -15,6 +15,7 @@
 #define dsyevd_ _dsyevd_
 #define dsyrk_  _dsyrk_
 #define dnrm2_  _dnrm2_
+#define daxpy_  _daxpy_
 #else
 #define ddot_   DDOT
 #define dscal_  DSCAL
@@ -24,6 +25,7 @@
 #define dsyevd_ DSYEVD
 #define dsyrk_  DSYRK
 #define dnrm2_  DNRM2
+#define daxpy_  DAXPY
 #endif
 #endif
 
@@ -34,6 +36,7 @@
 #define dscal_ dscal
 #define dsyrk_ dsyrk
 #define dsymv_ dsymv
+#define daxpy_  daxpy
 #endif
 
 
@@ -330,6 +333,31 @@ void dscal_(const int *n,
 			const double *alpha,
 			double *x,
 			const int *incx);
+
+
+/// Scale by alpha a vector x and add it to a vector y 
+///
+/// This routine performs the following vector operation:  y <-- alpha x + y
+/// where alpha is a double precision scalar, x and y are double precision vectors.
+///
+/// @param[in] n  Number of elements in the vector. If n <= 0, this routine returns without computation.
+///
+/// @param[in]  alpha   The scaling value.
+///
+/// @param[in]  x Array of dimension (n-1) * |incx| + 1.
+/// @param[in]  incx Increment between elements of x. If incx = 0, the results will be unpredictable.
+///
+/// @param[in,out]  y Array of dimension (n-1) * |incy| + 1. Vector which contains the result.
+/// @param[in]  incy Increment between elements of x. If incy = 0, the results will be unpredictable.
+///
+
+void daxpy_(const int *n,
+			const double *alpha,
+			double *x,
+			const int *incx,
+			double *y,
+			const int *incy);
+
 
 #ifdef __cplusplus
 }

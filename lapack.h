@@ -251,6 +251,138 @@ extern "C" void dsyevd_(const char *jobz,
                         int *iwork,
                         const int *liwork,
                         int *info);
+                        
+                        
+
+/// The pdgeqrf routine forms the QR factorization of a general m-by-n distributed matrix 
+/// sub(A)= A(ia:ia+m-1,ja:ja+n-1) as A=Q*R
+///
+/// @params[in] m  (global) INTEGER. The number of rows in the submatrix sub(Q) (m ≥ 0).
+///
+/// @params[in] n  (global) INTEGER. The number of columns in the submatrix sub(Q) (m ≥ n ≥ 0).
+///
+/// @params[in,out] a  (local)  DOUBLE PRECISION 
+///			in:	   Pointer into the local memory to an array of local dimension (lld_a, LOCc(ja+n-1)). 
+///				   Contains the local pieces of the distributed matrix sub(A) to be factored.
+///			out:   The elements on and above the diagonal of sub(A) contain the min(m,n)-by-n upper 
+///				   trapezoidal matrix R (R is upper triangular if m ≥ n); the elements below the diagonal, 
+///				   with the array tau, represent the orthogonal/unitary matrix Q as a product of elementary 
+///				   reflectors (see Application Notes below).
+///
+/// @params[in] ia
+/// @params[in] ja (global) INTEGER. 
+/// 			The row and column indices in the global array a indicating the first row and the first 
+///				column of the submatrix A(ia:ia+m-1,ja:ja+n-1), respectively.
+///
+/// @params[in] desca (global and local) INTEGER array, dimension (dlen_). 
+///				The array descriptor for the distributed matrix A.
+///
+/// @params[out] tau (local) DOUBLE PRECISION Array, DIMENSION LOCc(ja+k-1).
+///				Contains the scalar factor tau of elementary reflectors. tau is tied to the distributed matrix A.
+///
+/// @params[in,out] work (local) DOUBLE PRECISION
+///			    Workspace array of dimension of lwork.
+///				On exit, work(1) contains the minimum value of lwork required for optimum performance.
+///
+/// @params[in] lwork (local or global) INTEGER, dimension of work.
+///				Must be at least lwork ≥ nb_a*(nqa0 + mpa0 + nb_a), where
+///			    iroffa = mod(ia-1, mb_a), icoffa = mod(ja-1, nb_a),
+///				iarow = indxg2p(ia, mb_a, MYROW, rsrc_a, NPROW),
+///				iacol = indxg2p(ja, nb_a, MYCOL, csrc_a, NPCOL),
+///				mpa0 = numroc(m+iroffa, mb_a, MYROW, iarow, NPROW),
+///				nqa0 = numroc(n+icoffa, nb_a, MYCOL, iacol, NPCOL);
+///				indxg2p and numroc are ScaLAPACK tool functions; MYROW, MYCOL, NPROW and NPCOL can be 
+///				determined by calling the subroutine blacs_gridinfo.
+///				If lwork = -1, then lwork is global input and a workspace query is assumed; 
+///				the routine only calculates the minimum and optimal size for all work arrays. 
+///				Each of these values is returned in the first entry of the corresponding work array, 
+///				and no error message is issued by pxerbla.
+///
+/// @params[out] info (global) INTEGER.
+///					= 0: the execution is successful.
+///					< 0: if the i-th argument is an array and the j-entry had an illegal value, 
+///					then info = - (i* 100+j), if the i-th argument is a scalar and had an illegal value, 
+///					then info = -i.
+///
+extern "C" void pdgeqrf(const int *m
+					   ,const int *n
+					   ,double *A
+					   ,const int *IA
+					   ,const int *JA
+					   ,const int *desca
+					   ,double *tau
+					   ,double *work
+					   ,const int *lwork
+					   ,int *info);
+
+
+
+/// The pdorgqr routine generates the whole or part of m-by-n real distributed matrix Q denoting 
+/// A(ia:ia+m-1, ja:ja+n-1) with orthonormal columns, which is defined as the first n columns of 
+/// a product of k elementary reflectors of order m Q= H(1)*H(2)*...*H(k) as returned by p?geqrf.
+///
+/// @params[in] m  (global) INTEGER. The number of rows in the submatrix sub(Q) (m ≥ 0).
+///
+/// @params[in] n  (global) INTEGER. The number of columns in the submatrix sub(Q) (m ≥ n ≥ 0).
+///
+/// @params[in] k  (global) INTEGER. The number of elementary reflectors whose product defines 
+/// 			   					 the matrix Q (n ≥ k ≥ 0).
+///
+/// @params[in,out] a  (local)  DOUBLE PRECISION 
+///			in:	   Pointer into the local memory to an array of local dimension (lld_a, LOCc(ja+n-1)). 
+///				   The j-th column must contain the vector which defines the elementary reflector 
+///				   H(j), ja≤j≤ja +k-1, as returned by p?geqrf in the k columns of its distributed 
+///				   matrix argument A(ia:*, ja:ja+k-1).
+///			out:   Contains the local pieces of the m-by-n distributed matrix Q.
+///
+/// @params[in] ia
+/// @params[in] ja (global) INTEGER. 
+/// 			The row and column indices in the global array a indicating the first row and the first 
+///				column of the submatrix A(ia:ia+m-1,ja:ja+n-1), respectively.
+///
+/// @params[in] desca (global and local) INTEGER array, dimension (dlen_). 
+///				The array descriptor for the distributed matrix A.
+///
+/// @params[in] tau (local) DOUBLE PRECISION Array, DIMENSION LOCc(ja+k-1).
+///				Contains the scalar factor tau (j) of elementary reflectors H(j) as returned by p?geqrf. 
+///				tau is tied to the distributed matrix A.
+///
+/// @params[in,out] work (local) DOUBLE PRECISION
+///			    Workspace array of dimension of lwork.
+///				On exit, work(1) contains the minimum value of lwork required for optimum performance.
+///
+/// @params[in] lwork (local or global) INTEGER, dimension of work.
+///				Must be at least lwork ≥ nb_a*(nqa0 + mpa0 + nb_a), where
+///			    iroffa = mod(ia-1, mb_a), icoffa = mod(ja-1, nb_a),
+///				iarow = indxg2p(ia, mb_a, MYROW, rsrc_a, NPROW),
+///				iacol = indxg2p(ja, nb_a, MYCOL, csrc_a, NPCOL),
+///				mpa0 = numroc(m+iroffa, mb_a, MYROW, iarow, NPROW),
+///				nqa0 = numroc(n+icoffa, nb_a, MYCOL, iacol, NPCOL);
+///				indxg2p and numroc are ScaLAPACK tool functions; MYROW, MYCOL, NPROW and NPCOL can be 
+///				determined by calling the subroutine blacs_gridinfo.
+///				If lwork = -1, then lwork is global input and a workspace query is assumed; 
+///				the routine only calculates the minimum and optimal size for all work arrays. 
+///				Each of these values is returned in the first entry of the corresponding work array, 
+///				and no error message is issued by pxerbla.
+///
+/// @params[out] info (global) INTEGER.
+///					= 0: the execution is successful.
+///					< 0: if the i-th argument is an array and the j-entry had an illegal value, 
+///					then info = - (i* 100+j), if the i-th argument is a scalar and had an illegal value, 
+///					then info = -i.
+///
+extern "C" void pdorgqr(const int *m
+					   ,const int *n
+					   ,const int *k
+					   ,double *A
+					   ,const int *IA
+					   ,const int *JA
+					   ,const int *desca
+					   ,double *tau
+					   ,double *work
+					   ,const int *lwork
+					   ,int *info);
+
 
 #endif
 

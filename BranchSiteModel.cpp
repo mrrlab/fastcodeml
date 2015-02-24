@@ -1771,12 +1771,12 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	// Special case for a mixed optimizer
 	if(mOptAlgo == OPTIM_LD_MIXED)
 	{
-		// first "reduce" quickly the problem with LBFGS
+		// first "reduce" (quickly?) the problem with BOBYQA
 		if (mFixedBranchLength)
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
         else
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
-        opt->set_vector_storage(20);
+            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
+        //opt->set_vector_storage(20);
         
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
@@ -1788,7 +1788,10 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		double maxl = 0;
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
-		opt->set_maxeval(1000);
+		// limit the number of calls so we can change the optimizer
+		int num_iterations(150);
+		opt->set_maxeval(num_iterations); // gradient free
+		//opt->set_maxeval(num_iterations * (1+mNumVariables+mNumTimes)); // gradient based
 		
 		optimize_using_nlopt(opt, maxl);		
 		
