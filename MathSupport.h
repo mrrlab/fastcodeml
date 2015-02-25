@@ -183,6 +183,54 @@ inline double distance(double *x1, double *x2, double *workspace, int const& N, 
 
 
 
+inline static double min2(double a, double b) {return (a < b) ? a : b;}
+inline static double max2(double a, double b) {return (a > b) ? a : b;}
+inline static double square(double a) {return a*a;}
+inline static void   zero(double x[], int n) {memset(x, 0, n*sizeof(double));}
+inline static void   xtoy(const double x[], double y[], int n) {memcpy(y, x, n*sizeof(double));}
+
+inline static void identityMatrix(double* x, int n) 
+{
+	memset(x, 0, n*n*sizeof(double));
+	for(int i = 0; i < n; i++) x[i*n + i] = 1.0;
+}
+
+static inline double norm(const double x[], int n) 
+{
+#ifdef USE_LAPACK
+	return dnrm2_(&n, x, &I1);
+#else
+	double t = 0;
+
+	for(int i = 0; i < n; ++i) t += square(x[i]);
+
+	return sqrt(t);
+#endif
+}
+
+static inline double innerp(const double x[], const double y[], int n) 
+{
+#ifdef USE_LAPACK
+	return ddot_(&n, x, &I1, y, &I1);
+#else
+	double t = 0.;
+
+	for(int i=0; i < n; ++i) t += x[i] * y[i];
+
+	return t;
+#endif
+}
+
+static inline double distance(const double* RESTRICT x, const double* RESTRICT y, int n) 
+{
+	double t = 0;
+
+	for(int i = 0; i < n; ++i) t += square(x[i] - y[i]);
+
+	return sqrt(t);
+}
+
+
 
 
 #endif
