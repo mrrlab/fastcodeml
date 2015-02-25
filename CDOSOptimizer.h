@@ -42,10 +42,9 @@ public:
 				 ,int aMaxIterations) 
 		:mModel(aModel)
 		,mTrace(aTrace)
-		,mTraceFun(false)
+		,mTraceFun(aTrace)
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
-		,mDeltaForGradient(aDeltaForGradient)
 		,mRelativeError(aRelativeError)
 		,mVerbose(aVerbose)
 		,mStopIfBigger(aStopIfBigger)
@@ -74,7 +73,7 @@ private:
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	int CDOSminimizer(double& f, double x[]);
+	int CDOSminimizer(double *f, double *x);
 	
 	/// LineSearch
 	/// Perform a line search in the p direction
@@ -123,6 +122,17 @@ private:
 	/// @params[in] numIter The number of iterations we performed
 	///
 	void reduce_step(double& step, int const& numIter) const;
+	
+	
+	/// computeGradient
+	/// Compute the gradient of the function to minimize.
+	/// Only used to bootstrap the optimizer
+	///
+	/// @params[in] f0 The value of the function at the point x0
+	/// @params[in] x0 The point at which we compute the gradient
+	/// @params[out] g The value of the gradient
+	///
+	void computeGradient(double f0, double *x0, double *g);
 
 private:
 	

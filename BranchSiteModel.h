@@ -279,6 +279,7 @@ private:
 		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
 		
 		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
+		OPTIM_CDOS			= 43,	///< CDOS optimizer derivative free
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};

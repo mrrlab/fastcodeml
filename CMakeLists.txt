@@ -27,6 +27,7 @@ set(SRCS
 	DAGScheduler.cpp
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
+	CDOSOptimizer.cpp
 )
 
 

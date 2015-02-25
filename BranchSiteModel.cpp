@@ -20,6 +20,7 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
+#include "CDOSOptimizer.h"
 #include "ParseParameters.h"
 
 /// Starting value for the computed maximum likelihood.
@@ -1536,6 +1537,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
 	case OPTIM_LD_MIXED:
+	case OPTIM_CDOS:
 		return;
 
 	default:
@@ -1765,8 +1767,20 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		}
 	}
 	
-	std::auto_ptr<nlopt::opt> opt;
+	// Special case for the CDOS optimizer
+	if(mOptAlgo == OPTIM_CDOS)
+	{
+		// Create the optimizer instance
+		CDOSOptimizer optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		
+		double maxl = optim.maximizeFunction(mVar);
+		
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+	}
 	
+	std::auto_ptr<nlopt::opt> opt;
 	
 	// Special case for a mixed optimizer
 	if(mOptAlgo == OPTIM_LD_MIXED)

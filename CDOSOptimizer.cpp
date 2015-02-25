@@ -1,4 +1,5 @@
-#include "CDOSOPtimizer.h"
+
+#include "CDOSOptimizer.h"
 #include "blas.h"
 #include "lapack.h"
 
@@ -17,22 +18,26 @@ double CDOSOptimizer::maximizeFunction(std::vector<double>& aVars)
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
-int CDOSOptimizer::CDOSminimizer(double *f, double x[])
+int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 {
 	// local variables
 	double fx, fy, lambda_i;
 	std::vector<double> x_prev(mN);
 
-	const double minus_one(-1);
 	alocateWorkspace();
-	InitSearchDirections();
+	initSearchDirections();
 	
 	// ------------------------------ stage 1 ------------------------------
 	
 	// first conjugate direction is the anti-gradient normalized
 	std::vector<double> gradient;
-	gradient.resize(mN, 0.);
-	// TODO compute the gradient
+	gradient.resize(mN);
+	
+	fy = -mModel->computeLikelihood(x, mN, mTraceFun);
+	fx = fy;
+	
+	// compute the gradient at point x
+	computeGradient(fx, x, &gradient[0]);
 	
 #ifdef USE_LAPACK
 	double scale = -1./dnrm2_(&mN, &gradient[0], &I1);
@@ -47,11 +52,11 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 	
 	memcpy(&mU[0], &gradient[0], mN*sizeof(double));
 	
-	LineSearch(&x, &mU[0], lamndaS, &fy);
+	LineSearch(x, &mU[0], mLambda, &fy);
 	
 	// ------------------------------ stage 2 ------------------------------
 	
-	double LambdaS (0.62*mLambda);
+	double lambdaS (0.62*mLambda);
 	std::vector<double> y;
 	y.resize(mN);
 	
@@ -64,7 +69,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 		memcpy(&y[0], &x[0], mN*sizeof(double));
 		daxpy_(&mN, &lambdaS, &y[0], &I1, &mqi[0], &I1);
 		
-		// look for a new point y (more optimized than x)
+		// look for a new point y (better than x)
 		for(int j(0); j<i-1; j++)
 		{	
 			// line search in uj direction
@@ -98,8 +103,8 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 	// compute the step value lambda_i 
 	daxpy_(&mN, &minus_one,	&x[0], &I1, &x_prev[0],	&I1);
 	
-	lambda_i = 0.3 * dnrm2_(&mN, &x_prev[0], &I1) + 0.091 * mLamnda;
-	lamdaS = 0.62 * lambda_i;
+	lambda_i = 0.3 * dnrm2_(&mN, &x_prev[0], &I1) + 0.091 * mLambda;
+	lambdaS = 0.62 * lambda_i;
 	
 	int num_iter(0);
 	bool stop_condition_reached(false);
@@ -109,15 +114,15 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 		// reverse the column order (is it needed??)
 		for(int column(0); column<mN/2; column++)
 		{
-			swap(&mU[column*mN], &mU[(mN-column-1)*mN], mN);
+			swap_content(&mU[column*mN], &mU[(mN-column-1)*mN], mN);
 		}
 		// compute the new direction
 		QRdecomposition(mN-1);
 		
 		// change the sign if necessary
-		double d1 = distance(&mq1[0], &mU[0], &mSpace[0], mN);
-		double d2 = distance(&mq1[0], &mU[0], &mSpace[0], mN, -1.);
-		if (d1 > d2) {dscal_(&mN, &minus_one, &mQi[0], &I1);}
+		double d1 = distance(&mqi[0], &mU[0], &mSpace[0], mN);
+		double d2 = distance(&mqi[0], &mU[0], &mSpace[0], mN, -1.);
+		if (d1 > d2) {dscal_(&mN, &minus_one, &mqi[0], &I1);}
 		
 		// perform y = x+lamndaS*mqi using blas
 		memcpy(&y[0], &x[0], mN*sizeof(double));
@@ -134,14 +139,14 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 		{
 			// line search in uj direction
 			// update y if better point
-			LineSearch(&y[0], &mU[j*mN]);
+			LineSearch(&y[0], &mU[j*mN], 3.*lambdaS, &fy);
 		}
 		
 		// --- update Un
 			double searchDirection = (fx<fy) ? -1. : 1.;
 			// store y-x in ui
 			memcpy(&mU[mN*(mN-1)], &y[0], mN*sizeof(double));
-			daxpy_(&mN, &minus_one, &x[0], &I1, &mU[mN*i], &I1);
+			daxpy_(&mN, &minus_one, &x[0], &I1, &mU[mN*(mN-1)], &I1);
 			// scale it
 			double scale = searchDirection/dnrm2_(&mN, &mU[mN*(mN-1)], &I1);
 			dscal_(&mN, &scale, &mU[mN*(mN-1)], &I1);
@@ -151,6 +156,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 		memcpy(&x_prev[0], &x[0], mN*sizeof(double));
 		if(fy < fx)
 		{
+			// TODO: use lambdaS and N_exit
 			if( fx - fy < mRelativeError )
 				stop_condition_reached = true;
 				
@@ -160,11 +166,12 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 		
 		// update the step value lambda_i 
 		daxpy_(&mN, &minus_one,	&x[0], &I1, &x_prev[0],	&I1);
-		lambda_i = 0.3 * dnrm2_(&mN, &x_prev[0], &I1) + 0.091 * mLamnda;
-		lamdaS = 0.62 * lambda_i;
+		lambda_i = 0.3 * dnrm2_(&mN, &x_prev[0], &I1) + 0.091 * mLambda;
+		lambdaS = 0.62 * lambda_i;
 	
 	
 		num_iter++;
+		*f = fx;
 		if (num_iter > mMaxIterations) 
 		{
 			stop_condition_reached = true;
@@ -177,29 +184,29 @@ int CDOSOptimizer::CDOSminimizer(double *f, double x[])
 }
 
 
-
-void LineSearch(double *y, double *p, double step, double *fy)
+// ----------------------------------------------------------------
+void CDOSOptimizer::LineSearch(double *y, double *p, double step, double *fy)
 {
 	// Local variables
 	// we use the workspace to store the three required points
 	std::vector<double> F;
 	std::vector<double*> X;
 	
-	double *x;
+	double *x, f_tmp;
 	x  = &mSpace[0];
-	double f_tmp;
 	
 	double step_size(step);
 	
 	// stopping criterion variables
-	int iter(0);
+	int iter( 0 );
+	int MaxIter( 20 );
 	bool keep_searching(true);
 	
 	
 	while(keep_searching)
 	{
 		iter ++;
-		if(iter > 20)
+		if(iter > MaxIter)
 		{
 			keep_searching = false;
 		}
@@ -241,14 +248,71 @@ void LineSearch(double *y, double *p, double step, double *fy)
 	
 	if (X.size() < 3)
 		return;
+
+	// compute the quadratic interpolation
 	
-	// TODO compute the parabolic point
+	double d, d12, d13, d23;
+	double f1, f2, f3, *x1, *x2, *x3;
 	
+	f3 = F.back(); F.pop_back();
+	f2 = F.back(); F.pop_back();
+	f1 = F.back(); F.pop_back();
+	
+	x3 = X.back(); X.pop_back();
+	x2 = X.back(); X.pop_back();
+	x1 = X.back(); X.pop_back();
+	
+	d12 = distance(x1, x2, &mSpace[0], mN);
+	d13 = distance(x1, x3, &mSpace[0], mN);
+	d23 = distance(x2, x3, &mSpace[0], mN);
+	
+	// we need d13 > d12 && d13 > d23
+	double f_swapper, *x_swapper;
+	if(d13 < d23)
+	{
+		if(d23 < d12) // d13 < d12 < d23
+		{
+			x_swapper = x1;
+			f_swapper = f1;
+			x1 = x2;
+			f1 = f2;
+			x2 = x_swapper;
+			f2 = f_swapper;
+		}
+		else // d13 < d23 < d12
+		{
+			x_swapper = x2;
+			f_swapper = f2;
+			x2 = x3;
+			f2 = f3;
+			x3 = x_swapper;
+			f3 = f_swapper;
+		}
+	}
+	else if(d13 < d12) // d23 < d13 < d12
+	{
+		x_swapper = x2;
+		f_swapper = f2;
+		x2 = x3;
+		f2 = f3;
+		x3 = x_swapper;
+		f3 = f_swapper;
+	}
+	
+	// compute the position of the interpolation
+	d = 0.5 * ( square(d12)*(f1-f3) + square(d13)*(f2-f1) ) / ( f2*d13 - f3*d12 + f1*(d12-d13) );
+	
+	// set y = x1 + d*p
+	memcpy(y, x1, mN*sizeof(double));
+	daxpy_(&mN, &d, p, &I1, y, &I1);
+	
+	// update fy
+	*fy = -mModel->computeLikelihood(y, mN, mTraceFun);
 }
 
 
-
-bool isFeasiblePoint(double *x) const
+// ----------------------------------------------------------------
+bool CDOSOptimizer::isFeasiblePoint(double *x) const
 {
 	// check all the bounds
 	for(int i(0); i<mN; i++)
@@ -261,7 +325,8 @@ bool isFeasiblePoint(double *x) const
 	return true;
 }
 
-void reduce_step(double& step, int const& numIter) const
+// ----------------------------------------------------------------
+void CDOSOptimizer::reduce_step(double& step, int const& numIter) const
 {
 	if(numIter <= 6)
 		step /= 1.1;
@@ -278,14 +343,14 @@ void reduce_step(double& step, int const& numIter) const
 	else if(numIter <= 50)
 		step *= 0.01; */
 	else
-		step = -5.*step
+		step = -5.*step;
 }
 
 
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
-void QRdecomposition(int width)
+void CDOSOptimizer::QRdecomposition(int width)
 {
 	// copy the 'width' first vectors of U into Q
 	memcpy(&mQ[0], &mU[0], mN*width*sizeof(double));
@@ -295,10 +360,10 @@ void QRdecomposition(int width)
 	int info;
 	
 	// use the lapack functions to first decompose mQ
-	dgeqrf(&mN, &width, &mQ[0], &width, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	dgeqrf(&mN, &width, &mQ[0], &mN, &mSpace[lwork], &mSpace[0], &lwork, &info);
 	//TODO: check errors
 	// and then compute the first 'width' vectors of Q
-	dorgqr(&mN, &width, &width, &mQ[0], &width, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	dorgqr(&mN, &width, &width, &mQ[0], &mN, &mSpace[lwork], &mSpace[0], &lwork, &info);
 	//TODO: check errors
 	
 	// copy the interesting vector in mqi
@@ -327,3 +392,28 @@ void CDOSOptimizer::alocateWorkspace()
 	else
 		mSpace.resize(mlwork+mN);
 }
+
+// ----------------------------------------------------------------
+void CDOSOptimizer::computeGradient(double f0, double *x0, double *g)
+{
+	double delta( sqrt( DBL_MIN ) );
+	double di, *x;
+	x = &mSpace[0];
+	
+	for(int i(0); i < mN; i++)
+	{
+		memcpy(x, x0, mN*sizeof(double));
+		
+		di = delta * (1.+x0[i]);
+		x[i] += di;
+		
+		if(x[i] > mUpperBound[i])
+		{
+			di = -di;
+			x[i] += 2.*di;
+		}
+		
+		g[i] = (-mModel->computeLikelihood(x, mN, false) - f0) / di;
+	}	
+}
+

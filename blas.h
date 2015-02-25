@@ -368,6 +368,7 @@ static const int	I0 = 0;		///< Integer zero.
 static const int	I1 = 1;		///< Integer one.
 static const double	D0 = 0.;	///< Float double zero.
 static const double	D1 = 1.;	///< Float double one.
+static const double minus_one(-1);	///< Float double -1
 
 #endif
 
