@@ -2,7 +2,7 @@
 #ifndef CDOSOPTIMIZER_H
 #define CDOSOPTIMIZER_H
 
-#define USE_CODE_ML_LINE_SEARCH
+//#define USE_CODE_ML_LINE_SEARCH
 
 #include <cstdio>
 #include <vector>
@@ -53,7 +53,7 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mN(0)
-		,mLambda(0.01)
+		,mLambda(0.05)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -88,7 +88,9 @@ private:
 	///					so it is not modified
 	/// @params[out] fy the value of the function
 	///
-	void PerformLineSearch(double *y, double *p, double step, double *fy);
+	/// @return The step the algorithm chooses
+	///
+	double PerformLineSearch(double *y, double *p, double step, double *fy);
 	
 	
 #ifndef USE_CODE_ML_LINE_SEARCH
@@ -101,7 +103,9 @@ private:
 	///					so it is not modified
 	/// @params[out] fy the value of the function
 	///
-	void LineSearch(double *y, double *p, double step, double *fy);
+	/// @return The step the algorithm chooses
+	///
+	double LineSearch(double *y, double *p, double step, double *fy);
 	
 	/// isFeasiblePoint
 	/// check if the point satisfies the constraints
