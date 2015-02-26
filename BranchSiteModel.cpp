@@ -1778,6 +1778,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
 		printVar(mVar);
+		return maxl;
 	}
 	
 	std::auto_ptr<nlopt::opt> opt;
@@ -1795,19 +1796,21 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
-		opt->set_ftol_rel(mRelativeError);
+		opt->set_ftol_rel(1e-3);
 		nlopt::srand(static_cast<unsigned long>(mSeed));
 		
-		// Optimize the function until enough iterations are made
+		// Optimize the function (until enough iterations are made/tolerance?)
 		double maxl = 0;
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
 		// limit the number of calls so we can change the optimizer
 		int num_iterations(150);
-		opt->set_maxeval(num_iterations); // gradient free
+		//opt->set_maxeval(num_iterations); // gradient free
 		//opt->set_maxeval(num_iterations * (1+mNumVariables+mNumTimes)); // gradient based
 		
 		optimize_using_nlopt(opt, maxl);		
+		
+		std::cout << "switch optimizer\n";
 		
 		// finish problem with SLSQP
 		if (mFixedBranchLength)

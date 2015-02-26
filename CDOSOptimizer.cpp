@@ -116,10 +116,14 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 		
 		if(mVerbose > 2)
 		{
+			/*
 			std::cout << "Stage 2, iteration i=" << i << "/" << mN << ", with loglikelihood " << -fx << "\n"
 					  << "Direction mqi: \n";
 			memcpy(&traceVar[0], &mqi[0], mN*sizeof(double));
 			mModel->printVar(traceVar, -fx);
+			std::cout << "Direction Ui: \n";
+			memcpy(&traceVar[0], &mU[i*mN], mN*sizeof(double));
+			mModel->printVar(traceVar, -fx); */
 			
 		}
 		
@@ -132,14 +136,14 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 		// look for a new point y (better than x)
 		for(int j(0); j<i-1; j++)
 		{	
-			// line search in uj direction
+			// line search in uj direction from point y
 			// update y if better point
 			PerformLineSearch(&y[0], &mU[j*mN], lambdaS, &fy);
 		}
 		
 		// --- update ui
 			double searchDirection = (fx<fy) ? -1. : 1.;
-			// store y-x in ui
+			// store (y-x) in ui
 			memcpy(&mU[mN*i], &y[0], mN*sizeof(double));
 			daxpy_(&mN, &minus_one, &x[0], &I1, &mU[mN*i], &I1);
 			// scale it
@@ -147,20 +151,28 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 			dscal_(&mN, &scale, &mU[mN*i], &I1);
 		// --
 		
-		// update x
-		memcpy(&x_prev[0], &x[0], mN*sizeof(double));
-		if(fy < fx)
+		
+		// line search in new ui direction
+		if (fx <= fy)
 		{
+			PerformLineSearch(&x[0], &mU[i*mN], lambdaS, &fx);
+		}
+		else
+		{
+			PerformLineSearch(&y[0], &mU[i*mN], lambdaS, &fy);
 			memcpy(&x[0], &y[0], mN*sizeof(double));
 			fx = fy;
 		}
+		
 	}
 	
 	if (mVerbose > 2)
 	{
+	/*
 		memcpy(&traceVar[0], x, mN*sizeof(double));
 		std::cout << "Stage 2 done\n";
 		mModel->printVar(traceVar, -fx);
+		*/
 	}
 	
 	// ------------------------------ stage 3 ------------------------------
@@ -184,7 +196,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 			swap_content(&mU[column*mN], &mU[(mN-column-1)*mN], mN);
 		}
 		// compute the new direction
-		QRdecomposition(mN-1);
+		QRdecomposition(mN);
 		
 		// change the sign if necessary
 		double d1 = distance(&mqi[0], &mU[0], &mSpace[0], mN);
@@ -253,36 +265,9 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 
 double CDOSOptimizer::PerformLineSearch(double *y, double *p, double step, double *fy)
 {
-#ifndef USE_CODE_ML_LINE_SEARCH
 	return LineSearch(y, p, step, fy);
-#else
-	
-	memcpy(&mSpace[0], y, mN*sizeof(double)); 
-	
-	double am(0);
-	for (int i(0), am = 0.1; i < mN; i++)  	/* max step length */
-    {
-        if (p[i] > 0 && (mUpperBound[i] - y[i]) / p[i] < am)
-        {
-            am = (mUpperBound[i] - y[i]) / p[i];
-        }
-        else if (p[i] < 0 && (mLowerBound[i] - y[i]) / p[i] < am)
-        {
-            am = (mLowerBound[i] - y[i]) / p[i];
-        }
-    }
-    
-    step = am/2.;
-	step = LineSearch2(fy, &mSpace[0], p, step, am, 1e-3, &mSpace[mN], 10, mN);
-	daxpy_(&mN, &step, p, &I1, y, &I1);
-	return 0.; //TODO
-		
-#endif
 }
 
-
-
-#ifndef USE_CODE_ML_LINE_SEARCH
 // ----------------------------------------------------------------
 double CDOSOptimizer::LineSearch(double *y, double *p, double step, double *fy)
 {
@@ -476,385 +461,7 @@ void CDOSOptimizer::reduce_step(double& step, int const& numIter) const
 	else
 		step = -1.;
 }
-#endif
 
-
-
-#ifdef USE_CODE_ML_LINE_SEARCH
-
-double CDOSOptimizer::fun_LineSearch(double t, const double x0[], const double p[], double x[], int n)
-{
-    for(int i=0; i < n; ++i) x[i] = x0[i] + t * p[i];
-    //return ((*fun) (x, n));
-	return -mModel->computeLikelihood(x, n, mTraceFun);
-}
-
-
-
-double CDOSOptimizer::LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n)
-{
-    /* linear search using quadratic interpolation
-       from x0[] in the direction of p[],
-                    x = x0 + a*p        a ~(0,limit)
-       returns (a).    *f: f(x0) for input and f(x) for output
-
-       x0[n] x[n] p[n] space[n]
-
-       adapted from Wolfe M. A.  1978.  Numerical methods for unconstrained
-       optimization: An introduction.  Van Nostrand Reinhold Company, New York.
-       pp. 62-73.
-       step is used to find the bracket and is increased or reduced as necessary,
-       and is not terribly important.
-    */
-    int ii = 0, maxround = 10, status, i, nsymb = 0;
-    double *x = space, factor = 4, small = 1e-10, smallgapa = 0.2;
-    double a0, a1, a2, a3, a4 = -1, a5, a6, f0, f1, f2, f3, f4 = -1, f5, f6;
-
-    /* look for bracket (a1, a2, a3) with function values (f1, f2, f3)
-       step length step given, and only in the direction a>=0
-    */
-
-    if (mVerbose > 2)
-        printf("\n%3d h-m-p %7.4f %6.4f %8.4f ", iround + 1, step, limit, norm(p, n));
-
-    if (step <= 0 || limit < small || step >= limit)
-    {
-        if (mVerbose > 2)
-            printf("\nh-m-p:%20.8e%20.8e%20.8e %12.6f\n", step, limit, norm(p, n), *f);
-
-        return 0;
-    }
-
-    a0 = a1 = 0;
-    f1 = f0 = *f;
-    a2 = a0 + step;
-    f2 = fun_LineSearch(a2, x0, p, x, n);
-
-    if (f2 > f1)  		/* reduce step length so the algorithm is decreasing */
-    {
-        for (;;)
-        {
-            step /= factor;
-
-            if (step < small)
-            {
-                return 0;
-            }
-
-            a3 = a2;
-            f3 = f2;
-            a2 = a0 + step;
-            f2 = fun_LineSearch(a2, x0, p, x, n);
-
-            if (f2 <= f1)
-            {
-                break;
-            }
-
-            if (mVerbose > 2)   //CMV added correct #if
-            {
-                putchar('-');
-                nsymb++;
-            }
-        }
-    }
-    else  			/* step length is too small? */
-    {
-        for (;;)
-        {
-            step *= factor;
-
-            if (step > limit)
-            {
-                step = limit;
-            }
-
-            a3 = a0 + step;
-            f3 = fun_LineSearch(a3, x0, p, x, n);
-
-            if (f3 >= f2)
-            {
-                break;
-            }
-
-            if (mVerbose > 2)
-            {
-                putchar('+');
-                nsymb++;
-            }
-
-            a1 = a2;
-            f1 = f2;
-            a2 = a3;
-            f2 = f3;
-
-            if(step >= limit)
-            {
-                if(mVerbose > 2) //CMV added correct #if
-				{
-                    for (; nsymb < 5; nsymb++)
-                    {
-                        printf(" ");
-                    }
-
-                    printf(" %12.6f%3c %6.4f", *f = f3, 'm', a3);
-                    //printf(" %12.6f%3c %6.4f %5d", *f = f3, 'm', a3, mNumFunCall);
-				}
-
-                *f = f3;
-                return a3;
-            }
-        }
-    }
-
-    /* iteration by quadratic interpolation, fig 2.2.9-10 (pp 71-71) */
-    for(ii = 0; ii < maxround; ii++)
-    {
-        /* a4 is the minimum from the parabola over (a1,a2,a3)  */
-        a4 = (a2 - a3) * f1 + (a3 - a1) * f2 + (a1 - a2) * f3;
-
-        if (fabs(a4) > 1e-100)
-            a4 = ((a2 * a2 - a3 * a3) * f1 + (a3 * a3 - a1 * a1) * f2 + (a1 * a1 - a2 * a2) * f3) / (2 * a4);
-
-        if (a4 > a3 || a4 < a1)  	/* out of range */
-        {
-            a4 = (a1 + a2) / 2;
-            status = 'N';
-        }
-        else
-        {
-            if ((a4 <= a2 && a2 - a4 > smallgapa * (a2 - a1))
-            || (a4 > a2 && a4 - a2 > smallgapa * (a3 - a2)))
-            {
-                status = 'Y';
-            }
-            else
-            {
-                status = 'C';
-            }
-        }
-
-        f4 = fun_LineSearch(a4, x0, p, x, n);
-
-        if (mVerbose > 2) //CMV added correct #if
-        {
-            putchar(status);
-        }
-
-        if (fabs(f2 - f4) < e * (1 + fabs(f2)))
-        {
-            if (mVerbose > 2) //CMV added correct #if
-                for (nsymb += ii + 1; nsymb < 5; nsymb++)
-                {
-                    putchar(' ');
-                }
-            break;
-        }
-
-        /* possible multiple local optima during line search */
-        if (mVerbose > 2 && ((a4 < a2 && f4 > f1) || (a4 > a2 && f4 > f3)))   //CMV added correct #if
-        {
-            printf("\n\na %12.6f %12.6f %12.6f %12.6f", a1, a2, a3, a4);
-            printf("\nf %12.6f %12.6f %12.6f %12.6f\n", f1, f2, f3, f4);
-
-            for (a5 = a1; a5 <= a3; a5 += (a3 - a1) / 20)
-            {
-                printf("\t%.6e ", a5);
-
-                if (n < 5)
-                {
-                    for(i=0; i < n; ++i) printf("\t%.6f", x0[i] + a5 * p[i]);
-                }
-
-                printf("\t%.6f\n", fun_LineSearch(a5, x0, p, x, n));
-            }
-
-            puts("Linesearch2 a4: multiple optima?");
-        }
-
-        if (a4 <= a2)  		/* fig 2.2.10 */
-        {
-            if (a2 - a4 > smallgapa * (a2 - a1))
-            {
-                if (f4 <= f2)
-                {
-                    a3 = a2;
-                    a2 = a4;
-                    f3 = f2;
-                    f2 = f4;
-                }
-                else
-                {
-                    a1 = a4;
-                    f1 = f4;
-                }
-            }
-            else
-            {
-                if (f4 > f2)
-                {
-                    a5 = (a2 + a3) / 2;
-                    f5 = fun_LineSearch(a5, x0, p, x, n);
-
-                    if (f5 > f2)
-                    {
-                        a1 = a4;
-                        a3 = a5;
-                        f1 = f4;
-                        f3 = f5;
-                    }
-                    else
-                    {
-                        a1 = a2;
-                        a2 = a5;
-                        f1 = f2;
-                        f2 = f5;
-                    }
-                }
-                else
-                {
-                    a5 = (a1 + a4) / 2;
-                    f5 = fun_LineSearch(a5, x0, p, x, n);
-
-                    if (f5 >= f4)
-                    {
-                        a3 = a2;
-                        a2 = a4;
-                        a1 = a5;
-                        f3 = f2;
-                        f2 = f4;
-                        f1 = f5;
-                    }
-                    else
-                    {
-                        a6 = (a1 + a5) / 2;
-                        f6 = fun_LineSearch(a6, x0, p, x, n);
-
-                        if (f6 > f5)
-                        {
-                            a1 = a6;
-                            a2 = a5;
-                            a3 = a4;
-                            f1 = f6;
-                            f2 = f5;
-                            f3 = f4;
-                        }
-                        else
-                        {
-                            a2 = a6;
-                            a3 = a5;
-                            f2 = f6;
-                            f3 = f5;
-                        }
-                    }
-                }
-            }
-        }
-        else  		/* fig 2.2.9 */
-        {
-            if (a4 - a2 > smallgapa * (a3 - a2))
-            {
-                if (f2 >= f4)
-                {
-                    a1 = a2;
-                    a2 = a4;
-                    f1 = f2;
-                    f2 = f4;
-                }
-                else
-                {
-                    a3 = a4;
-                    f3 = f4;
-                }
-            }
-            else
-            {
-                if (f4 > f2)
-                {
-                    a5 = (a1 + a2) / 2;
-                    f5 = fun_LineSearch(a5, x0, p, x, n);
-
-                    if (f5 > f2)
-                    {
-                        a1 = a5;
-                        a3 = a4;
-                        f1 = f5;
-                        f3 = f4;
-                    }
-                    else
-                    {
-                        a3 = a2;
-                        a2 = a5;
-                        f3 = f2;
-                        f2 = f5;
-                    }
-                }
-                else
-                {
-                    a5 = (a3 + a4) / 2;
-                    f5 = fun_LineSearch(a5, x0, p, x, n);
-
-                    if (f5 >= f4)
-                    {
-                        a1 = a2;
-                        a2 = a4;
-                        a3 = a5;
-                        f1 = f2;
-                        f2 = f4;
-                        f3 = f5;
-                    }
-                    else
-                    {
-                        a6 = (a3 + a5) / 2;
-                        f6 = fun_LineSearch(a6, x0, p, x, n);
-
-                        if (f6 > f5)
-                        {
-                            a1 = a4;
-                            a2 = a5;
-                            a3 = a6;
-                            f1 = f4;
-                            f2 = f5;
-                            f3 = f6;
-                        }
-                        else
-                        {
-                            a1 = a5;
-                            a2 = a6;
-                            f1 = f5;
-                            f2 = f6;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (f2 > f0 && f4 > f0)
-    {
-        a4 = 0;
-    }
-
-    if (f2 <= f4)
-    {
-        *f = f2;
-        a4 = a2;
-    }
-    else
-    {
-        *f = f4;
-    }
-
-    if (mVerbose > 2)
-    {
-        printf(" %12.6f%3d %6.4f", *f, ii, a4);
-        //printf(" %12.6f%3d %6.4f %5d", *f, ii, a4, mNumFunCall);
-    }
-
-    return a4;
-}
-
-#endif
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
@@ -868,7 +475,7 @@ void CDOSOptimizer::QRdecomposition(int width)
 	int info;
 	
 	// use the lapack functions to first decompose mQ
-	dgeqrf(&mN, &width, &mQ[0], &mN, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	dgeqrf(&mN, &width, &mQ[0], &mN, &mSpace[0], &mSpace[0], &lwork, &info);
 	if( info < 0 )
 	{
 		//TODO: check errors exceptions
@@ -876,7 +483,7 @@ void CDOSOptimizer::QRdecomposition(int width)
 	}
 	
 	// and then compute the first 'width' vectors of Q
-	dorgqr(&mN, &width, &width, &mQ[0], &mN, &mSpace[lwork], &mSpace[0], &lwork, &info);
+	dorgqr(&mN, &width, &width, &mQ[0], &mN, &mSpace[0], &mSpace[0], &lwork, &info);
 	if( info < 0 )
 	{
 		//TODO: check errors exceptions
@@ -884,7 +491,7 @@ void CDOSOptimizer::QRdecomposition(int width)
 	}
 	
 	// copy the interesting vector in mqi
-	memcpy(&mqi[0], &mQ[mN*width], mN*sizeof(double));
+	memcpy(&mqi[0], &mQ[mN*(width-1)], mN*sizeof(double));
 }
 
 

@@ -2,7 +2,6 @@
 #ifndef CDOSOPTIMIZER_H
 #define CDOSOPTIMIZER_H
 
-//#define USE_CODE_ML_LINE_SEARCH
 
 #include <cstdio>
 #include <vector>
@@ -53,7 +52,7 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mN(0)
-		,mLambda(0.05)
+		,mLambda(0.01)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -93,7 +92,6 @@ private:
 	double PerformLineSearch(double *y, double *p, double step, double *fy);
 	
 	
-#ifndef USE_CODE_ML_LINE_SEARCH
 	/// LineSearch
 	/// Perform a line search in the p direction
 	/// 
@@ -122,7 +120,7 @@ private:
 	/// @params[in] numIter The number of iterations we performed
 	///
 	void reduce_step(double& step, int const& numIter) const;
-#endif
+	
 	
 	/// QRdecomposition
 	/// perform a QR decomposition of the first i vectors u.
@@ -155,40 +153,6 @@ private:
 	///
 	void computeGradient(double f0, double *x0, double *g);
 	
-#ifdef USE_CODE_ML_LINE_SEARCH
-	/// Compute the function moving along p starting from x0 by a percentage t.
-	///
-	/// @param[in] t Percentage move along p
-	/// @param[in] x0 Starting point
-	/// @param[in] p Search line vector
-	/// @param[out] x The position on which the function should be evaluated
-	/// @param[in] n Number of coordinates
-	///
-	/// @return The function value computed at point x
-	///
-	double fun_LineSearch(double t, const double x0[], const double p[], double x[], int n);
-
-	/// Linear search using quadratic interpolation from x0[] in the direction of p[].
-	/// The formula used is:
-    ///                x = x0 + a*p        a ~(0,limit)
-	///
-	/// Adapted from: Wolfe M. A.  1978.  Numerical methods for unconstrained
-    /// optimization: An introduction.  Van Nostrand Reinhold Company, New York. pp. 62-73.
-    ///
-	/// @param[in,out] f Contains f(x0) for input and f(x) for output
-	/// @param[in] x0 Starting point for the search
-	/// @param[in] p Search line vector
-	/// @param[in] step Is used to find the bracket and is increased or reduced as necessary, and is not terribly important.
-	/// @param[in] limit Limit the range of search between 0 and this value
-	/// @param[in] e (Unknown)
-	/// @param[out] space Workspace
-	/// @param[in] iround Iteration number just for reporting
-	/// @param[in] n Number of coordinates
-	///
-	/// @return The value of a as in: x = x0 + a*p  a ~(0,limit)
-	///
-	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n);
-#endif
 private:
 	
 	//double (f*)(unsigned, const double* x, double* grad, void* f_data); ///< Function to minimize
