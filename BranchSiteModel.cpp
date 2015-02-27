@@ -21,6 +21,7 @@
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
 #include "CDOSOptimizer.h"
+#include "OptSESOP.h"
 #include "ParseParameters.h"
 
 /// Starting value for the computed maximum likelihood.
@@ -1534,17 +1535,18 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_VAR1:
 	case OPTIM_LD_VAR2:
 	case OPTIM_LD_SLSQP:
+	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
 	case OPTIM_LD_MIXED:
 	case OPTIM_CDOS:
+	case OPTIM_SESOP:
 		return;
 
 	default:
 		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line.");
 	}
 }
-
 
 /// Adapter class to pass the routine to the optimizer.
 ///
@@ -1781,6 +1783,26 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		return maxl;
 	}
 	
+	
+	
+	
+	// Special case for the SESOP optimizer
+	if(mOptAlgo == OPTIM_SESOP)
+	{
+		// Create the optimizer instance
+		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		
+		double maxl = optim.maximizeFunction(mVar);
+		
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	
+	
+	
+	
 	std::auto_ptr<nlopt::opt> opt;
 	
 	// Special case for a mixed optimizer
@@ -1873,6 +1895,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
 
 		opt->set_vector_storage(20);
+		break;
+	
+	case OPTIM_LD_MMA:
+        if (mFixedBranchLength)
+            opt.reset(new nlopt::opt(nlopt::LD_MMA, mNumVariables));
+        else
+			opt.reset(new nlopt::opt(nlopt::LD_MMA, mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_LN_BOBYQA:

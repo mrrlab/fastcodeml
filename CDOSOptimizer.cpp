@@ -38,10 +38,10 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 	fy = -mModel->computeLikelihood(x, mN, mTraceFun);
 	fx = fy;
 	
-	/*
+	
 	// compute the gradient at point x
 	computeGradient(fx, x, &gradient[0]);
-	*/
+	
 	
 	/*
 	// compute the quasi gradient using linear search
@@ -58,6 +58,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 	*/
 	
 	// compute the quasi gradient
+	/*
 	double sign;
 	for(int i(0); i<mN; i++)
 	{
@@ -77,6 +78,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 		fy = -mModel->computeLikelihood(&y[0], mN, false);
 		gradient[i] = (fy - fx)*sign;
 	}
+	*/
 	
 	
 #ifdef USE_LAPACK

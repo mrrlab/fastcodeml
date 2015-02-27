@@ -28,6 +28,7 @@ set(SRCS
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
 	CDOSOptimizer.cpp
+	OptSESOP.cpp
 )
 
 

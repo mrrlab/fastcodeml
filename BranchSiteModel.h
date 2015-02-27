@@ -273,6 +273,7 @@ private:
 		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
 		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
 		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
+		OPTIM_LD_MMA		= 4,	///< Method of Moving Asymptotes
 
 		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free (BOBYQA)  
 		
@@ -280,6 +281,7 @@ private:
 		
 		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
 		OPTIM_CDOS			= 43,	///< CDOS optimizer derivative free
+		OPTIM_SESOP			= 44,	///< SESOP optimizer
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};

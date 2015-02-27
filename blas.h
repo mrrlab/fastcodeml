@@ -26,6 +26,7 @@
 #define dsyrk_  DSYRK
 #define dnrm2_  DNRM2
 #define daxpy_  DAXPY
+#define dgemv_	DGEMV
 #endif
 #endif
 
@@ -36,7 +37,8 @@
 #define dscal_ dscal
 #define dsyrk_ dsyrk
 #define dsymv_ dsymv
-#define daxpy_  daxpy
+#define daxpy_ daxpy
+#define dgemv_ dgemv
 #endif
 
 
@@ -353,10 +355,50 @@ void dscal_(const int *n,
 
 void daxpy_(const int *n,
 			const double *alpha,
-			double *x,
+			const double *x,
 			const int *incx,
 			double *y,
 			const int *incy);
+
+
+/// performs one of the matrix-vector operations
+/// y := alpha*A*x + beta*y,   or   y := alpha*A**T*x + beta*y,
+///
+/// where alpha and beta are scalars, x and y are vectors and A is an
+/// m by n matrix.
+///
+/// @param[in] trans: use the transpose of the matrix A if set to 'T', 't', 'C' or 'c'
+///					  use the matrix A if set to 'N' or 'n'
+///
+/// @param[in] m Number of rows in A.
+/// @param[in] n Number of columns in A.
+///
+/// @param[in]  alpha   The scaling value.
+/// @param[in]  A   The m by n matrix.
+/// @param[in]  LDA On entry, LDA specifies the first dimension of A as declared
+///       		in the calling (sub) program. LDA must be at least
+///				max( 1, m )..
+///
+/// @param[in]  x Array of dimension (n(or m)-1) * |incx| + 1 when trans='N' (or 'T')
+/// @param[in]  incx Increment between elements of x. If incx = 0, the results will be unpredictable.
+///
+/// @param[in]  beta   The scaling value.
+/// @param[in,out]  y Array of dimension (m(or n)-1) * |incy| + 1 when trans='N' (or 'T'). Vector which contains the result.
+/// @param[in]  incy Increment between elements of x. If incy = 0, the results will be unpredictable.
+///
+void dgemv_(const char *trans,
+			const int *m,
+			const int *n,
+			const double *alpha,
+			const double *A,
+			const int *LDA,
+			const double *x,
+			const int *incx,
+			const double *beta,
+			double *y,
+			const int *incy); 	
+
+
 
 
 #ifdef __cplusplus
