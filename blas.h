@@ -8,6 +8,7 @@
 #ifdef _MSC_VER
 #ifdef USE_REFERENCE_BLAS
 #define ddot_   _ddot_
+#define dcopy_	_dcopy_
 #define dscal_  _dscal_
 #define dsymv_  _dsymv_
 #define dsymm_  _dsymm_
@@ -18,6 +19,7 @@
 #define daxpy_  _daxpy_
 #else
 #define ddot_   DDOT
+#define dcopy_	DCOPY
 #define dscal_  DSCAL
 #define dsymv_  DSYMV
 #define dsymm_  DSYMM
@@ -32,8 +34,9 @@
 
 #ifdef _BGQ_COMPILER
 #define dsyevr_ dsyevr
-#define ddot_ ddot
+#define ddot_  ddot
 #define dnrm2_ dnrm2
+#define dcopy_ dcopy
 #define dscal_ dscal
 #define dsyrk_ dsyrk
 #define dsymv_ dsymv
@@ -337,6 +340,23 @@ void dscal_(const int *n,
 			const int *incx);
 
 
+
+/// copy a vector x into another location y.
+///
+/// @param[in] n Vector length
+/// @param[in] dx The first vector
+/// @param[in] incx The stride of the vector dx
+/// @param[in] dy The second vector
+/// @param[in] incy The stride of the vector dy
+///
+void dcopy_(const int *n,
+				const double *dx,
+				const int *incx,
+				const double *dy,
+				const int *incy);
+
+
+
 /// Scale by alpha a vector x and add it to a vector y 
 ///
 /// This routine performs the following vector operation:  y <-- alpha x + y
@@ -410,7 +430,7 @@ static const int	I0 = 0;		///< Integer zero.
 static const int	I1 = 1;		///< Integer one.
 static const double	D0 = 0.;	///< Float double zero.
 static const double	D1 = 1.;	///< Float double one.
-static const double minus_one(-1);	///< Float double -1
+static const double minus_one(-1.);	///< Float double -1
 
 #endif
 

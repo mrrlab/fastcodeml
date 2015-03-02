@@ -15,6 +15,13 @@
 ///     @version 1.1
 ///
 
+
+// if use the BOBYQA optimizer with bound constraints
+//#define USE_BOBYQA
+
+// if use the SLSQP optimizer with linear constraints (maybe more relevant)
+#define USE_SLSQP
+
 class OptSESOP
 {
 public:
@@ -64,6 +71,17 @@ public:
 	///
 	double maximizeFunction(std::vector<double>& aVars);
 	
+private:
+
+#ifdef USE_SLSQP
+	// structure only used for the constraints
+	struct data_constraint{
+		OptSESOP *sesop;
+		int line;
+		int bound_type; 
+	};
+#endif // USE_SLSQP
+
 private:
 
 	/// SESOPminimizer
@@ -136,7 +154,61 @@ private:
 	///
 	void updateDMatrix();
 	
+#ifdef USE_SLSQP
+	/// Wrapper to be passed to the nLopt optimizer for the constraints
+	///
+	/// @param[in] aVars Variables to be optimized
+	/// @param[out] aGrad Gradient values of the constraint
+	/// @param[in] aData Opaque pointer containing the function to be passed to the optimizer as well as what constraint we evaluate
+	///
+	/// @return The evaluated function
+	///
+	static double myconstraintWrapper(const std::vector<double> &alpha, std::vector<double> &grad, void *data)
+	{
+		unsigned n = alpha.size(); 
+		data_constraint *data_ = (data_constraint*)(data);
+		
+		return (*reinterpret_cast<OptSESOP*>(data_->sesop))(n, alpha, grad, data);
+	}
 	
+	
+	/// operator()
+	/// Implements the contraints for the problem reduced at the subspace
+	/// constraints have the form x0_i + (D*alpha)_i - u_i <= 0
+	/// 						  l_i - x0_i - (D*alpha)_i <= 0
+	///
+	/// @params[in] alpha The subspace variable to optimize
+	/// @params[out] grad The gradient of the constraint
+	/// @params[in] data The line i and the upper(1)/lower bound(0) b 
+	///				(put a int* containing two ints i and b)
+	///
+	double operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
+	
+#endif // if USE_SLSQP
+
+#ifdef USE_BOBYQA
+	/// updateBoundsAndAlpha
+	/// set the lower and upper bounds for alpha and initialize alpha
+	///
+	void updateBoundsAndAlpha();
+	
+	/// subspaceLowerBoundIsInSpace
+	/// verify if the lower bound of the subspace is contained in the full space
+	///
+	/// @return True if contained in the space
+	///			False otherwise
+	///
+	bool subspaceLowerBoundIsInSpace();
+	
+	/// subspaceUpperBoundIsInSpace
+	/// verify if the upper bound of the subspace is contained in the full space
+	///
+	/// @return True if contained in the space
+	///			False otherwise
+	///
+	bool subspaceUpperBoundIsInSpace();
+#endif // if USE_BOBYQA
+
 	/// computeGradient
 	/// computes the gradient of the log likelihood function at point x
 	/// 
@@ -145,6 +217,17 @@ private:
 	/// @param[out] aGrad Gradient values computed
 	///
 	void computeGradient(double aPointValue, const double *aVars, double* aGrad) const;
+	
+	
+	/// computeGradientSubspace
+	/// computes the gradient of the log likelihood function at point alpha in the subspace
+	/// 
+	/// @param[in] aPointValue The value of the function at aVars
+	/// @param[in] aAlpha Variables to be optimized
+	/// @param[out] aGrad Gradient values computed
+	///
+	void computeGradientSubspace(double aPointValue, const std::vector<double>& aAlpha, std::vector<double>& aGrad);
+	
 	
 private:
 	
@@ -155,6 +238,7 @@ private:
 	
 	int 						mSubspaceStorage;	///< storage size of the subspace directions
 	std::vector<double>			mSpace;				///< Workspace
+	std::vector<double> 		x_;					///< Workspace for function evaluation
 	
 	int							mStep;				///< current step	
 	int 						s1;					///< number of previous directions to store
@@ -169,9 +253,14 @@ private:
 	int 						mM;					///< size of the current subspace
 	std::vector<double>			alpha;				///< step to optimize in the current subspace
 	double						*mD;				///< D matrix, represent the current subspace. Only a pointer on Workspace mSpace
+#ifdef USE_SLSQP
+	std::vector<data_constraint>			data_constraints;	///< Data used to compute the constraints
+#endif // USE_SLSQP
+#ifdef USE_BOBYQA
 	std::vector<double>			mLowerBoundSubspace;///< Lower bounds for the subspace optimization
 	std::vector<double>			mUpperBoundSubspace;///< Upper bounds for the subspace optimization
-	
+#endif // USE_BOBYQA
+
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()

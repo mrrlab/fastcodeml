@@ -289,7 +289,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
-        mLowerBound.assign(aNumTimes, 0);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        mLowerBound.assign(aNumTimes, -0.001);				mUpperBound.assign(aNumTimes, 50.0);	// T
     }
 
 	// Set lower constrains							// Set upper constrains
@@ -491,7 +491,9 @@ void BranchSiteModel::initVariables(void)
     else
     {
         // Initialize times (if not already initialized)
-        if((mInitStatus & INIT_TIMES) != INIT_TIMES)
+        // TODO: put the condition back
+        //if((mInitStatus & INIT_TIMES) != INIT_TIMES)
+        if(true)
         {
             for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
         }
