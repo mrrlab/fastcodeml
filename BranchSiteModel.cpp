@@ -47,11 +47,12 @@ std::string BranchSiteModel::printFinalVars(std::ostream& aOut) const
 	double v0 = 0;
 	std::vector<double>::const_iterator ix(mVar.begin());
 	const std::vector<double>::const_iterator end(mVar.end());
+
 	if(mFixedBranchLength)
     {
         for(unsigned int i = 0; i<mNumTimes; i++)
         {
-            aOut <<  std::setw(VARS_WIDTH)<< mBranches[i];
+            aOut << std::setw(VARS_WIDTH)<< mBranches[i];
             oss  << std::setw(VARS_WIDTH)<< mBranches[i];
 
             ++count_per_line;
@@ -59,121 +60,75 @@ std::string BranchSiteModel::printFinalVars(std::ostream& aOut) const
             {
                 count_per_line = 0;
                 aOut << std::endl;
-                oss << std::endl;
+                oss  << std::endl;
             }
         }
-        for(int k = 0; ix != end; ++ix,++k)
-        {
-            switch(k)
-            {
-            case 0:
-               /* if(count_per_line) */aOut << std::endl;
-                v0 = *ix;
-                break;
-            case 1:
-                {
-                    double p[4];
-                    getProportions(v0, *ix, p);
-                    aOut << std::endl;
-                    aOut <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
-                    aOut << "  p1:" << std::setw(VARS_WIDTH) << p[1];
-                    aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
-                    aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
-                    aOut << std::endl;
+	}
 
-                    oss << std::endl;
-                    oss <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
-                    oss << "  p1:" << std::setw(VARS_WIDTH) << p[1];
-                    oss << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
-                    oss << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
-                    oss << std::endl;
-                }
-                break;
-            case 2:
-                aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
+	// Different layout of variables if branch lengths are fixed
+	int start = (mFixedBranchLength) ? 0 : -static_cast<int>(mNumTimes);
 
-                oss << "w0:" << std::setw(VARS_WIDTH) << *ix;
+	for(int k = start; ix != end; ++ix,++k)
+	{
+		switch(k)
+		{
+		case 0:
+			if(!mFixedBranchLength && count_per_line) aOut << std::endl;
+			v0 = *ix;
+			break;
+		case 1:
+			{
+				double p[4];
+				getProportions(v0, *ix, p);
+				aOut << std::endl;
+				aOut <<   "p0:"  << std::setw(VARS_WIDTH) << p[0];
+				aOut << "  p1:"  << std::setw(VARS_WIDTH) << p[1];
+				aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
+				aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
+				aOut << std::endl;
 
-                break;
-            case 3:
-                aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
+				oss << std::endl;
+				oss <<   "p0:"  << std::setw(VARS_WIDTH) << p[0];
+				oss << "  p1:"  << std::setw(VARS_WIDTH) << p[1];
+				oss << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
+				oss << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
+				oss << std::endl;
+			}
+			break;
+		case 2:
+			aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
 
-                oss << "  k: " << std::setw(VARS_WIDTH) << *ix;
+			oss  << "w0:" << std::setw(VARS_WIDTH) << *ix;
 
-                break;
-            case 4:
-                aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+			break;
+		case 3:
+			aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
 
-                oss << "  w2: " << std::setw(VARS_WIDTH) << *ix;
+			oss  << "  k: " << std::setw(VARS_WIDTH) << *ix;
 
-                break;
-            }
-        }
-    }
-    else
-    {
-        for(int k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
-        {
-            switch(k)
-            {
-            case 0:
-                if(count_per_line) aOut << std::endl;
-                v0 = *ix;
-                break;
-            case 1:
-                {
-                    double p[4];
-                    getProportions(v0, *ix, p);
-                    aOut << std::endl;
-                    aOut <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
-                    aOut << "  p1:" << std::setw(VARS_WIDTH) << p[1];
-                    aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
-                    aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
-                    aOut << std::endl;
+			break;
+		case 4:
+			aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
 
-                    oss << std::endl;
-                    oss <<   "p0:" << std::setw(VARS_WIDTH) << p[0];
-                    oss << "  p1:" << std::setw(VARS_WIDTH) << p[1];
-                    oss << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
-                    oss << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
-                    oss << std::endl;
-                }
-                break;
-            case 2:
-                aOut << "w0:" << std::setw(VARS_WIDTH) << *ix;
+			oss  << "  w2: " << std::setw(VARS_WIDTH) << *ix;
 
-                oss << "w0:" << std::setw(VARS_WIDTH) << *ix;
+			break;
+		default:
+			aOut << std::setw(VARS_WIDTH) << *ix;
 
-                break;
-            case 3:
-                aOut << "  k: " << std::setw(VARS_WIDTH) << *ix;
+			oss  << std::setw(VARS_WIDTH) << *ix;
 
-                oss << "  k: " << std::setw(VARS_WIDTH) << *ix;
+			++count_per_line;
+			if(count_per_line == VARS_PER_LINE)
+			{
+				count_per_line = 0;
+				aOut << std::endl;
 
-                break;
-            case 4:
-                aOut << "  w2: " << std::setw(VARS_WIDTH) << *ix;
-
-                oss << "  w2: " << std::setw(VARS_WIDTH) << *ix;
-
-                break;
-            default:
-                aOut << std::setw(VARS_WIDTH) << *ix;
-
-                oss << std::setw(VARS_WIDTH) << *ix;
-
-                ++count_per_line;
-                if(count_per_line == VARS_PER_LINE)
-                {
-                    count_per_line = 0;
-                    aOut << std::endl;
-
-                    oss << std::endl;
-                }
-                break;
-            }
-        }
-    }
+				oss << std::endl;
+			}
+			break;
+		}
+	}
 
 	aOut << std::endl;
 	aOut.precision(prec);
@@ -199,78 +154,44 @@ void BranchSiteModel::printVar(const std::vector<double>& aVars, double aLnl, st
 	int per_linea = 0;
 	std::vector<double>::const_iterator ix(aVars.begin());
 	const std::vector<double>::const_iterator end(aVars.end());
-	if(mFixedBranchLength)
-    {
-        for(int k = 0; ix != end; ++ix,++k)
-        {
-            switch(k)
-            {
-            case 0:
-                aOut << std::endl;
-                aOut <<   "v0: " << *ix;
-                v0 = *ix;
-                break;
-            case 1:
-                aOut << "  v1: " << *ix;
-                {
-                    double p[4];
-                    getProportions(v0, *ix, p);
-                    aOut << "  [" << p[0] << ", " << p[1] << ", " << p[2] << ", " << p[3] << "]";
-                }
-                break;
-            case 2:
-                aOut << "  w0: " << *ix;
-                break;
-            case 3:
-                aOut <<  "  k: " << *ix;
-                break;
-            case 4:
-                aOut << "  w2: " << *ix;
-                break;
-            /*default:
-                aOut << *ix << ' ';
-                ++per_linea;
-                if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea = 0;}
-                break;*/
-            }
-        }
-    }
-    else
-    {
-        for(int k = -static_cast<int>(mNumTimes); ix != end; ++ix,++k)
-        {
-            switch(k)
-            {
-            case 0:
-                aOut << std::endl;
-                aOut <<   "v0: " << *ix;
-                v0 = *ix;
-                break;
-            case 1:
-                aOut << "  v1: " << *ix;
-                {
-                    double p[4];
-                    getProportions(v0, *ix, p);
-                    aOut << "  [" << p[0] << ", " << p[1] << ", " << p[2] << ", " << p[3] << "]";
-                }
-                break;
-            case 2:
-                aOut << "  w0: " << *ix;
-                break;
-            case 3:
-                aOut <<  "  k: " << *ix;
-                break;
-            case 4:
-                aOut << "  w2: " << *ix;
-                break;
-            default:
-                aOut << *ix << ' ';
-                ++per_linea;
-                if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea = 0;}
-                break;
-            }
-        }
-    }
+
+	// Different layout of variables if branch lengths are fixed
+	int start = (mFixedBranchLength) ? 0 : -static_cast<int>(mNumTimes);
+
+	for(int k = start; ix != end; ++ix,++k)
+	{
+		switch(k)
+		{
+		case 0:
+			aOut << std::endl;
+			aOut <<   "v0: " << *ix;
+			v0 = *ix;
+			break;
+		case 1:
+			aOut << "  v1: " << *ix;
+			{
+				double p[4];
+				getProportions(v0, *ix, p);
+				aOut << "  [" << p[0] << ", " << p[1] << ", " << p[2] << ", " << p[3] << "]";
+			}
+			break;
+		case 2:
+			aOut << "  w0: " << *ix;
+			break;
+		case 3:
+			aOut <<  "  k: " << *ix;
+			break;
+		case 4:
+			aOut << "  w2: " << *ix;
+			break;
+		default:
+			aOut << *ix << ' '; // These are branch lengths
+			++per_linea;
+			if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea = 0;}
+			break;
+		}
+	}
+
 	aOut << std::endl;
 	aOut.precision(prec);
 }
@@ -325,44 +246,25 @@ void BranchSiteModel::initFromParams(void)
 	// Get the parameters (the default values or the values set on the command line)
 	ParseParameters* params = ParseParameters::getInstance();
 
-    if(mFixedBranchLength)
-    {
-        	// Initialization as in CodeML (seems)
-        mVar[2] = params->getParameter("w0");							// w0
-        mVar[3] = params->getParameter("k");							// k
+	// Different start if has fixed branch lengths
+	unsigned int start = (mFixedBranchLength) ? 0 : mNumTimes;
 
-        double p0 = params->getParameter("p0");
-        double p1 = params->getParameter("p1");
-#ifdef USE_ORIGINAL_PROPORTIONS
-        if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
-        mVar[0] = log(p0);											// p0 -> x0
-        mVar[1] = log(p1);											// p1 -> x1
-#else
-        if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
-        mVar[0] = p0+p1;												// p0+p1
-        mVar[1] = p0/(p0+p1);											// p0/(p0+p1)
-#endif
-        if(mNumVariables == 5) mVar[4] = params->getParameter("w2");	// w2
-    }
-    else
-    {
-       	// Initialization as in CodeML (seems)
-        mVar[mNumTimes+2] = params->getParameter("w0");							// w0
-        mVar[mNumTimes+3] = params->getParameter("k");							// k
+	// Initialization as in CodeML (seems)
+	mVar[start+2] = params->getParameter("w0");							// w0
+	mVar[start+3] = params->getParameter("k");							// k
 
-        double p0 = params->getParameter("p0");
-        double p1 = params->getParameter("p1");
+	double p0 = params->getParameter("p0");
+	double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
-        if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
-        mVar[mNumTimes+0] = log(p0);											// p0 -> x0
-        mVar[mNumTimes+1] = log(p1);											// p1 -> x1
+	if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
+	mVar[start+0] = log(p0);											// p0 -> x0
+	mVar[start+1] = log(p1);											// p1 -> x1
 #else
-        if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
-        mVar[mNumTimes+0] = p0+p1;												// p0+p1
-        mVar[mNumTimes+1] = p0/(p0+p1);											// p0/(p0+p1)
+	if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
+	mVar[start+0] = p0+p1;												// p0+p1
+	mVar[start+1] = p0/(p0+p1);											// p0/(p0+p1)
 #endif
-        if(mNumVariables == 5) mVar[mNumTimes+4] = params->getParameter("w2");	// w2
-    }
+	if(mNumVariables == 5) mVar[start+4] = params->getParameter("w2");	// w2
 
 	// The parameters have been initializated
 	mInitStatus |= INIT_PARAMS;
@@ -373,36 +275,22 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 	// Adjust the length to be copied
 	if(aValidLen == 0) aValidLen = static_cast<unsigned int>(aPreviousResult.size());
 
-    if(mFixedBranchLength)
-    {
-		// Too long, cut. Too short, ignore. Remember H0 has 4 variables.
-        if(aValidLen > mNumVariables) aValidLen = mNumVariables;
-        else if((int)aValidLen < 0)
-        {
-            mInitStatus = INIT_NONE;
-            return;
-        }
-        else if(aValidLen < 4) aValidLen = 0;
+	// Different start if has fixed branch lengths
+	unsigned int start = (mFixedBranchLength) ? 0 : mNumTimes;
 
-        // Copy the requested values
-        mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+static_cast<size_t>(aValidLen));
-        mVar.resize(static_cast<size_t>(mNumVariables));
-    }
-    else
-    {
-        // Too long, cut. Too short, ignore. Remember H0 has 4 variables.
-        if(aValidLen > mNumTimes+mNumVariables) aValidLen = mNumTimes+mNumVariables;
-        else if(aValidLen < mNumTimes)
-        {
-            mInitStatus = INIT_NONE;
-            return;
-        }
-        else if(aValidLen < mNumTimes+4) aValidLen = mNumTimes;
+	// Too long, cut. Too short, ignore. Remember H0 has 4 variables.
+	if(aValidLen > start + mNumVariables) aValidLen = start + mNumVariables;
+	else if((int)aValidLen < start)
+	{
+		mInitStatus = INIT_NONE;
+		return;
+	}
+	else if(aValidLen < start+4) aValidLen = start;
 
-        // Copy the requested values
-        mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+static_cast<size_t>(aValidLen));
-        mVar.resize(static_cast<size_t>(mNumTimes+mNumVariables));
-    }
+	// Copy the requested values
+	mVar.assign(aPreviousResult.begin(), aPreviousResult.begin()+static_cast<size_t>(aValidLen));
+	mVar.resize(static_cast<size_t>(start+mNumVariables));
+    
 	// Ask for initialization completion
 	if(aValidLen == mNumTimes)        mInitStatus = INIT_TIMES;
 	else if(aValidLen == mNumTimes+4) mInitStatus = INIT_TIMES|INIT_PARAMS_H1;

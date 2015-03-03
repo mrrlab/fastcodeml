@@ -83,6 +83,7 @@ private:
 #else
 
 #include <sys/time.h> // gettimeofday
+#include <stddef.h>
 
 /// Simple timer
 ///
