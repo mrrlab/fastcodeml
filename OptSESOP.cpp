@@ -25,34 +25,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 {	
 	// Store the initial state
 	
-	std::vector<double> x_0;
+	std::vector<double> x_0, x_prev;
 	x_0.resize(mN);
 	x_prev.resize(mN);
 	memcpy(&x_0[0], x, size_vect);
 	memcpy(&x_prev[0], x, size_vect);
 	
 	
-	*f = -mModel->computeLikelihood(x_0, mTrace);
-	if(mVerbose > 2)
-		std::cout << "f_init = " << *f << "\n";
-	double f_prev(*f+1.0);
+	*f = mModel->computeLikelihood(x_0, mTrace);
+	double f_prev = *f - 2.;
 	
-	mModel->printVar(x_0, f_prev);
-	
-	// nLopt optimizer parameters
-	std::auto_ptr<nlopt::opt> opt;
 	
 	// initialize the matrix D
 	computeGradient(*f, x, mGradient);
 	mM = 1;
 	memcpy(md2, mGradient, size_vect);
 	
-	if (mVerbose > 2)
-	{
-		memcpy(&x_[0], mGradient, size_vect);
-		std::cout << "\n\n Initial gradient:\n";
-		mModel->printVar(x_, -1);
-	}
 		
 	// loop until convergene reached
 	bool convergence_reached( false );
@@ -85,6 +73,15 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		}
 		updateDMatrix();
 		
+		
+		if(mVerbose > 2)
+		{
+			memcpy(&x_[0], mD, size_vect);
+			std::cout << "\n\nFirst column of D matrix:\n";
+			mModel->printVar(x_, -42);
+		}
+		
+		
 		memcpy(&x_prev[0], x, size_vect); 
 		
 		if(mVerbose > 2)
@@ -96,21 +93,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		
 		memcpy(&mSpace[0], x, size_vect); // we store the current state in the workspace
 		
+		// nLopt optimizer parameters
+		std::auto_ptr<nlopt::opt> opt;
 		
 #ifdef USE_SLSQP
 		opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mM));
 		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA, mM));
 		
 		// add the constraints
-		for(int constraint_id(0); constraint_id<mN; constraint_id++)
+		for(int constraint_id(0); constraint_id<2*mN; constraint_id++)
 		{
-			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, &data_constraints[2*constraint_id  ], 1e-6);
-			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, &data_constraints[2*constraint_id+1], 1e-6);
+			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, &data_constraints[constraint_id], 1e-8);
 		}
 		
-		// initialize alpha
+		// initialize alpha to 0 so we start at point x
 		for(int i(0); i<mM; i++)
-			alpha[i] = 1e-3;
+			alpha[i] = 0.;
 		
 #endif // USE_SLSQP
 
@@ -168,6 +166,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		
 		// update current state
 		char trans = 'N';
+		memcpy(x, &x_prev[0], size_vect);
 		dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &alpha[0], &I1, &D1, x, &I1);
 		
 		if(mVerbose > 2)
@@ -176,7 +175,10 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			for(int i(0); i<mM; i++)
 				std::cout << alpha[i] << " ";
 			
-			std::cout << "\n\nOptimized at this step, obtained likelihood: " << *f << "\n";
+			std::cout << "\n\nOptimized at this step, obtained likelihood: "; //<< *f << "\n";
+			memcpy(&x_[0], x, size_vect);
+			mModel->printVar(x_, *f);
+			
 		}
 		
 		// check convergence
@@ -199,7 +201,7 @@ double OptSESOP::operator()(const std::vector<double>& aVarsAlpha, std::vector<d
 	char trans = 'N';
 	dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &aVarsAlpha[0], &I1, &D1, &x_[0], &I1);
 	
-	double pointValue =  - mModel->computeLikelihood(x_, mTrace);
+	double pointValue = mModel->computeLikelihood(x_, mTrace);
 	
 	
 	if(mVerbose > 2)
@@ -212,6 +214,10 @@ double OptSESOP::operator()(const std::vector<double>& aVarsAlpha, std::vector<d
 	{
 		computeGradientSubspace(pointValue, aVarsAlpha, aGrad);
 	}
+	
+	// Stop optimization if value is greater or equal to threshold
+	if(mStopIfBigger && pointValue >= mThreshold) throw nlopt::forced_stop();
+	
 	return pointValue;
 }
 
@@ -235,8 +241,8 @@ void OptSESOP::alocateMemory()
 	
 	mGradient_prev.resize(s1);
 	mDirection_prev.resize(s2);
-	for(int i(0); i<s1; i++) {mGradient_prev[i] = &mSpace[4*mN+i];}
-	for(int i(0); i<s2; i++) {mDirection_prev[i] = &mSpace[(4+s1)*mN+i];}	
+	for(int i(0); i<s1; i++) {mGradient_prev[i] = &mSpace[(4+i)*mN];}
+	for(int i(0); i<s2; i++) {mDirection_prev[i] = &mSpace[(4+s1+i)*mN];}	
 	
 	
 	alpha.reserve(3+s1+s2);
@@ -275,10 +281,12 @@ void OptSESOP::saveDirection(double *dir)
 	}
 	else
 	{
+		double *tmp = mDirection_prev[0];
 		for(int i(0); i<s1-1; i++)
 		{
 			mDirection_prev[i] = mDirection_prev[i+1];
 		}
+		mDirection_prev.back() = tmp;
 		memcpy(mDirection_prev.back(), dir, size_vect);
 	}
 }
@@ -292,10 +300,12 @@ void OptSESOP::saveGradient(double *grad)
 	}
 	else
 	{
+		double *tmp = mGradient_prev[0];
 		for(int i(0); i<s2-1; i++)
 		{
 			mGradient_prev[i] = mGradient_prev[i+1];
 		}
+		mGradient_prev.back() = tmp;
 		memcpy(mGradient_prev.back(), grad, size_vect);
 	}
 }
@@ -312,7 +322,7 @@ void OptSESOP::updateDMatrix()
 	memcpy(mD, mGradient, size_vect);
 	
 	norm = dnrm2_(&mN, mD, &I1);
-	inv_norm = -1./norm;
+	inv_norm = 1./norm;
 	dscal_(&mN, &inv_norm, mD, &I1);
 	
 	mM = 1;
@@ -331,7 +341,7 @@ void OptSESOP::updateDMatrix()
 		memcpy(vec, md2, size_vect);
 		
 		norm = dnrm2_(&N, vec, &I1);
-		inv_norm = -1./norm;
+		inv_norm = 1./norm;
 		dscal_(&mN, &inv_norm, vec, &I1);
 		
 		mM = 3;
@@ -357,7 +367,7 @@ void OptSESOP::updateDMatrix()
 			vec = mD+(3+s1+i)*size_vect;
 			memcpy(vec, mGradient_prev[i], size_vect);
 			norm = dnrm2_(&N, vec, &I1);
-			inv_norm = -1./norm;
+			inv_norm = 1./norm;
 			dscal_(&mN, &inv_norm, vec, &I1);
 		}
 		mM = 3+s1+s2;
@@ -370,7 +380,6 @@ void OptSESOP::updateDMatrix()
 }
 
 #ifdef USE_SLSQP
-
 double OptSESOP::operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data)
 {
 	data_constraint *data_ = (data_constraint*)(data);
@@ -399,12 +408,10 @@ double OptSESOP::operator()(unsigned n, const std::vector<double> &alpha, std::v
 	}
 	else
 	{
-		std::cout << "Wrong data[1] (corresponding to the bound type, low or up): should be either 0 or 1.\n";
-		// TODO
+		throw FastCodeMLFatal("Exception in computation: Constraint evaluation: Wrong data[1] (corresponding to the bound type, low or up): should be either 0 or 1.\n");
 		return 0.;
 	}
 }
-
 #endif // if USE_SLSQP
 
 #ifdef USE_BOBYQA
@@ -504,7 +511,7 @@ void OptSESOP::computeGradient(double aPointValue, const double *aVars, double* 
 			delta[i] = eh;
 		}
 		
-		const double f1 = -mModel->computeLikelihood(vars_working_copy, false);
+		const double f1 = mModel->computeLikelihood(vars_working_copy, false);
 		aGrad[i] = (f1-aPointValue)/delta[i];
 		
 		vars_working_copy[i] = aVars[i];
@@ -522,7 +529,7 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	size_t i = 0;
 	for(; i < mM; ++i)
 	{
-		double eh = 1e-6 * (vars_working_copy[i]+1.);
+		double eh = 1e-8 * (fabs(vars_working_copy[i])+1.);
 		vars_working_copy[i] += eh;
 		
 		// compute x = x + D*alpha
@@ -530,18 +537,27 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 		char trans = 'N';
 		dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &vars_working_copy[0], &I1, &D1, &x_[0], &I1);
 		
-		double f1 = - mModel->computeLikelihood(x_, false);
+		double f1 = mModel->computeLikelihood(x_, false);
 		aGrad[i] = (f1-aPointValue)/eh;
 		
 		vars_working_copy[i] = aAlpha[i];
 	}
 #else
-	// try with a huge approximation, works if alpha << 1
+	// try with a huge approximation, works only if |alpha| << 1
 	for(int i(0); i<mM; i++)
 	{
 		aGrad[i] = ddot_(&mN, mGradient, &I1, &mD[i], &I1);
 	}
 
 #endif
+
+	if(mVerbose > 2)
+	{
+		std::cout << "\n Subspace Gradient: \n alpha = [ ";
+		for(int i(0); i<mM; i++)
+			std::cout << aGrad[i] << " ";
+		std::cout << " ].\n";
+		
+	}
 }
 

@@ -352,7 +352,7 @@ void dscal_(const int *n,
 void dcopy_(const int *n,
 				const double *dx,
 				const int *incx,
-				const double *dy,
+				double *dy,
 				const int *incy);
 
 

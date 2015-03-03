@@ -45,7 +45,8 @@ public:
 			,double aRelativeError
 			,bool aStopIfBigger
 			,double aThreshold
-			,int aMaxIterations) 
+			,int aMaxIterations
+			,int aNumTimes) 
 		:mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
@@ -56,6 +57,7 @@ public:
 		,mStopIfBigger(aStopIfBigger)
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
+		,mNumTimes(aNumTimes)
 		,mN(0)
 		,mStep(0)
 		,mOmega(1.)
@@ -105,7 +107,6 @@ private:
 	///
 	/// @return The evaluated function
 	///
-	/// TODO: throw exceptions
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
 	double operator()(const std::vector<double>& aVarsAlpha, std::vector<double>& aGrad);
@@ -270,7 +271,8 @@ private:
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
-	int							mMaxIterations;		///< Maximum number of iterations for the maximization	
+	int							mMaxIterations;		///< Maximum number of iterations for the maximization
+	int							mNumTimes;			///< Number of branches in the optimizer
 };
 
 #endif // OPTSESOP_H

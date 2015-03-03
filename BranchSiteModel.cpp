@@ -1792,7 +1792,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOptAlgo == OPTIM_SESOP)
 	{
 		// Create the optimizer instance
-		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		
