@@ -17,10 +17,10 @@
 
 
 // if use the BOBYQA optimizer with bound constraints
-//#define USE_BOBYQA
+//#define USE_BOUND_CONSTRAINTS
 
 // if use the SLSQP optimizer with linear constraints (maybe more relevant)
-#define USE_SLSQP
+#define USE_TRANSFORMED_CONSTRAINTS
 
 class OptSESOP
 {
@@ -61,8 +61,6 @@ public:
 		,mN(0)
 		,mStep(0)
 		,mOmega(1.)
-		,s1(3)
-		,s2(3)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -73,16 +71,17 @@ public:
 	///
 	double maximizeFunction(std::vector<double>& aVars);
 	
-private:
+public:
 
-#ifdef USE_SLSQP
-	// structure only used for the constraints
-	struct data_constraint{
-		OptSESOP *sesop;
-		int line;
-		int bound_type; 
+#ifdef USE_TRANSFORMED_CONSTRAINTS
+	// structure only used to store data for the constraints
+	struct data_constraint
+	{
+		OptSESOP*	sesop;		///< Pointer on the instance containing all the informations such as the bounds of the constraints 	
+		int 		line;		///< index of the bound
+		int 		bound_type; ///< type of bound, 0 meaning lower bound and 1 meaning upper bound
 	};
-#endif // USE_SLSQP
+#endif // USE_TRANSFORMED_CONSTRAINTS
 
 private:
 
@@ -135,19 +134,6 @@ private:
 	///
 	void alocateMemory();
 	
-	/// saveDirection
-	/// save the last direction dir and reorder the pointers
-	///
-	/// @params[in] dir pointer on the new direction
-	///
-	void saveDirection(double *dir);
-	
-	/// saveGradient
-	/// save the last gradient grad and reorder the pointers
-	///
-	/// @params[in] grad pointer on the new grad
-	///
-	void saveGradient(double *grad);
 	
 	/// updateDMatrix
 	/// Updates the D matrix by calling all the required subroutines
@@ -155,7 +141,7 @@ private:
 	///
 	void updateDMatrix();
 	
-#ifdef USE_SLSQP
+#ifdef USE_TRANSFORMED_CONSTRAINTS
 	/// Wrapper to be passed to the nLopt optimizer for the constraints
 	///
 	/// @param[in] aVars Variables to be optimized
@@ -185,9 +171,9 @@ private:
 	///
 	double operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
 	
-#endif // if USE_SLSQP
+#endif // if USE_TRANSFORMED_CONSTRAINTS
 
-#ifdef USE_BOBYQA
+#ifdef USE_BOUND_CONSTRAINTS
 	/// updateBoundsAndAlpha
 	/// set the lower and upper bounds for alpha and initialize alpha
 	///
@@ -208,7 +194,7 @@ private:
 	///			False otherwise
 	///
 	bool subspaceUpperBoundIsInSpace();
-#endif // if USE_BOBYQA
+#endif // if USE_BOUND_CONSTRAINTS
 
 	/// computeGradient
 	/// computes the gradient of the log likelihood function at point x
@@ -242,11 +228,8 @@ private:
 	std::vector<double> 		x_;					///< Workspace for function evaluation
 	
 	int							mStep;				///< current step	
-	int 						s1;					///< number of previous directions to store
-	int 						s2;					///< number of previous gradients to store
 	double*						mGradient;			///< current gradient
-	std::vector<double*>		mGradient_prev;		///< previous gradients
-	std::vector<double*>		mDirection_prev;	///< previous directions
+	double*						mGradient_times;	///< search direction with only the components other than w0, w2 and kappa
 	double*						md1;				///< Nemirovski direction 1 (=xk - x0)
 	double*						md2;				///< Nemirovski direction 2 (=\sum_{i=1}^k omega_i gradient(x_i))
 	double						mOmega;				///< used to compute Nemirovski direction 2
@@ -254,13 +237,13 @@ private:
 	int 						mM;					///< size of the current subspace
 	std::vector<double>			alpha;				///< step to optimize in the current subspace
 	double						*mD;				///< D matrix, represent the current subspace. Only a pointer on Workspace mSpace
-#ifdef USE_SLSQP
+#ifdef USE_TRANSFORMED_CONSTRAINTS
 	std::vector<data_constraint>			data_constraints;	///< Data used to compute the constraints
-#endif // USE_SLSQP
-#ifdef USE_BOBYQA
+#endif // USE_TRANSFORMED_CONSTRAINTS
+#ifdef USE_BOUND_CONSTRAINTS
 	std::vector<double>			mLowerBoundSubspace;///< Lower bounds for the subspace optimization
 	std::vector<double>			mUpperBoundSubspace;///< Upper bounds for the subspace optimization
-#endif // USE_BOBYQA
+#endif // USE_BOUND_CONSTRAINTS
 
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
