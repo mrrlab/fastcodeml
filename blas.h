@@ -428,6 +428,7 @@ void dgemv_(const char *trans,
 // Constants used by blas and lapack routines
 static const int	I0 = 0;		///< Integer zero.
 static const int	I1 = 1;		///< Integer one.
+static const int	I2 = 2;		///< Integer two.
 static const double	D0 = 0.;	///< Float double zero.
 static const double	D1 = 1.;	///< Float double one.
 static const double minus_one(-1.);	///< Float double -1

@@ -259,12 +259,6 @@ private:
 	///
 	void setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength);
 
-	/// Generate a double random number between 0 and 1
-	///
-	/// @return The random number
-	///
-	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
-
 	/// Valid values (on the command line) for the optimization algorithm
 	///
 	enum OptimAlgoIdentifier

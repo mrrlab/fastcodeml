@@ -289,7 +289,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
-        mLowerBound.assign(aNumTimes, -0.001);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        mLowerBound.assign(aNumTimes, -1e-6);				mUpperBound.assign(aNumTimes, 50.0);	// T
     }
 
 	// Set lower constrains							// Set upper constrains
@@ -491,9 +491,7 @@ void BranchSiteModel::initVariables(void)
     else
     {
         // Initialize times (if not already initialized)
-        // TODO: put the condition back
-        //if((mInitStatus & INIT_TIMES) != INIT_TIMES)
-        if(true)
+        if((mInitStatus & INIT_TIMES) != INIT_TIMES)
         {
             for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
         }
@@ -1786,16 +1784,62 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	
 	
-	
+	std::auto_ptr<nlopt::opt> opt;
 	
 	// Special case for the SESOP optimizer
 	if(mOptAlgo == OPTIM_SESOP)
 	{
 		// Create the optimizer instance
-		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mRelativeError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		
+		
+		
+		
+		// finish problem with SLSQP
+#if 1
+		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
+		
+		// put the values back in the interval
+		for(int varid(0); varid<mNumVariables+mNumTimes; varid++)
+		{
+			if(mVar[varid] < mLowerBound[varid])
+			{
+				mVar[varid] = mLowerBound[varid]+mRelativeError;
+			}
+			else if(mVar[varid] > mUpperBound[varid])
+			{
+				mVar[varid] = mUpperBound[varid]-mRelativeError;
+			}
+		}
+		
+		if (mFixedBranchLength)
+		{
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
+        }
+        else
+        {
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
+        }
+        opt->set_vector_storage(20);
+        
+        // Initialize bounds and termination criteria
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+		
+		opt->set_ftol_rel(mRelativeError);
+		
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+				
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+		
+		optimize_using_nlopt(opt, maxl);
+#endif	
 		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
 		printVar(mVar);
@@ -1803,9 +1847,6 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	
 	
-	
-	
-	std::auto_ptr<nlopt::opt> opt;
 	
 	// Special case for a mixed optimizer
 	if(mOptAlgo == OPTIM_LD_MIXED)
@@ -1846,12 +1887,15 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
+		
 		opt->set_ftol_rel(mRelativeError);
+		
 		nlopt::srand(static_cast<unsigned long>(mSeed));		
+		
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
 				
 		// If the user has set a maximum number of iterations set it
-		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+		//if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
 		
 		optimize_using_nlopt(opt, maxl);
 		

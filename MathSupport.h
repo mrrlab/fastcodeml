@@ -18,6 +18,8 @@
 #include <cmath>
 #endif
 
+#include <cstdlib>
+
 //#ifdef USE_MKL_VML
 //#include <mkl_vml_functions.h>
 //#endif
@@ -230,7 +232,11 @@ static inline double distance(const double* RESTRICT x, const double* RESTRICT y
 	return sqrt(t);
 }
 
-
+/// Generate a double random number between 0 and 1
+///
+/// @return The random number
+///
+static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
 
 
 #endif

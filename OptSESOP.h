@@ -229,8 +229,8 @@ private:
 	
 	int							mStep;				///< current step	
 	double*						mGradient;			///< current gradient
-	double*						mGradient_times;	///< search direction with only the components other than w0, w2 and kappa
-	double*						md1;				///< Nemirovski direction 1 (=xk - x0)
+	double*						mGradient_times;	///< search direction with only some components of the gradient with respect to branch lengths
+	double*						mGradient_others;	///< search direction with only the kappa component of the gradient
 	double*						md2;				///< Nemirovski direction 2 (=\sum_{i=1}^k omega_i gradient(x_i))
 	double						mOmega;				///< used to compute Nemirovski direction 2
 	
