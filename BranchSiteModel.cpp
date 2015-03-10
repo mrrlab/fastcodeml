@@ -22,6 +22,7 @@
 #include "CodeMLoptimizer.h"
 #include "CDOSOptimizer.h"
 #include "OptSESOP.h"
+#include "Opt2RDSA.h"
 #include "ParseParameters.h"
 
 /// Starting value for the computed maximum likelihood.
@@ -289,7 +290,8 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
-        mLowerBound.assign(aNumTimes, -1e-6);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        mLowerBound.assign(aNumTimes, -1e-3);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        //TODO find a way so it works with 0
     }
 
 	// Set lower constrains							// Set upper constrains
@@ -1541,6 +1543,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MIXED:
 	case OPTIM_CDOS:
 	case OPTIM_SESOP:
+	case OPTIM_2RDSA:
 		return;
 
 	default:
@@ -1783,6 +1786,20 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		return maxl;
 	}
 	
+	// Special case for the 2RDSA optimizer
+	if(mOptAlgo == OPTIM_2RDSA)
+	{
+		// Create the optimizer instance
+		Opt2RDSA optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		
+		double maxl = optim.maximizeFunction(mVar);
+		
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	
 	
 	std::auto_ptr<nlopt::opt> opt;
 	
@@ -1797,16 +1814,20 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		
 		
 		
-		// finish problem with SLSQP
-#if 1
+		// finish problem with a NLopt algo
+#if 0
 		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
 		
 		// put the values back in the interval
 		for(int varid(0); varid<mNumVariables+mNumTimes; varid++)
 		{
+			// TODO??
+			if(!mFixedBranchLength && varid < mNumTimes)
+				mLowerBound[varid] = 0.;
+				
 			if(mVar[varid] < mLowerBound[varid])
 			{
-				mVar[varid] = mLowerBound[varid]+mRelativeError;
+				mVar[varid] = mLowerBound[varid]+randFrom0to1()*mRelativeError;
 			}
 			else if(mVar[varid] > mUpperBound[varid])
 			{
@@ -1816,13 +1837,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		
 		if (mFixedBranchLength)
 		{
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
         }
         else
         {
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
         }
         opt->set_vector_storage(20);
         

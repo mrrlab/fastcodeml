@@ -276,6 +276,7 @@ private:
 		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
 		OPTIM_CDOS			= 43,	///< CDOS optimizer derivative free
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
+		OPTIM_2RDSA			= 45,	///< 2RDSA optimizer
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};

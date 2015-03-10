@@ -188,6 +188,7 @@ inline double distance(double *x1, double *x2, double *workspace, int const& N, 
 inline static double min2(double a, double b) {return (a < b) ? a : b;}
 inline static double max2(double a, double b) {return (a > b) ? a : b;}
 inline static double square(double a) {return a*a;}
+inline static double cube(double a) {return a*a*a;}
 inline static void   zero(double x[], int n) {memset(x, 0, n*sizeof(double));}
 inline static void   xtoy(const double x[], double y[], int n) {memcpy(y, x, n*sizeof(double));}
 

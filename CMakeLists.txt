@@ -29,6 +29,7 @@ set(SRCS
 	WriteResults.cpp
 	CDOSOptimizer.cpp
 	OptSESOP.cpp
+	Opt2RDSA.cpp
 )
 
 

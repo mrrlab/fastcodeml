@@ -7,6 +7,7 @@
 #include <vector>
 #include "BranchSiteModel.h"
 
+
 /// OptSESOP class.
 /// SESOP optimizer, gradient based
 ///
@@ -15,12 +16,6 @@
 ///     @version 1.1
 ///
 
-
-// if use the BOBYQA optimizer with bound constraints
-//#define USE_BOUND_CONSTRAINTS
-
-// if use the SLSQP optimizer with linear constraints (maybe more relevant)
-#define USE_TRANSFORMED_CONSTRAINTS
 
 class OptSESOP
 {
@@ -73,7 +68,6 @@ public:
 	
 public:
 
-#ifdef USE_TRANSFORMED_CONSTRAINTS
 	// structure only used to store data for the constraints
 	struct data_constraint
 	{
@@ -81,7 +75,6 @@ public:
 		int 		line;		///< index of the bound
 		int 		bound_type; ///< type of bound, 0 meaning lower bound and 1 meaning upper bound
 	};
-#endif // USE_TRANSFORMED_CONSTRAINTS
 
 private:
 
@@ -141,7 +134,7 @@ private:
 	///
 	void updateDMatrix();
 	
-#ifdef USE_TRANSFORMED_CONSTRAINTS
+
 	/// Wrapper to be passed to the nLopt optimizer for the constraints
 	///
 	/// @param[in] aVars Variables to be optimized
@@ -171,30 +164,6 @@ private:
 	///
 	double operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
 	
-#endif // if USE_TRANSFORMED_CONSTRAINTS
-
-#ifdef USE_BOUND_CONSTRAINTS
-	/// updateBoundsAndAlpha
-	/// set the lower and upper bounds for alpha and initialize alpha
-	///
-	void updateBoundsAndAlpha();
-	
-	/// subspaceLowerBoundIsInSpace
-	/// verify if the lower bound of the subspace is contained in the full space
-	///
-	/// @return True if contained in the space
-	///			False otherwise
-	///
-	bool subspaceLowerBoundIsInSpace();
-	
-	/// subspaceUpperBoundIsInSpace
-	/// verify if the upper bound of the subspace is contained in the full space
-	///
-	/// @return True if contained in the space
-	///			False otherwise
-	///
-	bool subspaceUpperBoundIsInSpace();
-#endif // if USE_BOUND_CONSTRAINTS
 
 	/// computeGradient
 	/// computes the gradient of the log likelihood function at point x
@@ -237,13 +206,8 @@ private:
 	int 						mM;					///< size of the current subspace
 	std::vector<double>			alpha;				///< step to optimize in the current subspace
 	double						*mD;				///< D matrix, represent the current subspace. Only a pointer on Workspace mSpace
-#ifdef USE_TRANSFORMED_CONSTRAINTS
+
 	std::vector<data_constraint>			data_constraints;	///< Data used to compute the constraints
-#endif // USE_TRANSFORMED_CONSTRAINTS
-#ifdef USE_BOUND_CONSTRAINTS
-	std::vector<double>			mLowerBoundSubspace;///< Lower bounds for the subspace optimization
-	std::vector<double>			mUpperBoundSubspace;///< Upper bounds for the subspace optimization
-#endif // USE_BOUND_CONSTRAINTS
 
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
