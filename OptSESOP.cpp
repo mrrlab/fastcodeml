@@ -7,10 +7,10 @@
 double OptSESOP::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
+	
 	if(mVerbose > 2)
-	{
 		std::cout << "Size of the problem: N=" << mN << "\n";
-	}
+
 	alocateMemory();
 	
 	double maxl = -1000000;
@@ -25,11 +25,9 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 {	
 	// Store the initial state
 	
-	std::vector<double> x_0, x_prev;
+	std::vector<double> x_0;
 	x_0.resize(mN);
-	x_prev.resize(mN);
-	memcpy(&x_0[0]   , x, size_vect);
-	memcpy(&x_prev[0], x, size_vect);	
+	memcpy(&x_0[0], x, size_vect);	
 	
 	*f = mModel->computeLikelihood(x_0, mTrace);
 	double f_prev = *f - 2.;
@@ -41,23 +39,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	computeGradient(*f, x, mGradient);
 	
 	memcpy(mGradient_times, mGradient, mNumTimes*sizeof(double));
-	for(int i(mNumTimes); i<mN; i++)
-	{
-		mGradient_times[i] = 0.;
-	}
 	
+	for(int i(mNumTimes); i<mN; i++)
+		mGradient_times[i] = 0.;
+			
 	
 	// mGradient_others
 	for(size_t i(0); i<mN; i++)
 		mGradient_others[i] = 0.;
-	//mGradient_others[mNumTimes+3] = mGradient[mNumTimes+3]; // kappa
 	mGradient_others[mNumTimes+1] = mGradient[mNumTimes+1];	// v1
 	mGradient_others[mNumTimes+2] = mGradient[mNumTimes+2]; // w0
-	
+	//mGradient_others[mNumTimes+3] = mGradient[mNumTimes+3]; // kappa
+		
 	// Initialize the second Nemirovski direction
 	memcpy(md2, mGradient, size_vect);
 	
-		
+	
 	// loop until convergene reached
 	bool convergence_reached( false );
 	while(!convergence_reached)
@@ -80,6 +77,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			
 			
 			// randomly choose the search directions for the matrix parameters:
+			// TODO: improve with correlations?
 			for(size_t i(mNumTimes); i<mN; i++)
 			{
 				mGradient_others[i] = 0.;
@@ -119,40 +117,31 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		}
 		
 		
-		memcpy(&x_prev[0], x, size_vect); 
-		
 		if(mVerbose > 2)
-		{
 			std::cout << "Matrix D updated, optimizing...\n";
-		}
-		
+				
 		// optimize in the subspace, i.e. find best alpha s.t. f(x+D*alpha) is minimized
 		// we store the current state in the workspace
 		memcpy(&mSpace[0], x, size_vect); 
 		
-
 		opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mM));
-		opt->set_vector_storage(mM);
+		//opt->set_vector_storage(mM);
 		
 		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA, mM));
 		
 		// add the constraints
 		for(int constraint_id(0); constraint_id<2*mN; constraint_id++)
-		{
-			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, (void*) &data_constraints[constraint_id], 1e-8);
-		}
+			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, (void*) &data_constraints[constraint_id], 1e-6);
 		
 		if(mVerbose > 2)
-		{
 			std::cout << "Inequality constraints added\n";
-		}
+			
 		
 		// initialize alpha to 0 so we start at point x
 		for(int i(0); i<mM; i++)
 			alpha[i] = 0.;
 
-		opt->set_ftol_rel(1e-6);
-		//nlopt::srand(static_cast<unsigned long>(mSeed));
+		opt->set_ftol_rel(mRelativeError);
 		opt->set_max_objective(OptSESOP::subspaceEvaluatorWrapper, this);
 		
 		try
@@ -165,7 +154,8 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		}
 		catch(const nlopt::roundoff_limited&)
 		{
-			throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+			//throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+			std::cout << "Esception NLOPT_ROUNDOFF_LIMITED caught. continue in another subspace...\n";
 		}
 		catch(const std::runtime_error&)
 		{
@@ -186,19 +176,20 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			throw FastCodeMLFatal(o);
 		}
 		
-		if(mVerbose > 2)
-			std::cout << "Removing inequality constraints...\n";
 		opt->remove_inequality_constraints();
-		
-		
-		if(mVerbose > 2)
-			std::cout << "Updating current state...\n";
-			
+					
 		
 		// update current state
 		char trans = 'N';
-		memcpy(x, &x_prev[0], size_vect);
 		dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &alpha[0], &I1, &D1, x, &I1);
+		
+		for(size_t i(0); i<mN; i++)
+		{
+			if(x[i] < mLowerBound[i])
+				x[i] = mLowerBound[i];
+			if(x[i] > mUpperBound[i])
+				x[i] = mUpperBound[i]-mRelativeError;
+		}
 		
 		if(mVerbose > 2)
 		{
@@ -226,27 +217,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		{
 			memcpy(&x_[0], x, size_vect);
 			for(size_t i(0); i<mNumTimes; i++)
-			{
-				/*
-				x_[i] += 1e-1 * square(x[i])					// scale
-					   * sqrt(randFrom0to1())
-					   * (grad_prop*mGradient[i]			 	// give only importance of the gradient if alpha is small,
-					      + fabs(mGradient[i])*(randFrom0to1()-0.5)*(1.-grad_prop));	// otherwise random direction
-				*/
-				
-				// ~3000 eval
-				//x_[i] += 1e-1 * square(x[i])*square(randFrom0to1()) * mGradient[i];
+			{				
+				// ~3000 eval for deltaL = 4
 				x_[i] += 1e-1 * square(x[i])*square(randFrom0to1()) * mGradient[i];
+				
+				// ~3270 eval for deltaL = 6
+				//x_[i] += 1e-1 * square(x[i])*square(randFrom0to1()) * sign(mGradient[i])*square(mGradient[i]);
 				
 				
 				if(x_[i] < mLowerBound[i])
-				{
-					x_[i] = mLowerBound[i] + mRelativeError*(1.+randFrom0to1());
-				}
+					x_[i] = mLowerBound[i];
 			}
 			double f_test = mModel->computeLikelihood(x_, mTrace);
+			
 			if(mVerbose > 2)
 				std::cout << "Step " << mStep << ", previous f: " << *f << ", new one: " << f_test << std::endl;
+			
 			if (f_test > *f)
 			{
 				*f = f_test;
@@ -257,9 +243,9 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		
 		// check convergence
 		convergence_reached = f_diff < mRelativeError;
-		//					&& square(dnrm2_(&mN, mGradient, &I1))/mN < mRelativeError;
+
 		
-		if(mStep > 30)
+		if(mStep > 100)
 		{
 			if(mVerbose > 2)
 			{
@@ -305,7 +291,7 @@ double OptSESOP::operator()(const std::vector<double>& aVarsAlpha, std::vector<d
 
 
 // ----------------------------------------------------------------------
-void OptSESOP::updateOmega() {0.5 + sqrt(0.25 + square(mOmega));}
+void OptSESOP::updateOmega() {mOmega = 0.5 + sqrt(0.25 + square(mOmega));}
 
 // ----------------------------------------------------------------------
 void OptSESOP::alocateMemory()
@@ -477,7 +463,7 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	{
 		for(size_t i(0); i < mM; i++)
 		{
-			double eh = 1e-6;
+			double eh = 1e-7;
 			vars_working_copy[i] += eh;
 		
 			// compute x = x + D*alpha

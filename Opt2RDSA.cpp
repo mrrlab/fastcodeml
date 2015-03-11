@@ -56,7 +56,7 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 	{
 		x[i] = (x[i] - mLowerBound[i]) / (mUpperBound[i] - mLowerBound[i]);
 	}
-	x[mNumTimes+3] =  mapKappaInverse_(x[mNumTimes+3] - mLowerBound[mNumTimes+3]) / (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]);
+	//x[mNumTimes+3] =  mapKappaInverse_(x[mNumTimes+3] - mLowerBound[mNumTimes+3]) / (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]);
 	
 	*f = evaluateFunction(x, mTrace);
 	
@@ -99,7 +99,7 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 		}
 		
 		memcpy(&y[0], x, size_vect);
-		y[mNumTimes+3] += mGradient[mNumTimes+3]/fabs(mGradient[mNumTimes+3])*sqrt(randFrom0to1())*1e-2;
+		//y[mNumTimes+3] += mGradient[mNumTimes+3]/fabs(mGradient[mNumTimes+3])*sqrt(randFrom0to1())*1e-2;
 		if(y[mNumTimes+3] < 0.)
 			y[mNumTimes+3] = 0.;
 		if(y[mNumTimes+3] >1.)
@@ -129,7 +129,7 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 		else
 			num_good_iter=0;
 			
-		convergenceReached = (num_good_iter > 10);
+		convergenceReached = (num_good_iter > 20);
 	}
 	
 	// unscale x:
@@ -137,7 +137,7 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 	{
 		x[i] = mLowerBound[i] + x[i] * (mUpperBound[i] - mLowerBound[i]);
 	}
-	x[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
+	//x[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
 }
 
 
@@ -179,16 +179,8 @@ void Opt2RDSA::alocateMemory()
 
 void Opt2RDSA::updateParameters()
 {
-	if(mStep == 0)
-	{
-		aN = 1.;
-		deltaN = 3.8;
-	}
-	else
-	{
-		aN = 1. / ( 1. + randFrom0to1()*pow(double(mStep), 0.602));
-		deltaN = 3.8 / pow(double(mStep), 0.101);
-	}
+	aN = 1. / ( double(mN) + pow(double(mStep+1), 0.602));
+	deltaN = 3.8 / pow(double(mStep+1), 0.101);
 }
 
 
@@ -196,78 +188,95 @@ void Opt2RDSA::updateParameters()
 
 void Opt2RDSA::computeGradientAndHessian(double aPointValue, const double *aVars)
 {
-	// generate the random varables in the workspace
-	double *dN = &mSpace[0];
-	
-	bool isPositive;
-	for(size_t i(0); i<mN; i++)
-	{
-		dN[i] = eta * (2.0*randFrom0to1() - 1.0);
-		
-		// treat boundary problems
-		isPositive = (dN[i] >= 0.);
-		
-		if(aVars[i] - deltaN*fabs(dN[i]) < 0.)
-		{
-			dN[i] = (0.-aVars[i]) / deltaN;
-			if(isPositive)
-				dN[i] = -dN[i] - mRelativeError;
-			else
-				dN[i] += mRelativeError;
-		}
-		
-		if(aVars[i] + deltaN*fabs(dN[i]) > 1.)
-		{
-			dN[i] = (1.-aVars[i]) / deltaN;
-			if(isPositive)
-				dN[i] -= mRelativeError;
-			else
-				dN[i] = -dN[i] + mRelativeError;
-		}
-	}
-	
-	double ynp, ynm;
-	double deltaNm(-deltaN);
-	
-	// compute yn+
-	memcpy(&x_[0], aVars, size_vect); 
-	daxpy_(&mN, &deltaN, dN, &I1, &x_[0], &I1);
-	//ynp = mModel->computeLikelihood(x_, false);
-	ynp = evaluateFunction(x_, false);
-	
-	// compute yn-
-	memcpy(&x_[0], aVars, size_vect); 
-	daxpy_(&mN, &deltaNm, dN, &I1, &x_[0], &I1);
-	//ynm = mModel->computeLikelihood(x_, false);
-	ynm = evaluateFunction(x_, false);
-	
-	// compute the gradient estimator
-	double factor_grad = 1.5 * (ynp-ynm) / (square(eta)*deltaN);
-	memcpy(mGradient, dN, size_vect);
-	dscal_(&mN, &factor_grad, mGradient, &I1);
-	
-	// Update the Hessian estimator
-	double eta_sq_3 = square(eta)/3.;
-	double factor_hessian = 4.5 * (ynp+ynm-2.*aPointValue) / (square(square(eta)*deltaN));
+	size_t numAv(1);
+	double one_over_NumAv = 1./double(numAv);
 	
 	double alpha_1, alpha_2;
 	alpha_1 = double(mStep) / (1.+double(mStep));
 	alpha_2 = 1. / (1.+double(mStep));
 	
+	// set the gradient to 0
 	
-	size_t diagId = 0;
 	for(size_t i(0); i<mN; i++)
-	{
-		// diagonal terms
-		//Hn[i*(mN+1)] = alpha_1 * Hn[i*(mN+1)] + alpha_2*factor_hessian*2.5 * (square(dN[i]) - eta_sq_3);
-		Hn[diagId] = alpha_1 * Hn[diagId] + alpha_2*factor_hessian*2.5 * (square(dN[i]) - eta_sq_3);
+		mGradient[i] = 0.;
 		
-		for(size_t j(0); j<i; j++)
+		
+	// set the hessian to alpha1*Hn-1 so we can easily add the mean hessian
+	dscal_(&packSize, &alpha_1, Hn, &I1);
+	
+	for(size_t avStep(0); avStep<numAv; avStep++)
+	{
+		// generate the random varables in the workspace
+		double *dN = Hn+packSize;
+		double *tmp_grad = &mSpace[0];
+	
+		bool isPositive;
+		for(size_t i(0); i<mN; i++)
 		{
-			//Hn[i*mN+j] = alpha_1 * Hn[i*mN+j] + alpha_2*factor_hessian*dN[i]*dN[j];
-			Hn[diagId+j+1] = alpha_1 * Hn[diagId+j+1] + alpha_2*factor_hessian*dN[j]*dN[i];
+			dN[i] = eta * (2.0*randFrom0to1() - 1.0);
+		
+			// treat boundary problems
+			isPositive = (dN[i] >= 0.);
+		
+			if(aVars[i] - deltaN*fabs(dN[i]) < 0.)
+			{
+				dN[i] = (0.-aVars[i]) / deltaN;
+				if(isPositive)
+					dN[i] = -dN[i] - mRelativeError;
+				else
+					dN[i] += mRelativeError;
+			}
+		
+			if(aVars[i] + deltaN*fabs(dN[i]) > 1.)
+			{
+				dN[i] = (1.-aVars[i]) / deltaN;
+				if(isPositive)
+					dN[i] -= mRelativeError;
+				else
+					dN[i] = -dN[i] + mRelativeError;
+			}
 		}
-		diagId += i+2;
+	
+		double ynp, ynm;
+		double deltaNm(-deltaN);
+	
+		// compute yn+
+		memcpy(&x_[0], aVars, size_vect); 
+		daxpy_(&mN, &deltaN, dN, &I1, &x_[0], &I1);
+		ynp = evaluateFunction(x_, false);
+	
+		// compute yn-
+		memcpy(&x_[0], aVars, size_vect); 
+		daxpy_(&mN, &deltaNm, dN, &I1, &x_[0], &I1);
+		ynm = evaluateFunction(x_, false);
+	
+		// compute the gradient estimator
+		double factor_grad = 1.5 * (ynp-ynm) / (square(eta)*deltaN);
+		memcpy(tmp_grad, dN, size_vect);
+		dscal_(&mN, &factor_grad, tmp_grad, &I1);
+		
+		// add contribution of this to the mean gradient
+		daxpy_(&mN, &one_over_NumAv, tmp_grad, &I1, mGradient, &I1);
+	
+	
+	
+		// Update the Hessian estimator
+		double eta_sq_3 = square(eta)/3.;
+		double factor_hessian = one_over_NumAv*4.5 * (ynp+ynm-2.*aPointValue) / (square(square(eta)*deltaN));
+	
+	
+		size_t diagId = 0;
+		for(size_t i(0); i<mN; i++)
+		{
+			// diagonal terms
+			Hn[diagId] += alpha_2*factor_hessian*2.5 * (square(dN[i]) - eta_sq_3);
+		
+			for(size_t j(0); j<i; j++)
+			{
+				Hn[diagId+j+1] += alpha_2*factor_hessian*dN[j]*dN[i];
+			}
+			diagId += i+2;
+		}
 	}
 }
 
@@ -360,7 +369,7 @@ double Opt2RDSA::evaluateFunction(std::vector<double> &x, bool trace)
 	{
 		x_unscaled[i] = mLowerBound[i] + x[i]*(mUpperBound[i]-mLowerBound[i]);
 	}
-	x_unscaled[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
+	//x_unscaled[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
 	
 	return mModel->computeLikelihood(x_unscaled, trace);
 }

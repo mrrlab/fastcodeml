@@ -493,7 +493,8 @@ void BranchSiteModel::initVariables(void)
     else
     {
         // Initialize times (if not already initialized)
-        if((mInitStatus & INIT_TIMES) != INIT_TIMES)
+        //if((mInitStatus & INIT_TIMES) != INIT_TIMES) //TODO check with Mario how to change this
+        if(true)
         {
             for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
         }
@@ -1815,35 +1816,18 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		
 		
 		// finish problem with a NLopt algo
-#if 0
+#if 1
 		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
-		
-		// put the values back in the interval
-		for(int varid(0); varid<mNumVariables+mNumTimes; varid++)
-		{
-			// TODO??
-			if(!mFixedBranchLength && varid < mNumTimes)
-				mLowerBound[varid] = 0.;
-				
-			if(mVar[varid] < mLowerBound[varid])
-			{
-				mVar[varid] = mLowerBound[varid]+randFrom0to1()*mRelativeError;
-			}
-			else if(mVar[varid] > mUpperBound[varid])
-			{
-				mVar[varid] = mUpperBound[varid]-mRelativeError;
-			}
-		}
 		
 		if (mFixedBranchLength)
 		{
-            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
         }
         else
         {
-            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
         }
         opt->set_vector_storage(20);
         
