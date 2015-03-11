@@ -3,6 +3,31 @@
 #include "MathSupport.h"
 #include "lapack.h"
 
+
+inline double mapKappa_(const double &k) 
+{
+	double alpha = 0.04;
+	double x_lim = pow(alpha, 2./7.);
+	
+	if(k < x_lim)
+		return alpha*sqrt(k);
+	else
+		return  square(square(k));
+}
+
+inline double mapKappaInverse_(const double &k)
+{
+	double alpha = 0.04;
+	double x_lim = pow(alpha, 1./7.);
+	
+	if(k < x_lim)
+		return square(k)/alpha;
+	else
+		return  pow(k, 0.25);
+}
+
+
+
 double Opt2RDSA::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
@@ -22,13 +47,27 @@ double Opt2RDSA::maximizeFunction(std::vector<double>& aVars)
 
 int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 {
-	memcpy(&x_[0], x, size_vect);
-	*f = mModel->computeLikelihood(x_, mTrace);
+	//memcpy(&x_[0], x, size_vect);
+	//*f = mModel->computeLikelihood(x_, mTrace);
+	
+	
+	// scale x:
+	for(size_t i(0); i<mN; i++)
+	{
+		x[i] = (x[i] - mLowerBound[i]) / (mUpperBound[i] - mLowerBound[i]);
+	}
+	x[mNumTimes+3] =  mapKappaInverse_(x[mNumTimes+3] - mLowerBound[mNumTimes+3]) / (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]);
+	
+	*f = evaluateFunction(x, mTrace);
 	
 	// convergence parametters
 	bool convergenceReached(false);
 	int num_good_iter(0);
 	double f_prev(*f);
+	
+	std::vector<double> y(mN);
+	double fy;
+	
 	
 	while(!convergenceReached)
 	{
@@ -47,13 +86,41 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 		if(mVerbose > 2)
 			std::cout << "Gradient and hessian updated!\n";
 		
-		performOneStage(f, x);
+		
+		memcpy(&y[0], x, size_vect);
+		fy = *f;
+		
+		performOneStage(&fy, &y[0]);
+		
+		if(fy > *f)
+		{
+			*f = fy;
+			memcpy(x, &y[0], size_vect);
+		}
+		
+		memcpy(&y[0], x, size_vect);
+		y[mNumTimes+3] += mGradient[mNumTimes+3]/fabs(mGradient[mNumTimes+3])*sqrt(randFrom0to1())*1e-2;
+		if(y[mNumTimes+3] < 0.)
+			y[mNumTimes+3] = 0.;
+		if(y[mNumTimes+3] >1.)
+			y[mNumTimes+3] = 1.;
+		
+		fy = evaluateFunction(y, false);
+		
+		if(fy > *f)
+		{
+			*f = fy;
+			memcpy(x, &y[0], size_vect);
+		}
+		
 		
 		if(mVerbose > 2)
-			std::cout << "State updated! Obtained values:\n";
+		{
+			std::cout << "State updated! Obtained values (scaled!):\n";
+			memcpy(&x_[0], x, size_vect);
+			mModel->printVar(x_, *f);
+		}
 		
-		memcpy(&x_[0], x, size_vect);
-		mModel->printVar(x_, *f);
 		
 		mStep ++;
 		
@@ -62,8 +129,15 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 		else
 			num_good_iter=0;
 			
-		convergenceReached = (num_good_iter > 4);
+		convergenceReached = (num_good_iter > 10);
 	}
+	
+	// unscale x:
+	for(size_t i(0); i<mN; i++)
+	{
+		x[i] = mLowerBound[i] + x[i] * (mUpperBound[i] - mLowerBound[i]);
+	}
+	x[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
 }
 
 
@@ -87,8 +161,9 @@ void Opt2RDSA::alocateMemory()
 	// variable to get the permutaions, acts as a workspace
 	IPIV.resize(mN);
 	
-	// vector used to evaluate the function
+	// vectors used to evaluate the function
 	x_.resize(mN);
+	x_unscaled.resize(mN);
 	
 	// make the gradient and Hessian variables point on a region of workspace
 	mGradient = &mSpace[mN];
@@ -111,7 +186,7 @@ void Opt2RDSA::updateParameters()
 	}
 	else
 	{
-		aN = 1. / ( 0.1*double(mN) + pow(double(mStep), 0.602));
+		aN = 1. / ( 1. + randFrom0to1()*pow(double(mStep), 0.602));
 		deltaN = 3.8 / pow(double(mStep), 0.101);
 	}
 }
@@ -132,18 +207,18 @@ void Opt2RDSA::computeGradientAndHessian(double aPointValue, const double *aVars
 		// treat boundary problems
 		isPositive = (dN[i] >= 0.);
 		
-		if(aVars[i] - deltaN*fabs(dN[i]) < mLowerBound[i])
+		if(aVars[i] - deltaN*fabs(dN[i]) < 0.)
 		{
-			dN[i] = (mLowerBound[i]-aVars[i]) / deltaN;
+			dN[i] = (0.-aVars[i]) / deltaN;
 			if(isPositive)
 				dN[i] = -dN[i] - mRelativeError;
 			else
 				dN[i] += mRelativeError;
 		}
 		
-		if(aVars[i] + deltaN*fabs(dN[i]) > mUpperBound[i])
+		if(aVars[i] + deltaN*fabs(dN[i]) > 1.)
 		{
-			dN[i] = (mUpperBound[i]-aVars[i]) / deltaN;
+			dN[i] = (1.-aVars[i]) / deltaN;
 			if(isPositive)
 				dN[i] -= mRelativeError;
 			else
@@ -157,12 +232,14 @@ void Opt2RDSA::computeGradientAndHessian(double aPointValue, const double *aVars
 	// compute yn+
 	memcpy(&x_[0], aVars, size_vect); 
 	daxpy_(&mN, &deltaN, dN, &I1, &x_[0], &I1);
-	ynp = mModel->computeLikelihood(x_, false);
+	//ynp = mModel->computeLikelihood(x_, false);
+	ynp = evaluateFunction(x_, false);
 	
 	// compute yn-
 	memcpy(&x_[0], aVars, size_vect); 
 	daxpy_(&mN, &deltaNm, dN, &I1, &x_[0], &I1);
-	ynm = mModel->computeLikelihood(x_, false);
+	//ynm = mModel->computeLikelihood(x_, false);
+	ynm = evaluateFunction(x_, false);
 	
 	// compute the gradient estimator
 	double factor_grad = 1.5 * (ynp-ynm) / (square(eta)*deltaN);
@@ -252,24 +329,40 @@ void Opt2RDSA::performOneStage(double *f, double *x)
 	// verify the boundary conditions // TODO: better way...
 	for(size_t i(0); i<mN; i++)
 	{
-		if(x[i] < mLowerBound[i])
-			x[i] = mLowerBound[i] + mRelativeError;
-		if(x[i] > mUpperBound[i])
-			x[i] = mUpperBound[i] - mRelativeError;
+		if(x[i] < 0.)
+			x[i] = mRelativeError;
+		if(x[i] > 1.)
+			x[i] = 1. - mRelativeError;
 	}
 	
 	if(mVerbose > 2)
 		std::cout << "x updated!\n"; 
 	
-	memcpy(&x_[0], x, size_vect);
-	
 	if(mVerbose > 2)
 		std::cout << "Computing f...\n"; 
 	
-	*f = mModel->computeLikelihood(x_, mTrace);
+	*f = evaluateFunction(x, mTrace);
 	
 	if(mVerbose > 2)
 		std::cout << "f updated!\n"; 
+}
+
+
+double Opt2RDSA::evaluateFunction(double *x, bool trace)
+{
+	memcpy(&x_[0], x, size_vect);
+	return evaluateFunction(x_, trace);
+}
+
+double Opt2RDSA::evaluateFunction(std::vector<double> &x, bool trace)
+{
+	for(size_t i(0); i<mN; i++)
+	{
+		x_unscaled[i] = mLowerBound[i] + x[i]*(mUpperBound[i]-mLowerBound[i]);
+	}
+	x_unscaled[mNumTimes+3] =  mLowerBound[mNumTimes+3] + mapKappaInverse_(x[mNumTimes+3] * (mUpperBound[mNumTimes+3] - mLowerBound[mNumTimes+3]));
+	
+	return mModel->computeLikelihood(x_unscaled, trace);
 }
 
 

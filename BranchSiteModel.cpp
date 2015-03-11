@@ -290,7 +290,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
-        mLowerBound.assign(aNumTimes, -1e-3);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        mLowerBound.assign(aNumTimes, 0.);				mUpperBound.assign(aNumTimes, 50.0);	// T
         //TODO find a way so it works with 0
     }
 
@@ -1790,7 +1790,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOptAlgo == OPTIM_2RDSA)
 	{
 		// Create the optimizer instance
-		Opt2RDSA optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		Opt2RDSA optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		

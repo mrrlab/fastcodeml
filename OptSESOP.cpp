@@ -132,7 +132,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		
 
 		opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mM));
-		opt->set_vector_storage(20);
+		opt->set_vector_storage(mM);
 		
 		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA, mM));
 		

@@ -40,7 +40,8 @@ public:
 			,double aRelativeError
 			,bool aStopIfBigger
 			,double aThreshold
-			,int aMaxIterations) 
+			,int aMaxIterations
+			,int aNumTimes) 
 		:mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
@@ -53,7 +54,8 @@ public:
 		,mMaxIterations(aMaxIterations)
 		,mN(0)
 		,mStep(0)
-		,eta(1.0)
+		,eta(0.25)
+		,mNumTimes(aNumTimes)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -109,6 +111,26 @@ private:
 	void performOneStage(double *f, double *x);
 	
 	
+	/// evaluateFunction
+	/// evaluate the likelihood at point x
+	///
+	/// @param[in] x The point at which we want to evaluate the function
+	/// @param[in] trace The trace
+	///
+	/// @return the function value
+	///
+	double evaluateFunction(double *x, bool trace);
+	
+	/// evaluateFunction
+	/// evaluate the likelihood at point x
+	///
+	/// @param[in] x The point at which we want to evaluate the function
+	/// @param[in] trace The trace
+	///
+	/// @return the function value
+	///
+	double evaluateFunction(std::vector<double> &x, bool trace);
+	
 private:
 	
 	//double (f*)(unsigned, const double* x, double* grad, void* f_data); ///< Function to minimize
@@ -119,6 +141,7 @@ private:
 	std::vector<double>			mSpace;				///< Workspace
 	std::vector<int>			IPIV;				///< Workspace used by lapack	
 	std::vector<double> 		x_;					///< Workspace for function evaluation
+	std::vector<double>			x_unscaled;			///< Variable unscaled, used to evaluate the function
 	int							packSize;			///< Number of elements in the packed matrix
 	
 	int							mStep;				///< current step	
@@ -140,6 +163,7 @@ private:
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
 	int							mMaxIterations;		///< Maximum number of iterations for the maximization
+	int 						mNumTimes;			///< Number of branch lengths to optimize
 };
 
 #endif // OPTSESOP_H
