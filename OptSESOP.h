@@ -172,7 +172,7 @@ private:
 	/// @param[in] aVars Variables to be optimized
 	/// @param[out] aGrad Gradient values computed
 	///
-	void computeGradient(double aPointValue, const double *aVars, double* aGrad) const;
+	void computeGradient(double aPointValue, const double *aVars, double* aGrad);
 	
 	
 	/// computeGradientSubspace
@@ -202,6 +202,12 @@ private:
 	double*						mGradient_others;	///< search direction with only the kappa component of the gradient
 	double*						md2;				///< Nemirovski direction 2 (=\sum_{i=1}^k omega_i gradient(x_i))
 	double						mOmega;				///< used to compute Nemirovski direction 2
+	
+	double*						mHdiag;				///< Approximation of the hessian matrix. Only store the diagonal.
+	double*						mS;					///< "tool" variable used to compute the hessian. Variation of the position between two steps
+	double*						mXPrev;				///< previous position
+	double*						mY;					///< "tool" variable used to compute the hessian. Variation of the gradient between two steps
+	double*						mGradPrev;			///< previous gradient
 	
 	int 						mM;					///< size of the current subspace
 	std::vector<double>			alpha;				///< step to optimize in the current subspace

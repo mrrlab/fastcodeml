@@ -146,6 +146,29 @@ inline double normalizeVector(double* RESTRICT aVector)
 
 #endif
 
+/// Normalize a vector (length N).
+///
+///	@param[in] aN The Vector length
+/// @param[in,out] aVector The vector to be scaled
+///
+/// @return The length of the vector
+///
+inline double normalizeVector(const int *aN, double* RESTRICT aVector)
+{
+#ifdef USE_LAPACK
+	double norm = dnrm2_(aN, aVector, &I1);
+	double inv_norm = 1./norm;
+
+	dscal_(aN, &inv_norm, aVector, &I1);
+#else
+	double norm = 0.;
+	for(int i=0; i < *aN; ++i) norm += aVector[i]*aVector[i];
+	norm = sqrt(norm);
+	for(int i=0; i < *aN; ++i) aVector[i] /= norm;
+#endif
+	return norm;
+}
+
 
 /// swap_content: swaps the content of two vectors
 ///

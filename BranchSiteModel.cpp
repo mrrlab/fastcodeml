@@ -1821,13 +1821,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		
 		if (mFixedBranchLength)
 		{
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
         }
         else
         {
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
         }
         opt->set_vector_storage(20);
         
