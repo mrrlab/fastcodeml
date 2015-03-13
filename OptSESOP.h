@@ -17,6 +17,10 @@
 ///
 
 
+#define SESOP_HESSIAN_APPROX
+#define SESOP_CORR_SELECTION
+#define SESOP_CORR_MEM_OPTIM
+
 class OptSESOP
 {
 public:
@@ -91,8 +95,8 @@ private:
 	int SESOPminimizer(double *f, double *x);
 	
 	
-	/// Computes the function.
-	/// Note that the computation of the gradient is not yet implemented
+	/// eValuateFunctionSubspace
+	/// Computes the function from the vector alpha in the subspace.
 	///
 	/// @param[in] aVarsAlpha Variables to be optimized
 	/// @param[out] aGrad Gradient values
@@ -101,7 +105,7 @@ private:
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double operator()(const std::vector<double>& aVarsAlpha, std::vector<double>& aGrad);
+	double eValuateFunctionSubspace(const std::vector<double>& aVarsAlpha, std::vector<double>& aGrad);
 	
 	
 	/// Wrapper to be passed to the nLopt optimizer
@@ -114,26 +118,33 @@ private:
 	///
 	static double subspaceEvaluatorWrapper(const std::vector<double> &x, std::vector<double> &grad, void *data)
     {
-    	return (*reinterpret_cast<OptSESOP*>(data))(x, grad);
+    	return (reinterpret_cast<OptSESOP*>(data))->eValuateFunctionSubspace(x, grad);
 	}
 	
 	/// updateOmega
 	/// Update the omega weight at stage k
 	///
-	void updateOmega();
+	void updateOmega(void);
 	
 	/// alocateMemory
 	/// alocate all the needed space to store the directions of search, as well as the workspace
 	///
-	void alocateMemory();
+	void alocateMemory(void);
 	
 	
 	/// updateDMatrix
 	/// Updates the D matrix by calling all the required subroutines
 	/// Scales the columns of the matrix
 	///
-	void updateDMatrix();
+	void updateDMatrix(void);
 	
+#ifdef SESOP_CORR_SELECTION
+	/// updateCorr
+	/// updates the mCorr matrix from the gradients stored in mGradient
+	/// and mGradPrev 
+	///
+	void updateCorr(void);
+#endif
 
 	/// Wrapper to be passed to the nLopt optimizer for the constraints
 	///
@@ -145,14 +156,12 @@ private:
 	///
 	static double myconstraintWrapper(const std::vector<double> &alpha, std::vector<double> &grad, void *data)
 	{
-		unsigned n = alpha.size(); 
 		data_constraint *data_ = (data_constraint*)(data);
-		
-		return (*reinterpret_cast<OptSESOP*>(data_->sesop))(n, alpha, grad, data);
+		return (reinterpret_cast<OptSESOP*>(data_->sesop))->eValuateConstraintsSubspace(alpha, grad, data);
 	}
 	
 	
-	/// operator()
+	/// eValuateConstraintsSubspace
 	/// Implements the contraints for the problem reduced at the subspace
 	/// constraints have the form x0_i + (D*alpha)_i - u_i <= 0
 	/// 						  l_i - x0_i - (D*alpha)_i <= 0
@@ -162,7 +171,7 @@ private:
 	/// @params[in] data The line i and the upper(1)/lower bound(0) b 
 	///				(put a int* containing two ints i and b)
 	///
-	double operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
+	double eValuateConstraintsSubspace(const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
 	
 
 	/// computeGradient
@@ -203,12 +212,21 @@ private:
 	double*						md2;				///< Nemirovski direction 2 (=\sum_{i=1}^k omega_i gradient(x_i))
 	double						mOmega;				///< used to compute Nemirovski direction 2
 	
+#ifdef SESOP_HESSIAN_APPROX
 	double*						mHdiag;				///< Approximation of the hessian matrix. Only store the diagonal.
 	double*						mS;					///< "tool" variable used to compute the hessian. Variation of the position between two steps
 	double*						mXPrev;				///< previous position
 	double*						mY;					///< "tool" variable used to compute the hessian. Variation of the gradient between two steps
 	double*						mGradPrev;			///< previous gradient
-	
+#endif
+
+#ifdef SESOP_CORR_SELECTION
+	double*						mCorr;				///< "Correlation" matrix between the variables so we choose the highest correlated values together in the subspace 
+	double*						mCorrPrefSumm;		///< Prefix sum of the array mCorr
+	double*						mPrefSumWorkspace;	///< Workspace to compute the prefix sum
+	size_t						size_corr;			///< size of the correlation matrix
+#endif
+
 	int 						mM;					///< size of the current subspace
 	std::vector<double>			alpha;				///< step to optimize in the current subspace
 	double						*mD;				///< D matrix, represent the current subspace. Only a pointer on Workspace mSpace

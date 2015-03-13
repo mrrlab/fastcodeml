@@ -4,6 +4,28 @@
 #include "lapack.h"
 #include "nlopt.hpp"
 
+// ----------------------------------------------------------------------
+//	Utility functions
+// ----------------------------------------------------------------------
+
+#ifdef SESOP_CORR_SELECTION
+static size_t binarySearch(double aValue, double* aVect, size_t aLeft, size_t aRight)
+{
+	if(aLeft >= aRight-1)
+		return aLeft;
+
+	size_t mid = (aLeft + aRight)>>1;
+	
+	if(aValue > aVect[mid]) 
+		return binarySearch(aValue, aVect, mid, aRight);
+	else
+		return binarySearch(aValue, aVect, aLeft, mid);
+}
+#endif
+
+// ----------------------------------------------------------------------
+//	Class members definition
+// ----------------------------------------------------------------------
 double OptSESOP::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
@@ -12,6 +34,7 @@ double OptSESOP::maximizeFunction(std::vector<double>& aVars)
 		std::cout << "Size of the problem: N=" << mN << "\n";
 
 	alocateMemory();
+	std::cout << "Alocated.\n";
 	
 	double maxl = -1000000;
 	int success = SESOPminimizer(&maxl, &aVars[0]);
@@ -28,8 +51,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	std::vector<double> x_0;
 	x_0.resize(mN);
 	memcpy(&x_0[0], x, size_vect);
-	memcpy(mXPrev,  x, size_vect);	
-	
+
 	*f = mModel->computeLikelihood(x_0, mTrace);
 	double f_prev = *f - 2.;
 	
@@ -39,16 +61,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	// initialize the matrix D
 	computeGradient(*f, x, mGradient);
 	
-	memcpy(mGradPrev, mGradient, size_vect);
 	memcpy(mGradient_times, mGradient, mNumTimes*sizeof(double));
+	for(size_t i(mNumTimes); i<mN; ++i) mGradient_times[i] = 0.;
 	
-	for(int i(mNumTimes); i<mN; i++)
-		mGradient_times[i] = 0.;
-			
+#ifdef SESOP_HESSIAN_APPROX
+	memcpy(mXPrev,  x, size_vect);	
+	memcpy(mGradPrev, mGradient, size_vect);
+	
+	// Initialize the Hessian matrix to identity
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i) mHdiag[i] = 1.;
+#endif	
 	
 	// mGradient_others
-	for(size_t i(0); i<mN; i++)
-		mGradient_others[i] = 0.;
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i) mGradient_others[i] = 0.;
+		
 	mGradient_others[mNumTimes+1] = mGradient[mNumTimes+1];	// v1
 	mGradient_others[mNumTimes+2] = mGradient[mNumTimes+2]; // w0
 	//mGradient_others[mNumTimes+3] = mGradient[mNumTimes+3]; // kappa
@@ -56,29 +84,24 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	// Initialize the second Nemirovski direction
 	memcpy(md2, mGradient, size_vect);
 	
-	// Initialize the Hessian matrix to identity
-	for(size_t i(0); i<mN; i++) {mHdiag[i] = 1.;}
-	
 	
 	// loop until convergene reached
 	bool convergence_reached( false );
 	while(!convergence_reached)
 	{
-		double f_diff = fabs(*f - f_prev);
-		f_prev = *f;		
+		// local variables
+		double f_diff, stepTolerance; 
 		
-		double stepTolerance, orderF_diff;
-		orderF_diff = log(f_diff)/log(10.);
+		f_diff = fabs(*f - f_prev);
+		f_prev = *f;
 		
+		// adaptative tolerance so we don't spend too much time at each iteration
 		stepTolerance = max2(mRelativeError, exp(-double(mStep)));
-		//stepTolerance = max2(mRelativeError, pow(0.1, 5.-orderF_diff) );
-		
-		std::cout << "Step " << mStep << ", tolerance " << stepTolerance << ", order of f_diff:" << orderF_diff << ".\n";
 		
 		if(mVerbose > 2)
 			std::cout << "Starting step " << mStep << ":\n";
 			
-		// update D
+		// compute/update search directions
 		if(mStep > 0)
 		{	
 			// compute and store all the required vectors to construct the subspace
@@ -89,9 +112,42 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			// mGradient_times			
 			memcpy(mGradient_times, mGradient, mNumTimes*sizeof(double));			
 			
+#ifdef SESOP_CORR_SELECTION
+			// Correlation matrix
+			updateCorr();
+
+			// randomly choose the search directions for the matrix parameters using the correlation:
+			#pragma omp parallel for
+			for(size_t i(0); i<mN; ++i) mGradient_others[i] = 0.;
 			
-			// randomly choose the search directions for the matrix parameters:
-			// TODO: improve with correlations?
+			size_t numVarSelected(sqrt(mN));
+			double rand_selector;
+			for(size_t i(0); i<numVarSelected; ++i)
+			{
+				size_t id1, id2, k;
+				rand_selector = randFrom0to1() * mCorrPrefSumm[size_corr-1];
+				std::cout << "Rand_selector: " << rand_selector << std::endl;
+				
+				// Find the index k in the correlation matrix
+				//k = 0;
+				//while(k < size_corr-1 && mCorrPrefSumm[k+1] <= rand_selector) ++k;
+				k = binarySearch(rand_selector, mCorrPrefSumm, 0, size_corr);
+				
+				std::cout << "Found k: " << k << std::endl;
+				
+				// Find the indices id1 and id2 of the variables
+				
+				id1 = size_t(round(sqrt(2*k)));
+				if(id1*id1+id1 <= 2*k) ++id1;
+				id2 = k - ((id1-1)*id1>>1);
+				
+				std::cout << "Selected variables " << id1 << " and " << id2 << "\n";
+				
+				// add the variables gradient to the search direction
+				mGradient_others[id1] = mGradient[id1];
+				mGradient_others[id2] = mGradient[id2];
+			}			
+#else
 			for(size_t i(mNumTimes); i<mN; i++)
 			{
 				mGradient_others[i] = 0.;
@@ -111,13 +167,14 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			{
 				mGradient_others[mNumTimes+3] = 1.; // kappa
 			}
+#endif
 			
 			// md2
 			updateOmega();
 			daxpy_(&mN, &mOmega, mGradient, &I1, md2, &I1);	
 			
-			
-			// -- Hessian approximation
+
+#ifdef SESOP_HESSIAN_APPROX			
 			
 			//mS
 			memcpy(mS, x, size_vect);
@@ -145,11 +202,14 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			double factor = (SY - sTDs) / sum_s_sq;
 			
 			daxpy_(&mN, &factor, &mSpace[0], &I1, mHdiag, &I1);
+			
+#endif
 		}
+		// copy and normalize all the search directions in matrix D
 		updateDMatrix();
 		
 		
-		if(mVerbose > 3	)
+		if(mVerbose > 2	)
 		{
 			std::cout << "\n\n --------------- Matrix D: ------------- \n\n";
 			for(int j(0); j<mM; ++j)
@@ -160,11 +220,11 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			}
 		}
 		
-		
+#ifdef SESOP_HESSIAN_APPROX
 		// save position and gradient
 		memcpy(mGradPrev, mGradient , size_vect);
 		memcpy(mXPrev	, x			, size_vect);
-		
+#endif
 		
 		if(mVerbose > 2)
 			std::cout << "Matrix D updated, optimizing...\n";
@@ -179,23 +239,22 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		//opt.reset(new nlopt::opt(nlopt::LN_COBYLA, mM));
 		
 		// add the constraints
-		for(int constraint_id(0); constraint_id<2*mN; constraint_id++)
-			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, (void*) &data_constraints[constraint_id], 1e-6);
+		for(size_t constraint_id(0); constraint_id<2*mN; ++constraint_id)
+			opt->add_inequality_constraint(OptSESOP::myconstraintWrapper, &data_constraints[constraint_id], 1e-6);
 		
 		if(mVerbose > 2)
 			std::cout << "Inequality constraints added\n";
 			
 		
-		// initialize alpha to 0 so we start at point x
-		for(int i(0); i<mM; i++)
-			alpha[i] = 0.;
-
-		opt->set_ftol_rel(stepTolerance);
-		opt->set_max_objective(OptSESOP::subspaceEvaluatorWrapper, this);
+		// initialize alpha to 0 so the optimizer starts at current point x
+		for(size_t i(0); i<mM; ++i)	alpha[i] = 0.;
 		
 		try
 		{
+			opt->set_ftol_rel(stepTolerance);
+			opt->set_max_objective(OptSESOP::subspaceEvaluatorWrapper, this);
 			nlopt::result result = opt->optimize(alpha, *f);
+			opt->remove_inequality_constraints();
 		}
 		catch(const nlopt::forced_stop&)
 		{
@@ -223,10 +282,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			std::ostringstream o;
 			o << "Exception in computation: " << e.what();
 			throw FastCodeMLFatal(o);
-		}
-		
-		opt->remove_inequality_constraints();
-					
+		}					
 		
 		// update current state
 		char trans = 'N';
@@ -253,10 +309,11 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			
 		}
 		
+#if 1
 		// test to make the times move...
 		size_t iter_move = 0;
 		//size_t num_iter_move = 1+size_t(4. / (1 + square(2.*float(mStep)/float(mN))));
-		size_t num_iter_move = 1+size_t(5. / (1 + square(2.*float(mStep)/float(mN))));
+		size_t num_iter_move = 1+size_t(6. / (1 + square(2.*float(mStep)/float(mN))));
 		
 		for(; iter_move < num_iter_move; ++iter_move)
 		{
@@ -265,7 +322,6 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			{				
 				x_[i] += 1e-1 * square(x[i])*square(randFrom0to1()) * mGradient[i];
 							
-				
 				if(x_[i] < mLowerBound[i])
 					x_[i] = mLowerBound[i];
 			}
@@ -280,16 +336,15 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			}
 		}		
 		
+#endif
 		// check convergence
 		convergence_reached = f_diff < mRelativeError;
 
 		
-		if(mStep > mN) // TODO: have to find optimal parameter here
+		if(mStep > mN)
 		{
 			if(mVerbose > 2)
-			{
 				std::cout << "SESOP aborted, number of iterations exceeded.\n";
-			}
 			return 1;
 		}
 		
@@ -300,7 +355,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 }
 
 // ----------------------------------------------------------------------
-double OptSESOP::operator()(const std::vector<double>& aVarsAlpha, std::vector<double>& aGrad)
+double OptSESOP::eValuateFunctionSubspace(const std::vector<double>& aVarsAlpha, std::vector<double>& aGrad)
 {
 	memcpy(&x_[0], &mSpace[0], size_vect);
 	// compute x = x + D*alpha
@@ -330,16 +385,25 @@ double OptSESOP::operator()(const std::vector<double>& aVarsAlpha, std::vector<d
 
 
 // ----------------------------------------------------------------------
-void OptSESOP::updateOmega() {mOmega = 0.5 + sqrt(0.25 + square(mOmega));}
+void OptSESOP::updateOmega(void) {mOmega = 0.5 + sqrt(0.25 + square(mOmega));}
 
 // ----------------------------------------------------------------------
-void OptSESOP::alocateMemory()
+void OptSESOP::alocateMemory(void)
 {
 	int max_size_alpha = 4;
+	size_t size_mSpace(mN + 2*mSubspaceStorage);
+	mSubspaceStorage = mN*max_size_alpha;
 	size_vect = mN*sizeof(double);
 	
-	mSubspaceStorage = mN*max_size_alpha;
-	mSpace.resize(2*mSubspaceStorage + 6*mN);
+#ifdef SESOP_HESSIAN_APPROX
+	size_mSpace += 5*mN;
+#endif	
+#ifdef SESOP_CORR_SELECTION
+	size_corr = mN*(mN-1)/2;
+	size_mSpace += 3*size_corr;
+#endif
+	
+	mSpace.resize(size_mSpace);
 	// memory space:
 	// mN of workspace
 	// mN for gradient
@@ -347,11 +411,18 @@ void OptSESOP::alocateMemory()
 	// mN for gradient others
 	// mN for md2
 	// mSubspaceStorage for matrix D
+	// --- following only ifdef SESOP_HESSIAN_APPROX
 	// mN for Hessian diagonal
 	// mN for mS
 	// mN for mXPrev
 	// mN for mY
 	// mN for mGradPrev
+	// ---
+	// --- following only ifdef SESOP_CORR_SELECTION
+	// size_corr for the correlation matrix (don't store the diagonal and the lower triangle part)
+	// size_corr for the prefix sum
+	// size_corr for the prefix sum workspace
+	// ---
 	
 	x_.resize(mN);
 	
@@ -361,12 +432,27 @@ void OptSESOP::alocateMemory()
 	md2 				= mGradient_others	+ mN;	
 	
 	mD = &mSpace[mN+mSubspaceStorage];
-	
+
+#ifdef SESOP_HESSIAN_APPROX
 	mHdiag 		= mD		+ mSubspaceStorage;
 	mS			= mHdiag	+ mN;
 	mXPrev		= mS		+ mN;
 	mY			= mXPrev	+ mN;
 	mGradPrev	= mY		+ mN;
+#endif
+
+#ifdef SESOP_CORR_SELECTION
+#ifdef SESOP_HESSIAN_APPROX
+	mCorr		= mGradPrev	+ mN;
+#else
+	mCorr		= mD		+ mSubspaceStorage;
+#endif
+	mCorrPrefSumm 		= mCorr			+ size_corr;
+	mPrefSumWorkspace	= mCorrPrefSumm	+ size_corr;
+
+	#pragma omp parallel for
+	for(size_t k(0); k<size_corr; ++k) mCorr[k] = 0.;
+#endif
 	
 	mM = 3;
 	
@@ -384,26 +470,24 @@ void OptSESOP::alocateMemory()
 		data_constraints[2*i+1].sesop = this;
 		data_constraints[2*i+1].line = i;
 		data_constraints[2*i+1].bound_type = 1;
-	}
-	
-	
+	}	
 }
 
 	
 // ----------------------------------------------------------------------
-void OptSESOP::updateDMatrix()
+void OptSESOP::updateDMatrix(void)
 {
 	// local variables
 	double *vec;
 
-	// first direction of the subspace: modified gradient
+	// first direction of the subspace: (modified) gradient
 	memcpy(mD, mGradient, size_vect);
 	
-#if 1
+#ifdef SESOP_HESSIAN_APPROX
 	#pragma omp parallel for	
 	for(size_t i(0); i<mN; ++i) 
 	{
-		if(fabs(mHdiag[i]) > 1e-5)
+		if(fabs(mHdiag[i]) > 1e-3)
 			mD[i] /= mHdiag[i];
 	}
 #endif
@@ -427,14 +511,55 @@ void OptSESOP::updateDMatrix()
 	{
 		vec = &mD[3*mN];
 		memcpy(vec, md2, size_vect);
+		// only keep this direction if it is not too small
 		if( normalizeVector(&mN, vec) > 1e-5 )
 			mM = 4;
 	}
 	alpha.resize(mM);
 }
 
+// ----------------------------------------------------------------------
+#ifdef SESOP_CORR_SELECTION
+void OptSESOP::updateCorr(void)
+{
+	// update the correlation matrix
+	double an = 1./(1.+double(mStep));
+	
+	#pragma omp parallel for
+	for(size_t i(1); i<mN; ++i)
+	{
+		for(size_t j(0); j<i; ++j)
+		{
+			// index of the correlation between ith and jth variables
+			size_t k = (i*(i-1))>>1 + j;
+			mCorr[k] = (1.-an)*mCorr[k] + an*fabs(mGradient[i]*mGradient[j]);
+		}
+	}
+	
+	
+	// compute the prefix sum with openMP
+	memcpy(mCorrPrefSumm, mCorr, size_corr*sizeof(double));
+	
+	for(size_t step(0); step<log2(size_corr); ++step)
+	{
+		size_t i;
+		#pragma omp parallel private(i)
+		{
+			#pragma omp for
+			for(i = 1<<step; i<size_corr; ++i)
+				mPrefSumWorkspace[i] = mCorrPrefSumm[i] + mCorrPrefSumm[i-(1<<step)];				
+			#pragma omp barrier 
+			#pragma omp for
+			for(i = 1<<step; i<size_corr; ++i)
+				mCorrPrefSumm[i] = mPrefSumWorkspace[i];
+			#pragma omp barrier 
+		}
+	}
+}
+#endif
 
-double OptSESOP::operator()(unsigned n, const std::vector<double> &alpha, std::vector<double> &grad, void *data)
+// ----------------------------------------------------------------------
+double OptSESOP::eValuateConstraintsSubspace(const std::vector<double> &alpha, std::vector<double> &grad, void *data)
 {
 	data_constraint *data_ = (data_constraint*)(data);
 	int i = data_->line;
@@ -508,18 +633,23 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	
 	if(alpha_norm > 1e-5)
 	{
-		for(size_t i(0); i < mM; i++)
-		{
-			double eh = 1e-7 * max2(aAlpha[i], 1.);
-			vars_working_copy[i] += eh;
+		volatile double da;
+		double eh, f1;		
+		char trans = 'N';
 		
-			// compute x = x + D*alpha
+		for(size_t i(0); i < mM; ++i)
+		{
+			eh = 1e-5 * (1. + randFrom0to1());// * max2(fabs(aAlpha[i]), 1.);
+			if(aAlpha[i] > 0.) eh = -eh; 
+			vars_working_copy[i] += eh;
+			da = vars_working_copy[i]-aAlpha[i];
+			
+			// compute x + D*(alpha+da)
 			memcpy(&x_[0], &mSpace[0], size_vect);
-			char trans = 'N';
 			dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &vars_working_copy[0], &I1, &D1, &x_[0], &I1);
 		
-			double f1 = mModel->computeLikelihood(x_, false);
-			aGrad[i] = (f1-aPointValue)/eh;
+			f1 = mModel->computeLikelihood(x_, false);
+			aGrad[i] = (f1-aPointValue)/da;
 		
 			vars_working_copy[i] = aAlpha[i];
 		}
@@ -527,7 +657,7 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	else
 	{
 		// try with a huge approximation, works only if |alpha| << 1
-		for(size_t i(0); i<mM; i++)
+		for(size_t i(0); i<mM; ++i)
 			aGrad[i] = ddot_(&mN, mGradient, &I1, &mD[i*mN], &I1);
 	}
 

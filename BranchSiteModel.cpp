@@ -291,7 +291,6 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
         mLowerBound.assign(aNumTimes, 0.);				mUpperBound.assign(aNumTimes, 50.0);	// T
-        //TODO find a way so it works with 0
     }
 
 	// Set lower constrains							// Set upper constrains
