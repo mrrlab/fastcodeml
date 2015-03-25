@@ -1,0 +1,328 @@
+#include "BootstrapRandom.h"
+#include "MathSupport.h"
+#include "lapack.h"
+#include "blas.h"
+
+// --------------------------------------------------------------------
+double BootstrapRandom::bootstrap(std::vector<double>& aVars)
+{
+	mN = static_cast<int>(aVars.size());
+	alocateMemory();
+	
+	double likelihoodValue = -1000000;
+	
+	BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS;
+	switch(btype)
+	{
+	case ONLY_RANDOM_TRIES:
+		bootstrapRandomly(&likelihoodValue, &aVars[0], mN);
+		break;
+		
+	case RANDOM_TRIES_SEPARATE_VARS:
+		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN/2);
+		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
+		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
+		break;
+		
+	case EVOLUTION_STRATEGY:
+		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], 20);
+		break;
+	};
+	return -likelihoodValue;
+}
+
+
+// --------------------------------------------------------------------
+double BootstrapRandom::evaluateLikelihood(double *x)
+{
+	memcpy(&x_[0], x, size_vect);
+	return evaluateLikelihood(x_);
+}
+
+
+// --------------------------------------------------------------------
+double BootstrapRandom::evaluateLikelihood(const std::vector<double> &x)
+{
+	return mModel->computeLikelihood(x, mTrace);
+}
+
+
+// --------------------------------------------------------------------
+void BootstrapRandom::alocateMemory(void)
+{
+	size_vect = mN*sizeof(double);
+	
+	x_.resize(mN);
+	mSpace.resize(mN);
+	
+#ifdef BOOTSTRAP_ES
+	
+	mPopSize = 50;
+	
+	mGASpace.resize( mPopSize*(mN+1) );
+	
+	mPopFitness = &mGASpace[0];
+	mPopPos 	= mPopFitness+mPopSize;
+	
+#endif // BOOTSTRAP_ES
+}
+
+
+// --------------------------------------------------------------------
+double BootstrapRandom::generateRandom(unsigned int i)
+{
+	double randNumber, low, high;
+	
+	high = mUpperBound[i];
+    low  = mLowerBound[i];
+    randNumber = high+1.;
+    
+	// branch lengths
+	if (i < mNumTimes)
+	{
+		while(randNumber >= high || randNumber <= low)
+        		randNumber = gamma_dist_T( rng );
+	}
+	else
+	{
+		switch(i-mNumTimes)
+		{
+		case 0: // v0
+			while(randNumber >= high || randNumber <= low)
+        		randNumber = 1.0 - exp_dist_v0( rng );
+        	break;
+        	
+        case 1: // v1
+			while(randNumber >= high || randNumber <= low)
+        		randNumber = 1.0 - gamma_dist_v1( rng );
+        	break;
+        
+        case 2: // w0
+			randNumber = beta_dist_w0( rng ); // always between 0 and 1
+        	break;
+        
+        case 3: // kappa
+			while(randNumber >= high || randNumber <= low)
+        		randNumber = gamma_dist_k( rng );
+        	break;
+        	
+        case 4: // w2
+			while(randNumber >= high || randNumber <= low)
+        		randNumber = 1.0 + gamma_dist_w2( rng );
+        	break;
+        
+        default:
+        	std::cout << "Error: wrong index of i: " << i << std::endl;
+        	break;			
+		}
+	}
+	
+	return randNumber;
+}
+
+// --------------------------------------------------------------------
+void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTries)
+{
+	
+	*f = evaluateLikelihood(x);
+	double *rand_x = &mSpace[0];
+	
+	bool optimize_w2 = (mN-mNumTimes) == 5;
+    
+    // local variables
+    double rand_f;
+    size_t step;
+    
+	for(step = 0; step < numTries; ++step)
+	{	
+		// generate the random variables
+		
+		for(unsigned int i(0); i<mN; ++i) rand_x[i] = generateRandom(i);
+		  	
+        
+        // verify if it is a better choice
+        rand_f = evaluateLikelihood(rand_x);
+        
+        if( rand_f > *f )
+        {
+        	*f = rand_f;
+        	memcpy(x, rand_x, size_vect);
+        }
+	}
+}
+
+
+// --------------------------------------------------------------------
+void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int numGlobal)
+{
+	if (numGlobal > 0)
+		bootstrapRandomly(f, x, numGlobal);
+	
+	double rand_f;
+	double *rand_x = &mSpace[0];
+	memcpy(rand_x, x, size_vect);
+	
+	unsigned int numTriesPerVar = ceil(log(mN));
+	
+	// look in each direction the "best" variable
+	for(unsigned int i(0); i<mN; ++i)
+	{
+		for(unsigned int j(0); j<numTriesPerVar; ++j)
+		{
+			rand_x[i] = generateRandom(i);
+			rand_f = evaluateLikelihood(rand_x);
+			
+			if( rand_f > *f )
+			{
+				*f = rand_f;
+				x[i] = rand_x[i];
+			}
+			else
+				rand_x[i] = x[i];
+		}	
+	}
+}
+
+
+// --------------------------------------------------------------------
+#ifdef BOOTSTRAP_ES
+void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNumGenerations)
+{
+	// initialize the state of each individual randomly according to the distribution of the variables
+	double *individual_pos;
+	int best_individual( 0 );
+	
+	double fmin, fmax, ftot, ftmp;
+	fmin = fmax = -1e16;
+	ftot = 0.;
+	
+	for(size_t individual_id( 0 ); individual_id<mPopSize; ++individual_id)
+	{
+		individual_pos = &mPopPos[individual_id*mN];
+		
+		// generate the initial position of individuals
+		for(size_t i( 0 ); i<mN; ++i)
+			individual_pos[i] = generateRandom(i);
+			
+		// compute its likelihood
+		ftmp = evaluateLikelihood(individual_pos);
+		mPopFitness[individual_id] = ftmp;
+		
+		// save the min/max
+		if( fmax<mPopFitness[individual_id] )
+		{
+			fmax = ftmp;
+			best_individual = individual_id;
+		}
+		ftot += ftmp;
+		fmin = (ftmp < fmin) ? ftmp : fmin;
+		
+	}
+	*f = fmax;
+	memcpy(x, &mPopPos[best_individual*mN], size_vect);
+	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "Finished initialization of the population, evolving generations..." << std::endl;
+	
+	
+	int lambda = mPopSize>>2;
+	// selection temp storage
+	std::vector<int> selected( lambda<<1 );
+	// children temp storage
+	std::vector<double> children( lambda*mN );
+	
+	
+	// loop evolving the generations	
+	size_t generation;
+	for(generation=0; generation<maxNumGenerations; ++generation)
+	{	
+		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+			std::cout << "Starting generation " << generation << std::endl;
+			
+		// --children generation from random parents
+		
+		/*
+		for(size_t i(0); i<lambda<<1; ++i)
+			selected[i] = int( randFrom0to1()*(mPopSize-1) );			
+		*/
+		for(size_t i(0); i<lambda; ++i)
+		{
+			selected[i<<1] = int( randFrom0to1()*(mPopSize-1) );	
+			selected[(i<<1)+1] = best_individual;
+		}
+		
+			
+		int parid;
+		double *child, *parent;
+		const double half = 0.5;
+		for(size_t childid(0); childid<lambda; ++childid)
+		{
+			parid = selected[childid<<1];
+			child = &children[childid*mN];
+			parent = &mPopPos[parid*mN];
+			memcpy(child, parent, size_vect);
+			dscal_(&mN, &half, child, &I1);
+			
+			parid = selected[(childid<<1) + 1];
+		
+			parent = &mPopPos[parid*mN];
+			daxpy_(&mN, &half, parent, &I1, child, &I1);
+		}
+		
+		// --mutations
+		
+		boost::random::normal_distribution<double> N_dist(0, 0.05);
+		for(size_t i(0); i<lambda*mN; ++i)
+		{
+			if(randFrom0to1() < 0.4)
+			{
+			/*
+				double newVar = mLowerBound[i]-1.;
+				while(newVar<mLowerBound[i] || newVar>mUpperBound[i])
+					newVar = children[i] + N_dist( rng );
+				children[i] = newVar;
+			*/
+				double prop = 0.6 + 0.3*randFrom0to1();
+				children[i] = prop*children[i] + (1.-prop)*generateRandom(i%mN);
+			}
+		}
+		
+		// --selection
+		
+		double childFitness;
+		double *childPos;
+		for(size_t childid(0); childid<lambda; ++childid)
+		{
+			childPos = &children[childid*mN];
+			childFitness = evaluateLikelihood(childPos);
+			
+			for(size_t selectTry(0); selectTry<mN; ++selectTry)
+			{
+				//int randId = int( randFrom0to1()*(mPopSize-1) );
+				if(childFitness > mPopFitness[selectTry])
+				{
+					memcpy(&mPopPos[selectTry*mN], childPos, size_vect);
+					mPopFitness[selectTry] = childFitness;
+					
+					if(fmax < childFitness)
+					{
+						fmax = childFitness;
+						best_individual = selectTry;
+					}
+					break;
+				}
+			}
+		}
+	}
+	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "Finished bootstrap!" << std::endl;
+		
+	// save the best result
+	*f = fmax;
+	memcpy(x, &mPopPos[best_individual*mN], size_vect);
+}
+#endif // BOOTSTRAP_ES
+
+
+
