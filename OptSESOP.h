@@ -16,12 +16,22 @@
 ///     @version 1.1
 ///
 
+/* uncomment to use the hessian approximation for refining the search direction */ 
+#define SESOP_HESSIAN_APPROX 
 
-#define SESOP_HESSIAN_APPROX
-#define SESOP_CORR_SELECTION
+//#define SESOP_STOCHASTIC_GRADIENT
+
+/* uncomment to use the the correlations between variables to choose the search	direction */ 
+//#define SESOP_CORR_SELECTION
+/* uncomment to use the the correlations (version with less memory) */ 
+#ifdef SESOP_CORR_SELECTION
 #define SESOP_CORR_MEM_OPTIM
+#endif
 
-class OptSESOP
+/* uncomment to use COBYLA derivative free optimizer at each step. Otherwise use SLSQP. */ 
+//#define SESOP_USE_COBYLA
+
+class OptSESOP	
 {
 public:
 	/// Constructor
@@ -35,6 +45,7 @@ public:
 	/// @param[in] aStopIfBigger		If true stop computation as soon as value is over aThreshold
 	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
+	/// @param[in] aNumTimes			Number of branches
 	/// 
 	OptSESOP(BranchSiteModel* aModel
 			,bool aTrace
@@ -110,9 +121,9 @@ private:
 	
 	/// Wrapper to be passed to the nLopt optimizer
 	///
-	/// @param[in] aVars Variables to be optimized
-	/// @param[out] aGrad Gradient values
-	/// @param[in] aData Opaque pointer containing the function to be passed to the optimizer
+	/// @param[in] x Variables to be optimized
+	/// @param[out] grad Gradient values
+	/// @param[in] data Opaque pointer containing the function to be passed to the optimizer
 	///
 	/// @return The evaluated function
 	///
@@ -144,13 +155,20 @@ private:
 	/// and mGradPrev 
 	///
 	void updateCorr(void);
+	
+	
+	/// selectCorrVariables
+	/// Randomly selects variables, with a bigger chance if it is highly correlated with others.
+	/// Add their gradients to the array mGrad_others
+	///
+	void selectCorrVariables(void);	
 #endif
 
 	/// Wrapper to be passed to the nLopt optimizer for the constraints
 	///
-	/// @param[in] aVars Variables to be optimized
-	/// @param[out] aGrad Gradient values of the constraint
-	/// @param[in] aData Opaque pointer containing the function to be passed to the optimizer as well as what constraint we evaluate
+	/// @param[in] alpha Variables to be optimized
+	/// @param[out] grad Gradient values of the constraint
+	/// @param[in] data Opaque pointer containing the function to be passed to the optimizer as well as what constraint we evaluate
 	///
 	/// @return The evaluated function
 	///
@@ -166,9 +184,9 @@ private:
 	/// constraints have the form x0_i + (D*alpha)_i - u_i <= 0
 	/// 						  l_i - x0_i - (D*alpha)_i <= 0
 	///
-	/// @params[in] alpha The subspace variable to optimize
-	/// @params[out] grad The gradient of the constraint
-	/// @params[in] data The line i and the upper(1)/lower bound(0) b 
+	/// @param[in] alpha The subspace variable to optimize
+	/// @param[out] grad The gradient of the constraint
+	/// @param[in] data The line i and the upper(1)/lower bound(0) b 
 	///				(put a int* containing two ints i and b)
 	///
 	double eValuateConstraintsSubspace(const std::vector<double> &alpha, std::vector<double> &grad, void *data); 
@@ -208,9 +226,9 @@ private:
 	int							mStep;				///< current step	
 	double*						mGradient;			///< current gradient
 	double*						mGradient_times;	///< search direction with only some components of the gradient with respect to branch lengths
-	double*						mGradient_others;	///< search direction with only the kappa component of the gradient
-	double*						md2;				///< Nemirovski direction 2 (=\sum_{i=1}^k omega_i gradient(x_i))
-	double						mOmega;				///< used to compute Nemirovski direction 2
+	double*						mGradient_others;	///< search direction with only the kappa, omega or v components (chosen randomly) of the gradient
+	double*						md2;				///< Nemirovski direction 2 (=sum_{i=1}^k omega_i gradient(x_i))
+	double						mOmega;				///< used to compute the second Nemirovski direction
 	
 #ifdef SESOP_HESSIAN_APPROX
 	double*						mHdiag;				///< Approximation of the hessian matrix. Only store the diagonal.
@@ -221,10 +239,18 @@ private:
 #endif
 
 #ifdef SESOP_CORR_SELECTION
+	std::vector<double>			mCorrContainer;
 	double*						mCorr;				///< "Correlation" matrix between the variables so we choose the highest correlated values together in the subspace 
+ #ifndef SESOP_CORR_MEM_OPTIM
 	double*						mCorrPrefSumm;		///< Prefix sum of the array mCorr
 	double*						mPrefSumWorkspace;	///< Workspace to compute the prefix sum
+ #endif
 	size_t						size_corr;			///< size of the correlation matrix
+#endif
+
+#ifdef SESOP_USE_COBYLA
+	double 						mInitStepLenghth0;	///< Step length chosen by COBYLA. Used to determine smaller step lengths for the next steps
+	std::vector<double>				mInitStepCobyla;	///< Initial step to give to COBYLA
 #endif
 
 	int 						mM;					///< size of the current subspace

@@ -81,11 +81,11 @@ private:
 	/// PerformLineSearch
 	/// Perform a line search in the p direction
 	/// 
-	/// @params[in,out] y The variable to be optimized
-	/// @params[in] p The direction of search
-	/// @params[in] step The (initial) step value, copy passing 
+	/// @param[in,out] y The variable to be optimized
+	/// @param[in] p The direction of search
+	/// @param[in] step The (initial) step value, copy passing 
 	///					so it is not modified
-	/// @params[out] fy the value of the function
+	/// @param[out] fy the value of the function
 	///
 	/// @return The step the algorithm chooses
 	///
@@ -95,11 +95,11 @@ private:
 	/// LineSearch
 	/// Perform a line search in the p direction
 	/// 
-	/// @params[in,out] y The variable to be optimized
-	/// @params[in] p The direction of search
-	/// @params[in] step The (initial) step value, copy passing 
+	/// @param[in,out] y The variable to be optimized
+	/// @param[in] p The direction of search
+	/// @param[in] step The (initial) step value, copy passing 
 	///					so it is not modified
-	/// @params[out] fy the value of the function
+	/// @param[out] fy the value of the function
 	///
 	/// @return The step the algorithm chooses
 	///
@@ -108,7 +108,7 @@ private:
 	/// isFeasiblePoint
 	/// check if the point satisfies the constraints
 	///
-	/// @params[in] x the point we consider
+	/// @param[in] x the point we consider
 	/// @return true if the point satisfies the constrains, false otherwise
 	/// 
 	bool isFeasiblePoint(double *x) const;
@@ -116,8 +116,8 @@ private:
 	/// reduce_step
 	///	reduces the step value when needed, change its size if numIter is too high
 	///
-	/// @params[in,out] step The step size to reduce or change size
-	/// @params[in] numIter The number of iterations we performed
+	/// @param[in,out] step The step size to reduce or change size
+	/// @param[in] numIter The number of iterations we performed
 	///
 	void reduce_step(double& step, int const& numIter) const;
 	
@@ -126,7 +126,7 @@ private:
 	/// perform a QR decomposition of the first i vectors u.
 	/// store the result in qi (last orthonormal vector)
 	///
-	/// @params[in] width The number of columns in U to be decomposed
+	/// @param[in] width The number of columns in U to be decomposed
 	///
 	void QRdecomposition(int width);
 	
@@ -147,9 +147,9 @@ private:
 	/// Compute the gradient of the function to minimize.
 	/// Only used to bootstrap the optimizer
 	///
-	/// @params[in] f0 The value of the function at the point x0
-	/// @params[in] x0 The point at which we compute the gradient
-	/// @params[out] g The value of the gradient
+	/// @param[in] f0 The value of the function at the point x0
+	/// @param[in] x0 The point at which we compute the gradient
+	/// @param[out] g The value of the gradient
 	///
 	void computeGradient(double f0, double *x0, double *g);
 	

@@ -18,6 +18,7 @@
 #include <cmath>
 #endif
 
+//#include <random>
 #include <cstdlib>
 
 //#ifdef USE_MKL_VML
@@ -172,9 +173,9 @@ inline double normalizeVector(const int *aN, double* RESTRICT aVector)
 
 /// swap_content: swaps the content of two vectors
 ///
-/// @params[in,out] x1 first vector
-/// @params[in,out] x2 second vector
-/// @params[in] N size of the vectors
+/// @param[in,out] x1 first vector
+/// @param[in,out] x2 second vector
+/// @param[in] N size of the vectors
 ///
 inline void swap_content(double *x1, double *x2, int const& N)
 {
@@ -189,11 +190,11 @@ inline void swap_content(double *x1, double *x2, int const& N)
 
 /// distance: distance between two vectors x1 and alpha*x2 using the Euclidian-norm
 ///
-/// @params[in] x1 first vector
-/// @params[in] x2 second vector
-/// @params[out] workspace should have size m (m>n)
-/// @params[in] N size of the vectors
-/// @params[in] alpha coefficient 
+/// @param[in] x1 first vector
+/// @param[in] x2 second vector
+/// @param[out] workspace should have size m (m>n)
+/// @param[in] N size of the vectors
+/// @param[in] alpha coefficient 
 ///
 /// @return The euclidian norm |x1-alpha*x2|
 ///
@@ -264,5 +265,25 @@ static inline double distance(const double* RESTRICT x, const double* RESTRICT y
 static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
 
 
-#endif
+/*
+/// Generate a double random number between 0 andd 1 according to the beta distribution
+///
+/// @param[in] a a parameter 
+/// @param[in] b b parameter
+/// @param[in] seed Seed of the generator
+/// 
+/// @return The random number
+///
+static double randBeta(double a, double b, unsigned int seed)
+{
+	std::default_random_engine generator (seed);
+	std::gamma_distribution<double> gen_gamma_a(a, 1.0);
+	std::gamma_distribution<double> gen_gamma_b(b, 1.0);
+	double gamma_a( gen_gamma_a(generator) ), 
+		   gamma_b( gen_gamma_b(generator) );
+	std::cout << "gamma_a = " << gamma_a << "gamma_b = " << gamma_b << "result = " << gamma_a / (gamma_a+gamma_b) << std::endl;
+	return gamma_a / (gamma_a+gamma_b);
+}*/
+
+#endif // MATHSUPPORT_H
 

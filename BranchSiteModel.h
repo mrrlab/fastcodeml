@@ -2,6 +2,16 @@
 #ifndef BRANCHSITEMODEL_H
 #define BRANCHSITEMODEL_H
 
+// uncomment this to use the old randomized initialization of parameters
+// otherwise use initialization based on distribution of the parameters
+#define OLD_INITIALIZATION
+
+// uncomment this to use the bootstrap before optimizing
+#define BOOTSTRAP
+
+// uncomment this to use an approximate version of the gradient
+//#define APPROXIMATE_GRADIENT
+
 #include <vector>
 #include <cstdlib>
 #include <cfloat>
@@ -297,7 +307,7 @@ private:
 	/// manages all the try/catch
 	///
 	/// @param[in] aopt The optimizer to use, already containing all the parameters
-	/// @param[in/out] amaxl The value of the maximum likelihood
+	/// @param[in,out] amaxl The value of the maximum likelihood
 	///
 	void optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
 

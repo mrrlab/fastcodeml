@@ -4,6 +4,9 @@
 #include <cfloat>
 #include <cmath>
 #include <memory>
+#include "blas.h"
+#include "lapack.h"
+#include "time.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -24,6 +27,19 @@
 #include "OptSESOP.h"
 #include "Opt2RDSA.h"
 #include "ParseParameters.h"
+#include "BootstrapRandom.h"
+
+#ifndef OLD_INITIALIZATION
+// boost random generation
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/beta_distribution.hpp>
+#include <boost/random/gamma_distribution.hpp>
+#include <boost/random/exponential_distribution.hpp>
+typedef boost::random::mt19937 RNGType;
+#endif // OLD_INITIALIZATION
+
+
+
 
 /// Starting value for the computed maximum likelihood.
 /// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -415,159 +431,124 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
 void BranchSiteModel::initVariables(void)
 {
-	unsigned int i;
-
-    if(mFixedBranchLength)
+	unsigned int i, index_vars_other;
+	
+	// index of the variables other than branchlengths 
+	index_vars_other = mFixedBranchLength ? 0 : mNumTimes;
+	
+#ifndef OLD_INITIALIZATION
+	// uniform random generator used to generate random numbers according to distributions
+	RNGType rng(mSeed);
+	// working variable for local accesses
+	double low, high; // bounds
+	double randGen;   // random variable generated
+#endif
+	
+    // Initialize times (if not already initialized)
+#ifdef OLD_INITIALIZATION
+	if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
+	{
+        for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
+#else
+    if(true)
     {
-        // Initialize w0, k, v1, v2 (if not already initialized)
-        if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+        //boost::random::exponential_distribution<double> exp_dist(10.9455);
+        boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
+        for(i=0; i < mNumTimes; ++i)
         {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
-                mVar[1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
-#else
-                double x0 =  exp(1.0 + 0.2 * randFrom0to1());
-                double x1 =  exp(0.0 + 0.2 * randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[0] = p0+p1;											// p0+p1
-                mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[2] = 0.2  + 0.1 * randFrom0to1();						// w0
-                mVar[3] = 0.35 + 0.1 * randFrom0to1();						// k
-            }
-            else
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[0] = 0.5  +       randFrom0to1();						// x0 -> p0
-                mVar[1] = 0.5  +       randFrom0to1();						// x1 -> p1
-#else
-                double x0 =  exp(0.5 + randFrom0to1());
-                double x1 =  exp(0.5 + randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[0] = p0+p1;											// p0+p1
-                mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[2] = 0.2  + 0.6 * randFrom0to1();						// w0
-                mVar[3] = 0.5  +       randFrom0to1();						// k
-            }
+        	high = mUpperBound[i];
+        	low  = mLowerBound[i];
+        	randGen = high+1.;
+        	while(randGen >= high || randGen <= low)
+        		randGen = gamma_dist_T( rng );
+        	mVar[i] = randGen;											// T
         }
+#endif // OLD_INITIALIZATION
+    }
+     // Initialize w0, k, v1, v2 (if not already initialized)
+    if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+    {
+        RNGType rng(mSeed);
+#ifdef OLD_INITIALIZATION
+	#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[index_vars_other+0] = 0.5  +       randFrom0to1();			// x0 -> p0
+        mVar[index_vars_other+1] = 0.5  +       randFrom0to1();			// x1 -> p1
+	#else
+	
+        double x0 =  exp(0.5 + randFrom0to1());
+        double x1 =  exp(0.5 + randFrom0to1());
+        double tot = x0 + x1 + 0.1;
+        double p0 = x0/tot;
+        double p1 = x1/tot;
+	#endif // USE_ORIGINAL_PROPORTIONS
+#else
+		double p0 = -1.0;
+		double p1 = 2.0;
+        boost::random::exponential_distribution<double> exp_dist_p0(4.605203);
+        boost::random::exponential_distribution<double> exp_dist_p1(5.807218);
+        while(p0 < 0.0)
+          	p0 = 1.0 - exp_dist_p0( rng );
+        while(p1 > 1.0)
+           	p1 = exp_dist_p1( rng );
+            
+        double tot = p0+p1+0.1;
+        p0 /= tot;
+        p1 /= tot;
+#endif // OLD_INITIALIZATION
+        mVar[index_vars_other+0] = p0+p1;								// p0+p1
+        mVar[index_vars_other+1] = p0/(p0+p1);							// p0/(p0+p1)
 
-        // Initialize w2 if needed
-        if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+	#ifdef OLD_INITIALIZATION
+        mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();				// w0
+        mVar[index_vars_other+3] = 0.5  +       randFrom0to1();			// k
+    #else    
+        boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);
+        boost::random::gamma_distribution<double> gamma_dist_k(7.547445, 0.5789037);
+        
+        mVar[index_vars_other+2] = beta_dist( rng );					// w0
+        
+        high = mUpperBound[index_vars_other+3];
+        randGen = high+1.;
+        while (randGen > high)
+        	randGen = gamma_dist_k( rng );				
+        mVar[index_vars_other+3] = randGen;								// k
+    #endif // OLD_INITIALIZATION
+    }
+    // Initialize w2 if needed
+    if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+    {
+	#ifdef OLD_INITIALIZATION
+        if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
         {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-                mVar[4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-            else
-            {
-                mVar[4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
+            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
         }
-
-        // Re-initialize the next time
-        mInitStatus = INIT_NONE;
-
-        // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
-        // Don't clamp the results if they came from H1
-        if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+        else
         {
-            unsigned int nv = mNumVariables;
-            for(i=0; i < nv; ++i)
-            {
-                double range = mUpperBound[i]-mLowerBound[i];
-                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
-                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
-            }
+            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
+        }
+	#else
+        //boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.003642493);
+        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 274.5372468800901);
+        mVar[index_vars_other+4] = 1.0 + gamma_dist_w2( rng );				// w2
+    #endif // OLD_INITIALIZATION
+    }
+    // Re-initialize the next time
+    mInitStatus = INIT_NONE;
+
+#ifdef OLD_INITIALIZATION
+    // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
+    // Don't clamp the results if they came from H1
+    if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+    {
+        unsigned int nv = mNumVariables;
+        for(i=0; i < nv; ++i)
+        {
+            double range = mUpperBound[i]-mLowerBound[i];
+            if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
+            else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
         }
     }
-    else
-    {
-        // Initialize times (if not already initialized)
-        //if((mInitStatus & INIT_TIMES) != INIT_TIMES) //TODO check with Mario how to change this
-        if(true)
-        {
-            for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
-        }
-
-        // Initialize w0, k, v1, v2 (if not already initialized)
-        if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
-        {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[mNumTimes+0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
-                mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
-#else
-                double x0 =  exp(1.0 + 0.2 * randFrom0to1());
-                double x1 =  exp(0.0 + 0.2 * randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[mNumTimes+0] = p0+p1;											// p0+p1
-                mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[mNumTimes+2] = 0.2  + 0.1 * randFrom0to1();						// w0
-                mVar[mNumTimes+3] = 0.35 + 0.1 * randFrom0to1();						// k
-            }
-            else
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[mNumTimes+0] = 0.5  +       randFrom0to1();					// x0 -> p0
-                mVar[mNumTimes+1] = 0.5  +       randFrom0to1();					// x1 -> p1
-#else
-                double x0 =  exp(0.5 + randFrom0to1());
-                double x1 =  exp(0.5 + randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[mNumTimes+0] = p0+p1;											// p0+p1
-                mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();					// w0
-                mVar[mNumTimes+3] = 0.5  +       randFrom0to1();					// k
-            }
-        }
-
-        // Initialize w2 if needed
-        if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
-        {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-                mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-            else
-            {
-                mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-        }
-
-        // Re-initialize the next time
-        mInitStatus = INIT_NONE;
-
-        // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
-        // Don't clamp the results if they came from H1
-        if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
-        {
-            unsigned int nv = mNumVariables;
-            for(i=0; i < nv; ++i)
-            {
-                double range = mUpperBound[i]-mLowerBound[i];
-                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
-                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
-            }
-        }
-    }
+#endif // OLD_INITIALIZATION
 }
 
 
@@ -583,7 +564,7 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, 
 	// Initialize the matrix set and the matrix set used for gradient computation
 	mSet.initializeSet(mForest.adjustFgBranchIdx(aFgBranch));
 	mSetForGradient.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
-
+	
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch, aStopIfBigger, aThreshold);
 }
@@ -1577,7 +1558,19 @@ public:
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
 					    mTotalNumVariables(aUpper.size()), mNumBranchLengths(aUpper.size() - aNumMatrixParams),
 						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
-						{}
+	{
+#ifdef APPROXIMATE_GRADIENT
+		mM = 8*mTotalNumVariables/10;
+		
+		// allocate the workspace
+		mSpaceApproxGradient.resize(mM*(mTotalNumVariables+1) + mTotalNumVariables*mTotalNumVariables);
+		
+		// assign space to arrays
+		mSearchDirections = &mSpaceApproxGradient[0];
+		mDirectionalGradients = mSearchDirections + mM*mTotalNumVariables;
+		mAWork = mDirectionalGradients + mM;
+#endif						
+	}
 
 	/// Wrapper to be passed to the optimizer
 	///
@@ -1601,7 +1594,7 @@ public:
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
+	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad)
 	{
 		// Compute the function at the requested point
 		double f0 = mModel->computeLikelihood(aVars, mTrace);
@@ -1623,6 +1616,49 @@ private:
 	/// @param[in] aVars Variables to be optimized
 	/// @param[out] aGrad Gradient values computed
 	///
+#ifdef APPROXIMATE_GRADIENT
+	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad)
+	{
+		std::vector<double> vars_working_copy(aVars);
+		generateRandomSearchDirections();
+		
+		int mN = mTotalNumVariables;
+		
+		for(size_t i(0); i < mM; ++i)
+		{
+			// select a variation number
+			double norm_direction = dnrm2_(&mN, &mSearchDirections[i*mTotalNumVariables], &I1);
+			double eh = mDeltaForGradient * (norm_direction+1.);
+			
+			// compute the point in the direction of the search direction
+			memcpy(&vars_working_copy[0], &aVars[0], mTotalNumVariables*sizeof(double));
+			daxpy_(&mN, &eh, &mSearchDirections[i*mTotalNumVariables], &I1, &vars_working_copy[0], &I1);
+
+			const double f1 = mModel->computeLikelihood(vars_working_copy, false);
+
+			mDirectionalGradients[i] = (f1-aPointValue)/eh;
+		}
+		
+		// solve the underestimated system using lapack
+		const char trans('T');
+		memcpy(&aGrad[0], mDirectionalGradients, mM*sizeof(double));
+		int LWork( mN*mN );
+		int INFO;
+		
+		dgels(&trans
+			 ,&mN
+			 ,&mM
+			 ,&I1
+			 ,mSearchDirections
+			 ,&mN
+			 ,&aGrad[0]
+			 ,&mN
+			 ,mAWork
+			 ,&LWork
+			 ,&INFO);
+		
+	}
+#else
 	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		std::vector<double> vars_working_copy(aVars);
@@ -1675,6 +1711,25 @@ private:
 			vars_working_copy[i] = aVars[i];
 		}
 	}
+#endif // APPROXIMATE_GRADIENT
+
+
+#ifdef APPROXIMATE_GRADIENT
+/// generateRandomSearchDirections
+/// generate random search directions
+///
+void generateRandomSearchDirections(void)
+{
+	#pragma omp parallel
+	{
+		srand(time(NULL) ^ omp_get_thread_num());
+		#pragma omp for
+		for (size_t i(0); i < mM*mTotalNumVariables; ++i)
+			mSearchDirections[i] = randFrom0to1();
+	}
+}
+#endif // APPROXIMATE_GRADIENT
+
 
 #if 0
 	/// Compute the function gradient (original method)
@@ -1714,6 +1769,14 @@ private:
 	size_t				mNumBranchLengths;	///< Number of branch lengths (total number of variables to be used to compute gradient minus matrix params)
 	bool				mStopIfBigger;		///< If true stop optimization as soon as function value is above mThreshold
 	double				mThreshold;			///< Threshold value to stop optimization
+	
+#ifdef APPROXIMATE_GRADIENT
+	int					mM;						///< number of search directions used to approximate the gradient
+	std::vector<double>	mSpaceApproxGradient;	///< work space to store all the required variables to approximate the gradient
+	double*				mSearchDirections;		///< mM linearly random directions (m being a parameter of the algorithm, 0<m<=mTotalNumVariables)
+	double*				mDirectionalGradients;	///< the m values of the gradient in the mSearchDirections directions
+	double*				mAWork;					///< matrix used for the least square approximation
+#endif
 };
 
 
@@ -1739,6 +1802,14 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
 	// If only the initial step is requested, do it and return
 	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
+	
+#ifdef BOOTSTRAP
+	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
+	double maxL = bootstrapper.bootstrap(mVar);
+	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "value after bootstrap: " << maxL << std::endl;
+#endif
 
 	// Special case for the CodeML optimizer
 	if(mOptAlgo == OPTIM_LD_MING2)
@@ -1860,33 +1931,42 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
             opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
         else
             opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
-        //opt->set_vector_storage(20);
         
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
-		opt->set_ftol_rel(1e-3);
+		opt->set_ftol_rel(1e3*mRelativeError);
 		nlopt::srand(static_cast<unsigned long>(mSeed));
 		
 		// Optimize the function (until enough iterations are made/tolerance?)
 		double maxl = 0;
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+		
 		// limit the number of calls so we can change the optimizer
-		int num_iterations(150);
-		//opt->set_maxeval(num_iterations); // gradient free
-		//opt->set_maxeval(num_iterations * (1+mNumVariables+mNumTimes)); // gradient based
+		int max_num_iterations(40);
+		//opt->set_maxeval(max_num_iterations); // gradient free
 		
 		optimize_using_nlopt(opt, maxl);		
 		
-		std::cout << "switch optimizer\n";
+		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+			std::cout << "switch optimizer\n";
 		
+#if 1
 		// finish problem with SLSQP
 		if (mFixedBranchLength)
             opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
         else
             opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
         opt->set_vector_storage(20);
+#else
+		// finish problem with LBFGS
+		if (mFixedBranchLength)
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+        else
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+        opt->set_vector_storage(20);
+#endif
         
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
@@ -1894,12 +1974,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		
 		opt->set_ftol_rel(mRelativeError);
 		
-		nlopt::srand(static_cast<unsigned long>(mSeed));		
 		
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
-				
-		// If the user has set a maximum number of iterations set it
-		//if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
 		
 		optimize_using_nlopt(opt, maxl);
 		
@@ -1993,7 +2069,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	// Initialize bounds and termination criteria
 	opt->set_lower_bounds(mLowerBound);
 	opt->set_upper_bounds(mUpperBound);
-    opt->set_ftol_rel(mRelativeError);
+    //opt->set_ftol_rel(mRelativeError);
+    opt->set_ftol_abs(mRelativeError);
 	nlopt::srand(static_cast<unsigned long>(mSeed));
 
 	// Optimize the function
