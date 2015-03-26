@@ -109,7 +109,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Set the codon frequencies and related values needed for the eigensolver
 	CodonFrequencies* cf = CodonFrequencies::getInstance();
 	cf->setCodonFrequencies(codons_info, aCodonFrequencyModel, mVerbose >= VERBOSE_INFO_OUTPUT);
-	mCodonFreq     = cf->getCodonFrequencies();
+	mCodonFreq	   = cf->getCodonFrequencies();
 	mInvCodonFreq  = cf->getInvCodonFrequencies();
 	mInv2CodonFreq = cf->getCodonFreqInv2();
 
@@ -134,42 +134,42 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 #ifdef NEW_LIKELIHOOD
 void Forest::postLoad(void)
 {
-    // Prepare the list of node id's by level
-    std::vector<ForestNode*> next_level;
-    std::vector<ForestNode*> curr_level;
-    std::vector<ForestNode*> level_nodes;
+	// Prepare the list of node id's by level
+	std::vector<ForestNode*> next_level;
+	std::vector<ForestNode*> curr_level;
+	std::vector<ForestNode*> level_nodes;
 
-    // First level is the root (but it is not added because no processing is done on it)
-    //level_nodes.push_back(&mRoots[mNumSites-1]);
-    mNodesByLevel.clear();
-    //mNodesByLevel.push_back(level_nodes);
-    curr_level.push_back(&mRoots[mNumSites-1]);
+	// First level is the root (but it is not added because no processing is done on it)
+	//level_nodes.push_back(&mRoots[mNumSites-1]);
+	mNodesByLevel.clear();
+	//mNodesByLevel.push_back(level_nodes);
+	curr_level.push_back(&mRoots[mNumSites-1]);
 
-    // Continue with all levels till reaching the leaves
-    for(;; curr_level = next_level)
-    {
-        // Empty temporary arrays
-        next_level.clear();
-        level_nodes.clear();
+	// Continue with all levels till reaching the leaves
+	for(;; curr_level = next_level)
+	{
+		// Empty temporary arrays
+		next_level.clear();
+		level_nodes.clear();
 
-        // Put in a list all the children of the current level nodes
-        std::vector<ForestNode*>::const_iterator il(curr_level.begin());
-        const std::vector<ForestNode*>::const_iterator end(curr_level.end());
-        for(; il != end; ++il)
-        {
-            if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
-        }
+		// Put in a list all the children of the current level nodes
+		std::vector<ForestNode*>::const_iterator il(curr_level.begin());
+		const std::vector<ForestNode*>::const_iterator end(curr_level.end());
+		for(; il != end; ++il)
+		{
+			if(!(*il)->mChildrenList.empty()) next_level.insert(next_level.end(), (*il)->mChildrenList.begin(), (*il)->mChildrenList.end());
+		}
 
-        // No children, the last level was the leaves level
-        if(next_level.empty()) break;
+		// No children, the last level was the leaves level
+		if(next_level.empty()) break;
 
-        // Add the list of node pointers of this level
-        for(il=next_level.begin(); il != next_level.end(); ++il)
-        {
-            level_nodes.push_back(*il);
-        }
-        mNodesByLevel.push_back(level_nodes);
-    }
+		// Add the list of node pointers of this level
+		for(il=next_level.begin(); il != next_level.end(); ++il)
+		{
+			level_nodes.push_back(*il);
+		}
+		mNodesByLevel.push_back(level_nodes);
+	}
 
 #if 0
 	// Show the tree before balancing
@@ -182,7 +182,7 @@ void Forest::postLoad(void)
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "	 ");
 		}
 		std::cout << std::endl;
 	}
@@ -192,7 +192,7 @@ void Forest::postLoad(void)
 	for(bool found=true; found;)
 	{
 		// Find the level with the maximum number of leaves
-		size_t max_len   = 0;
+		size_t max_len	 = 0;
 		unsigned int max_level = 0;
 		unsigned int max_leaf  = 0;
 		unsigned int level = 0;
@@ -240,7 +240,7 @@ void Forest::postLoad(void)
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "	 ");
 		}
 		std::cout << std::endl;
 	}
@@ -273,12 +273,12 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 		{
 			if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch marked in tree file. Ignoring" << std::endl;
 			aBranchStart = 0;
-			aBranchEnd   = num_branches-1;
+			aBranchEnd	 = num_branches-1;
 		}
 		else
 		{
 			aBranchStart = marked_branch;
-			aBranchEnd   = marked_branch;
+			aBranchEnd	 = marked_branch;
 			do_all = false;
 		}
 	}
@@ -287,13 +287,13 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 		// Invalid start value, ignoring, do all branches
 		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl; 
 		aBranchStart = 0;
-		aBranchEnd   = num_branches-1;
+		aBranchEnd	 = num_branches-1;
 	}
 	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd == UINT_MAX)
 	{
 		// Only start branch set. Do from it to the end.
 		aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
-		aBranchEnd   = num_branches-1;
+		aBranchEnd	 = num_branches-1;
 		if(aBranchStart > 0) do_all = false;
 	}
 	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd < UINT_MAX)
@@ -316,7 +316,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 	{
 		// No limit set, do all branches
 		aBranchStart = 0;
-		aBranchEnd   = num_branches-1;
+		aBranchEnd	 = num_branches-1;
 	}
 
 	return do_all;
@@ -402,10 +402,10 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 {
 	// General forest statistics
 	aOut << std::endl;
-	aOut << "Num branches:       " << std::setw(7) << aForest.mNumBranches << std::endl;
-	aOut << "Internal branches:  " << std::setw(7) << aForest.mNumInternalBranches << std::endl;
-	aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites << std::endl;
-	aOut << "Total branches:     " << std::setw(7) << aForest.mNumBranches*aForest.mNumSites << std::endl;
+	aOut << "Num branches:		 " << std::setw(7) << aForest.mNumBranches << std::endl;
+	aOut << "Internal branches:	 " << std::setw(7) << aForest.mNumInternalBranches << std::endl;
+	aOut << "Unique sites:		 " << std::setw(7) << aForest.mNumSites << std::endl;
+	aOut << "Total branches:	 " << std::setw(7) << aForest.mNumBranches*aForest.mNumSites << std::endl;
 
 	// Count total branches on the reduced forest
 	size_t i;
@@ -417,7 +417,7 @@ void Forest::cleanReductionWorkingData(ForestNode* aNode)
 		cnt += n.countBranches();
 		cntAggressive += n.countBranches(true);
 	}
-	aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << static_cast<double>(cnt*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
+	aOut << "Reduced branches:	 " << std::fixed << std::setw(7) << cnt << std::setw(8) << std::setprecision(2) << static_cast<double>(cnt*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << "Aggressive reduct.: " << std::fixed << std::setw(7) << cntAggressive << std::setw(8) << std::setprecision(2) << static_cast<double>(cntAggressive*100.)/static_cast<double>(aForest.mNumBranches*aForest.mNumSites) << '%' << std::endl;
 	aOut << std::endl;
 
@@ -506,61 +506,61 @@ void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* 
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, unsigned int /*aHyp*/)
 {
 	// Initialize variables
-    const unsigned int num_sets = aSet.size();
-    //aLikelihoods.assign(num_sets*mNumSites, 1.0);
+	const unsigned int num_sets = aSet.size();
+	//aLikelihoods.assign(num_sets*mNumSites, 1.0);
 	//aLikelihoods.resize(num_sets*mNumSites);
 
 	// For each level of the tree (except the root)
 	unsigned int level=0;
-    std::vector< std::vector<ForestNode*> >::reverse_iterator inbl;
-    for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl,++level)
-    {
+	std::vector< std::vector<ForestNode*> >::reverse_iterator inbl;
+	for(inbl=mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend(); ++inbl,++level)
+	{
 		const int num_sites = static_cast<int>(inbl->size());
-        const int len       = num_sites*num_sets;
+		const int len		= num_sites*num_sets;
 
 #ifdef _MSC_VER
-        #pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(guided)
+		#pragma omp parallel for default(none) shared(aSet, len, inbl, num_sets, num_sites, level) schedule(guided)
 #else
-        #pragma omp parallel for default(shared) schedule(guided)
+		#pragma omp parallel for default(shared) schedule(guided)
 #endif
-        for(int i=0; i < len; ++i)
-        {
-            // Compute probability vector along this branch (for the given set) (reordered to give a 2% speedup)
-			const unsigned int set_idx  = i / num_sites;
+		for(int i=0; i < len; ++i)
+		{
+			// Compute probability vector along this branch (for the given set) (reordered to give a 2% speedup)
+			const unsigned int set_idx	= i / num_sites;
 			const unsigned int site_idx = i - set_idx * num_sites; // Was: unsigned int set_idx = i % num_sets;
-            const unsigned int branch   = ((*inbl)[site_idx])->mBranchId;
-			const size_t       start    = VECTOR_SLOT*(mNumSites*Nt*(branch+1)+mNumSites*set_idx+mFatVectorTransform.getLowerIndex(branch));
+			const unsigned int branch	= ((*inbl)[site_idx])->mBranchId;
+			const size_t	   start	= VECTOR_SLOT*(mNumSites*Nt*(branch+1)+mNumSites*set_idx+mFatVectorTransform.getLowerIndex(branch));
 
 			// For each branch, except the root, compute the transition
-            aSet.doTransition(set_idx,
+			aSet.doTransition(set_idx,
 							  branch,
 							  static_cast<int>(mFatVectorTransform.getCount(branch)),
 							  &mProbs[start],
 							  &mProbsOut[start]);
-        }
+		}
 
 		// Combine the results to have the input for the next round
 		mFatVectorTransform.postCompact(mProbsOut, mProbs, level, num_sets);
-    }
+	}
 
 	// Compute the final likelyhood
 	const int num_sites = static_cast<int>(mNumSites);
-    const int len       = num_sites*num_sets;
+	const int len		= num_sites*num_sets;
 
 #ifdef _MSC_VER
-    #pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods) schedule(guided)
+	#pragma omp parallel for default(none) shared(len, num_sites, aLikelihoods) schedule(guided)
 #else
-    #pragma omp parallel for default(shared) schedule(guided)
+	#pragma omp parallel for default(shared) schedule(guided)
 #endif
-    for(int i=0; i < len; ++i)
-    {
+	for(int i=0; i < len; ++i)
+	{
 		const unsigned int set_idx = i / num_sites;
-		const unsigned int site    = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
-		const size_t       start   = VECTOR_SLOT*(set_idx*mNumSites+site);
+		const unsigned int site	   = i - set_idx * num_sites; // Was: unsigned int site_idx = i % num_sites;
+		const size_t	   start   = VECTOR_SLOT*(set_idx*mNumSites+site);
 
 		// Take the result from branch 0 (the root)
-        aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, &mProbs[start]);
-    }
+		aLikelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, &mProbs[start]);
+	}
 }
 #endif
 
@@ -703,8 +703,8 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 		for(int i=0; i < len; ++i)
 		{
 			// Compute likelihood array at the root of one tree (the access order is the fastest)
-			const unsigned int tmp     = tmp_ivs[i];
-			const unsigned int site    = getSiteNum(tmp);
+			const unsigned int tmp	   = tmp_ivs[i];
+			const unsigned int site	   = getSiteNum(tmp);
 			const unsigned int set_idx = getSetNum(tmp);
 
 			computeLikelihoodsWalkerNR(aSet, set_idx, site);
@@ -845,8 +845,8 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 #endif
 			{
 				// Compute likelihood array at the root of one tree (the access order is the fastest)
-				const unsigned int tmp     = tmp_ivs[i];
-				const unsigned int site    = TreeAndSetsDependencies::getSiteNum(tmp);
+				const unsigned int tmp	   = tmp_ivs[i];
+				const unsigned int site	   = TreeAndSetsDependencies::getSiteNum(tmp);
 				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
 
 				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
@@ -863,7 +863,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
-	double* anode_prob    = aNode->mProb[aSetIdx];
+	double* anode_prob	  = aNode->mProb[aSetIdx];
 	const unsigned int nc = aNode->mChildrenCount;
 
 	// Shortcut (on the leaves return immediately the probability vector)

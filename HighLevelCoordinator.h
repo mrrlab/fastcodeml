@@ -54,7 +54,7 @@ public:
 	///
 	/// @return The number of MPI processes
 	///
-	int  numJobs(void) const {return mSize;}
+	int	 numJobs(void) const {return mSize;}
 
 	/// Return the current process rank.
 	///

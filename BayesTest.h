@@ -10,7 +10,7 @@
 
 /// The minimum value for class 2 sites probability to be a positive selection site.
 ///
-const static double MIN_PROB       = 0.50;
+const static double MIN_PROB	   = 0.50;
 const static double ONE_STAR_PROB  = 0.95;
 const static double TWO_STARS_PROB = 0.99;
 
@@ -39,9 +39,9 @@ public:
 
 /// Tests to find the sites under positive selection.
 ///
-///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///  @date 2010-12-22 (initial version)
-///  @version 1.1
+///	 @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///	 @date 2010-12-22 (initial version)
+///	 @version 1.1
 ///
 class BayesTest
 {
@@ -96,18 +96,18 @@ private:
 	///
 	///@verbatim
 	/// Order of site classes for iw or f(x_h|w):
-	///                     back   fore     num.sets
+	///						back   fore		num.sets
 	/// Branchsite A (121 sets)
-	///   site class 0:      w0     w0        10
-	///   site class 1:      w1=1   w1=1       1
-	///   site class 2a:     w0     w2       100
-	///   site class 2b:     w1=1   w2        10
+	///	  site class 0:		 w0		w0		  10
+	///	  site class 1:		 w1=1	w1=1	   1
+	///	  site class 2a:	 w0		w2		 100
+	///	  site class 2b:	 w1=1	w2		  10
 	///@endverbatim
 	///
 	/// @param[in] aVars  The variables optimized at the end of the H1 run.
 	/// @param[in] aSiteMultiplicity  The site multiplicity vector.
 	/// @param[in] aFgBranch  The foreground branch under test.
-	/// @param[in] aScales  The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
+	/// @param[in] aScales	The two scales ([0] bg; [1] fg) to rescale the branch lengths. They are computed in H1.
 	///
 	/// @return The computed scale.
 	///

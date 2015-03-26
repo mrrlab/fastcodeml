@@ -26,7 +26,7 @@
 
 void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aNoParallel)
 {
-	size_t  j;
+	size_t	j;
 
 	// Save for the optimization phase
 	mNoParallel = aNoParallel;

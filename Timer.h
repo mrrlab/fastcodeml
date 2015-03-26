@@ -16,9 +16,9 @@
 
 /// Simple timer.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-08-31 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-08-31 (initial version)
+///		@version 1.1
 ///
 class Timer
 {
@@ -74,8 +74,8 @@ private:
 #ifndef USE_WIN_MSEC_TIMER
 	time_t			mStartTime;	///< The start time
 #else
-    LARGE_INTEGER	mFreq;		///< The timer frequency
-    LARGE_INTEGER	mStartTime;	///< The start time
+	LARGE_INTEGER	mFreq;		///< The timer frequency
+	LARGE_INTEGER	mStartTime;	///< The start time
 #endif
 	time_t			mDelta;		///< The elapsed time in milliseconds
 };
@@ -86,9 +86,9 @@ private:
 
 /// Simple timer
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-08-31 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-08-31 (initial version)
+///		@version 1.1
 ///
 class Timer
 {
@@ -113,7 +113,7 @@ public:
 		struct timeval end_time;
 		gettimeofday(&end_time, NULL);
 
-		mDelta  = end_time.tv_sec*1000000L+end_time.tv_usec;
+		mDelta	= end_time.tv_sec*1000000L+end_time.tv_usec;
 		mDelta -= mStartTime.tv_sec*1000000L+mStartTime.tv_usec;
 		mDelta /= 1000L;
 

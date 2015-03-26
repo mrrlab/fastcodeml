@@ -9,9 +9,9 @@
 
 /// Manipulations on the per-branch probability vector array.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-09-31 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2011-09-31 (initial version)
+///		@version 1.1
 ///
 class FatVectorTransform
 {
@@ -150,9 +150,9 @@ private:
 	///
 	enum BranchSitePositionStatus
 	{
-		SITE_EXISTS     = -2,					///< The position (Branch, Site) in mNodePresent exists
+		SITE_EXISTS		= -2,					///< The position (Branch, Site) in mNodePresent exists
 		SITE_NOT_EXISTS = -1,					///< The position (Branch, Site) in mNodePresent refers to a not existent node
-		SITE_FIRST_NUM  =  0					///< if greater or equal to this value the position contains the index from which the value should be copied
+		SITE_FIRST_NUM	=  0					///< if greater or equal to this value the position contains the index from which the value should be copied
 	};
 
 	/// Representation of a range to be copied and the number of items to be copied

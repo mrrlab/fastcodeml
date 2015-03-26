@@ -9,9 +9,9 @@ typedef std::vector< std::vector<unsigned int> > ListDependencies;
 
 /// Create the lists of trees and sets that can be computed concurrently
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-21 (initial version)
-///     @version 1.0
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-21 (initial version)
+///		@version 1.0
 ///
 ///
 class TreeAndSetsDependencies

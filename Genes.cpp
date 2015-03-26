@@ -221,7 +221,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 
 	// Remove invalid codons
 	for(i=0; i < nspecies; ++i)
-    {
+	{
 		const char *p = mDnaGene[i].c_str();
 		for(j=0; j < ncodons; ++j)
 		{
@@ -239,10 +239,10 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	{
 		std::cout << std::endl;
 		std::cout << "Num. species: " << std::setw(6) << nspecies << std::endl;
-		std::cout << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
+		std::cout << "Num. basis:	" << std::setw(6) << nbasis << std::endl;
 		std::cout << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
 		if(num_ambiguous) std::cout 
-                  << "Ambiguous:    " << std::setw(6) << num_ambiguous << "/" << ncodons << std::endl;
+				  << "Ambiguous:	" << std::setw(6) << num_ambiguous << "/" << ncodons << std::endl;
 		if(num_gaps) std::cout
 				  << "Gaps removed: " << std::setw(6) << num_gaps << std::endl;
 	}
@@ -282,10 +282,10 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 
 	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-		std::cout << "Sites:        " << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
+		std::cout << "Sites:		" << std::setw(6) << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
 		int multi_codons = static_cast<int>(std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(), std::bind2nd(std::greater<unsigned int>(), 1)));
 		std::cout << "Multi codons: " << std::setw(6) << multi_codons << "/" << ncodons << std::endl;
-                std::cout << std::endl<<"------------------------------------"<<std::endl;
+				std::cout << std::endl<<"------------------------------------"<<std::endl;
 
 	}
 	if(mVerboseLevel >= VERBOSE_MORE_DEBUG)
@@ -364,26 +364,26 @@ void Genes::initFullCodonMap(void)
 			for(k=0; k < 4; ++k)
 			{
 				// Skip stop codons
-			    if(i == 0)
-			    {
+				if(i == 0)
+				{
 					if((j == 2) && (k == 2 || k == 3)) continue;
 					else if(j == 3 && k == 2) continue;
-			    }
+				}
 
-			    // Compute the index
-			    int idx = i*4*4+j*4+k;
+				// Compute the index
+				int idx = i*4*4+j*4+k;
 
-			    // Adjust for missing stop codons
-			    if(idx > 14) idx -= 3;
-			    else if(idx >  9) idx -= 2;
+				// Adjust for missing stop codons
+				if(idx > 14) idx -= 3;
+				else if(idx >  9) idx -= 2;
 
 				// Create the valid codon
-			    codon[0] = base[i];
-			    codon[1] = base[j];
-			    codon[2] = base[k];
+				codon[0] = base[i];
+				codon[1] = base[j];
+				codon[2] = base[k];
 
 				// Add to the map from codon to position in the CPV
-			    codons.insert(std::pair<std::string, int>(std::string(codon), idx));
+				codons.insert(std::pair<std::string, int>(std::string(codon), idx));
 			}
 		}
 	}

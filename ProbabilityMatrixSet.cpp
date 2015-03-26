@@ -39,10 +39,10 @@ void ProbabilityMatrixSetH1::initializeSet(unsigned int aFgBranch)
 
 
 void ProbabilityMatrixSetH0::fillMatrixSet(const TransitionMatrix& aQw0,
-											 const  TransitionMatrix& aQ1,
+											 const	TransitionMatrix& aQ1,
 											 double aSbg,
 											 double aSfg,
-											 const  std::vector<double>& aParams)
+											 const	std::vector<double>& aParams)
 {
 	const int num_matrices = mNumMatrices;
 	const double* params = &aParams[0];
@@ -70,13 +70,13 @@ void ProbabilityMatrixSetH0::fillMatrixSet(const TransitionMatrix& aQw0,
 void ProbabilityMatrixSetH0::restoreSavedMatrix(size_t aBranch)
 {
 	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQw0, N*N*sizeof(double));
-	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,  N*N*sizeof(double));
+	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,	N*N*sizeof(double));
 }
 
 void ProbabilityMatrixSetH0::saveMatrix(size_t aBranch)
 {
 	memcpy(mSaveQw0, &mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
-	memcpy(mSaveQ1,  &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+	memcpy(mSaveQ1,	 &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
 }
 
 const double** ProbabilityMatrixSetH0::getChangedMatrices(size_t aBranch)
@@ -142,7 +142,7 @@ void ProbabilityMatrixSetH1::fillMatrixSet(const  TransitionMatrix& aQw0,
 void ProbabilityMatrixSetH1::restoreSavedMatrix(size_t aBranch)
 {
 	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQw0, N*N*sizeof(double));
-	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,  N*N*sizeof(double));
+	memcpy(&mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], mSaveQ1,	N*N*sizeof(double));
 	if(static_cast<int>(aBranch) == mFgBranch)
 	{
 		memcpy(&mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], mSaveQw2, N*N*sizeof(double));
@@ -152,7 +152,7 @@ void ProbabilityMatrixSetH1::restoreSavedMatrix(size_t aBranch)
 void ProbabilityMatrixSetH1::saveMatrix(size_t aBranch)
 {
 	memcpy(mSaveQw0, &mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
-	memcpy(mSaveQ1,  &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
+	memcpy(mSaveQ1,	 &mMatrixSpace[1*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], N*N*sizeof(double));
 	if(static_cast<int>(aBranch) == mFgBranch)
 	{
 		memcpy(mSaveQw2, &mMatrixSpace[(2*mNumMatrices+mFgBranch)*MATRIX_SLOT], N*N*sizeof(double));

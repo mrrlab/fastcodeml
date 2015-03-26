@@ -88,8 +88,8 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 			else
 			{
 				std::string s = mForest.mNodeNames[iv->second];
-				if(s.empty()) net << "   label \"" << iv->second << "\"\n";
-				else          net << "   label \"" << s << "\"\n";
+				if(s.empty()) net << "	 label \"" << iv->second << "\"\n";
+				else		  net << "	 label \"" << s << "\"\n";
 				net << "   type 1\n";
 			}
 			net << "]\n";
@@ -102,8 +102,8 @@ void ForestExport::exportForest(const char* aFilename, size_t aCounter) const
 			bool same_tree = node_from[i].first == node_to[i].first;
 
 			net << "edge [\n";
-			net << "   source " <<  map[pf] << '\n';
-			net << "   target " <<  map[pt] << '\n';
+			net << "   source " <<	map[pf] << '\n';
+			net << "   target " <<	map[pt] << '\n';
 			net << "   label \"" << std::fixed << std::setprecision(2) << map_value[pt] << (same_tree ? "" : "+") << "\"\n"; // Trailing plus means not same tree link
 			net << "]\n";
 		}

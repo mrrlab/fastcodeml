@@ -31,17 +31,17 @@ struct CmdLine::CmdLineImpl
 
 const char *CmdLine::CmdLineImpl::getLastErrorText(CSimpleOpt& aOptParser)
 {
-    switch(aOptParser.LastError())
+	switch(aOptParser.LastError())
 	{
-    case SO_SUCCESS:            return "Success";
-    case SO_OPT_INVALID:        return "Unrecognized option";
-    case SO_OPT_MULTIPLE:       return "Option matched multiple strings";
-    case SO_ARG_INVALID:        return "Option does not accept argument";
-    case SO_ARG_INVALID_TYPE:   return "Invalid argument format";
-    case SO_ARG_MISSING:        return "Required argument is missing";
-    case SO_ARG_INVALID_DATA:   return "Invalid argument data";
-    default:					return "Unknown error";
-    }
+	case SO_SUCCESS:			return "Success";
+	case SO_OPT_INVALID:		return "Unrecognized option";
+	case SO_OPT_MULTIPLE:		return "Option matched multiple strings";
+	case SO_ARG_INVALID:		return "Option does not accept argument";
+	case SO_ARG_INVALID_TYPE:	return "Invalid argument format";
+	case SO_ARG_MISSING:		return "Required argument is missing";
+	case SO_ARG_INVALID_DATA:	return "Invalid argument data";
+	default:					return "Unknown error";
+	}
 }
 
 
@@ -64,7 +64,7 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		{
 			if(done[j] || aParserOptions[j].nId != aParserOptions[i].nId) continue;
 			done[j] = true;
-			std::cout << "  " << aParserOptions[j].pszArg;
+			std::cout << "	" << aParserOptions[j].pszArg;
 		}
 
 		// Translate the kind of argument
@@ -94,7 +94,7 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions)
 		}
 
 		std::cout << " " << type << std::endl;
-		std::cout << "        " << aParserOptions[i].pszHelp << std::endl << std::endl;
+		std::cout << "		  " << aParserOptions[i].pszHelp << std::endl << std::endl;
 	}
 }
 
@@ -151,11 +151,11 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_VERBOSE,			"--debug",				SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"-v",					SO_REQ_SEP, "" },
 		{ OPT_VERBOSE,			"--verbose",			SO_REQ_SEP, "" },
-		{ OPT_QUIET,			"-q",					SO_NONE,    "No messages except results" },
-		{ OPT_QUIET,			"--quiet",				SO_NONE,    "" },
-		{ OPT_HELP,				"-?",					SO_NONE,    "This help" },
-		{ OPT_HELP,				"-h",					SO_NONE,    "" },
-		{ OPT_HELP,				"--help",				SO_NONE,    "" },
+		{ OPT_QUIET,			"-q",					SO_NONE,	"No messages except results" },
+		{ OPT_QUIET,			"--quiet",				SO_NONE,	"" },
+		{ OPT_HELP,				"-?",					SO_NONE,	"This help" },
+		{ OPT_HELP,				"-h",					SO_NONE,	"" },
+		{ OPT_HELP,				"--help",				SO_NONE,	"" },
 		{ OPT_SEED,				"-s",					SO_REQ_SEP, "Random number generator seed (0 < seed < 1000000000)" },
 		{ OPT_SEED,				"--seed",				SO_REQ_SEP, "" },
 		{ OPT_BRANCH,			"-b",					SO_REQ_SEP, "Do only this branch as foreground branch (count from 0)" },
@@ -209,19 +209,19 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_NO_PRE_STOP,		"--no-pre-stop",		SO_NONE,	"" },
 		{ OPT_MAX_ITER,			"-mi",					SO_REQ_SEP,	"Maximum number of iterations for the maximizer (default: 10000)" },
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
-        {OPT_BRANCH_LENGTH,      "-bl",                 SO_NONE,    "The length of the brances is fixed"},
-		{OPT_BRANCH_LENGTH,      "--branch-lengths-fixed", SO_NONE,    ""},
+		{OPT_BRANCH_LENGTH,		 "-bl",					SO_NONE,	"The length of the brances is fixed"},
+		{OPT_BRANCH_LENGTH,		 "--branch-lengths-fixed", SO_NONE,	   ""},
 		SO_END_OF_OPTIONS
 	};
 
 	// Setup the usage string
 	const char* usage_msg = "FastCodeML [options] tree_file alignment_file";
 
-    // Declare our options parser, pass in the arguments from main as well as our array of valid options.
-    CSimpleOpt args(aCnt, aVal, parser_options, SO_O_NOSLASH);
+	// Declare our options parser, pass in the arguments from main as well as our array of valid options.
+	CSimpleOpt args(aCnt, aVal, parser_options, SO_O_NOSLASH);
 
-    // While there are arguments left to process
-    while(args.Next())
+	// While there are arguments left to process
+	while(args.Next())
 	{
 		// Signal error if option invalid
 		if(args.LastError() == SO_OPT_INVALID)
@@ -229,13 +229,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			std::ostringstream o;
 			o << "Error: " << mCmdLineImpl->getLastErrorText(args) << ": " << args.OptionText() << std::endl;
 			throw FastCodeMLFatal(o);
-        }
-        if(args.LastError() != SO_SUCCESS)
+		}
+		if(args.LastError() != SO_SUCCESS)
 		{
 			std::ostringstream o;
-            o << "Error: " << mCmdLineImpl->getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
+			o << "Error: " << mCmdLineImpl->getLastErrorText(args) << " for: " << args.OptionText() << std::endl;
 			throw FastCodeMLFatal(o);
-        }
+		}
 
 		// Get the various options
 		int tmpi;
@@ -254,9 +254,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 
 		default:
 		case OPT_HELP:
-            std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+			std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 			std::cout << "Usage:" << std::endl;
-			std::cout << "    " << usage_msg << std::endl << std::endl;
+			std::cout << "	  " << usage_msg << std::endl << std::endl;
 			mCmdLineImpl->showHelp(parser_options);
 			throw FastCodeMLSuccess();
 
@@ -377,16 +377,16 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_NUM_THREADS:
-            mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
-          /*  if (mNumThreads == 1)
-                mForceSerial = true;*/
-            if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
+			mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
+		  /*  if (mNumThreads == 1)
+				mForceSerial = true;*/
+			if (mNumThreads <=0) throw FastCodeMLFatal("Invalid number of threads");
 			break;
 
-        case OPT_BRANCH_LENGTH:
-            mFixedBranchLength = true;
-            mBranchLengthsFromFile = true;
-            break;
+		case OPT_BRANCH_LENGTH:
+			mFixedBranchLength = true;
+			mBranchLengthsFromFile = true;
+			break;
 		}
 	}
 
@@ -402,7 +402,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		std::cout << "Missing PHYLIP CODON ALIGNMENT file" << std::endl << std::endl;
 		std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 		std::cout << "Usage:" << std::endl;
-		std::cout << "    " << usage_msg << std::endl << std::endl;
+		std::cout << "	  " << usage_msg << std::endl << std::endl;
 		mCmdLineImpl->showHelp(parser_options);
 		throw FastCodeMLFatal();
 

@@ -6,7 +6,7 @@
 #include "Exceptions.h"
 
 /// Max number of iterations to resolve codon frequencies in presence of ambiguous codons.
-static const int    CODON_FREQ_MAX_ITER  = 20;
+static const int	CODON_FREQ_MAX_ITER	 = 20;
 
 /// Max cumulative difference between an iteration and the next to stop iterations to resolve codon frequencies in presence of ambiguous codons.
 static const double CODON_FREQ_MAX_ERROR = 1e-12;
@@ -149,7 +149,7 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodon
 		{
 			int id = codon64to61(k);
 			if(id < 0) std::cout << std::setw(12) << 0;
-			else       std::cout << std::setw(12) << std::setprecision(3) << std::fixed << aCodonCount[id];
+			else	   std::cout << std::setw(12) << std::setprecision(3) << std::fixed << aCodonCount[id];
 			if(k % 4 == 3) std::cout << std::endl;
 		}
 		std::cout << std::endl;
@@ -160,22 +160,22 @@ void CodonFrequencies::setCodonFrequenciesF3x4(const std::vector<double>& aCodon
 
 	memset(fb3x4sg, 0, 12*sizeof(double));
 
-    for(k = 0; k < N64; k++)
-    {
+	for(k = 0; k < N64; k++)
+	{
 		int kk = codon64to61(k);
 		if(kk < 0) continue;
 
-        fb3x4sg[0 * 4 + k / 16]      += aCodonCount[kk];
-        fb3x4sg[1 * 4 + (k / 4) % 4] += aCodonCount[kk];
-        fb3x4sg[2 * 4 + k % 4]       += aCodonCount[kk];
-    }
+		fb3x4sg[0 * 4 + k / 16]		 += aCodonCount[kk];
+		fb3x4sg[1 * 4 + (k / 4) % 4] += aCodonCount[kk];
+		fb3x4sg[2 * 4 + k % 4]		 += aCodonCount[kk];
+	}
 
-    for(j = 0; j < 3; j++)
-    {
-        double t = 0;
+	for(j = 0; j < 3; j++)
+	{
+		double t = 0;
 		for(k=0; k < 4; ++k) t += fb3x4sg[j*4+k];
 		for(k=0; k < 4; ++k) fb3x4sg[j*4+k] /= t;
-    }
+	}
 
 	if(aShowMessages)
 	{

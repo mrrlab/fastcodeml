@@ -43,11 +43,11 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 
 	// Calculating f(x_h|w) 
 	// Order of site classes for iw or f(x_h|w):
-	//                     back   fore     #sets
-	//   site class 0:      w0     w0        10
-	//   site class 1:      w1=1   w1=1       1
-	//   site class 2a:     w0     w2       100
-	//   site class 2b:     w1=1   w2        10
+	//					   back	  fore	   #sets
+	//	 site class 0:		w0	   w0		 10
+	//	 site class 1:		w1=1   w1=1		  1
+	//	 site class 2a:		w0	   w2		100
+	//	 site class 2b:		w1=1   w2		 10
 	//
 	for(unsigned int iw=0; iw < BEB_NUM_CAT; ++iw)
 	{
@@ -62,15 +62,15 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 			omega_fg_is_one = omega_bg_is_one = true;
 		}
 		else if(iw < (BEB_N1D+1+BEB_N1D*BEB_N1D))				// class 2a: w0 w2
-		{                                  
-            omega_bg = prior_params[2][(iw-BEB_N1D-1) / BEB_N1D];
-            omega_fg = prior_params[3][(iw-BEB_N1D-1) % BEB_N1D];
+		{								   
+			omega_bg = prior_params[2][(iw-BEB_N1D-1) / BEB_N1D];
+			omega_fg = prior_params[3][(iw-BEB_N1D-1) % BEB_N1D];
 			omega_fg_is_one = omega_bg_is_one = false;
 		}
 		else													// class 2b: w1 w2
-		{                                                       
-            omega_bg = 1.;
-            omega_fg = prior_params[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
+		{														
+			omega_bg = 1.;
+			omega_fg = prior_params[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
 			omega_fg_is_one = false; omega_bg_is_one = true;
 		}
 
@@ -111,7 +111,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 		{
 			double p = likelihoods[site];
 			mPriors[iw*mNumSites+site] = (p > 0) ? log(p) : -184.2068074395237; // If p < 0 then the value in codeml.c is: log(1e-80);
- 		}
+		}
 	}
 
 	double scale = 0.;
@@ -200,7 +200,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 		}
 	}
 
-	// Calculate marginal prob of data, fX, and postpara[].  scale2 is scale.
+	// Calculate marginal prob of data, fX, and postpara[].	 scale2 is scale.
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
 	double fX = 1.;
 	double scale2 = -1e300;
@@ -213,7 +213,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	double postp0p1[BEB_N1D*BEB_N1D];
 	for(unsigned int k=0; k < BEB_N1D*BEB_N1D; k++) postp0p1[k] = 1.;
 
-   	for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
+	for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
 	{
 		// Get one point on the grid
 		unsigned int ip[BEB_DIMS];
@@ -297,7 +297,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	fX = log(fX)+scale2;
 
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
-		                                           << "  Scales = " << scale1 << " " << scale2 << std::endl;
+												   << "	 Scales = " << scale1 << " " << scale2 << std::endl;
 
 	// Calculate posterior probabilities for sites. scale1 is scale factor
 	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
@@ -308,7 +308,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 
 		for(unsigned int j=0; j < BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] = 1.;
 
-   		for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
+		for(unsigned int igrid=0; igrid < BEB_NGRID; ++igrid)
 		{
 			double fh = 0.;
 			double fhk[BEB_DIMS];
@@ -387,9 +387,9 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 
 		// Set significance
 		const char* sig;
-		if(prob > TWO_STARS_PROB)     sig = "**";
+		if(prob > TWO_STARS_PROB)	  sig = "**";
 		else if(prob > ONE_STAR_PROB) sig = "*";
-		else                          sig = "";
+		else						  sig = "";
 
 		std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 	}

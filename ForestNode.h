@@ -16,9 +16,9 @@ static const unsigned char ALL_CHILDREN_SAME_TREE = 0xFF;
 
 /// Support data needed only during forest preprocessing phase. It is deleted before the computation phase.
 ///
-///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///   @date 2011-11-08 (initial version)
-///   @version 1.1
+///	  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///	  @date 2011-11-08 (initial version)
+///	  @version 1.1
 ///
 struct ForestNodeSupport
 {
@@ -32,9 +32,9 @@ struct ForestNodeSupport
 
 /// One node of each tree in the forest.
 ///
-///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///   @date 2011-02-23 (initial version)
-///   @version 1.1
+///	  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///	  @date 2011-02-23 (initial version)
+///	  @version 1.1
 ///
 struct ForestNode
 {
@@ -255,11 +255,11 @@ struct ForestNode
 		for(i=0; i < aIndent; ++i) aOut << ' ';
 
 		// Print the name
-		aOut << '<' << ((mBranchId  != UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
+		aOut << '<' << ((mBranchId	!= UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
 
 		// Print the ID
 		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << '|' << mLeafCodon << ") ";
-		else                            aOut << '('                    << '|' << mBranchId << '|' << mLeafCodon << ") ";
+		else							aOut << '('					   << '|' << mBranchId << '|' << mLeafCodon << ") ";
 
 		// Print the indexes of the codons accumulated till this node
 		if(mPreprocessingSupport)

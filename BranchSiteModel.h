@@ -16,9 +16,9 @@ static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
 /// Common routines for testing the two hypotheses (H0 and H1).
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-23 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
 ///
 class BranchSiteModel
 {
@@ -40,17 +40,17 @@ protected:
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	/// @param[in] aMaxIterations Maximum number of iterations for the maximization
 	///
-	BranchSiteModel(Forest&      aForest,
-					size_t       aNumBranches,
-					size_t       aNumSites,
+	BranchSiteModel(Forest&		 aForest,
+					size_t		 aNumBranches,
+					size_t		 aNumSites,
 					unsigned int aSeed,
 					unsigned int aNumVariables,
-					bool         aOnlyInitialStep,
-					bool         aTrace,
+					bool		 aOnlyInitialStep,
+					bool		 aTrace,
 					unsigned int aOptAlgo,
-					double       aDeltaValueForGradient,
-					double       aRelativeError,
-					bool	     aNoParallel,
+					double		 aDeltaValueForGradient,
+					double		 aRelativeError,
+					bool		 aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
 					unsigned int aMaxIterations,
@@ -78,8 +78,8 @@ protected:
 //		  mRelativeError(aRelativeError),
 		  mFixedBranchLength(aFixedBranchLength),
 		  mBranches(aNumBranches),
-                  mSeed(aSeed),
-                  mRelativeError(aRelativeError)
+				  mSeed(aSeed),
+				  mRelativeError(aRelativeError)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}
@@ -345,8 +345,8 @@ protected:
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
 	bool						mNoParallel;		///< True if no preparation for multithreading should be done
-    bool                       mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
-    std::vector<double>		mBranches;          ///< Variable with the branch lengths
+	bool					   mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
+	std::vector<double>		mBranches;			///< Variable with the branch lengths
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -357,9 +357,9 @@ private:
 
 /// Null Hypothesis test.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-23 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
 ///
 ///
 class BranchSiteModelNullHyp : public BranchSiteModel
@@ -434,8 +434,8 @@ private:
 	double combineSiteLikelihoods(void);
 
 private:
-	TransitionMatrix 		mQw0;				///< Q matrix for the omega0 case
-	TransitionMatrix 		mQ1;				///< Q matrix for the omega1 == 1 case
+	TransitionMatrix		mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
 	ProbabilityMatrixSetH0	mSet;				///< Set of matrices used for the tree visits
 	ProbabilityMatrixSetH0	mSetForGradient;	///< Set of matrices used for the tree visits
 	double					mPrevK;				///< Previous k value used to compute matrices
@@ -448,9 +448,9 @@ private:
 
 /// Alternate Hypothesis test.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-23 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
 ///
 ///
 class BranchSiteModelAltHyp : public BranchSiteModel
@@ -525,7 +525,7 @@ private:
 private:
 	CheckpointableTransitionMatrix	mQw0;				///< Q matrix for the omega0 case
 	TransitionMatrix				mQw2;				///< Q matrix for the omega2 case
-	CheckpointableTransitionMatrix	mQ1;  				///< Q matrix for the omega1 == 1 case
+	CheckpointableTransitionMatrix	mQ1;				///< Q matrix for the omega1 == 1 case
 	ProbabilityMatrixSetH1			mSet;				///< Set of matrices used for the tree visits
 	ProbabilityMatrixSetH1			mSetForGradient;	///< Set of matrices used for the tree visits
 	double							mPrevK;				///< Previous k value used to compute matrices

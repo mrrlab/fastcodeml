@@ -43,9 +43,9 @@
 
 /// Main program for FastCodeML.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-22 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-22 (initial version)
+///		@version 1.1
 ///
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
@@ -75,17 +75,17 @@ int main(int aRgc, char **aRgv)
 	// Adjust and report the number of threads that will be used
 #ifdef _OPENMP
 	int num_threads = omp_get_max_threads();
-    //std::cout<<"max num of thr: "<< num_threads <<std::endl;
+	//std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
-     if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= (unsigned int)num_threads))
-        num_threads = cmd.mNumThreads;
-    // std::cout<<"num of thr: "<< num_threads <<std::endl;
+	 if((cmd.mNumThreads >=1)&&(cmd.mNumThreads <= (unsigned int)num_threads))
+		num_threads = cmd.mNumThreads;
+	// std::cout<<"num of thr: "<< num_threads <<std::endl;
 
-     omp_set_num_threads(num_threads);
-    /*if (num_threads < 2)
-        cmd.mForceSerial = true;
-     else
-        cmd.mForceSerial = false;*/
+	 omp_set_num_threads(num_threads);
+	/*if (num_threads < 2)
+		cmd.mForceSerial = true;
+	 else
+		cmd.mForceSerial = false;*/
 #else
 	cmd.mNumThreads=1;
 	int num_threads = 1;
@@ -110,7 +110,7 @@ int main(int aRgc, char **aRgv)
 	if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
-//    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+//	  std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
@@ -119,19 +119,19 @@ int main(int aRgc, char **aRgv)
 		std::cout << "FastCodeML V"<<version << std::endl;
 		std::cout << "------------------------------------"<<std::endl;
 		std::cout << std::endl;
-													std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
-													std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
+													std::cout << "Tree file:	  " << cmd.mTreeFile << std::endl;
+													std::cout << "Gene file:	  " << cmd.mGeneFile << std::endl;
 													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
-		if(cmd.mSeed)								std::cout << "Seed:           " << cmd.mSeed << std::endl;
-		if(cmd.mBranchFromFile)						std::cout << "Branch:         From tree file" << std::endl;
+		if(cmd.mSeed)								std::cout << "Seed:			  " << cmd.mSeed << std::endl;
+		if(cmd.mBranchFromFile)						std::cout << "Branch:		  From tree file" << std::endl;
 		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchStart == cmd.mBranchEnd)
-			                                        std::cout << "Branch:         " << cmd.mBranchStart << std::endl;
+													std::cout << "Branch:		  " << cmd.mBranchStart << std::endl;
 		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
-			                                        std::cout << "Branches:       " << cmd.mBranchStart << "-end" << std::endl;
+													std::cout << "Branches:		  " << cmd.mBranchStart << "-end" << std::endl;
 		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
-													std::cout << "Branches:       " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
-		if(!cmd.mStopIfNotLRT)						std::cout << "H0 pre stop:    No" << std::endl;
-		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:    Ignore" << std::endl;
+													std::cout << "Branches:		  " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
+		if(!cmd.mStopIfNotLRT)						std::cout << "H0 pre stop:	  No" << std::endl;
+		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:	  Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
 		else										std::cout << "Reduce forest:  Aggressive" << std::endl;
 		if(cmd.mInitH0fromH1)						std::cout << "Starting val.:  From H1" << std::endl;
@@ -139,31 +139,31 @@ int main(int aRgc, char **aRgv)
 													std::cout << "Starting val.:  Times from tree file and params from const (see below)" << std::endl;
 		else if(cmd.mInitFromParams)				std::cout << "Starting val.:  Params from const (see below)" << std::endl;
 		else if(cmd.mBranchLengthsFromFile)			std::cout << "Starting val.:  Times from tree file" << std::endl;
-		if(cmd.mNoMaximization)						std::cout << "Maximization:   No" << std::endl;
-		if(cmd.mTrace)								std::cout << "Trace:          On" << std::endl;
-		if(cmd.mCleanData)							std::cout << "Clean data:     On" << std::endl;
-		else										std::cout << "Clean data:     Off" << std::endl;
-		if(cmd.mGraphFile)							std::cout << "Graph file:     " << cmd.mGraphFile << std::endl;
+		if(cmd.mNoMaximization)						std::cout << "Maximization:	  No" << std::endl;
+		if(cmd.mTrace)								std::cout << "Trace:		  On" << std::endl;
+		if(cmd.mCleanData)							std::cout << "Clean data:	  On" << std::endl;
+		else										std::cout << "Clean data:	  Off" << std::endl;
+		if(cmd.mGraphFile)							std::cout << "Graph file:	  " << cmd.mGraphFile << std::endl;
 		if(cmd.mGraphFile && cmd.mExportComputedTimes != UINT_MAX)
-													std::cout << "Graph times:    From H" << cmd.mExportComputedTimes << std::endl;
-		if(!cmd.mNoMaximization)					std::cout << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
+													std::cout << "Graph times:	  From H" << cmd.mExportComputedTimes << std::endl;
+		if(!cmd.mNoMaximization)					std::cout << "Optimizer:	  " << cmd.mOptimizationAlgo << std::endl;
 		if(cmd.mMaxIterations != MAX_ITERATIONS)	std::cout << "Max iterations: " << cmd.mMaxIterations << std::endl;
-		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
+		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:	  " << cmd.mDeltaValueForGradient << std::endl;
 													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
-		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
-        if(cmd.mNumThreads)                         std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
-        if(cmd.mFixedBranchLength)                        std::cerr << "Branch lengths are fixed" << std::endl;
+		if(cmd.mResultsFile)						std::cout << "Results file:	  " << cmd.mResultsFile << std::endl;
+		if(cmd.mNumThreads)							std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
+		if(cmd.mFixedBranchLength)						  std::cerr << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
 		if(num_threads > 1)
 		{
-													std::cout << "Num. threads:   " << num_threads << std::endl
-		                                                      << "Num. cores:     " << omp_get_num_procs() << std::endl;
+													std::cout << "Num. threads:	  " << num_threads << std::endl
+															  << "Num. cores:	  " << omp_get_num_procs() << std::endl;
 		}
 		else
 #endif
 		{
-													std::cout << "Num. threads:   1 serial" << std::endl
-		                                                      << "Num. cores:     1"  << std::endl;
+													std::cout << "Num. threads:	  1 serial" << std::endl
+															  << "Num. cores:	  1"  << std::endl;
 		}
 #ifdef USE_MPI
 		if(hlc.numJobs() > 2)						std::cout << "Num. MPI proc:  1 (master) + " << hlc.numJobs()-1 << " (workers)" << std::endl;
@@ -244,7 +244,7 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mBranchLengthsFromFile)
 	{
 		int zero_on_leaf_cnt = 0;
-		int zero_on_int_cnt  = 0;
+		int zero_on_int_cnt	 = 0;
 		tree.countNullBranchLengths(zero_on_leaf_cnt, zero_on_int_cnt);
 
 		if(zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0)
@@ -386,13 +386,13 @@ int main(int aRgc, char **aRgv)
 					std::cout << std::setprecision(15) << std::fixed << lnl0;
 				else
 					std::cout << "(Doesn't pass LRT, skipping)";
-				std::cout << " Function calls: " << h0.getNumEvaluations() << "   ";
+				std::cout << " Function calls: " << h0.getNumEvaluations() << "	  ";
 				std::cout << std::endl << std::endl;
 				if(lnl0 != std::numeric_limits<double>::infinity())
 				{
-                    std::string s0 = h0.printFinalVars(std::cout);
-                    //std::cout<<"EDW0: "<< s0 <<std::endl;
-                    output_results.saveParameters(fg_branch, s0, 0);
+					std::string s0 = h0.printFinalVars(std::cout);
+					//std::cout<<"EDW0: "<< s0 <<std::endl;
+					output_results.saveParameters(fg_branch, s0, 0);
 				}
 				std::cout << std::endl;
 			}
@@ -407,9 +407,9 @@ int main(int aRgc, char **aRgv)
 				std::cout << std::endl << std::endl;
 				if(lnl1 != std::numeric_limits<double>::infinity())
 				{
-				    std::string s1= h1.printFinalVars(std::cout);
-				    //std::cout<<"EDW1: "<< s1 <<std::endl;
-				    output_results.saveParameters(fg_branch, s1, 1);
+					std::string s1= h1.printFinalVars(std::cout);
+					//std::cout<<"EDW1: "<< s1 <<std::endl;
+					output_results.saveParameters(fg_branch, s1, 1);
 				}
 				std::cout << std::endl;
 			}
@@ -418,7 +418,7 @@ int main(int aRgc, char **aRgv)
 				if(lnl0 == std::numeric_limits<double>::infinity() || lnl1 == std::numeric_limits<double>::infinity())
 					std::cout << "LRT: **Invalid result**";
 				else if(lnl0 < DBL_MAX)
-					std::cout << "LRT: " << std::setprecision(15) << std::fixed << lnl1 - lnl0 << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+					std::cout << "LRT: " << std::setprecision(15) << std::fixed << lnl1 - lnl0 << "	 (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 				else
 					std::cout << "LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
 				std::cout << std::endl;
@@ -561,94 +561,94 @@ The input `tree_file` is in %Newick format with the file containing only one tre
 @verbatim
 
 Usage:
-    FastCodeML [options] tree_file alignment_file
+	FastCodeML [options] tree_file alignment_file
 
--d  --debug  -v  --verbose (required argument)
-        Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
+-d	--debug	 -v	 --verbose (required argument)
+		Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
 
--q  --quiet (no argument)
-        No messages except results
+-q	--quiet (no argument)
+		No messages except results
 
--?  -h  --help (no argument)
-        This help
+-?	-h	--help (no argument)
+		This help
 
--s  --seed (required argument)
-        Random number generator seed (0 < seed < 1000000000)
+-s	--seed (required argument)
+		Random number generator seed (0 < seed < 1000000000)
 
--b  --branch (required argument)
-        Do only this branch as foreground branch (count from 0)
+-b	--branch (required argument)
+		Do only this branch as foreground branch (count from 0)
 
--bs  --branch-start (required argument)
-        Start computing from this branch as foreground one (count from 0) (default: first one)
+-bs	 --branch-start (required argument)
+		Start computing from this branch as foreground one (count from 0) (default: first one)
 
--be  --branch-end (required argument)
-        End computing at this branch as foreground one (count from 0) (default: last one)
+-be	 --branch-end (required argument)
+		End computing at this branch as foreground one (count from 0) (default: last one)
 
--i  --ignore-freq (no argument)
-        Ignore computed codon frequency and set all of them to 1/61
+-i	--ignore-freq (no argument)
+		Ignore computed codon frequency and set all of them to 1/61
 
--e  --export (required argument)
-        Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
+-e	--export (required argument)
+		Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
 
--nr  --no-reduce (no argument)
-        Do not reduce forest by merging common subtrees
+-nr	 --no-reduce (no argument)
+		Do not reduce forest by merging common subtrees
 
--l  --lengths-from-file  --times-from-file (no argument)
-        Initial branch lengths from tree file
+-l	--lengths-from-file	 --times-from-file (no argument)
+		Initial branch lengths from tree file
 
--o  --initial-step (no argument)
-        Only the initial step is performed (no maximization)
+-o	--initial-step (no argument)
+		Only the initial step is performed (no maximization)
 
--c  --export-comp-times (required argument)
-        Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree
+-c	--export-comp-times (required argument)
+		Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree
 
--r  --trace (no argument)
-        Trace the maximization run
+-r	--trace (no argument)
+		Trace the maximization run
 
--nt  --number-of-threads (required argument)
-        Number of threads (1 for non parallel execution)
+-nt	 --number-of-threads (required argument)
+		Number of threads (1 for non parallel execution)
 
--bf  --branch-from-file (no argument)
-        Do only the branch marked in the file as foreground branch
+-bf	 --branch-from-file (no argument)
+		Do only the branch marked in the file as foreground branch
 
--hy  --only-hyp (required argument)
-        Compute only H0 if 0, H1 if 1
+-hy	 --only-hyp (required argument)
+		Compute only H0 if 0, H1 if 1
 
--i1  --init-from-h1 (no argument)
-        Start H0 optimization from H1 results
+-i1	 --init-from-h1 (no argument)
+		Start H0 optimization from H1 results
 
--m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)
+-m	--maximizer (required argument)
+		Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)
 
--sd  --small-diff (required argument)
-        Delta used in gradient computation (default: 1.49e-8)
+-sd	 --small-diff (required argument)
+		Delta used in gradient computation (default: 1.49e-8)
 
--p  --init-param (required argument)
-        Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
+-p	--init-param (required argument)
+		Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
 
--ic  --init-default (no argument)
-        Start from default parameter values and times from tree file
+-ic	 --init-default (no argument)
+		Start from default parameter values and times from tree file
 
--x  --extra-debug (required argument)
-        Extra debug parameter (zero disables it)
+-x	--extra-debug (required argument)
+		Extra debug parameter (zero disables it)
 
--re  --relative-error (required argument)
-        Relative error where to stop maximization (default: 1e-3)
+-re	 --relative-error (required argument)
+		Relative error where to stop maximization (default: 1e-3)
 
--ou  --output (required argument)
-        Write results formatted to this file
+-ou	 --output (required argument)
+		Write results formatted to this file
 
--cl  --clean-data (no argument)
-        Remove ambiguous or missing sites from the MSA (default: no)
+-cl	 --clean-data (no argument)
+		Remove ambiguous or missing sites from the MSA (default: no)
 
--ps  --no-pre-stop (no argument)
-        Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
+-ps	 --no-pre-stop (no argument)
+		Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
 
--mi  --max-iterations (required argument)
-        Maximum number of iterations for the maximizer (default: 10000)
+-mi	 --max-iterations (required argument)
+		Maximum number of iterations for the maximizer (default: 10000)
 
--bl  --branch-lengths-fixed (no argument)
-        The length of the brances is fixed
+-bl	 --branch-lengths-fixed (no argument)
+		The length of the brances is fixed
 
 @endverbatim
 */
@@ -669,11 +669,11 @@ Usage:
 ///
 /// Before running the executable, define the following environment variables:
 ///
-///     export VT_BUFFER_SIZE=512M
-///     export VT_MAX_FLUSHES=0
-///     export VT_SYNCH_FLUSH=yes
-///     export VT_GPUTRACE=no
-///     export VT_UNIFY=no
+///		export VT_BUFFER_SIZE=512M
+///		export VT_MAX_FLUSHES=0
+///		export VT_SYNCH_FLUSH=yes
+///		export VT_GPUTRACE=no
+///		export VT_UNIFY=no
 ///
 /// Due to a VampirTrace bug, at the end of the execution, run the vtunify executable by itself.
 ///

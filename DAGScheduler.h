@@ -9,9 +9,9 @@
 
 /// The high-performance DAG scheduler. Visits the DAG obeying the dependencies.
 ///
-///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///   @date 2012-05-14 (initial version)
-///   @version 1.1
+///	  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///	  @date 2012-05-14 (initial version)
+///	  @version 1.1
 ///
 class DAGScheduler
 {

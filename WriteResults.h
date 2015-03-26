@@ -8,9 +8,9 @@
 
 /// Write all results to a given file.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-24 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-24 (initial version)
+///		@version 1.1
 ///
 ///
 class WriteResults
@@ -66,13 +66,13 @@ public:
 	const std::vector<size_t>& orderSites(const std::vector<unsigned int>& aSites) const;
 
 
-    /// Save the parameters string for later printing.
+	/// Save the parameters string for later printing.
 	///
 	/// @param[in] aFgBranch The foreground branch to which the log-likelihood refers
 	/// @param[in] aParamStr The parameters string
 	/// @param[in] aHypothesis The hypothesis (0 for H0 and 1 for H1) for which the log-likelihood has been computed
 	///
-    void saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis);
+	void saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis);
 
 private:
 	const char*					mFilename;			///< The file to which the results should be written. If null, no printing appear

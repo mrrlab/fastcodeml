@@ -76,7 +76,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	if(aTreeNode == NULL)
 	{
 		aTreeNode = &mTreeRoot;
-		aNodeId   = UINT_MAX;
+		aNodeId	  = UINT_MAX;
 		aForestNode->mParent = NULL;
 		id = 0;
 	}
@@ -96,7 +96,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	aForestNode->mInternalNodeId = (int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
-	// Set the pointers.        The sequence is: Branch -> Set -> Site -> 1:N
+	// Set the pointers.		The sequence is: Branch -> Set -> Site -> 1:N
 	// Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
@@ -167,7 +167,7 @@ void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const Tr
 		if(aTreeNode->getLen() < 1e-14)
 		{
 			if(aTreeNode->isLeaf()) ++aOnLeafCnt;
-			else                    ++aOnIntCnt;
+			else					++aOnIntCnt;
 		}
 	}
 
@@ -194,10 +194,10 @@ void PhyloTree::checkRootBranches(void) const
 		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 	}
 
-    if (cnt_root_branches == 2)
-    {
-        std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
-    }
+	if (cnt_root_branches == 2)
+	{
+		std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
+	}
 	// if it is an invalid tree then raise exception
 	if(cnt_root_branches < 2) throw FastCodeMLFatal("Root has only one branch. Invalid tree. Quitting.");
 

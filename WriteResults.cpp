@@ -46,7 +46,7 @@ void WriteResults::outputResults(void)
 
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
-		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "  LnL0: ";
+		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "	LnL0: ";
 
 		// Prints LnL for H0 if present
 		im = mLnL[0].find(branch);
@@ -60,7 +60,7 @@ void WriteResults::outputResults(void)
 			
 			ims = mParamStr[0].find(branch);
 			// This output does not work on BG/Q.
-                        //out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
+						//out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 
@@ -74,8 +74,8 @@ void WriteResults::outputResults(void)
 		{
 			out << std::setw(22) << std::setprecision(15) << std::fixed << im->second;
 
-            ims = mParamStr[1].find(branch);
-            out << std::endl<< std::fixed  <<"Branch lengths:" <<ims->second << std::endl;
+			ims = mParamStr[1].find(branch);
+			out << std::endl<< std::fixed  <<"Branch lengths:" <<ims->second << std::endl;
 		}
 		out << std::endl;
 	}
@@ -88,7 +88,7 @@ void WriteResults::outputResults(void)
 		if(ipss != mPositiveSelSites.end())
 		{
 			const std::vector<unsigned int>& site = ipss->second.first;
-			const std::vector<double>& prob       = ipss->second.second;
+			const std::vector<double>& prob		  = ipss->second.second;
 
 			const std::vector<size_t>& idx = orderSites(site);
 
@@ -116,7 +116,7 @@ const std::vector<size_t>& WriteResults::orderSites(const std::vector<unsigned i
 	mSiteOrder.clear();
 	std::multimap<unsigned int, size_t>::const_iterator im(ordered_map.begin());
 	std::multimap<unsigned int, size_t>::const_iterator endm(ordered_map.end());
-	for(; im != endm; ++im)  mSiteOrder.push_back(im->second);
+	for(; im != endm; ++im)	 mSiteOrder.push_back(im->second);
 
 	return mSiteOrder;
 }

@@ -18,7 +18,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	}
 
 	// Skip empty lines and verify the file has at least one line
-    std::string str;
+	std::string str;
 	do
 	{
 		if(!getline(in, str))
@@ -55,10 +55,10 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 	}
 
 	// Read and parse the genes
-    while(aSpecies.size() < nspecies && getline(in, str))
-    {
+	while(aSpecies.size() < nspecies && getline(in, str))
+	{
 		// Extract the specie name
-        if(str.empty()) continue;
+		if(str.empty()) continue;
 		size_t p1 = str.find_first_not_of(" \t\r");
 		if(p1 == std::string::npos) continue;
 		size_t p2 = str.find_first_of(" \t\r", p1);
@@ -85,7 +85,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 			if(!getline(in, str)) break;
 			p2 = 0;
 		}
-        aSequences.push_back(s);
+		aSequences.push_back(s);
 	}
 	in.close();
 

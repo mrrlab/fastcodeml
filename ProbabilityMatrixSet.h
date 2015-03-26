@@ -19,9 +19,9 @@
 
 /// Set of probability matrices for all branches of a tree.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-04-05 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2011-04-05 (initial version)
+///		@version 1.1
 ///
 class ProbabilityMatrixSet
 {
@@ -39,7 +39,7 @@ protected:
 	{
 		mMatrixSpace  = static_cast<double*>(alignedMalloc(sizeof(double)*aNumMatSets*aNumMatrices*MATRIX_SLOT, CACHE_LINE_ALIGN));
 		if(!mMatrixSpace) throw FastCodeMLMemoryError("Cannot allocate mMatrixSpace");
-		mMatrices     = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
+		mMatrices	  = static_cast<double**>(alignedMalloc(sizeof(double*)*aNumSets*aNumMatrices, CACHE_LINE_ALIGN));
 		if(!mMatrices) throw FastCodeMLMemoryError("Cannot allocate mMatrices");
 #ifdef NEW_LIKELIHOOD
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
@@ -108,18 +108,18 @@ public:
 		// Simply copy the symmetric matrix column
 		// instead of: dsymv_("U", &N, &D1, mMatrices[aSetIdx*mNumMatrices+aBranch], &N, aGin, &I1, &D0, aGout, &I1);
 		// The method is:
-	    //	for(i=0; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
+		//	for(i=0; i < aCodon; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][aCodon*N+i];
 		//	for(i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
 		// The special cases below are for accellerate the routine
 		switch(aCodon)
-        {
-        case 0:
-            for(int i=0; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N];
-            break;
+		{
+		case 0:
+			for(int i=0; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N];
+			break;
 		case 1:
-            aGout[0] = mMatrices[aSetIdx*mNumMatrices+aBranch][N];
-            for(int i=1; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+1];
-            break;
+			aGout[0] = mMatrices[aSetIdx*mNumMatrices+aBranch][N];
+			for(int i=1; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+1];
+			break;
 		default:
 			memcpy(aGout, mMatrices[aSetIdx*mNumMatrices+aBranch]+aCodon*N, aCodon*sizeof(double));
 			for(int i=aCodon; i < N; ++i) aGout[i] = mMatrices[aSetIdx*mNumMatrices+aBranch][i*N+aCodon];
@@ -195,9 +195,9 @@ protected:
 
 /// Set of probability matrices for all branches of a tree for the null hypothesis.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-07 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-07 (initial version)
+///		@version 1.1
 ///
 class ProbabilityMatrixSetH0 : public ProbabilityMatrixSet
 {
@@ -227,10 +227,10 @@ public:
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (p0+p1, p0/(p0+p1), w0, k, w2)
 	///
 	void fillMatrixSet(const TransitionMatrix& aQw0,
-						    const TransitionMatrix& aQ1,
+							const TransitionMatrix& aQ1,
 							double aSbg,
 							double aSfg,
-						    const std::vector<double>& aParams);
+							const std::vector<double>& aParams);
 
 	/// Restore the previous value for the aBranch matrices.
 	///
@@ -268,9 +268,9 @@ private:
 
 /// Set of probability matrices for all branches of a tree for the alternate hypothesis.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-07 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-07 (initial version)
+///		@version 1.1
 ///
 class ProbabilityMatrixSetH1 : public ProbabilityMatrixSet
 {
@@ -302,11 +302,11 @@ public:
 	/// @param[in] aParams Optimization parameters. First the branch lengths, then the variable parts (p0+p1, p0/(p0+p1), w0, k, w2)
 	///
 	void fillMatrixSet(const  TransitionMatrix& aQw0,
-						    const  TransitionMatrix& aQ1,
-						    const  TransitionMatrix& aQw2,
+							const  TransitionMatrix& aQ1,
+							const  TransitionMatrix& aQw2,
 							double aSbg,
 							double aSfg,
-						    const std::vector<double>& aParams);
+							const std::vector<double>& aParams);
 
 	/// Restore the previous value for the aBranch matrices.
 	///
@@ -345,9 +345,9 @@ private:
 
 /// Set of probability matrices for all branches of a tree for the BEB computation.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-20 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-20 (initial version)
+///		@version 1.1
 ///
 class ProbabilityMatrixSetBEB : public ProbabilityMatrixSet
 {

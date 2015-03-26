@@ -35,18 +35,18 @@ inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
 	double result;
    __m128d num1, num2, num3, num4;
 
-    num4 = _mm_setzero_pd();
+	num4 = _mm_setzero_pd();
 
-    for(int i=0; i < N-1; i += 2)
-    {
-        num1 = _mm_load_pd(aV1+i);
-        num2 = _mm_load_pd(aV2+i);
-        num3 = _mm_mul_pd(num1, num2);
-        num4 = _mm_add_pd(num4, num3);
-    }
-    num4 = _mm_hadd_pd(num4, num4);
-    _mm_store_sd(&result, num4);
-    result += aV1[60]*aV2[60];
+	for(int i=0; i < N-1; i += 2)
+	{
+		num1 = _mm_load_pd(aV1+i);
+		num2 = _mm_load_pd(aV2+i);
+		num3 = _mm_mul_pd(num1, num2);
+		num4 = _mm_add_pd(num4, num3);
+	}
+	num4 = _mm_hadd_pd(num4, num4);
+	_mm_store_sd(&result, num4);
+	result += aV1[60]*aV2[60];
 	return result;
 #endif
 #ifdef USE_LAPACK
@@ -70,20 +70,20 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 //#elif defined(__SSE2__)
 //	__m128d num1, num2, num3;
 //
-//    for(int i=0; i < N-1; )
-//    {
-//        num1 = _mm_load_pd(aVres+i);
-//        num2 = _mm_load_pd(aV+i);
-//        num3 = _mm_mul_pd(num1, num2);
-//        _mm_store_pd(aVres+i, num3);
+//	  for(int i=0; i < N-1; )
+//	  {
+//		  num1 = _mm_load_pd(aVres+i);
+//		  num2 = _mm_load_pd(aV+i);
+//		  num3 = _mm_mul_pd(num1, num2);
+//		  _mm_store_pd(aVres+i, num3);
 //		i += 2;
 //
-//        num1 = _mm_load_pd(aVres+i);
-//        num2 = _mm_load_pd(aV+i);
-//        num3 = _mm_mul_pd(num1, num2);
-//        _mm_store_pd(aVres+i, num3);
+//		  num1 = _mm_load_pd(aVres+i);
+//		  num2 = _mm_load_pd(aV+i);
+//		  num3 = _mm_mul_pd(num1, num2);
+//		  _mm_store_pd(aVres+i, num3);
 //		i += 2;
-//    }
+//	  }
 //	aVres[N-1] *= aV[N-1];
 //#else
 	// Manual unrolling gives the best results here

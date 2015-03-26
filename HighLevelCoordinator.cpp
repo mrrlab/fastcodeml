@@ -74,7 +74,7 @@ struct HighLevelCoordinator::WorkTable
 	{
 		double				mLnl[2];				///< Likelihood values for H0 and H1
 		std::vector<double> mHxVariables[2];		///< Variables for H0 and H1
-		std::vector<int>    mPositiveSelSites;		///< Sites (if any) under positive selection
+		std::vector<int>	mPositiveSelSites;		///< Sites (if any) under positive selection
 		std::vector<double>	mPositiveSelProbs;		///< Corresponding probabilities
 
 		/// Default constructor.
@@ -104,7 +104,7 @@ struct HighLevelCoordinator::WorkTable
 	///
 	/// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0, JOB_H1, JOB_BEB, JOB_SHUTDOWN);
 	///									  [1] to the fg branch number (or zero for JOB_SHUTDOWN);
-	///                                   [2] zero or the number of variables for a JOB_BEB or JOB_H0 requests
+	///									  [2] zero or the number of variables for a JOB_BEB or JOB_H0 requests
 	/// @param[in] aRank The current worker rank
 	/// @param[in] aInitFromH1 If true for a H0 request send back also all H1 variables
 	///
@@ -131,7 +131,7 @@ struct HighLevelCoordinator::WorkTable
 	/// Print completed branches.
 	/// This routine should be called after markJobFinished().
 	///
-	/// @param[in] aIdx  The identifier of the finished job (it is branch*JOBS_PER_BRANCH+job_type) as returned by markJobFinished().
+	/// @param[in] aIdx	 The identifier of the finished job (it is branch*JOBS_PER_BRANCH+job_type) as returned by markJobFinished().
 	///
 	void printFinishedBranch(int aIdx) const;
 
@@ -170,7 +170,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank, bool aIni
 			aJob[1] = static_cast<int>(branch);
 			aJob[2] = 0; // No additional data sent
 			mJobStatus[idx] = JOB_ASSIGNED;
-			mWorkList[idx]  = aRank;
+			mWorkList[idx]	= aRank;
 			return true;
 		}
 	}
@@ -185,7 +185,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank, bool aIni
 			aJob[1] = static_cast<int>(branch);
 			aJob[2] = (aInitFromH1) ? static_cast<int>(mResults[branch].mHxVariables[1].size())+1 : 1; // Send the lnl of the corresponding H1 step or mResults[branch].mHxVariables[1]
 			mJobStatus[idx] = JOB_ASSIGNED;
-			mWorkList[idx]  = aRank;
+			mWorkList[idx]	= aRank;
 			return true;
 		}
 	}
@@ -200,7 +200,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank, bool aIni
 			aJob[1] = static_cast<int>(branch);
 			aJob[2] = 0; // No additional data sent
 			mJobStatus[idx] = JOB_ASSIGNED;
-			mWorkList[idx]  = aRank;
+			mWorkList[idx]	= aRank;
 			return true;
 		}
 	}
@@ -229,7 +229,7 @@ bool HighLevelCoordinator::WorkTable::getNextJob(int* aJob, int aRank, bool aIni
 		// Mark it as assigned
 		size_t idx = branch*JOBS_PER_BRANCH+JOB_BEB;
 		mJobStatus[idx] = JOB_ASSIGNED;
-		mWorkList[idx]  = aRank;
+		mWorkList[idx]	= aRank;
 		return true;
 	}
 
@@ -313,7 +313,7 @@ void HighLevelCoordinator::WorkTable::skipOtherHypothesis(unsigned int aHypothes
 	// Skip the other computation and BEB
 	for(size_t branch=0; branch < mNumInternalBranches; ++branch)
 	{
-		mJobStatus[branch*JOBS_PER_BRANCH+h]       = JOB_SKIP;
+		mJobStatus[branch*JOBS_PER_BRANCH+h]	   = JOB_SKIP;
 		mJobStatus[branch*JOBS_PER_BRANCH+JOB_BEB] = JOB_SKIP;
 	}
 }
@@ -326,7 +326,7 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 	static const unsigned int VARS_PER_LINE = 8;
 	unsigned int count_per_line = 0;
 	static const std::streamsize VARS_PRECISION = 7;
-	static const std::streamsize VARS_WIDTH     = 11;
+	static const std::streamsize VARS_WIDTH		= 11;
 	
 	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
@@ -364,8 +364,8 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 				p[3] = (1.-v0)*(1.-(*ix));
 #endif
 
-				aOut <<   "p0:"  << std::setw(VARS_WIDTH) << p[0];
-				aOut << "  p1:"  << std::setw(VARS_WIDTH) << p[1];
+				aOut <<	  "p0:"	 << std::setw(VARS_WIDTH) << p[0];
+				aOut << "  p1:"	 << std::setw(VARS_WIDTH) << p[1];
 				aOut << "  p2a:" << std::setw(VARS_WIDTH) << p[2];
 				aOut << "  p2b:" << std::setw(VARS_WIDTH) << p[3];
 				aOut << std::endl;
@@ -400,12 +400,12 @@ HighLevelCoordinator::HighLevelCoordinator(int* aRgc, char*** aRgv) : mVerbose(0
 {
 #ifdef _OPENMP
 #ifdef VTRACE
-    const int requested = MPI_THREAD_SINGLE;
+	const int requested = MPI_THREAD_SINGLE;
 #else
 	const int requested = (omp_get_max_threads() <= 1) ? MPI_THREAD_SINGLE : MPI_THREAD_FUNNELED; // Change to MPI_THREAD_SERIALIZED if master process do more
 #endif
 #else
-    const int requested = MPI_THREAD_SINGLE;
+	const int requested = MPI_THREAD_SINGLE;
 #endif
 	int provided = MPI_THREAD_SINGLE;
 	int mpi_status = MPI_Init_thread(aRgc, aRgv, requested, &provided);
@@ -505,7 +505,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 
 	// Prepare variables to hold results from workers
 	std::vector<double> results_double;
-	std::vector<int>    results_integer;
+	std::vector<int>	results_integer;
 
 	for(;;)
 	{
@@ -530,9 +530,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			MPI_Recv(static_cast<void*>(&results_double[0]), job_request[1], MPI_DOUBLE, worker, MSG_GET_RESULTS, MPI_COMM_WORLD, &status);
 
 			// Mark the step as done (and compute branch and hypothesis)
-			int idx    = mWorkTable->markJobFinished(worker);
+			int idx	   = mWorkTable->markJobFinished(worker);
 			int branch = idx / JOBS_PER_BRANCH;
-			int h      = idx % JOBS_PER_BRANCH;
+			int h	   = idx % JOBS_PER_BRANCH;
 
 			// Save all results (lnl + all variables)
 			// For H1 there are also the two scale values at the end of variables for BEB computation
@@ -567,7 +567,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			}
 
 			// Mark the step as done (and compute branch)
-			int idx    = mWorkTable->markJobFinished(worker);
+			int idx	   = mWorkTable->markJobFinished(worker);
 			int branch = idx / JOBS_PER_BRANCH;
 
 			// Save all results (positive selection sites and corresponding probability)
@@ -652,7 +652,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 				std::cout << "Sent BEB [branch " << job[1] << "] to " << worker << std::endl;
 				break;
 			case JOB_SHUTDOWN:
-				std::cout << "Sent SHUTDOWN to "                      << worker << std::endl;
+				std::cout << "Sent SHUTDOWN to "					  << worker << std::endl;
 				break;
 			default:
 				std::cout << "Sent " << job[0] << " [branch " << job[1] << "] to " <<  worker << std::endl;
@@ -683,35 +683,35 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 		// Skip branches that were not computed
 		if(mWorkTable->mJobStatus[branch*JOBS_PER_BRANCH+JOB_H1] == JOB_SKIP) continue;
 
-		std::cout << "Branch: "   << std::fixed << std::setw(3) << branch;
+		std::cout << "Branch: "	  << std::fixed << std::setw(3) << branch;
 		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity())
 		{
-			std::cout << "  Lnl H0: " << std::setw(24) << "Inf";
+			std::cout << "	Lnl H0: " << std::setw(24) << "Inf";
 		}
 		else if(mWorkTable->mResults[branch].mLnl[0] == DBL_MAX)
 		{
-			std::cout << "  Lnl H0: " << std::setw(24) << "NA";
+			std::cout << "	Lnl H0: " << std::setw(24) << "NA";
 		}
 		else
 		{
-			std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
+			std::cout << "	Lnl H0: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[0];
 		}
 		if(mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
 		{
-			std::cout << "  Lnl H1: " << std::setw(24) << "Inf";
+			std::cout << "	Lnl H1: " << std::setw(24) << "Inf";
 		}
 		else
 		{
-			std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
+			std::cout << "	Lnl H1: " << std::setw(24) << std::setprecision(15) << mWorkTable->mResults[branch].mLnl[1];
 		}
 		if(mWorkTable->mResults[branch].mLnl[0] == std::numeric_limits<double>::infinity() || mWorkTable->mResults[branch].mLnl[1] == std::numeric_limits<double>::infinity())
 		{
-			std::cout << "  LRT: " << std::setw(24) << "*Invalid*";
+			std::cout << "	LRT: " << std::setw(24) << "*Invalid*";
 		}
 		else if(mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
-			std::cout << "  LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "  (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+			std::cout << "	LRT: " << std::setw(24) << std::setprecision(15) << std::fixed << mWorkTable->mResults[branch].mLnl[1] - mWorkTable->mResults[branch].mLnl[0] << "	(threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
 		else
-			std::cout << "  LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+			std::cout << "	LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
 		std::cout << std::endl;
 		std::cout << std::endl;
 		if(mWorkTable->mResults[branch].mLnl[0] != std::numeric_limits<double>::infinity() && mWorkTable->mResults[branch].mLnl[0] != DBL_MAX) mWorkTable->printVariables(branch, 0, std::cout);
@@ -747,7 +747,7 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 			std::vector<double> probs;
 			size_t current_idx = 0;
 
-			std::cout << "Branch: "   << std::fixed << std::setw(3) << *ib << std::endl;
+			std::cout << "Branch: "	  << std::fixed << std::setw(3) << *ib << std::endl;
 			for(size_t pss=0; pss < branch_results.mPositiveSelSites.size(); ++pss)
 			{
 				// Get probability
@@ -768,9 +768,9 @@ void HighLevelCoordinator::doMaster(WriteResults& aOutputResults, const CmdLine&
 
 				// Set significance
 				const char* sig;
-				if(prob > TWO_STARS_PROB)     sig = "**";
+				if(prob > TWO_STARS_PROB)	  sig = "**";
 				else if(prob > ONE_STAR_PROB) sig = "*";
-				else                          sig = "";
+				else						  sig = "";
 
 				std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed << std::setprecision(6) << prob << sig << std::endl;
 			}
@@ -793,8 +793,8 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 	// Variables for communication between master and workers
 	std::vector<double> values_double;
-	std::vector<int>    values_integer;
-	MPI_Status          status;
+	std::vector<int>	values_integer;
+	MPI_Status			status;
 
 	for(;;)
 	{
@@ -887,7 +887,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 			// Extract the results
 			std::vector<unsigned int> positive_sel_sites;
-			std::vector<double>       positive_sel_sites_prob;
+			std::vector<double>		  positive_sel_sites_prob;
 			beb.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
 			size_t num_sites = positive_sel_sites.size();
 

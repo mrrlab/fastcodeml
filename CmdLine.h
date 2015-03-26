@@ -16,9 +16,9 @@ static const unsigned int MAX_ITERATIONS=10000;
 
 /// Parse the command line flags.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-22 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-22 (initial version)
+///		@version 1.1
 ///
 ///
 class CmdLine
@@ -54,7 +54,7 @@ public:
 #ifdef _OPENMP
 		mNumThreads(omp_get_max_threads()),
 #else
-        mNumThreads(1),
+		mNumThreads(1),
 #endif
 		mForceSerial(false),
 		mBranchFromFile(false),
@@ -63,8 +63,8 @@ public:
 		mCleanData(false),
 		mStopIfNotLRT(true),
 //		mCmdLineImpl(NULL),
-        	mFixedBranchLength(false),
-                mCmdLineImpl(NULL)
+			mFixedBranchLength(false),
+				mCmdLineImpl(NULL)
 
 	{}
 
@@ -106,14 +106,14 @@ public:
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
-        unsigned int    	mNumThreads;                    ///< Number of threads (if 1 the parallelization is disabled)
+		unsigned int		mNumThreads;					///< Number of threads (if 1 the parallelization is disabled)
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
-    	bool          		 mFixedBranchLength;           ///<fixed branch lengths
+		bool				 mFixedBranchLength;		   ///<fixed branch lengths
 
 
 

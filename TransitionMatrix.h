@@ -20,9 +20,9 @@
 
 /// The transition matrix plus its eigendecomposition.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2011-02-23 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2011-02-23 (initial version)
+///		@version 1.1
 ///
 class TransitionMatrix
 {
@@ -122,15 +122,15 @@ public:
 #else
 		// Manual unrolling gives the best results here.
 		// Remember, the eigenvalues are stored in reverse order
-        for(int j=0; j < N-1; )
-        {
-            tmp[j] = tm*mD[N-1-j]; ++j;
-            tmp[j] = tm*mD[N-1-j]; ++j;
-            tmp[j] = tm*mD[N-1-j]; ++j;
-            tmp[j] = tm*mD[N-1-j]; ++j;
-            tmp[j] = tm*mD[N-1-j]; ++j;
-            tmp[j] = tm*mD[N-1-j]; ++j;
-        }
+		for(int j=0; j < N-1; )
+		{
+			tmp[j] = tm*mD[N-1-j]; ++j;
+			tmp[j] = tm*mD[N-1-j]; ++j;
+			tmp[j] = tm*mD[N-1-j]; ++j;
+			tmp[j] = tm*mD[N-1-j]; ++j;
+			tmp[j] = tm*mD[N-1-j]; ++j;
+			tmp[j] = tm*mD[N-1-j]; ++j;
+		}
 		tmp[60] = tm*mD[0];
 
 		vdExp(N, tmp, expt);
@@ -194,8 +194,8 @@ private:
 
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4324) // Padding added due to alignment request
+	#pragma warning(push)
+	#pragma warning(disable: 4324) // Padding added due to alignment request
 #endif
 
 protected:
@@ -218,16 +218,16 @@ protected:
 	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif
 };
 
 
 /// The transition matrix that can be saved ad restored afterwards.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2012-09-07 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2012-09-07 (initial version)
+///		@version 1.1
 ///
 class CheckpointableTransitionMatrix : public TransitionMatrix
 {
@@ -250,8 +250,8 @@ public:
 	double restoreCheckpoint(void);
 
 #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4324) // Padding added due to alignment request
+	#pragma warning(push)
+	#pragma warning(disable: 4324) // Padding added due to alignment request
 #endif
 
 private:
@@ -266,7 +266,7 @@ private:
 	double ALIGN64	mSavedD[N];			///< The matrix eigenvalues stored in reverse order
 
 #ifdef _MSC_VER
-    #pragma warning(pop)
+	#pragma warning(pop)
 #endif
 };
 

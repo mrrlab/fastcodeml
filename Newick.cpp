@@ -1,7 +1,7 @@
 
 #ifdef _MSC_VER
-    #pragma warning(disable: 4512) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
-    #pragma warning(disable: 4503) // warning C4503: '...' : decorated name length exceeded, name was truncated
+	#pragma warning(disable: 4512) // warning C4512: 'boost::spirit::classic::optional<S>' : assignment operator could not be generated
+	#pragma warning(disable: 4503) // warning C4503: '...' : decorated name length exceeded, name was truncated
 #endif
 
 #include <iostream>
@@ -26,15 +26,15 @@ void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int 
 	// Print the node (after getting the node id)
 	boost::spirit::classic::parser_id id = aTreeIterator->value.id();
 
-         if(id == NewickGrammar::treeID)      std::cout << "TREE";
-    else if(id == NewickGrammar::nodelistID)  std::cout << "NODELST";
-    else if(id == NewickGrammar::subtreeID)   std::cout << "SUBTREE";
-    else if(id == NewickGrammar::fulllabelID) std::cout << "FLAB";
-    else if(id == NewickGrammar::labelID)     std::cout << "LABEL";
-    else if(id == NewickGrammar::markerID)    std::cout << "MARKER";
-    else if(id == NewickGrammar::branchlenID) std::cout << "BRANCHLEN";
-    else if(id == NewickGrammar::cblenID)     std::cout << "CBLEN";
-    else									  std::cout << "????";
+		 if(id == NewickGrammar::treeID)	  std::cout << "TREE";
+	else if(id == NewickGrammar::nodelistID)  std::cout << "NODELST";
+	else if(id == NewickGrammar::subtreeID)	  std::cout << "SUBTREE";
+	else if(id == NewickGrammar::fulllabelID) std::cout << "FLAB";
+	else if(id == NewickGrammar::labelID)	  std::cout << "LABEL";
+	else if(id == NewickGrammar::markerID)	  std::cout << "MARKER";
+	else if(id == NewickGrammar::branchlenID) std::cout << "BRANCHLEN";
+	else if(id == NewickGrammar::cblenID)	  std::cout << "CBLEN";
+	else									  std::cout << "????";
 
 	// Print the corresponding label if any
 	if(aTreeIterator->value.begin() != aTreeIterator->value.end())
@@ -54,106 +54,106 @@ void Newick::printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int 
 
 void Newick::evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNode *aNode)
 {
-    unsigned int k;
+	unsigned int k;
 
 	// Get the node id
 	boost::spirit::classic::parser_id id = aTreeIterator->value.id();
 
-    //if(aTreeIterator->value.id() == NewickGrammar::treeID)
-    if(id == NewickGrammar::treeID)
-    {
-        //std::cout << "tree (" << std::endl;
-        for(k=0; k < aTreeIterator->children.size(); ++k)
-            evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-        //std::cout << ")" << std::endl;
-    }
-    else if(id == NewickGrammar::nodelistID)
-    {
-        //std::cout << "node_list {" << std::endl;
+	//if(aTreeIterator->value.id() == NewickGrammar::treeID)
+	if(id == NewickGrammar::treeID)
+	{
+		//std::cout << "tree (" << std::endl;
+		for(k=0; k < aTreeIterator->children.size(); ++k)
+			evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+		//std::cout << ")" << std::endl;
+	}
+	else if(id == NewickGrammar::nodelistID)
+	{
+		//std::cout << "node_list {" << std::endl;
 		//TreeNode* x = new TreeNode;
 		//n->addChild(x);
-        for(k=0; k < aTreeIterator->children.size(); ++k)
-            evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-        //std::cout << "}" << std::endl;
-    }
-    else if(id == NewickGrammar::subtreeID)
-    {
-        //std::cout << "subtree [" << std::endl;
+		for(k=0; k < aTreeIterator->children.size(); ++k)
+			evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+		//std::cout << "}" << std::endl;
+	}
+	else if(id == NewickGrammar::subtreeID)
+	{
+		//std::cout << "subtree [" << std::endl;
 		TreeNode* x = new TreeNode;
 		aNode->addChild(x);
 		x->addParent(aNode);
-        for(k=0; k < aTreeIterator->children.size(); ++k)
-            evaluateTreeNode(aTreeIterator->children.begin()+k, x);
-        //std::cout << "]" << std::endl;
-    }
-    else if(id == NewickGrammar::fulllabelID)
-    {
-        //std::cout << "full_label " << std::endl;
-        for(k=0; k < aTreeIterator->children.size(); ++k)
-            evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-    }
-    else if(id == NewickGrammar::labelID)
-    {
-        if(aTreeIterator->children.size() == 0)
+		for(k=0; k < aTreeIterator->children.size(); ++k)
+			evaluateTreeNode(aTreeIterator->children.begin()+k, x);
+		//std::cout << "]" << std::endl;
+	}
+	else if(id == NewickGrammar::fulllabelID)
+	{
+		//std::cout << "full_label " << std::endl;
+		for(k=0; k < aTreeIterator->children.size(); ++k)
+			evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+	}
+	else if(id == NewickGrammar::labelID)
+	{
+		if(aTreeIterator->children.size() == 0)
 		{
 			std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
-            //std::cout << "label " << label_name << std::endl;
+			//std::cout << "label " << label_name << std::endl;
 			aNode->addLabel(label_name);
-        }
+		}
 		else
 		{
 			for(k=0; k < aTreeIterator->children.size(); ++k)
-            	evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-    	}
+				evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+		}
 	}
-    else if(id == NewickGrammar::markerID)
-    {
-        if(aTreeIterator->children.size() == 0)
+	else if(id == NewickGrammar::markerID)
+	{
+		if(aTreeIterator->children.size() == 0)
 		{
 			std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
-            //std::cout << "type " << label_name << std::endl;
+			//std::cout << "type " << label_name << std::endl;
 			aNode->addType(label_name);
-        }
+		}
 		else
 		{
 			for(k=0; k < aTreeIterator->children.size(); ++k)
-            	evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-    	}
+				evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+		}
 	}
-    else if(id == NewickGrammar::branchlenID)
-    {
-        if(aTreeIterator->children.size() == 0)
+	else if(id == NewickGrammar::branchlenID)
+	{
+		if(aTreeIterator->children.size() == 0)
 		{
 			std::string blen(aTreeIterator->value.begin(), aTreeIterator->value.end());
-            //std::cout << "branch_length " << atof(blen.c_str())<< std::endl;
+			//std::cout << "branch_length " << atof(blen.c_str())<< std::endl;
 			aNode->addLen(atof(blen.c_str()));
-        }
+		}
 		else
 		{
 			for(k=0; k < aTreeIterator->children.size(); ++k)
-            	evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+				evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
 		}
-    }
-    else if(id == NewickGrammar::cblenID)
-    {
-        //std::cout << "colon_plus_len " << std::endl;
-        for(k=0; k < aTreeIterator->children.size(); ++k)
-            evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
-    }
-    else
-    {
-        std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
+	}
+	else if(id == NewickGrammar::cblenID)
+	{
+		//std::cout << "colon_plus_len " << std::endl;
+		for(k=0; k < aTreeIterator->children.size(); ++k)
+			evaluateTreeNode(aTreeIterator->children.begin()+k, aNode);
+	}
+	else
+	{
+		std::string label_name(aTreeIterator->value.begin(), aTreeIterator->value.end());
 		std::ostringstream o;
-        o << "*** " << label_name << std::endl;
+		o << "*** " << label_name << std::endl;
 		throw FastCodeMLFatal(o);
-    }
+	}
 }
 
 
 void Newick::readFile(const char *aFilename)
 {
 	// Open the tree file
-    std::ifstream in(aFilename);
+	std::ifstream in(aFilename);
 	if(!in)
 	{
 		std::ostringstream o;
@@ -163,12 +163,12 @@ void Newick::readFile(const char *aFilename)
 
 	// Cleaning step. Should not be necessary after fixing the grammar...
 	// Find the tree definition start
-    std::string str;
-    size_t p1 = std::string::npos;
-    while(getline(in, str))
+	std::string str;
+	size_t p1 = std::string::npos;
+	while(getline(in, str))
 	{
-        p1 = str.find_first_of('(');
-        if(p1 != std::string::npos) break;
+		p1 = str.find_first_of('(');
+		if(p1 != std::string::npos) break;
 	}
 	in.close();
 	if(p1 == std::string::npos)
@@ -180,7 +180,7 @@ void Newick::readFile(const char *aFilename)
 
 	// Find the tree definition end
 	size_t p2 = str.rfind(';');
-    if(p2 == std::string::npos)
+	if(p2 == std::string::npos)
 	{
 		std::ostringstream o;
 		o << "File \"" << aFilename << "\" is empty (cannot find ending semicolon)." << std::endl;
@@ -201,7 +201,7 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 {
 	// Clear the tree and initialize the parser
 	mTreeRoot.clearNode();
-    NewickGrammar tree;
+	NewickGrammar tree;
 
 	// Parse the tree
 	tree_parse_info<> info = pt_parse(aTreeAsString.c_str(), tree);
