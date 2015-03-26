@@ -86,7 +86,7 @@ const double** ProbabilityMatrixSetH0::getChangedMatrices(size_t aBranch)
 
 	return mMatricesPtr;
 }
-	
+
 void ProbabilityMatrixSetH0::setMatrices(size_t aBranch, const double** aMatricesPtr)
 {
 	memcpy(&mMatrixSpace[0*mNumMatrices*MATRIX_SLOT+aBranch*MATRIX_SLOT], aMatricesPtr[0], N*N*sizeof(double));

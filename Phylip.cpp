@@ -107,7 +107,7 @@ void Phylip::loadData(const char* aFilename, std::vector<std::string>& aSpecies,
 			throw FastCodeMLFatal(o);
 		}
 	}
-	
+
 	// Other sanity checks
 	if(nbasis % 3)
 	{

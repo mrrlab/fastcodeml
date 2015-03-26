@@ -72,14 +72,14 @@ void DAGScheduler::dumpDAG(std::ostream& aOut) const
 		aOut << std::hex << *ind << ' ' << std::setw(6) << v << std::endl;
 	}
 	aOut << '#' << std::endl;
-	
+
 	// Then output all edges
 	std::vector<std::pair<const void*, const void*> >::const_iterator ied = mEdges.begin();
 	for(; ied != mEdges.end(); ++ied)
 	{
 		aOut << ied->first << ' ' << ied->second << std::endl;
 	}
-	
+
 	// For debug print the reference counts
 	std::map<const void*, int>::const_iterator irc = mRefCounter.begin();
 	for(; irc != mRefCounter.end(); ++irc)

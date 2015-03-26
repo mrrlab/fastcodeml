@@ -126,7 +126,7 @@
 ///			 returns this value as the first entry of the IWORK array, and
 ///			 no error message related to LIWORK is issued by XERBLA.
 ///
-///	 @param[out] info 
+///	 @param[out] info
 ///			 = 0:  successful exit
 ///			 < 0:  if INFO = -i, the i-th argument had an illegal value
 ///			 > 0:  Internal error
@@ -158,31 +158,31 @@ extern "C" void dsyevr_(const char *jobz,
 ///	  DSYEVD computes all eigenvalues and, optionally, eigenvectors of a
 ///	  real symmetric matrix A. If eigenvectors are desired, it uses a
 ///	  divide and conquer algorithm.
-///	
+///
 ///	  The divide and conquer algorithm makes very mild assumptions about
 ///	  floating point arithmetic. It will work on machines with a guard
 ///	  digit in add/subtract, or on those binary machines without guard
 ///	  digits which subtract like the Cray X-MP, Cray Y-MP, Cray C-90, or
 ///	  Cray-2. It could conceivably fail on hexadecimal or decimal machines
 ///	  without guard digits, but we know of none.
-///	
+///
 ///	  Because of large use of BLAS of level 3, DSYEVD needs N**2 more
 ///	  workspace than DSYEVX.
-///	
+///
 ///	  Arguments
 ///	  =========
-///	
+///
 ///	  @param[in] jobz	 (input) CHARACTER*1
 ///			  = 'N':  Compute eigenvalues only;
 ///			  = 'V':  Compute eigenvalues and eigenvectors.
-///	
+///
 ///	  @param[in] uplo	 (input) CHARACTER*1
 ///			  = 'U':  Upper triangle of A is stored;
 ///			  = 'L':  Lower triangle of A is stored.
-///	
+///
 ///	  @param[in] n		 (input) INTEGER
 ///			  The order of the matrix A.  N >= 0.
-///	
+///
 ///	  @param[in,out] a		 (input/output) DOUBLE PRECISION array, dimension (LDA, N)
 ///			  On entry, the symmetric matrix A.	 If UPLO = 'U', the
 ///			  leading N-by-N upper triangular part of A contains the
@@ -194,16 +194,16 @@ extern "C" void dsyevr_(const char *jobz,
 ///			  If JOBZ = 'N', then on exit the lower triangle (if UPLO='L')
 ///			  or the upper triangle (if UPLO='U') of A, including the
 ///			  diagonal, is destroyed.
-///	
+///
 ///	  @param[in] lda	 (input) INTEGER
 ///			  The leading dimension of the array A.	 LDA >= max(1,N).
-///	
+///
 ///	  @param[out] w		  (output) DOUBLE PRECISION array, dimension (N)
 ///			  If INFO = 0, the eigenvalues in ascending order.
-///	
+///
 ///	  @param[out] work	  (workspace/output) DOUBLE PRECISION array, dimension (LWORK)
 ///			  On exit, if INFO = 0, WORK(1) returns the optimal LWORK.
-///	
+///
 ///	  @param[in] lwork	 (input) INTEGER
 ///			  The dimension of the array WORK.
 ///			  If N <= 1,			   LWORK must be at least 1.
@@ -214,10 +214,10 @@ extern "C" void dsyevr_(const char *jobz,
 ///			  arrays, returns these values as the first entries of the WORK
 ///			  and IWORK arrays, and no error message related to LWORK or
 ///			  LIWORK is issued by XERBLA.
-///	
+///
 ///	  @param[out] iwork	  (workspace/output) INTEGER array, dimension (MAX(1,LIWORK))
 ///			  On exit, if INFO = 0, IWORK(1) returns the optimal LIWORK.
-///	
+///
 ///	  @param[in] liwork	 (input) INTEGER
 ///			  The dimension of the array IWORK.
 ///			  If N <= 1,				LIWORK must be at least 1.
@@ -228,7 +228,7 @@ extern "C" void dsyevr_(const char *jobz,
 ///			  IWORK arrays, returns these values as the first entries of
 ///			  the WORK and IWORK arrays, and no error message related to
 ///			  LWORK or LIWORK is issued by XERBLA.
-///	
+///
 ///	  @param[out] info	  (output) INTEGER
 ///			  = 0:	successful exit
 ///			  < 0:	if INFO = -i, the i-th argument had an illegal value
@@ -239,7 +239,7 @@ extern "C" void dsyevr_(const char *jobz,
 ///					to compute an eigenvalue while working on the submatrix
 ///					lying in rows and columns INFO/(N+1) through
 ///					mod(INFO,N+1).
-///	
+///
 extern "C" void dsyevd_(const char *jobz,
 						const char *uplo,
 						const int *n,

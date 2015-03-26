@@ -100,8 +100,8 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	// Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
 	for(int i=0; i < Nt; ++i)
 	{
-		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)]; 
-		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)]; 
+		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)];
+		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)];
 	}
 #endif
 

@@ -97,7 +97,7 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 
 	// Number of dependencies classes
 	size_t nc = tree_groups_dependencies.size();
-	
+
 	// One dependency classes
 	std::vector<unsigned int> one_class;
 

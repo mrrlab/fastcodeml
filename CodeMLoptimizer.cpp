@@ -17,13 +17,13 @@ inline static double square(double a) {return a*a;}
 inline static void	 zero(double x[], int n) {memset(x, 0, n*sizeof(double));}
 inline static void	 xtoy(const double x[], double y[], int n) {memcpy(y, x, n*sizeof(double));}
 
-inline static void identityMatrix(double* x, int n) 
+inline static void identityMatrix(double* x, int n)
 {
 	memset(x, 0, n*n*sizeof(double));
 	for(int i = 0; i < n; i++) x[i*n + i] = 1.0;
 }
 
-static inline double norm(const double x[], int n) 
+static inline double norm(const double x[], int n)
 {
 #ifdef USE_LAPACK
 	return dnrm2_(&n, x, &I1);
@@ -36,7 +36,7 @@ static inline double norm(const double x[], int n)
 #endif
 }
 
-static inline double innerp(const double x[], const double y[], int n) 
+static inline double innerp(const double x[], const double y[], int n)
 {
 #ifdef USE_LAPACK
 	return ddot_(&n, x, &I1, y, &I1);
@@ -49,7 +49,7 @@ static inline double innerp(const double x[], const double y[], int n)
 #endif
 }
 
-static inline double distance(const double* RESTRICT x, const double* RESTRICT y, int n) 
+static inline double distance(const double* RESTRICT x, const double* RESTRICT y, int n)
 {
 	double t = 0;
 

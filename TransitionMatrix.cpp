@@ -368,7 +368,7 @@ void TransitionMatrix::eigenRealSymm(double* aU, int aDim, double* aR, double* /
 	{
 		work = new double[lwork];
 		//std::cout << "Optimal work:  " << lwork << " (" << lfwork << ")" << std::endl;
-		
+
 	}
 	if(liwork > lfiwork)
 	{

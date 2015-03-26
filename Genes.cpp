@@ -14,10 +14,10 @@
 
 Genes::~Genes()
 {
-	mDnaSpecies.clear();		
-	mDnaGene.clear();			
-	mSiteMultiplicity.clear();	
-	mMapSiteToDnaGene.clear();	
+	mDnaSpecies.clear();
+	mDnaGene.clear();
+	mSiteMultiplicity.clear();
+	mMapSiteToDnaGene.clear();
 	mMapSpecieToDnaGene.clear();
 	mSitesMappingToOriginal.clear();
 	mMapCodonToPosition.clear();
@@ -186,7 +186,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 			}
 
 			// It is a gap if the codon is completely ambiguous
-			if(len < 61) break; 
+			if(len < 61) break;
 		}
 		if(i == nspecies)
 		{
@@ -241,7 +241,7 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 		std::cout << "Num. species: " << std::setw(6) << nspecies << std::endl;
 		std::cout << "Num. basis:	" << std::setw(6) << nbasis << std::endl;
 		std::cout << "Valid codons: " << std::setw(6) << valid_codons << "/" << ncodons << std::endl;
-		if(num_ambiguous) std::cout 
+		if(num_ambiguous) std::cout
 				  << "Ambiguous:	" << std::setw(6) << num_ambiguous << "/" << ncodons << std::endl;
 		if(num_gaps) std::cout
 				  << "Gaps removed: " << std::setw(6) << num_gaps << std::endl;
@@ -402,9 +402,9 @@ void Genes::initFullCodonMap(void)
 			for(k=1; k < 16; ++k)
 			{
 				// Build one of the possible codons (valid and ambiguous)
-				codona[0] = amb[i];					
-				codona[1] = amb[j];					
-				codona[2] = amb[k];					
+				codona[0] = amb[i];
+				codona[1] = amb[j];
+				codona[2] = amb[k];
 
 				std::vector<int> pos;
 				bool valid = false;

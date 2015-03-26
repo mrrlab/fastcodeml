@@ -107,7 +107,7 @@ void CodonFrequencies::updateCodonCount(const std::vector<std::vector<unsigned i
 
 	// Count again
 	size_t cnt = aCodons.size();
-	for(size_t i=0; i < cnt; ++i) 
+	for(size_t i=0; i < cnt; ++i)
 	{
 		//if no ambiguities count as usual (add site multiplicity)
 		if(aCodons[i].size() == 2)

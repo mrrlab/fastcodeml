@@ -41,7 +41,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 	// Initialize the probability list. Only the fg branch needs to be set
 	mBEBset.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
 
-	// Calculating f(x_h|w) 
+	// Calculating f(x_h|w)
 	// Order of site classes for iw or f(x_h|w):
 	//					   back	  fore	   #sets
 	//	 site class 0:		w0	   w0		 10
@@ -62,13 +62,13 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 			omega_fg_is_one = omega_bg_is_one = true;
 		}
 		else if(iw < (BEB_N1D+1+BEB_N1D*BEB_N1D))				// class 2a: w0 w2
-		{								   
+		{
 			omega_bg = prior_params[2][(iw-BEB_N1D-1) / BEB_N1D];
 			omega_fg = prior_params[3][(iw-BEB_N1D-1) % BEB_N1D];
 			omega_fg_is_one = omega_bg_is_one = false;
 		}
 		else													// class 2b: w1 w2
-		{														
+		{
 			omega_bg = 1.;
 			omega_fg = prior_params[3][iw-BEB_N1D-1-BEB_N1D*BEB_N1D];
 			omega_fg_is_one = false; omega_bg_is_one = true;
@@ -89,7 +89,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 					q_fg.fillMatrix(omega_fg, kappa);
 
 				q_fg.eigenQREV();
-			} 
+			}
 			#pragma omp section
 			{
 				if(omega_bg_is_one)
@@ -171,10 +171,10 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 		// In the original code instead of BEB_DIMS there is nclassM. Both values are 4.
 		for(unsigned int codon_class=0; codon_class < BEB_DIMS; ++codon_class)
 		{
-			// Given the point on the grid ip[] and codon_class, this returns iw and codon_class_proportion, 
-			// where iw locates the correct f(x_h|w) stored in com.fhK[], and codon_class_proportion is 
+			// Given the point on the grid ip[] and codon_class, this returns iw and codon_class_proportion,
+			// where iw locates the correct f(x_h|w) stored in com.fhK[], and codon_class_proportion is
 			// the proportion of the site class under the model.
-			// The BEB_N1D*BEB_N1D grid for p0-p1 is mapped onto the ternary graph for p0-p1-p2.  
+			// The BEB_N1D*BEB_N1D grid for p0-p1 is mapped onto the ternary graph for p0-p1-p2.
 			//
 			unsigned int idx;
 			switch(codon_class)
@@ -326,7 +326,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 				// t is log of term on grid
 				double t = log(fhk[codon_class]) + lnfXs[igrid];
 				if(t > scale1 + 50)
-				{ 
+				{
 					// Change scale factor scale1
 					for(unsigned int j=0; j < BEB_DIMS; ++j) mSiteClassProb[j*mNumSites+site] *= exp(scale1-t);
 					scale1 = t;

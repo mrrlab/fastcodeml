@@ -404,7 +404,7 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 				}
 			}
 
-			// Reuse values 
+			// Reuse values
 			VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[branch].begin();
 			const VectorOfRangesNoCnt::const_iterator endr=mReuseCmds[branch].end();
 			for(; icr != endr; ++icr)

@@ -48,7 +48,7 @@ void ParseParameters::addParameter(const char* aParamValuePair)
 	mDictionary[name] = atof(p+1);
 }
 
-	
+
 double ParseParameters::getParameter(const char* aParamName) const
 {
 	// The name should exist in the dictionary

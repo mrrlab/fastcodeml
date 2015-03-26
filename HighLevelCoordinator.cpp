@@ -142,7 +142,7 @@ struct HighLevelCoordinator::WorkTable
 	/// @param[in] aOut The stream on which the print should be done.
 	///
 	void printVariables(size_t aBranch, unsigned int aHyp, std::ostream& aOut=std::cout) const;
-	
+
 	/// Mark as job to be skipped branches outside the given range
 	///
 	/// @param[in] aBranchStart The first branch to be processed
@@ -282,7 +282,7 @@ void HighLevelCoordinator::WorkTable::checkAllJobsDone(void) const
 			any_error = true;
 		}
 	}
-	
+
 	if(any_error) {std::cout << std::endl; throw FastCodeMLFatal();}
 }
 
@@ -327,7 +327,7 @@ void HighLevelCoordinator::WorkTable::printVariables(size_t aBranch, unsigned in
 	unsigned int count_per_line = 0;
 	static const std::streamsize VARS_PRECISION = 7;
 	static const std::streamsize VARS_WIDTH		= 11;
-	
+
 	// Write the data with uniform precision
 	std::streamsize prec = aOut.precision(VARS_PRECISION);
 	aOut.setf(std::ios::fixed, std::ios::floatfield);
@@ -784,7 +784,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 	// Initialize the two hypothesis
 	BranchSiteModelNullHyp h0(aForest, aCmdLine);
 	BranchSiteModelAltHyp  h1(aForest, aCmdLine);
-		
+
 	// Initialize the BEB (no verbose at all)
 	BayesTest beb(aForest, 0, aCmdLine.mDoNotReduceForest);
 
@@ -846,7 +846,7 @@ void HighLevelCoordinator::doWorker(Forest& aForest, const CmdLine& aCmdLine)
 
 			// Compute H0
 			double lnl = h0(static_cast<size_t>(job[1]), aCmdLine.mStopIfNotLRT && job[2] > 0, threshold);
-	
+
 			// Assemble the results to be passed to the master
 			h0.getVariables(values_double);
 			values_double.push_back(lnl);

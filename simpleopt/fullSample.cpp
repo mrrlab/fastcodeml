@@ -20,12 +20,12 @@
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #if defined(_MSC_VER)
@@ -153,10 +153,10 @@ void ShowFiles(int argc, TCHAR ** argv) {
 	}
 }
 
-static const TCHAR * 
+static const TCHAR *
 GetLastErrorText(
 	int a_nError
-	) 
+	)
 {
 	switch (a_nError) {
 	case SO_SUCCESS:			return _T("Success");
@@ -170,9 +170,9 @@ GetLastErrorText(
 	}
 }
 
-static void 
+static void
 DoMultiArgs(
-	CSimpleOpt &	args, 
+	CSimpleOpt &	args,
 	int				nMultiArgs
 	)
 {
@@ -209,7 +209,7 @@ DoMultiArgs(
 
 
 int _tmain(int argc, TCHAR * argv[]) {
-	// process the command line to extract that flags for SimpleOpt 
+	// process the command line to extract that flags for SimpleOpt
 	int nFlags = SO_O_USEALL;
 	CSimpleOpt args(argc, argv, g_rgFlags, SO_O_NOERR|SO_O_EXACT);
 	while (args.Next()) {
@@ -230,16 +230,16 @@ int _tmain(int argc, TCHAR * argv[]) {
 		case OPT_HELP:
 			ShowUsage();
 			return 0;
-		case OPT_MULTI:	 
+		case OPT_MULTI:
 			DoMultiArgs(args, -1);
 			break;
-		case OPT_MULTI0: 
+		case OPT_MULTI0:
 			DoMultiArgs(args, 0);
 			break;
-		case OPT_MULTI1: 
+		case OPT_MULTI1:
 			DoMultiArgs(args, 1);
 			break;
-		case OPT_MULTI2: 
+		case OPT_MULTI2:
 			DoMultiArgs(args, 2);
 			break;
 		default:

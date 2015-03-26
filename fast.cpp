@@ -114,7 +114,7 @@ int main(int aRgc, char **aRgv)
 	// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 	{
-	
+
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "FastCodeML V"<<version << std::endl;
 		std::cout << "------------------------------------"<<std::endl;
