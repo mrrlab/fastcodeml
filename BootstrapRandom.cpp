@@ -11,7 +11,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	
 	double likelihoodValue = -1000000;
 	
-	BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS;
+	BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS; //EVOLUTION_STRATEGY;//
 	switch(btype)
 	{
 	case ONLY_RANDOM_TRIES:
@@ -19,13 +19,14 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 		break;
 		
 	case RANDOM_TRIES_SEPARATE_VARS:
-		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN/2);
+		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN);
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
 		break;
 		
 	case EVOLUTION_STRATEGY:
-		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], 20);
+		int numGenerations = 5;
+		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], numGenerations);
 		break;
 	};
 	return -likelihoodValue;
@@ -57,7 +58,7 @@ void BootstrapRandom::alocateMemory(void)
 	
 #ifdef BOOTSTRAP_ES
 	
-	mPopSize = 50;
+	mPopSize = 70;
 	
 	mGASpace.resize( mPopSize*(mN+1) );
 	
@@ -271,20 +272,11 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		
 		// --mutations
 		
-		boost::random::normal_distribution<double> N_dist(0, 0.05);
 		for(size_t i(0); i<lambda*mN; ++i)
-		{
-			if(randFrom0to1() < 0.4)
-			{
-			/*
-				double newVar = mLowerBound[i]-1.;
-				while(newVar<mLowerBound[i] || newVar>mUpperBound[i])
-					newVar = children[i] + N_dist( rng );
-				children[i] = newVar;
-			*/
-				double prop = 0.6 + 0.3*randFrom0to1();
-				children[i] = prop*children[i] + (1.-prop)*generateRandom(i%mN);
-			}
+		{	
+			// apply a "little" mutation
+			double prop = 0.8 + 0.15*randFrom0to1();
+			children[i] = prop*children[i] + (1.-prop)*generateRandom(i%mN);
 		}
 		
 		// --selection

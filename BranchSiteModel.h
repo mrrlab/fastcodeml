@@ -2,15 +2,16 @@
 #ifndef BRANCHSITEMODEL_H
 #define BRANCHSITEMODEL_H
 
+// uncomment this to use (old) relative error stopping criterion with nlopt optimizers
+// comment it to use the absolute error stopping criterion
+//#define FTOL_REL_ERROR
+
 // uncomment this to use the old randomized initialization of parameters
 // otherwise use initialization based on distribution of the parameters
 #define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
 #define BOOTSTRAP
-
-// uncomment this to use an approximate version of the gradient
-//#define APPROXIMATE_GRADIENT
 
 #include <vector>
 #include <cstdlib>

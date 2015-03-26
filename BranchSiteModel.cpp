@@ -1558,19 +1558,7 @@ public:
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
 					    mTotalNumVariables(aUpper.size()), mNumBranchLengths(aUpper.size() - aNumMatrixParams),
 						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
-	{
-#ifdef APPROXIMATE_GRADIENT
-		mM = 8*mTotalNumVariables/10;
-		
-		// allocate the workspace
-		mSpaceApproxGradient.resize(mM*(mTotalNumVariables+1) + mTotalNumVariables*mTotalNumVariables);
-		
-		// assign space to arrays
-		mSearchDirections = &mSpaceApproxGradient[0];
-		mDirectionalGradients = mSearchDirections + mM*mTotalNumVariables;
-		mAWork = mDirectionalGradients + mM;
-#endif						
-	}
+	{}
 
 	/// Wrapper to be passed to the optimizer
 	///
@@ -1616,49 +1604,6 @@ private:
 	/// @param[in] aVars Variables to be optimized
 	/// @param[out] aGrad Gradient values computed
 	///
-#ifdef APPROXIMATE_GRADIENT
-	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad)
-	{
-		std::vector<double> vars_working_copy(aVars);
-		generateRandomSearchDirections();
-		
-		int mN = mTotalNumVariables;
-		
-		for(size_t i(0); i < mM; ++i)
-		{
-			// select a variation number
-			double norm_direction = dnrm2_(&mN, &mSearchDirections[i*mTotalNumVariables], &I1);
-			double eh = mDeltaForGradient * (norm_direction+1.);
-			
-			// compute the point in the direction of the search direction
-			memcpy(&vars_working_copy[0], &aVars[0], mTotalNumVariables*sizeof(double));
-			daxpy_(&mN, &eh, &mSearchDirections[i*mTotalNumVariables], &I1, &vars_working_copy[0], &I1);
-
-			const double f1 = mModel->computeLikelihood(vars_working_copy, false);
-
-			mDirectionalGradients[i] = (f1-aPointValue)/eh;
-		}
-		
-		// solve the underestimated system using lapack
-		const char trans('T');
-		memcpy(&aGrad[0], mDirectionalGradients, mM*sizeof(double));
-		int LWork( mN*mN );
-		int INFO;
-		
-		dgels(&trans
-			 ,&mN
-			 ,&mM
-			 ,&I1
-			 ,mSearchDirections
-			 ,&mN
-			 ,&aGrad[0]
-			 ,&mN
-			 ,mAWork
-			 ,&LWork
-			 ,&INFO);
-		
-	}
-#else
 	void computeGradient(double aPointValue, const std::vector<double>& aVars, std::vector<double>& aGrad) const
 	{
 		std::vector<double> vars_working_copy(aVars);
@@ -1711,24 +1656,6 @@ private:
 			vars_working_copy[i] = aVars[i];
 		}
 	}
-#endif // APPROXIMATE_GRADIENT
-
-
-#ifdef APPROXIMATE_GRADIENT
-/// generateRandomSearchDirections
-/// generate random search directions
-///
-void generateRandomSearchDirections(void)
-{
-	#pragma omp parallel
-	{
-		srand(time(NULL) ^ omp_get_thread_num());
-		#pragma omp for
-		for (size_t i(0); i < mM*mTotalNumVariables; ++i)
-			mSearchDirections[i] = randFrom0to1();
-	}
-}
-#endif // APPROXIMATE_GRADIENT
 
 
 #if 0
@@ -1769,14 +1696,6 @@ private:
 	size_t				mNumBranchLengths;	///< Number of branch lengths (total number of variables to be used to compute gradient minus matrix params)
 	bool				mStopIfBigger;		///< If true stop optimization as soon as function value is above mThreshold
 	double				mThreshold;			///< Threshold value to stop optimization
-	
-#ifdef APPROXIMATE_GRADIENT
-	int					mM;						///< number of search directions used to approximate the gradient
-	std::vector<double>	mSpaceApproxGradient;	///< work space to store all the required variables to approximate the gradient
-	double*				mSearchDirections;		///< mM linearly random directions (m being a parameter of the algorithm, 0<m<=mTotalNumVariables)
-	double*				mDirectionalGradients;	///< the m values of the gradient in the mSearchDirections directions
-	double*				mAWork;					///< matrix used for the least square approximation
-#endif
 };
 
 
@@ -1905,7 +1824,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
 		
-		opt->set_ftol_rel(mRelativeError);
+#ifdef FTOL_REL_ERROR
+	    opt->set_ftol_rel(mRelativeError);
+#else
+	    opt->set_ftol_abs(mRelativeError);
+#endif // FTOL_REL_ERROR
 		
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
@@ -1935,7 +1858,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
         // Initialize bounds and termination criteria
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
-		opt->set_ftol_rel(1e3*mRelativeError);
+		
+#ifdef FTOL_REL_ERROR
+    opt->set_ftol_rel(1e-1);
+#else
+    opt->set_ftol_abs(1e-1);
+#endif // FTOL_REL_ERROR
+
 		nlopt::srand(static_cast<unsigned long>(mSeed));
 		
 		// Optimize the function (until enough iterations are made/tolerance?)
@@ -1972,7 +1901,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		opt->set_lower_bounds(mLowerBound);
 		opt->set_upper_bounds(mUpperBound);
 		
-		opt->set_ftol_rel(mRelativeError);
+#ifdef FTOL_REL_ERROR
+    opt->set_ftol_rel(mRelativeError);
+#else
+    opt->set_ftol_abs(mRelativeError);
+#endif // FTOL_REL_ERROR
 		
 		
 		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
@@ -2069,8 +2002,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	// Initialize bounds and termination criteria
 	opt->set_lower_bounds(mLowerBound);
 	opt->set_upper_bounds(mUpperBound);
-    //opt->set_ftol_rel(mRelativeError);
+#ifdef FTOL_REL_ERROR
+    opt->set_ftol_rel(mRelativeError);
+#else
     opt->set_ftol_abs(mRelativeError);
+#endif // FTOL_REL_ERROR
 	nlopt::srand(static_cast<unsigned long>(mSeed));
 
 	// Optimize the function

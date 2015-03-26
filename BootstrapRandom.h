@@ -77,14 +77,14 @@ public:
 		,mNumTimes(aNumTimes)
 		,rng(aSeed)
 		,gamma_dist_T(0.5031126, 0.1844347)
-		,normal_dist_T(0.058, 0.03)
+		//,normal_dist_T(0.058, 0.03)
 		//,exp_dist_p0(4.605203)
 		//,exp_dist_p1(5.807218)
 		,exp_dist_v0(9.441686)
 		,gamma_dist_v1(0.8764469, 0.126567)
 		,beta_dist_w0(1.638631, 21.841174)
 		,gamma_dist_k(7.547445, 0.5789037)
-		,gamma_dist_w2(0.209740957, 274.537247)
+		,gamma_dist_w2(0.209741, 274.537247)
 		,mN(0)
 		{}
 	
@@ -185,7 +185,7 @@ private:
 	RNGType 										rng;			///< Uniform andom number generator
 	
 	boost::random::gamma_distribution<double> 		gamma_dist_T;	///< distribution of the branchLengths(mixture)
-	boost::random::normal_distribution<double>		normal_dist_T;	///< distribution of the branchLengths(mixture)
+	//boost::random::normal_distribution<double>		normal_dist_T;	///< distribution of the branchLengths(mixture)
     boost::random::exponential_distribution<double> exp_dist_v0;	///< distribution of 1 - v0
     boost::random::gamma_distribution<double> 		gamma_dist_v1;	///< distribution of 1 - v1
 	boost::random::beta_distribution<double> 		beta_dist_w0;	///< distribution of w0
