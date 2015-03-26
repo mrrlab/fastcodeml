@@ -1,6 +1,5 @@
 
 #include <map>
-#include <set>
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -56,6 +55,10 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	// Allocate the list of pointers to leaves
 	std::vector<ForestNode*> leaves;
 
+#ifdef USE_AGGREGATION
+	aGenes.observedCodons(mObservedCodons, mMapCodonToState);
+#endif
+
 	// Clone tree inside the forest
 	mRoots.resize(mNumSites);
 	for(size_t site=0; site < mNumSites; ++site)
@@ -78,6 +81,12 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 
 			// Get the codon index and internally build the list of corresponding positions
 			long long codon = aGenes.getCodonIdx(mNodeNames[node], site);
+
+#ifdef USE_AGGREGATION
+			// Number of observed codons
+			mRoots[site].mObservedCodons = mObservedCodons[site];
+			mRoots[site].mMapCodonToState = mMapCodonToState[site];
+#endif
 
 			// Add the codon index to the node signature
 			(*il)->mPreprocessingSupport->mSubtreeCodonsSignature.push_back(codon);
@@ -817,7 +826,7 @@ void Forest::prepareNewReductionNoReuse(void)
 
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
-
+// Optimizing this function ~ idavydov
 void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies)
 {
 	// To speedup the inner OpenMP parallel loop, this is precomputed
@@ -849,10 +858,25 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 				const unsigned int site	   = TreeAndSetsDependencies::getSiteNum(tmp);
 				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
 
+#ifdef USE_AGGREGATION
+				const double* g = computeLikelihoodsWalkerAG(tmp_roots+site, aSet, set_idx, (tmp_roots+site)->mObservedCodons, (tmp_roots+site)->mMapCodonToState);
+#else
 				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+#endif
 
 #ifdef USE_CPV_SCALING
+#ifdef USE_AGGREGATION
+				/*
+				std::cout << "g=";
+				for (std::vector<int>::const_iterator it=mObservedCodons[site].begin(); it!=mObservedCodons[site].end(); ++it)
+					std::cout << g[*it] << " ";
+				std::cout << g[N+1] << "\n";
+				*/
+
+				likelihoods[set_idx*mNumSites+site] = dotn(mCodonFreq, g, mObservedCodons[site])*g[N];
+#else
 				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g)*g[N];
+#endif
 #else
 				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
 #endif
@@ -861,6 +885,88 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	}
 }
 
+#ifdef USE_AGGREGATION
+double* Forest::computeLikelihoodsWalkerAG(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapCodonToState)
+{
+	double* anode_prob	  = aNode->mProb[aSetIdx];
+	const unsigned int nc = aNode->mChildrenCount;
+
+
+	// Shortcut (on the leaves return immediately the probability vector)
+	if(nc == 0) return anode_prob;
+
+	bool first = true;
+	for(unsigned int idx=0; idx < nc; ++idx)
+	{
+		// Copy to local var to avoid aliasing
+		double* anode_other_tree_prob = aNode->mOtherTreeProb[idx];
+
+		// If the node is in the same tree recurse and eventually save the value, else use the value
+		if(aNode->isSameTree(idx))
+		{
+			const ForestNode *m = aNode->mChildrenList[idx];
+			const unsigned int branch_id = m->mBranchId;
+			const int leaf_codon = m->mLeafCodon;
+
+			if(leaf_codon >= 0)
+			{
+				if(first)
+				{
+					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, anode_prob, aObservedCodons, aMapCodonToState);
+					anode_prob[N] = normalizeVectorN(anode_prob, aObservedCodons);
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+2)*sizeof(double));
+					first = false;
+				}
+				else
+				{
+					double ALIGN64 temp[N+2];
+					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
+					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, x, aObservedCodons, aMapCodonToState);
+					x[N] = normalizeVectorN(x, aObservedCodons);
+					anode_prob[N] *= x[N];
+					elementWiseMultN(anode_prob, x, aObservedCodons);
+				}
+			}
+			else
+			{
+				if(first)
+				{
+					double* g = computeLikelihoodsWalkerAG(m, aSet, aSetIdx, aObservedCodons, aMapCodonToState);
+					aSet.doTransition(aSetIdx, branch_id, g, anode_prob, aObservedCodons, aMapCodonToState);
+					anode_prob[N] = normalizeVectorN(anode_prob, aObservedCodons)*g[N];
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+2)*sizeof(double));
+					first = false;
+				}
+				else
+				{
+					double ALIGN64 temp[N+2];
+					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
+					double* g = computeLikelihoodsWalkerAG(m, aSet, aSetIdx, aObservedCodons, aMapCodonToState);
+					aSet.doTransition(aSetIdx, branch_id, g, x, aObservedCodons, aMapCodonToState);
+					x[N] = normalizeVectorN(x, aObservedCodons)*g[N];
+					anode_prob[N] *= x[N];
+					elementWiseMultN(anode_prob, x, aObservedCodons);
+				}
+			}
+		}
+		else
+		{
+			if(first)
+			{
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, (N+2)*sizeof(double));
+				first = false;
+			}
+			else
+			{
+				anode_prob[N] *= anode_other_tree_prob[VECTOR_SLOT*aSetIdx+N];
+				elementWiseMultN(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, aObservedCodons);
+			}
+		}
+	}
+
+	return anode_prob;
+}
+#else // no #USE_AGGREGATION
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
 	double* anode_prob	  = aNode->mProb[aSetIdx];
@@ -989,6 +1095,7 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 	return anode_prob;
 }
 
+#endif
 #endif
 
 #ifdef USE_DAG

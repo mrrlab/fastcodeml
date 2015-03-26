@@ -23,12 +23,19 @@ static const int MATRIX_SLOT = N*N+3;
 /// In the vectors used as CPV the location after the end will contain the CVP norm.
 ///
 #ifdef NEW_LIKELIHOOD
+#ifdef USE_AGGREGATION
+#error "Cannot use codon aggregation with new likelihood!"
+#endif
 #ifdef USE_CPV_SCALING
 #error "Cannot use CPV scaling with new likelihood!"
 #endif
 static const int VECTOR_SLOT = N;
 #else
 static const int VECTOR_SLOT = N+1+4;
+#endif
+
+#if defined(USE_AGGREGATION) && !defined(USE_CPV_SCALING)
+#error "Codon aggregation works only with CPV scaling"
 #endif
 
 /// Alignment to avoid cache line false sharing.

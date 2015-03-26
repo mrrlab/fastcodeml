@@ -346,6 +346,47 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 	for(; is != end; ++is, ++idx) mMapSpecieToDnaGene[*is] = idx;
 }
 
+#ifdef USE_AGGREGATION
+void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState) const
+{
+	size_t nspecies = mDnaSpecies.size();
+	// Save observed states
+	std::cout << "Creating codons/position table" << std::endl;
+	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
+	{
+		std::vector<int> s;
+		for(size_t i=0; i < nspecies; ++i)
+		{
+			// Convert the site to the position on the gene
+			unsigned int position_on_gene = mMapSiteToDnaGene[j];
+
+			// Get the list of positions for the given codon
+			const char *p = mDnaGene[i].c_str();
+			//mObservedCodons[j]
+			const std::vector<int>& pos = getPositions(&p[3*position_on_gene]);
+
+			s.insert(s.end(), pos.begin(), pos.end());
+
+		}
+		std::sort(s.begin(), s.end());
+		std::vector<int>::iterator last = std::unique(s.begin(), s.end());
+		s.erase(last, s.end());
+		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
+
+		aObservedCodons.push_back(s);
+	}
+	for(size_t j=0; j < mSiteMultiplicity.size(); ++j) {
+		std::vector<int> s;
+		for(int i=0; i < N; i++) {
+			int pos = std::find(aObservedCodons[j].begin(), aObservedCodons[j].end(), i) - aObservedCodons[j].begin();
+			s.push_back(pos);
+		}
+		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
+		aMapCodonToState.push_back(s);
+	}
+}
+#endif
+
 void Genes::initFullCodonMap(void)
 {
 	int i, j, k;

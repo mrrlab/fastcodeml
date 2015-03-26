@@ -58,6 +58,16 @@ inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
 #endif
 }
 
+#ifdef USE_AGGREGATION
+inline double dotn(const double* RESTRICT aV1, const double* RESTRICT aV2, const std::vector<int> &aObservedCodons)
+{
+	double tot = 0.;
+	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) tot += aV1[*it]*aV2[*it];
+	tot += aV1[N + 1]*aV2[N + 1];
+	return tot;
+}
+#endif
+
 /// Element-wise vector-vector multiplication (specialized to 61 elements vectors)
 ///
 /// @param[in,out] aVres Vector that should be multiplied by the aV one
@@ -103,6 +113,12 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 //#endif
 }
 
+#ifdef USE_AGGREGATION
+inline void elementWiseMultN(double* RESTRICT aVres, const double* RESTRICT aV, const std::vector<int> &aObservedCodons) {
+	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) aVres[*it] *= aV[*it];
+	aVres[N + 1] *= aV[N + 1];
+}
+#endif
 
 /// Check if two values are sufficiently different
 ///
@@ -119,6 +135,20 @@ inline bool isDifferent(double aFirst, double aSecond)
 }
 
 #ifdef USE_CPV_SCALING
+
+
+#ifdef USE_AGGREGATION
+inline double normalizeVectorN(double* RESTRICT aVector, const std::vector<int> &aObservedCodons)
+{
+	double norm = 0.;
+	for(std::vector<int>::const_iterator it = aObservedCodons.begin(); it != aObservedCodons.end(); ++it) norm += aVector[*it]*aVector[*it];
+	norm += aVector[N + 1] * aVector[N + 1];
+	norm = sqrt(norm);
+	for(std::vector<int>::const_iterator it = aObservedCodons.begin(); it != aObservedCodons.end(); ++it) aVector[*it] /= norm;
+	aVector[N + 1] /= norm;
+	return norm;
+}
+#endif
 
 /// Normalize a vector (length 61).
 ///

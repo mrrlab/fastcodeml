@@ -44,7 +44,7 @@ endif(Boost_FOUND)
 OPTION(USE_LAPACK         		"Use BLAS/LAPACK" OFF)
 OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
-OPTION(USE_MPI            		"Use MPI for high level parallelization" ON)
+OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
 if(NOT WIN32)
 	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF)
 endif(NOT WIN32)
@@ -54,6 +54,7 @@ SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihoo
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
 OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" ON)
+OPTION(USE_AGGREGATION			"Aggregate codon states" ON)
 
 
 # Search for OpenMP support
@@ -144,6 +145,11 @@ endif(USE_LIKELIHOOD_METHOD MATCHES "DAG")
 if(USE_CPV_SCALING)
 	add_definitions(-DUSE_CPV_SCALING)
 endif(USE_CPV_SCALING)
+
+# Codon aggregation
+if(USE_AGGREGATION)
+	add_definitions(-DUSE_AGGREGATION)
+endif(USE_AGGREGATION)
 
 # Set paths
 if(USE_MPI)

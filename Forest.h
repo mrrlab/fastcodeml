@@ -58,6 +58,10 @@ public:
 		mVisitTree.clear();
 		mVisitTreeParents.clear();
 #endif
+#ifdef USE_AGGREGATION
+		mObservedCodons.clear();
+		mMapCodonToState.clear();
+#endif
 	}
 
 	/// Build the forest and reduces the subtrees.
@@ -283,7 +287,11 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
+#ifdef USE_AGGREGATION
+	double* computeLikelihoodsWalkerAG(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapCodonToState);
+#else
 	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
+#endif
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -335,6 +343,10 @@ private:
 							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
+#ifdef USE_AGGREGATION
+	std::vector<std::vector<int> >	mObservedCodons;
+	std::vector<std::vector<int> >	mMapCodonToState;
+#endif
 
 #ifdef NEW_LIKELIHOOD
 

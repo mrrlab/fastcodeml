@@ -44,6 +44,9 @@ protected:
 #ifdef NEW_LIKELIHOOD
 		mInvCodonFreq = CodonFrequencies::getInstance()->getInvCodonFrequencies();
 #endif
+#ifdef USE_AGGREGATION
+		mCodonFreq = CodonFrequencies::getInstance()->getCodonFrequencies();
+#endif
 	}
 
 public:
@@ -76,6 +79,7 @@ public:
 	/// @param[in] aGin The input vector to be multiplied by the matrix exponential
 	/// @param[out] aGout The resulting vector
 	///
+#ifndef USE_AGGREGATION
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
@@ -94,6 +98,55 @@ public:
 		}
 #endif
 	}
+#else // #ifdef USE_AGGREGATION
+	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
+	{
+		int nObserved = aObservedCodons.size();
+/*
+		std::cout << "gin=";
+		for (std::vector<int>::const_iterator it=aObservedCodons.begin(); it !=aObservedCodons.end(); ++it)
+				std::cout << aGin[*it] << " ";
+		std::cout << aGin[N+1] << "\n";
+		*/
+
+		double unobservedFreq = 1;
+		for(std::vector<int>::const_iterator it = aObservedCodons.begin(); it != aObservedCodons.end(); ++it)
+			unobservedFreq -= mCodonFreq[*it];
+
+		double unobservedToUnobserved = 1;
+		double y = 0; // N + 1 -> ///
+		for(int r=0; r < N; ++r)
+		{
+			if (aMapObservedToState[r] < nObserved) {
+				// r = observed
+				double rToUnobserved = 0;
+				double unobservedToR = 0;
+				double x = 0; // r ->...
+				for(int c=0; c < N; ++c)
+					if (aMapObservedToState[c] < nObserved)
+						// first observed -> observed
+						x += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+c]*aGin[c];
+					else
+					{
+						rToUnobserved += mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+c];
+						unobservedToR += mCodonFreq[c] * mMatrices[aSetIdx*mNumMatrices+aBranch][c*N+r];
+					}
+				unobservedToR /= unobservedFreq;
+				unobservedToUnobserved -= unobservedToR;
+				aGout[r] = x + rToUnobserved*aGin[N + 1];
+				y += unobservedToR * aGin[r];
+			}
+		}
+
+		aGout[N + 1] = y + unobservedToUnobserved * aGin[N + 1];
+/*
+		std::cout << "gout=";
+		for (std::vector<int>::const_iterator it=aObservedCodons.begin(); it !=aObservedCodons.end(); ++it)
+				std::cout << aGout[*it] << " ";
+		std::cout << aGout[N+1] << "\n";
+		*/
+	}
+#endif
 
 	///	Multiply the aGin vector by the precomputed exp(Q*t) matrix
 	///
@@ -102,6 +155,7 @@ public:
 	/// @param[in] aCodon The leaf codon id (will supplant aGin)
 	/// @param[out] aGout The resulting vector
 	///
+#ifndef USE_AGGREGATION
 	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout) const
 	{
 #ifdef USE_LAPACK
@@ -137,6 +191,49 @@ public:
 		}
 #endif
 	}
+#else // #ifdef USE_AGGREGATION
+	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
+	{
+		int nObserved = aObservedCodons.size();
+
+		/*std::cout << "gin=leaf\n";
+		std::cout << "acodon=" << aCodon << "\n";
+		std::cout << "matrix_col=";
+		for (std::vector<int>::const_iterator it=aObservedCodons.begin(); it !=aObservedCodons.end(); ++it)
+				std::cout << mMatrices[aSetIdx*mNumMatrices+aBranch][*it*N+aCodon] << " ";
+		std::cout << mMatrices[aSetIdx*mNumMatrices+aBranch][(N+1)*N+aCodon] << "\n"; */
+
+		//
+		// aCodon is always in observed set. So we calculate only observed -> observed and unobserved -> observed
+		// First osberved -> observed
+		for(int r=0; r < N; ++r)
+		{
+			// if r = observed
+			if (aMapObservedToState[r] < nObserved) {
+				aGout[r] = mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+aCodon];
+			}
+		}
+		// Unobserved -> observed
+		double x = 0;
+		double UnobservedCodonFrequency = 0;
+		for(int r=0; r < N; ++r)
+		{
+			// if r = unobserved
+			if (aMapObservedToState[r] == nObserved) {
+				UnobservedCodonFrequency += mCodonFreq[r];
+				x += mCodonFreq[r] * mMatrices[aSetIdx*mNumMatrices+aBranch][r*N+aCodon];
+
+			}
+		}
+		aGout[N + 1] = x / UnobservedCodonFrequency;
+/*
+		std::cout << "gout=";
+		for (std::vector<int>::const_iterator it=aObservedCodons.begin(); it !=aObservedCodons.end(); ++it)
+				std::cout << aGout[*it] << " ";
+		std::cout << aGout[N+1] << "\n";
+		*/
+	}
+#endif
 
 #else
 
@@ -186,6 +283,9 @@ protected:
 	double**		mMatrices;			///< Access to the matrix set (contains pointers to mMatrixSpaces matrices)
 #ifdef NEW_LIKELIHOOD
 	const double*	mInvCodonFreq;		///< Inverse of the codon frequencies
+#endif
+#ifdef USE_AGGREGATION
+	const double*	mCodonFreq;			///< Inverse of the codon frequencies
 #endif
 	int				mNumMatrices;		///< Number of matrices in each set (should be int)
 	unsigned int	mNumSets;			///< Number of sets

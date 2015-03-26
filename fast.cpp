@@ -194,6 +194,9 @@ int main(int aRgc, char **aRgv)
 #ifdef USE_LAPACK
 													std::cout << "USE_LAPACK ";
 #endif
+#ifdef USE_AGGREGATION
+													std::cout << "USE_AGGREGATION ";
+#endif
 #ifdef USE_MKL_VML
 													std::cout << "USE_MKL_VML";
 #endif

@@ -105,6 +105,14 @@ public:
 	///
 	size_t getNumSpecies(void) const {return mDnaSpecies.size();}
 
+#ifdef USE_AGGREGATION
+	/// Generate observed codon tables.
+	///
+	// @param[out] aObservedCodons For each site vector of observed codons
+	// @param[out] aMapCodonToObserved For each site map codon to a new state
+	//
+	void observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState) const;
+#endif
 
 private:
 	/// Convert given codon in the corresponding codons positions after expanding ambiguous characters.
@@ -166,6 +174,7 @@ private:
 	std::map<std::string, std::vector<int> >	mMapCodonToPosition;		///< Map codons (including ambiguous ones) to positions on the CPV
 	std::vector<int>							mEmptyVector;				///< Empty vector to be returned if no position available
 	mutable std::vector<int>					mCurrentPositions;			///< Positions for the last codon decoded
+
 };
 
 #endif

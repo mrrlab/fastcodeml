@@ -59,6 +59,10 @@ struct ForestNode
 	bool						mFirstChild;
 	unsigned int				mChildIdx;					///< Mark the child position in the parent node
 #endif
+#ifdef USE_AGGREGATION
+	std::vector<int>			mObservedCodons;			///< Observed codons at current position
+	std::vector<int>			mMapCodonToState;			///< Map of codon to state
+#endif
 
 	/// Constructor.
 	///
