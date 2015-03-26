@@ -19,13 +19,13 @@ struct CmdLine::CmdLineImpl
 	///
 	/// @return The human readable error message
 	///
-	const char *getLastErrorText(CSimpleOpt& aOptParser);
+	static const char *getLastErrorText(CSimpleOpt& aOptParser);
 
 	/// Print the help about the parameters.
 	///
 	/// @param[in] aParserOptions The table of options definitions
 	///
-	void showHelp(const CSimpleOpt::SOption *aParserOptions);
+	static void showHelp(const CSimpleOpt::SOption *aParserOptions);
 };
 
 const char *CmdLine::CmdLineImpl::getLastErrorText(CSimpleOpt& aOptParser)

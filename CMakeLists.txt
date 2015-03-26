@@ -89,6 +89,21 @@ set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
 set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
 set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')")
 
+# Set few compiler dependent flags
+if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+
+	set(CMAKE_CXX_FLAGS "-mkl=sequential -restrict -march=core-avx2 ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "-mkl=sequential ${CMAKE_EXE_LINKER_FLAGS}")
+
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+
+	set(CMAKE_CXX_FLAGS "-mavx2 ${CMAKE_CXX_FLAGS}")
+
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Cray")
+
+	set(CMAKE_CXX_FLAGS "-mavx2 ${CMAKE_CXX_FLAGS}")
+
+endif()
 
 # Set compiler switches
 if(WIN32)

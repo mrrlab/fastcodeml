@@ -24,7 +24,7 @@ struct NewickGrammar : public grammar<NewickGrammar>
     template <typename ScannerT>
     struct definition
     {
-        definition(NewickGrammar const& /*self*/)
+        explicit definition(NewickGrammar const& /*self*/)
         {
             tree = nodelist >> !full_label >> !colon_plus_len >> no_node_d[*space_p >> ch_p(';')];
 

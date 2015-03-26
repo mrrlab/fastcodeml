@@ -103,7 +103,7 @@ private:
 	///
 	/// @return The corresponding id in the range 0 to 60
 	///
-	int codon64to61(int aId64) const;
+	static int codon64to61(int aId64);
 
 private:
 	static CodonFrequencies*	mInstance;					///< Pointer to the singleton instance

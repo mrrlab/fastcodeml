@@ -819,11 +819,11 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[], double spa
        xmark=0: central; 1: upper; -1: down
     */
     int i, j;
-    double *x0 = space, *x1 = space + n, eh;	/* eh0=1e-6 || 1e-7 */
+    double *x0 = space, *x1 = space + n;	/* eh0=1e-6 || 1e-7 */
 
     for(i=0; i < n; ++i)
     {
-        eh = mDeltaForGradient * (fabs(x[i]) + 1);
+        double eh = mDeltaForGradient * (fabs(x[i]) + 1);
 
         if(xmark[i] == 0 && (mAlwaysCenter || sizep < 1))  	/* central */
         {

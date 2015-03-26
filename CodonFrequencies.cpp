@@ -128,7 +128,7 @@ void CodonFrequencies::updateCodonCount(const std::vector<std::vector<unsigned i
 	}
 }
 
-int CodonFrequencies::codon64to61(int aId64) const
+int CodonFrequencies::codon64to61(int aId64)
 {
 	if(aId64 > 63 || aId64 == 10 || aId64 == 11 || aId64 == 14) return -1;
 

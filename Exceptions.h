@@ -20,14 +20,14 @@ public:
 	///
 	/// @param[in] aMessage The message to be printed before termination
 	///
-	FastCodeMLFatal(const char *aMessage) : runtime_error(aMessage)
+	explicit FastCodeMLFatal(const char *aMessage) : runtime_error(aMessage)
 	{}
 
 	/// Exception that prints a message (previously built into a std::ostringstream) before termination.
 	///
 	/// @param[in] aMessage The message to be printed before termination (has been formatted by printing into a std::ostringstream).
 	///
-	FastCodeMLFatal(const std::ostringstream& aMessage) : runtime_error(aMessage.str().c_str())
+	explicit FastCodeMLFatal(const std::ostringstream& aMessage) : runtime_error(aMessage.str().c_str())
 	{}
 };
 

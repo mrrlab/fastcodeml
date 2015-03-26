@@ -192,7 +192,7 @@ private:
 	/// @exception FastCodeMLMemoryError Error sizing workareas
 	/// @exception std::range_error No convergence in dsyevr
 	///
-	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
+	static void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
 
 
 #ifdef _MSC_VER

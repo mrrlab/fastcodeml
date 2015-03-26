@@ -128,7 +128,7 @@ private:
 	/// @param[out] aProbY The p1 value on the Y axis of the triangular grid.
 	/// @param[in] aTriangleIdx The index inside the triangular grid.
 	///
-	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx);
+	void getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx) const;
 
 private:
 	/// Disabled assignment operator to avoid warnings on Windows.

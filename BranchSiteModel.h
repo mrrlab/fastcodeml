@@ -223,7 +223,7 @@ protected:
 	/// @param[in] aV1 The second optimization variable
 	/// @param[out] aProportions The four proportions (p0, p1, p2a, p2b) computed from aV0 and aV1
 	///
-	void getProportions(double aV0, double aV1, double* aProportions) const
+	static void getProportions(double aV0, double aV1, double* aProportions)
 	{
 #ifdef USE_ORIGINAL_PROPORTIONS
 		aProportions[0] = exp(aV0);

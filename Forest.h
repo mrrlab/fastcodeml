@@ -214,7 +214,7 @@ public:
 	///
 	/// @return Multimap with key the internal site, and value one of the original sites.
 	///
-	const std::multimap<size_t, size_t>& getSitesMappingToOriginal(void) {return mSitesMappingToOriginal;}
+	const std::multimap<size_t, size_t>& getSitesMappingToOriginal(void) const {return mSitesMappingToOriginal;}
 
 #ifdef NEW_LIKELIHOOD
 	/// All the preparatory steps needed for the Fat Vector approach.

@@ -49,7 +49,7 @@ public:
 	///
 	/// @return Reference to the dependency list.
 	///
-	const ListDependencies& getDependencies(void) {return mDependenciesClassesAndTrees;}
+	const ListDependencies& getDependencies(void) const {return mDependenciesClassesAndTrees;}
 
 private:
 	/// Move dependent trees from class to class trying to balance the size of the classes
