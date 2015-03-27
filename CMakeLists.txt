@@ -31,6 +31,7 @@ set(SRCS
 	OptSESOP.cpp
 	Opt2RDSA.cpp
 	BootstrapRandom.cpp
+	OptNES.cpp
 )
 
 

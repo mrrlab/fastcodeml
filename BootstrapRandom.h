@@ -12,7 +12,6 @@
 #include <boost/random/beta_distribution.hpp>
 #include <boost/random/gamma_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
-#include <boost/random/normal_distribution.hpp>
 typedef boost::random::mt19937 RNGType;
 
 

@@ -238,7 +238,7 @@ int CDOSOptimizer::CDOSminimizer(double *f, double *x)
 		if(fy < fx)
 		{
 			// TODO: use lambdaS and N_exit
-			if( fx - fy < mRelativeError )
+			if( fx - fy < mAbsoluteError )
 				stop_condition_reached = true;
 				
 			memcpy(&x[0], &y[0], mN*sizeof(double));

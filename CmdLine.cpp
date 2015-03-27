@@ -198,8 +198,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
 		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disables it)" },
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
-		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Relative error where to stop maximization (default: 1e-3)" },
-		{ OPT_REL_ERROR,		"--relative-error",		SO_REQ_SEP,	"" },
+		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Absolute error where to stop maximization (default: 1e-3)" },
+		{ OPT_REL_ERROR,		"--absolute-error",		SO_REQ_SEP,	"" },
 		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		{ OPT_CLEAN_DATA,		"-cl",					SO_NONE,	"Remove ambiguous or missing sites from the MSA (default: no)" },
@@ -351,8 +351,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			break;
 
 		case OPT_REL_ERROR:
-			mRelativeError = atof(args.OptionArg());
-			if(mRelativeError <= 0.0) throw FastCodeMLFatal("Invalid relative error value");
+			mAbsoluteError = atof(args.OptionArg());
+			if(mAbsoluteError <= 0.0) throw FastCodeMLFatal("Invalid absolute error value");
 			break;
 
 		case OPT_OUT_RESULTS:

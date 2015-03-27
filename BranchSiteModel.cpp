@@ -26,6 +26,7 @@
 #include "CDOSOptimizer.h"
 #include "OptSESOP.h"
 #include "Opt2RDSA.h"
+#include "OptNES.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
 
@@ -1522,7 +1523,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
 	case OPTIM_LD_MIXED:
-	case OPTIM_CDOS:
+	case OPTIM_NES:
 	case OPTIM_SESOP:
 	case OPTIM_2RDSA:
 		return;
@@ -1735,7 +1736,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	{
 		try
 		{
-			// Create the optimizer (instead of mRelativeError is used the fixed value from CodeML)
+			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
 			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
 
 			// Do the maximization
@@ -1762,13 +1763,51 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		}
 	}
 	
-	// Special case for the CDOS optimizer
-	if(mOptAlgo == OPTIM_CDOS)
+	
+	std::auto_ptr<nlopt::opt> opt;
+	
+	
+	// Special case for the NES optimizer
+	if(mOptAlgo == OPTIM_NES)
 	{
 		// Create the optimizer instance
-		CDOSOptimizer optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations);
+		OptNES optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
 		
-		double maxl = optim.maximizeFunction(mVar);
+		double maxl = optim.maximizeFunction(mVar, 10);
+		
+		
+		// finish problem with a NLopt algo
+		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
+		
+		if (mFixedBranchLength)
+		{
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+        }
+        else
+        {
+            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+        }
+        opt->set_vector_storage(20);
+        
+        // Initialize bounds and termination criteria
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+		
+#ifdef FTOL_REL_ERROR
+	    opt->set_ftol_rel(mAbsoluteError);
+#else
+	    opt->set_ftol_abs(mAbsoluteError);
+#endif // FTOL_REL_ERROR
+		
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+				
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+		
+		optimize_using_nlopt(opt, maxl);
 		
 		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
@@ -1791,13 +1830,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	
 	
-	std::auto_ptr<nlopt::opt> opt;
-	
 	// Special case for the SESOP optimizer
 	if(mOptAlgo == OPTIM_SESOP)
 	{
 		// Create the optimizer instance
-		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mRelativeError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		
@@ -1825,9 +1862,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		opt->set_upper_bounds(mUpperBound);
 		
 #ifdef FTOL_REL_ERROR
-	    opt->set_ftol_rel(mRelativeError);
+	    opt->set_ftol_rel(mAbsoluteError);
 #else
-	    opt->set_ftol_abs(mRelativeError);
+	    opt->set_ftol_abs(mAbsoluteError);
 #endif // FTOL_REL_ERROR
 		
 		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
@@ -1902,9 +1939,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		opt->set_upper_bounds(mUpperBound);
 		
 #ifdef FTOL_REL_ERROR
-    opt->set_ftol_rel(mRelativeError);
+    opt->set_ftol_rel(mAbsoluteError);
 #else
-    opt->set_ftol_abs(mRelativeError);
+    opt->set_ftol_abs(mAbsoluteError);
 #endif // FTOL_REL_ERROR
 		
 		
@@ -2003,9 +2040,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	opt->set_lower_bounds(mLowerBound);
 	opt->set_upper_bounds(mUpperBound);
 #ifdef FTOL_REL_ERROR
-    opt->set_ftol_rel(mRelativeError);
+    opt->set_ftol_rel(mAbsoluteError);
 #else
-    opt->set_ftol_abs(mRelativeError);
+    opt->set_ftol_abs(mAbsoluteError);
 #endif // FTOL_REL_ERROR
 	nlopt::srand(static_cast<unsigned long>(mSeed));
 

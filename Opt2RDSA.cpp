@@ -124,7 +124,7 @@ int Opt2RDSA::Opt2RDSAminimizer(double *f, double *x)
 		
 		mStep ++;
 		
-		if(fabs(*f-f_prev)<mRelativeError)
+		if(fabs(*f-f_prev)<mAbsoluteError)
 			num_good_iter++;
 		else
 			num_good_iter=0;
@@ -222,18 +222,18 @@ void Opt2RDSA::computeGradientAndHessian(double aPointValue, const double *aVars
 			{
 				dN[i] = (0.-aVars[i]) / deltaN;
 				if(isPositive)
-					dN[i] = -dN[i] - mRelativeError;
+					dN[i] = -dN[i] - mAbsoluteError;
 				else
-					dN[i] += mRelativeError;
+					dN[i] += mAbsoluteError;
 			}
 		
 			if(aVars[i] + deltaN*fabs(dN[i]) > 1.)
 			{
 				dN[i] = (1.-aVars[i]) / deltaN;
 				if(isPositive)
-					dN[i] -= mRelativeError;
+					dN[i] -= mAbsoluteError;
 				else
-					dN[i] = -dN[i] + mRelativeError;
+					dN[i] = -dN[i] + mAbsoluteError;
 			}
 		}
 	
@@ -339,9 +339,9 @@ void Opt2RDSA::performOneStage(double *f, double *x)
 	for(size_t i(0); i<mN; i++)
 	{
 		if(x[i] < 0.)
-			x[i] = mRelativeError;
+			x[i] = mAbsoluteError;
 		if(x[i] > 1.)
-			x[i] = 1. - mRelativeError;
+			x[i] = 1. - mAbsoluteError;
 	}
 	
 	if(mVerbose > 2)

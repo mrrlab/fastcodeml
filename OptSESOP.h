@@ -41,7 +41,7 @@ public:
 	/// @param[in] aVerbose				The verbose level
 	/// @param[in] aLowerBound			Lower limit of the variables to constrain the interval on which the optimum should be computed
 	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
-	/// @param[in] aRelativeError		Relative error to stop computation
+	/// @param[in] aAbsoluteError		Absolute error to stop computation
 	/// @param[in] aStopIfBigger		If true stop computation as soon as value is over aThreshold
 	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
@@ -52,7 +52,7 @@ public:
 			,unsigned int aVerbose
 			,const std::vector<double>& aLowerBound
 			,const std::vector<double>& aUpperBound
-			,double aRelativeError
+			,double aAbsoluteError
 			,bool aStopIfBigger
 			,double aThreshold
 			,int aMaxIterations
@@ -62,7 +62,7 @@ public:
 		,mTraceFun(aTrace)
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
-		,mRelativeError(aRelativeError)
+		,mAbsoluteError(aAbsoluteError)
 		,mVerbose(aVerbose)
 		,mStopIfBigger(aStopIfBigger)
 		,mThreshold(-aThreshold)
@@ -264,7 +264,7 @@ private:
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
 	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
-	double						mRelativeError;		///< The relative error at which the computation stops
+	double						mAbsoluteError;		///< The absolute error at which the computation stops
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)

@@ -47,7 +47,7 @@ protected:
 	/// @param[in] aTrace If set print a trace of the maximization process
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
-	/// @param[in] aRelativeError Relative error for convergence
+	/// @param[in] aAbsoluteError Absolute error for convergence
 	/// @param[in] aNoParallel If true no parallel execution support is setup
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
@@ -63,7 +63,7 @@ protected:
 					bool         aTrace,
 					unsigned int aOptAlgo,
 					double       aDeltaValueForGradient,
-					double       aRelativeError,
+					double       aAbsoluteError,
 					bool	     aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
@@ -89,11 +89,11 @@ protected:
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
 //		  mSeed(aSeed),
-//		  mRelativeError(aRelativeError),
+//		  mAbsoluteError(aAbsoluteError),
 		  mFixedBranchLength(aFixedBranchLength),
 		  mBranches(aNumBranches),
                   mSeed(aSeed),
-                  mRelativeError(aRelativeError)
+                  mAbsoluteError(aAbsoluteError)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}
@@ -285,7 +285,7 @@ private:
 		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
 		
 		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
-		OPTIM_CDOS			= 43,	///< CDOS optimizer derivative free
+		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
 		OPTIM_2RDSA			= 45,	///< 2RDSA optimizer
 
@@ -372,7 +372,7 @@ protected:
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
-	double						mRelativeError;		///< Relative error to stop maximization
+	double						mAbsoluteError;		///< Absolute error to stop maximization
 };
 
 
@@ -396,7 +396,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
@@ -487,7 +487,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)

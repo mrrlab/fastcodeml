@@ -98,7 +98,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		f_prev = *f;
 		
 		// adaptative tolerance so we don't spend too much time at each iteration
-		stepTolerance = max2(mRelativeError, exp(-double(mStep)));
+		stepTolerance = max2(mAbsoluteError, exp(-double(mStep)));
 		
 		if(mVerbose > 2)
 			std::cout << "Starting step " << mStep << ":\n";
@@ -324,7 +324,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			if(x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
 			if(x[i] > mUpperBound[i])
-				x[i] = mUpperBound[i]-mRelativeError;
+				x[i] = mUpperBound[i]-mAbsoluteError;
 		}
 		
 		if(mVerbose > 2)
@@ -374,7 +374,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 
 		// check convergence
 		
-		if(f_diff < mRelativeError)
+		if(f_diff < mAbsoluteError)
 			++numIterBeforeConverged;
 		else
 			numIterBeforeConverged = 0;
