@@ -25,7 +25,7 @@
 #include "CodeMLoptimizer.h"
 #include "CDOSOptimizer.h"
 #include "OptSESOP.h"
-#include "Opt2RDSA.h"
+#include "OptAlternator.h"
 #include "OptNES.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
@@ -1525,7 +1525,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MIXED:
 	case OPTIM_NES:
 	case OPTIM_SESOP:
-	case OPTIM_2RDSA:
+	case OPTIM_ALTERNATOR:
 		return;
 
 	default:
@@ -1815,11 +1815,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		return maxl;
 	}
 	
-	// Special case for the 2RDSA optimizer
-	if(mOptAlgo == OPTIM_2RDSA)
+	// Special case for the Alternator optimizer
+	if(mOptAlgo == OPTIM_ALTERNATOR)
 	{
 		// Create the optimizer instance
-		Opt2RDSA optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, 1e-6, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		OptAlternator optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		

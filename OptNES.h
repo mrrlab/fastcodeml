@@ -36,6 +36,7 @@ public:
 	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	/// @param[in] aNumTimes			Number of branches
+	/// @param[in] aSeed				Seed used to generate the random numbers
 	/// 
 	OptNES(BranchSiteModel* aModel
 		  ,bool aTrace
@@ -67,6 +68,7 @@ public:
 	/// Compute the maximum of computeLikelihood()
 	///
 	/// @param[in,out] aVars The variables to be optimized
+	/// @param[in] popSize	The population size
 	///
 	/// @return The maximum loglikelihood value
 	///

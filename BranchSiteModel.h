@@ -287,7 +287,7 @@ private:
 		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
 		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
-		OPTIM_2RDSA			= 45,	///< 2RDSA optimizer
+		OPTIM_ALTERNATOR	= 45,	///< Alternator optimizer
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
