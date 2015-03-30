@@ -23,7 +23,6 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
-#include "CDOSOptimizer.h"
 #include "OptSESOP.h"
 #include "OptAlternator.h"
 #include "OptNES.h"
@@ -1773,11 +1772,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		// Create the optimizer instance
 		OptNES optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
 		
-		double maxl = optim.maximizeFunction(mVar, 10);
+		double maxl = optim.maximizeFunction(mVar, 100);
 		
 		
 		// finish problem with a NLopt algo
-		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
+		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << ". Current Likelihood: " << maxl << std::endl;
 		
 		if (mFixedBranchLength)
 		{

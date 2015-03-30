@@ -27,7 +27,6 @@ set(SRCS
 	DAGScheduler.cpp
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
-	CDOSOptimizer.cpp
 	OptSESOP.cpp
 	BootstrapRandom.cpp
 	OptNES.cpp

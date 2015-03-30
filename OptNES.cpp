@@ -118,7 +118,7 @@ void OptNES::initializeDistribution(void)
 	double shape, rate, a, b;
 	
 	double mf = 3.0;
-	double sf = 6.0;
+	double sf = 10.0;
 	
 	// branch lengths:
 	shape = 0.5031126;
