@@ -424,7 +424,7 @@ void OptSQP::BFGSupdate(void)
 	}
 	
 	
-	// compute Matrix (B*mSk)**T * (B*mSk)
+	// compute Matrix (B*mSk)^T * (B*mSk)
 	// note: B symmetric
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for //collapse(2)
@@ -481,8 +481,8 @@ void OptSQP::BFGSupdate(void)
 }
 
 
+#ifndef STRONG_WOLFE_LINE_SEARCH
 // ----------------------------------------------------------------------
-#if 0
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
@@ -567,13 +567,14 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	*aalpha = alpha;
 	daxpy_(&mN, &alpha, mP, &I1, x, &I1);
 }
-#else
 
+#else
+// ----------------------------------------------------------------------
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
-	// Wolfe condition constants
+	// strong Wolfe conditions constants
 	const double c1(1e-5);
-	const double c2(0.1);
+	const double c2(0.9);
 	
 	// local variables
 	double a_prev = 0.;
@@ -583,14 +584,23 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1); 
 	double phi_a_prime;
 	
+	double phi = evaluateFunctionForLineSearch(x, a);
 	double phi_prev = phi_0;
+	
+	// first perform a backtrace to  avoid too large values
+	double back_multiplier = 0.25;
+	int back_iter(0);
+	for(back_iter = 0; back_iter < 10 && phi >= phi_0; ++back_iter)
+	{
+		a *= back_multiplier;
+		phi = evaluateFunctionForLineSearch(x, a);
+	}
+	amax = a;
 	
 	bool WolfeSatisfied(false);
 	int iter = 0;
 	while(!WolfeSatisfied)
 	{
-		double phi = evaluateFunctionForLineSearch(x, a);
-		
 		if( (phi > phi_0 + c1*a*phi_0_prime) || (phi >= phi_prev && iter > 0) )
 		{
 			*aalpha = zoom(a_prev, a, x, phi_0, phi_0_prime, c1, c2);
@@ -599,8 +609,9 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		else
 		{
 			// evaluate the derivative phi_a_prime
-			double eh = 1e-6;
-			if( a+eh >= amax ) {eh = -eh;}
+			//double eh = 1e-6;
+			double eh = sqrt(DBL_EPSILON);
+			if( a+eh >= 1.0 ) {eh = -eh;}
 			phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
 		
 			if(fabs(phi_a_prime) <= -c2*phi_0_prime)
@@ -610,7 +621,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			}
 			else if( phi_a_prime >= 0.0 )
 			{
-				*aalpha = zoom(a, a_prev, x, phi_0, phi_0_prime, c1, c2);
+				*aalpha = a = zoom(a, a_prev, x, phi_0, phi_0_prime, c1, c2);
 				WolfeSatisfied = true;
 			}
 			else
@@ -620,38 +631,46 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 				++iter;
 			}
 		}
+		phi = evaluateFunctionForLineSearch(x, a);
 	}
 	
 	
 	*aalpha = a;
 	daxpy_(&mN, aalpha, mP, &I1, x, &I1);	
-	*f = evaluateFunction(x, mTrace);
+	*f = phi;
 }
 
-double OptSQP::zoom(double low, double high, double *x, double const& phi_0, double const& phi_0_prime, double const& c1, double const& c2)
+
+// ----------------------------------------------------------------------
+double OptSQP::zoom(double low, double high, double *x, 
+					double const& phi_0, double const& phi_0_prime, 
+					double const& c1, double const& c2)
 {
+	// bisection
 	double proplow = 0.5;
-	double a = proplow*low + (1.-proplow)*high;
+	double a = proplow*low + (1.0-proplow)*high;
 	
 	double phi = evaluateFunctionForLineSearch(x, a);
 	double phihigh = evaluateFunctionForLineSearch(x, high);
+	
 	if( phi > phi_0 + c1*a*phi_0_prime || phi >= phihigh )
 		return zoom(low, a, x, phi_0, phi_0_prime, c1, c2);
 	else
 	{
-		// evaluate the derivative phi_a_prime
-		double eh = 1e-6;
+		// evaluate the derivative phi_a_prime to verify the second Wolfe condition
+		//double eh = 1e-6;
+		double eh = sqrt(DBL_EPSILON);
 		if( a+eh >= 1.0 ) {eh = -eh;}
 		double phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
 		
 		if( fabs(phi_a_prime) <= -c2*phi_0_prime)
 			return a;
-		if( phi_0_prime*(high-low) >= 0. )
+		if( phi_a_prime*(high-low) >= 0.0 )
 			return zoom(a, low, x, phi_0, phi_0_prime, c1, c2);
 		return zoom(a, high, x, phi_0, phi_0_prime, c1, c2);
 	}
 	
 }
 
-#endif
+#endif // STRONG_WOLFE_LINE_SEARCH
 

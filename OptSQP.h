@@ -101,7 +101,9 @@ private:
 
 
 
-
+// uncomment to use strong wolfe conditions as a stopping criterion for the line search
+// comment it to use only the first Wolfe condition
+#define STRONG_WOLFE_LINE_SEARCH
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -220,7 +222,6 @@ private:
 	///
 	void BFGSupdate(void);
 	
-	
 	/// lineSearch
 	/// perform a line search in th mP direction
 	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf
@@ -234,8 +235,25 @@ private:
 	///
 	void lineSearch(double *aalpha, double *x, double *f);
 	
-	double zoom(double low, double high, double *x, double const& phi_0, double const& phi_0_prime, const double& c1, const double& c2);
-	
+#ifdef STRONG_WOLFE_LINE_SEARCH
+	/// zoom
+	///	subroutine used in the lineSearch for the strong Wolfe conditions
+	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf pp.60-61 for
+	/// more informations
+	///
+	/// @param[in]	low			Low value of the step length
+	/// @param[in]	high		High value of the step length
+	/// @param[in]	x			The current position
+	/// @param[in]	phi_0		The function value at point x
+	/// @param[in]	phi_0_prime	The derivative in the mP direction at point x
+	/// @param[in]	c1			Constant for the strong Wolfe conditions
+	/// @param[in]	c2			Constant for the strong Wolfe conditions
+	///
+	/// @return the optimal step length
+	///
+	double zoom(double low, double high, const double *x, double const& phi_0, double const& phi_0_prime, const double& c1, const double& c2);
+#endif
+
 private:
 	
 	//double (f*)(unsigned, const double* x, double* grad, void* f_data); ///< Function to minimize
