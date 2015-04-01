@@ -31,6 +31,7 @@ set(SRCS
 	BootstrapRandom.cpp
 	OptNES.cpp
 	OptAlternator.cpp
+	OptSQP.cpp
 )
 
 

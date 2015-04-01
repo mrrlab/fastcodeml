@@ -26,6 +26,7 @@
 #include "OptSESOP.h"
 #include "OptAlternator.h"
 #include "OptNES.h"
+#include "OptSQP.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
 
@@ -1525,6 +1526,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_NES:
 	case OPTIM_SESOP:
 	case OPTIM_ALTERNATOR:
+	case OPTIM_SQP:
 		return;
 
 	default:
@@ -1760,6 +1762,17 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			o << "Exception in Ming2 computation: " << e.what() << std::endl;
 			throw FastCodeMLFatal(o);
 		}
+	}
+	
+	
+	if(mOptAlgo == OPTIM_SQP)
+	{
+		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
 	}
 	
 	

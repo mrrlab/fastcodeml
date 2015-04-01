@@ -288,6 +288,7 @@ private:
 		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR	= 45,	///< Alternator optimizer
+		OPTIM_SQP			= 46,	///< sequential quadratic program
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};
