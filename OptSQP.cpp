@@ -489,87 +489,79 @@ void OptSQP::BFGSupdate(void)
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
-	double c1 (1e-5);
+	double c1 (1e-1);
 	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	double phi_0 = *f;
-	double a0 = *aalpha;
-	double alpha;
+	double phi_0 = *f, phi, phi_prev;
+	double a_prev = *aalpha;
+	double phi_a_prime;
+	double a = *aalpha;
 	
 	if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
-	// local variables
-	double phia0, phia1, tmp, a, b, firstComponent, secondComponent;
+	phi_prev = phi_0;
+	a_prev = 0.;
+	phi = evaluateFunctionForLineSearch(x, a);
 	
-	// verify if the initial guess satisfies the Wolfe conditions
-	phia0 = evaluateFunctionForLineSearch(x, a0);
-	if( phia0 <= phi_0 + c1 * a0 * phi_0_prime )
-	{
-		*aalpha = a0;
-		daxpy_(&mN, &a0, mP, &I1, x, &I1);
-		*f = phia0; 
-		return;
-	}
-		
-	// form a quadratic approximation of the function
-	tmp =  2.0 * (phia0 - phi_0 - a0*phi_0_prime);
-	if (fabs(tmp) < 1e-5)
-	{
-		std::cout << "Error: no step lengths satisfying Wolfe condition. Return." << std::endl;
-		return;
-	}
-	alpha = - phi_0_prime*square(a0) / tmp;
-	if(alpha < 1e-5)
-		alpha = 0.5; // test
+	double sigma = 0.3;
 	
-	phia1 = evaluateFunctionForLineSearch(x, alpha);
-	if( phia1 <= phi_0 + c1 * alpha * phi_0_prime )
+	// begin by a backtrace
+	size_t iter = 0;
+	while(phi > phi_0 + phi_0_prime*a*c1 && iter < 5)
 	{
-		*aalpha = alpha;
-		daxpy_(&mN, aalpha, mP, &I1, x, &I1);
-		*f = phia1; 
-		return;
+		++iter;
+		a_prev = a;
+		phi_prev = phi;
+		a *= sigma;
+		phi = evaluateFunctionForLineSearch(x, a);
 	}
 	
-	// iterate while the condition is not satisfied by cubic approximations
-	bool WolfeSatisfied(false);
-	int numIter = 0;
-	while(!WolfeSatisfied)
+	// compute the derivative
+	double eh = sqrt(DBL_EPSILON);
+	if( a+eh >= 1.0 ) {eh = -eh;}
+	phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
+	
+	iter = 0;
+	if(phi_a_prime < 0.0 && a != *aalpha)
 	{
-		++numIter;
-		tmp = square(a0*alpha)*(alpha-a0);
-		
-		if(fabs(tmp) < 1e-6)
+		double a0 = a_prev;
+		while(phi < phi_prev && iter < 3)
 		{
-			a0 = alpha;
-			phia0 = phia1;
-			alpha =  0.5*a0;
+			++iter;
+			
+			a_prev = a;
+			phi_prev = phi;
+			a = a + sigma*(a0-a);
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
-		else
+		if(phi_prev < phi)
 		{
-			firstComponent = phia1 - phi_0 - phi_0_prime*alpha;
-			secondComponent = phia0 - phi_0 - phi_0_prime*a0;
-			a = square(a0) * firstComponent + square(alpha) * secondComponent;
-			b = -a0*square(a0) * firstComponent + alpha*square(alpha) * secondComponent;
-		
-			a = a/tmp;
-			b = b/tmp;
+			phi = phi_prev;
+			a = a_prev;
 		}
-		
-		a0 = alpha;
-		phia0 = phia1;
-		alpha = ( -b + sqrt(square(b)-3.*a*phi_0_prime) ) / ( 3.*a );
-		
-		// make sure alpha is not too close to the previous alpha or 0
-		if( fabs(a) < 1e-6 || alpha < 1e-6 || a0-alpha < 1e-6 )
-			alpha = 0.5*a0;
-		phia1 = evaluateFunctionForLineSearch(x, alpha);
-		
-		WolfeSatisfied = ( phia1 <= phi_0 + c1 * alpha * phi_0_prime ) || (numIter > 10);
 	}
-	*f = phia1;
-	*aalpha = alpha;
-	daxpy_(&mN, &alpha, mP, &I1, x, &I1);
+	else
+	{
+		while(phi < phi_prev && iter < 5)
+		{
+			++iter;
+			
+			a_prev = a;
+			phi_prev = phi;
+			a *= 0.7;
+			phi = evaluateFunctionForLineSearch(x, a);
+		}
+		if(phi_prev < phi)
+		{
+			phi = phi_prev;
+			a = a_prev;
+		}
+	}
+	
+	
+	*f = phi;
+	*aalpha = a;
+	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
 }
 
 #else
@@ -598,9 +590,9 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	
 	// first perform a backtrace to  avoid too large values
-	double back_multiplier = 0.6;
+	double back_multiplier = 0.3;
 	int back_iter(0);
-	for(back_iter = 0; back_iter < 15 && phi > phi_0 + c1*a*phi_0_prime; ++back_iter)
+	for(back_iter = 0; back_iter < 10 && phi > phi_0 + c1*a*phi_0_prime; ++back_iter)
 	{
 		a *= back_multiplier;
 		phi = evaluateFunctionForLineSearch(x, a);
