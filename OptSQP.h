@@ -193,7 +193,7 @@ private:
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double evaluateFunction(double *x, bool aTrace);
+	double evaluateFunction(const double *x, bool aTrace);
 	
 	/// evaluateFunctionForLineSearch
 	///	evaluates the function at point x + alpha*mP
@@ -205,7 +205,7 @@ private:
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double evaluateFunctionForLineSearch(double* x, double alpha);
+	double evaluateFunctionForLineSearch(const double* x, double alpha);
 	
 	/// computeGradient
 	///	compute the gradient at point x using finite differences aproximation
@@ -279,6 +279,7 @@ private:
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
+	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
 	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver
 

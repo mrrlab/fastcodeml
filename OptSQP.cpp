@@ -57,18 +57,18 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			switch(mSets[i])
 			{
 				case LSET:
-					x[i] = ma[i];
-					mMu[i] = 0.;
+					x[i] 		= ma[i];
+					mMu[i] 		= 0.0;
 					break;
 				
 				case USET:
-					x[i] = mb[i];
-					mLambda[i] = 0.;
+					x[i] 		= mb[i];
+					mLambda[i] 	= 0.0;
 					break;
 				
 				case SSET:
-					mMu[i] = 0.;
-					mLambda[i] = 0.;
+					mMu[i] 		= 0.0;
+					mLambda[i] 	= 0.0;
 					break;
 			};
 		}
@@ -105,15 +105,15 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			switch(mSets[i])
 			{
 				case LSET:
-					for(size_t j(0); j<mN; ++j) {mLHS[i*mN + j] = 0.0;}
+					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
 					mLHS[i*(mN+1)] = -1.0;
 					break;
 				case USET:
-					for(size_t j(0); j<mN; ++j) {mLHS[i*mN + j] = 0.0;}
+					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
 					mLHS[i*(mN+1)] = 1.0;
 					break;
 				case SSET:
-					for(size_t j(0); j<mN; ++j) {mLHS[i*mN + j] = B[i*mN + j];}
+					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &B[i*mN], &I1, &mLHS[i*mN], &I1);}
 					break;
 			};
 		}
@@ -151,12 +151,6 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			};
 		}
 		
-		/*
-		std::cout << "solution " << step << ": " << std::endl;
-		for(size_t i(0); i<mN; ++i)
-			std::cout << ma[i] << " " << x[i] << " " << mb[i] << std::endl;
-		*/
-		
 		// --- verify validity of the solution
 		convergenceReached = true;
 		#pragma omp parallel for reduction(&&: convergenceReached)
@@ -168,15 +162,12 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			{
 				case LSET:
 					iVariableCorrect = mLambda[i] >= 0.0;
-					//std::cout << "Lambda: " << mLambda[i] << std::endl;
 					break;
 				case USET:
 					iVariableCorrect = mMu[i] >= 0.0;
-					//std::cout << "Mu: " << mMu[i] << std::endl;
 					break;
 				case SSET:
 					iVariableCorrect = (x[i] >= ma[i]) && (x[i] <= mb[i]);
-					//std::cout << "dx: " << ma[i] << " " << x[i] << " " << mb[i] << std::endl;
 					break;
 			};
 			convergenceReached = convergenceReached && iVariableCorrect;
@@ -269,6 +260,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	*f = evaluateFunction(x, mTrace);
 	
 	double alpha = 1.0;
+	double scale_s;
 	
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
@@ -301,20 +293,40 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		memcpy(mXPrev, x, size_vect);
 		
 		
-		// solve quadratic program to get the search direction	
-		std::cout << "Quadratic program solving..." << std::endl;
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Quadratic program solving..." << std::endl;
+		
+		// solve quadratic program to get the search direction		
 		mQPsolver->solveQP(mHessian, mGradient, mP);
+		
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Line Search..." << std::endl;
+		
+		alpha = 1.0;
 		
 		// line search
 		lineSearch(&alpha, x, f);
 		
-		std::cout << alpha << std::endl;
-		alpha = 1.0;		
+		// avoid unsatisfied bounds due to roundoff errors 
+		#pragma omp parallel for
+		for(size_t i(0); i<mN; ++i)
+		{
+			if(x[i] < mLowerBound[i])
+				x[i] = mLowerBound[i];
+			if(x[i] > mUpperBound[i])
+				x[i] = mUpperBound[i];
+		}
+		
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Step length found:" << alpha << std::endl;
 		
 		memcpy(&mXEvaluator[0], x, size_vect);
 		
-		std::cout << "New Solution:";
-		mModel->printVar(mXEvaluator, *f);
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "New Solution:";
+			mModel->printVar(mXEvaluator, *f);
+		}
 		
 		// update the system
 		computeGradient(x, *f, mGradient);
@@ -324,7 +336,10 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		memcpy(mYk, mGradient, size_vect);
 		daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
-		std::cout << "BFGS update..." << std::endl;
+		
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "BFGS update..." << std::endl;
+			
 		BFGSupdate();
 		
 		// check convergence
@@ -334,7 +349,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::evaluateFunction(double *x, bool aTrace)
+double OptSQP::evaluateFunction(const double *x, bool aTrace)
 {
 	memcpy(&mXEvaluator[0], x, size_vect);
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
@@ -347,7 +362,7 @@ double OptSQP::evaluateFunction(double *x, bool aTrace)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::evaluateFunctionForLineSearch(double* x, double alpha)
+double OptSQP::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
 	memcpy(mWorkSpaceVect, x, size_vect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
@@ -387,6 +402,13 @@ void OptSQP::BFGSupdate(void)
 	
 	int mN_sq = mN*mN;
 	
+#if 0	
+	// apply scaling, against roundoff errors
+	double scale_s = double(mN) / dnrm2_(&mN, mSk, &I1);
+	dscal_(&mN, &scale_s, mSk, &I1);
+	dscal_(&mN, &scale_s, mYk, &I1);
+#endif
+	
 	// compute vector B*mSk
 	Bs = mWorkSpaceVect;
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
@@ -398,20 +420,21 @@ void OptSQP::BFGSupdate(void)
 	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
-	sigma = 0.1;
+	sigma = 0.9; // empirical value
 	
-	if(ys <= sigma * sBs)
+	if(ys < sigma * sBs)
 	{
-		if(fabs(sBs) > 1e-6)
-		{
-			theta = ys / sBs - 1.0;
-		}
-		if(fabs(theta) > 1e-6)
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
+		
+		theta = sBs - ys;
+		
+		if(fabs(theta) > 1e-8)
 		{
 			do
 			{
-				theta_tmp = (sigma - 1.0) / theta;
-				sigma = sigma - 0.1*sigma;
+				theta_tmp = (1.0 - sigma) * sBs / theta;
+				sigma = 0.9*sigma;
 			}while(theta_tmp >= 1.0);
 			
 			theta = theta_tmp;
@@ -425,59 +448,39 @@ void OptSQP::BFGSupdate(void)
 	
 	
 	// compute Matrix (B*mSk)^T * (B*mSk)
-	// note: B symmetric
 	BssB = mWorkSpaceMat;
-	#pragma omp parallel for //collapse(2)
+	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 	{
-		for(size_t j(0); j<mN; ++j)
-		{
-			//std::cout << i << " " << j << " : " << i*mN+j << " / " << mN*mN << std::endl;
-			BssB[i*mN+j] = Bs[i] * Bs[j];
-		}
+		double prefactor = - Bs[i] / sBs;
+		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
+		dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
 	}
 	
-	// update B: first term
-	inverse_sBs = - 1.0 / sBs;
-	
-	if(mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "sBs = " << sBs << ", -inverse_sBs = " << inverse_sBs << std::endl;
-		
-	if(fabs(sBs) > 1e-5)
-		daxpy_(&mN_sq, &inverse_sBs, BssB, &I1, mHessian, &I1);
+	// add the BssB / sBs contribution
+	daxpy_(&mN_sq, &D1, BssB, &I1, mHessian, &I1);
 	
 	// compute matrix y**T * y
 	yy = mWorkSpaceMat;
-	#pragma omp parallel for //collapse(2)
+	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 	{
-		for(size_t j(0); j<mN; ++j)
-		{
-			yy[i*mN+j] = mYk[i] * mYk[j];
-		}
+		double prefactor = mYk[i] / ys;
+		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
+		dscal_(&mN, &prefactor, &yy[i*mN], &I1);
 	}
 	
 	
-	// update B: second term
-	inverse_ys = 1.0 / ys;
+	// add the yy / ys contribution
+	daxpy_(&mN_sq, &D1, yy, &I1, mHessian, &I1);
 	
-	if(mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "ys = " << ys << ", inverse_ys = " << inverse_ys << std::endl;
-	
-	if(fabs(ys) > 1e-5)
-		daxpy_(&mN_sq, &inverse_ys, yy, &I1, mHessian, &I1);
-	
-#if 0	
-	std::cout << "Matrix:" << std::endl;
-	for(size_t i(0); i<mN; ++i)
-	{
-		for(size_t j(0); j<mN; ++j)
-		{
-			std::cout << mHessian[i*mN + j] <<" ";
-		}
-		std::cout << std::endl;
-	}
-#endif
+	// make the diagonal more important in order to avoid non positive definite matrix, 
+	// due to roundoff errors
+	int diag_stride = mN+1;
+	double factor = 1.1;
+	double inv_factor = 1.0/factor;
+	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
+	dscal_(&mN, &factor, mHessian, &diag_stride);	
 }
 
 
@@ -492,7 +495,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	double a0 = *aalpha;
 	double alpha;
 	
-	std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
+	if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
 	// local variables
 	double phia0, phia1, tmp, a, b, firstComponent, secondComponent;
@@ -573,8 +577,10 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
 	// strong Wolfe conditions constants
-	const double c1(1e-5);
+	const double c1(1e-2);
 	const double c2(0.9);
+	
+	mNumCallZoom = 0;
 	
 	// local variables
 	double a_prev = 0.;
@@ -587,19 +593,30 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	double phi = evaluateFunctionForLineSearch(x, a);
 	double phi_prev = phi_0;
 	
+	if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		std::cout << "phi_0_prime : " << phi_0_prime << std::endl;
+	
+	
 	// first perform a backtrace to  avoid too large values
-	double back_multiplier = 0.25;
+	double back_multiplier = 0.6;
 	int back_iter(0);
-	for(back_iter = 0; back_iter < 10 && phi >= phi_0; ++back_iter)
+	for(back_iter = 0; back_iter < 15 && phi > phi_0 + c1*a*phi_0_prime; ++back_iter)
 	{
 		a *= back_multiplier;
 		phi = evaluateFunctionForLineSearch(x, a);
+		
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "LINE_SEARCH_DEBUG: backtracking: " << a << " " << phi << std::endl;
 	}
-	amax = a;
+	
+	if(back_iter==0)
+		a *= back_multiplier;
+	amax = a/back_multiplier;
+	a_prev = a*back_multiplier;
 	
 	bool WolfeSatisfied(false);
 	int iter = 0;
-	while(!WolfeSatisfied)
+	while(!WolfeSatisfied && iter<10)
 	{
 		if( (phi > phi_0 + c1*a*phi_0_prime) || (phi >= phi_prev && iter > 0) )
 		{
@@ -609,7 +626,6 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		else
 		{
 			// evaluate the derivative phi_a_prime
-			//double eh = 1e-6;
 			double eh = sqrt(DBL_EPSILON);
 			if( a+eh >= 1.0 ) {eh = -eh;}
 			phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
@@ -632,6 +648,9 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			}
 		}
 		phi = evaluateFunctionForLineSearch(x, a);
+		
+		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "LINE_SEARCH_INFO: strong wolfe line search: " << a << " " << phi << std::endl;
 	}
 	
 	
@@ -642,13 +661,17 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::zoom(double low, double high, double *x, 
+double OptSQP::zoom(double low, double high, const double *x, 
 					double const& phi_0, double const& phi_0_prime, 
 					double const& c1, double const& c2)
 {
 	// bisection
 	double proplow = 0.5;
 	double a = proplow*low + (1.0-proplow)*high;
+	
+	++ mNumCallZoom;
+	if(mNumCallZoom > 5)
+		return a;
 	
 	double phi = evaluateFunctionForLineSearch(x, a);
 	double phihigh = evaluateFunctionForLineSearch(x, high);
@@ -658,7 +681,6 @@ double OptSQP::zoom(double low, double high, double *x,
 	else
 	{
 		// evaluate the derivative phi_a_prime to verify the second Wolfe condition
-		//double eh = 1e-6;
 		double eh = sqrt(DBL_EPSILON);
 		if( a+eh >= 1.0 ) {eh = -eh;}
 		double phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;

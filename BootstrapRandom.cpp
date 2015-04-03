@@ -11,7 +11,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	
 	double likelihoodValue = -1000000;
 	
-	BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS; //EVOLUTION_STRATEGY;//
+	BootstrapType btype = EVOLUTION_STRATEGY; //RANDOM_TRIES_SEPARATE_VARS;//
 	switch(btype)
 	{
 	case ONLY_RANDOM_TRIES:
