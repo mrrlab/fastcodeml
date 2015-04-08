@@ -24,7 +24,7 @@
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
 #include "OptSESOP.h"
-#include "OptAlternator.h"
+#include "OptAlternatorSQP.h"
 #include "OptNES.h"
 #include "OptSQP.h"
 #include "ParseParameters.h"
@@ -1524,7 +1524,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_MLSL_LDS:
 	case OPTIM_NES:
 	case OPTIM_SESOP:
-	case OPTIM_ALTERNATOR:
+	case OPTIM_ALTERNATOR_SQP:
 	case OPTIM_SQP:
 		return;
 
@@ -1827,10 +1827,10 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	
 	// Special case for the Alternator optimizer
-	if(mOptAlgo == OPTIM_ALTERNATOR)
+	if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
 	{
 		// Create the optimizer instance
-		OptAlternator optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		OptAlternatorSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		
 		double maxl = optim.maximizeFunction(mVar);
 		

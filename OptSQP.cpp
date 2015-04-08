@@ -262,15 +262,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
-	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));
-	
+	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
 	
 	// initialize hessian matrix to identity
-	#pragma omp parallel for
-	for(size_t i(0); i<mN*mN; ++i) {mHessian[i] = 0.0;}
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i) {mHessian[i*(mN+1)] = 1.0;}
-	
 	int N_sq( mN*mN ), diag_stride( mN+1 );
 	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);

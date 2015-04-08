@@ -287,7 +287,7 @@ private:
 		OPTIM_SQP			= 42,	///< equential quadratic program
 		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
-		OPTIM_ALTERNATOR	= 45,	///< Alternator optimizer
+		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};

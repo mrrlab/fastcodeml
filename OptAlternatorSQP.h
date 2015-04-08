@@ -47,7 +47,7 @@ public:
 		  			,bool aStopIfBigger
 		  			,double aThreshold
 		  			,int aMaxIterations
-		  			,int aNumTimes) 
+		  			,int aNumTimes)
 		:mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
@@ -61,6 +61,7 @@ public:
 		,mNumTimes(aNumTimes)
 		,mN(0)
 		,mStep(0)
+		,mSearchSpace(SPACE_FULL)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -83,6 +84,14 @@ private:
 		SPACE_BRANCHES_ONLY,	///< only branchlengths
 		SPACE_EXTRA_ONLY		///< only parameters {v0, v1, w0, k, w2}
 	};
+	
+	/// getSpaceProperties
+	/// gives the indices of variables of current space (bounds)
+	///
+	/// @param[out]	idFirstVar	The index of first variable of the space
+	/// @param[out]	idLastVar	The index of last variable of the space
+	///
+	void getSpaceProperties(int& idFirstVar, int& idLastVar) const;
 
 private:
 
@@ -101,7 +110,7 @@ private:
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void SQPminimizer(double *f, double *x);
+	void AlternatorSQPminimizer(double *f, double *x);
 	
 	/// evaluateFunction
 	///	evaluates the function at point x
@@ -143,7 +152,7 @@ private:
 	void BFGSupdate(void);
 	
 	/// lineSearch
-	/// perform a line search in th mP direction
+	/// perform a line search in the mP direction
 	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf
 	///
 	/// @param[in,out] aalpha 	in: initial guess of step length
@@ -158,6 +167,9 @@ private:
 
 private:
 	
+	SearchSpace					mSearchSpace;		///< current search space
+	
+	int							mNumTimes;			///< Number of branches in the optimizer
 	int 						mN;					///< Number of unknown parameters
 	size_t						size_vect;			///< Size in memory of a mN vector
 	
@@ -181,8 +193,9 @@ private:
 	int							mStep;				///< current step	
 	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
-	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver
-
+	std::auto_ptr<BOXCQP>		mQPsolverFull;		///< box constrained quadratic program solver, full space
+	std::auto_ptr<BOXCQP>		mQPsolverBL;		///< box constrained quadratic program solver, only branch lengths may change
+	
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
@@ -193,7 +206,6 @@ private:
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
 	int							mMaxIterations;		///< Maximum number of iterations for the maximization
-	int							mNumTimes;			///< Number of branches in the optimizer
 };
 
 

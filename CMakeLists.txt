@@ -30,7 +30,7 @@ set(SRCS
 	OptSESOP.cpp
 	BootstrapRandom.cpp
 	OptNES.cpp
-	OptAlternator.cpp
+	OptAlternatorSQP.cpp
 	OptSQP.cpp
 )
 
