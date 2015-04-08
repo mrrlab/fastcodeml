@@ -284,11 +284,10 @@ private:
 		
 		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
 		
-		OPTIM_LD_MIXED		= 42,	///< Mixed optimizer between LBFGS and SLSQP
+		OPTIM_SQP			= 42,	///< equential quadratic program
 		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
 		OPTIM_SESOP			= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR	= 45,	///< Alternator optimizer
-		OPTIM_SQP			= 46,	///< sequential quadratic program
 
 		OPTIM_MLSL_LDS		= 99	///< A global optimizer
 	};

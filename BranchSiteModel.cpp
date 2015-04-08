@@ -1522,7 +1522,6 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
-	case OPTIM_LD_MIXED:
 	case OPTIM_NES:
 	case OPTIM_SESOP:
 	case OPTIM_ALTERNATOR:
@@ -1893,78 +1892,6 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		return maxl;
 	}
 	
-	
-	
-	// Special case for a mixed optimizer
-	if(mOptAlgo == OPTIM_LD_MIXED)
-	{
-		// first "reduce" (quickly?) the problem with BOBYQA
-		if (mFixedBranchLength)
-            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
-        else
-            opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables));
-        
-        // Initialize bounds and termination criteria
-		opt->set_lower_bounds(mLowerBound);
-		opt->set_upper_bounds(mUpperBound);
-		
-#ifdef FTOL_REL_ERROR
-    opt->set_ftol_rel(1e-1);
-#else
-    opt->set_ftol_abs(1e-1);
-#endif // FTOL_REL_ERROR
-
-		nlopt::srand(static_cast<unsigned long>(mSeed));
-		
-		// Optimize the function (until enough iterations are made/tolerance?)
-		double maxl = 0;
-		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
-		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
-		
-		// limit the number of calls so we can change the optimizer
-		int max_num_iterations(40);
-		//opt->set_maxeval(max_num_iterations); // gradient free
-		
-		optimize_using_nlopt(opt, maxl);		
-		
-		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-			std::cout << "switch optimizer\n";
-		
-#if 1
-		// finish problem with SLSQP
-		if (mFixedBranchLength)
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
-        else
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
-        opt->set_vector_storage(20);
-#else
-		// finish problem with LBFGS
-		if (mFixedBranchLength)
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
-        else
-            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
-        opt->set_vector_storage(20);
-#endif
-        
-        // Initialize bounds and termination criteria
-		opt->set_lower_bounds(mLowerBound);
-		opt->set_upper_bounds(mUpperBound);
-		
-#ifdef FTOL_REL_ERROR
-    opt->set_ftol_rel(mAbsoluteError);
-#else
-    opt->set_ftol_abs(mAbsoluteError);
-#endif // FTOL_REL_ERROR
-		
-		
-		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
-		
-		optimize_using_nlopt(opt, maxl);
-		
-		std::cout << "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
-		return maxl;
-	}
 
 	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
 	switch(mOptAlgo)

@@ -19,13 +19,9 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 	memcpy(mLHS, B, mN*sizeof(double));
 	
 	// null lagrangian multiplicators
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
-	{
-		mLambda[i]	= 0.;
-		mMu[i]		= 0.;
-	}
-	
+	dcopy_(&mN, &D0, &I0, mLambda, &I1);
+	dcopy_(&mN, &D0, &I0, mMu, &I1);
+
 	// solution of the unconstrained problem
 	memcpy(x, d, mN*sizeof(double));
 	dscal_(&mN, &minus_one, x, &I1);
@@ -83,15 +79,15 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			switch(mSets[i])
 			{
 				case LSET:
-					mLambda_known[i] = 0.;
+					mLambda_known[i] = 0.0;
 					break;
 				
 				case USET:
-					mMu_known[i] = 0.;
+					mMu_known[i] = 0.0;
 					break;
 				
 				case SSET:
-					mx_known[i] = 0.;
+					mx_known[i] = 0.0;
 					break;
 			};
 		}
@@ -108,7 +104,7 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
 					mLHS[i*(mN+1)] = -1.0;
 					break;
-				case USET:
+				case USET:	
 					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
 					mLHS[i*(mN+1)] = 1.0;
 					break;
@@ -189,7 +185,6 @@ void BOXCQP::alocateMemory(void)
 	mLambda_known 	= mMu_known + mN;
 	mRHS	= mLambda_known + mN;
 	mLHS	= mRHS + mN;
-	
 }
 
 
@@ -276,6 +271,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i) {mHessian[i*(mN+1)] = 1.0;}
 	
+	int N_sq( mN*mN ), diag_stride( mN+1 );
+	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
+	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
 	
 	// main loop
 	bool convergenceReached = false;
@@ -403,7 +401,7 @@ void OptSQP::BFGSupdate(void)
 	int mN_sq = mN*mN;
 	
 #if 0	
-	// apply scaling, against roundoff errors
+	// apply scaling against roundoff errors
 	double scale_s = double(mN) / dnrm2_(&mN, mSk, &I1);
 	dscal_(&mN, &scale_s, mSk, &I1);
 	dscal_(&mN, &scale_s, mYk, &I1);
@@ -420,7 +418,7 @@ void OptSQP::BFGSupdate(void)
 	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
-	sigma = 0.9; // empirical value
+	sigma = 0.2; // empirical value
 	
 	if(ys < sigma * sBs)
 	{
@@ -447,7 +445,7 @@ void OptSQP::BFGSupdate(void)
 	}
 	
 	
-	// compute Matrix (B*mSk)^T * (B*mSk)
+	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
@@ -507,11 +505,12 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	// begin by a backtrace
 	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < 5)
+	while(phi > phi_0 + phi_0_prime*a*c1 && iter < 10)
 	{
 		++iter;
 		a_prev = a;
 		phi_prev = phi;
+		sigma = 0.3+0.3*randFrom0to1();
 		a *= sigma;
 		phi = evaluateFunctionForLineSearch(x, a);
 	}
@@ -525,12 +524,13 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	if(phi_a_prime < 0.0 && a != *aalpha)
 	{
 		double a0 = a_prev;
-		while(phi < phi_prev && iter < 3)
+		while(phi < phi_prev && iter < 10)
 		{
 			++iter;
 			
 			a_prev = a;
 			phi_prev = phi;
+			sigma = 0.3+0.4*randFrom0to1();
 			a = a + sigma*(a0-a);
 			phi = evaluateFunctionForLineSearch(x, a);
 		}
@@ -542,13 +542,14 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	}
 	else
 	{
-		while(phi < phi_prev && iter < 5)
+		while(phi < phi_prev && iter < 10)
 		{
 			++iter;
 			
 			a_prev = a;
 			phi_prev = phi;
-			a *= 0.7;
+			sigma = 0.5+0.5*sqrt(randFrom0to1());
+			a *= sigma;
 			phi = evaluateFunctionForLineSearch(x, a);
 		}
 		if(phi_prev < phi)
