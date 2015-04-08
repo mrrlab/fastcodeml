@@ -274,22 +274,22 @@ private:
 	///
 	enum OptimAlgoIdentifier
 	{
-		OPTIM_LD_LBFGS		= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
-		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
-		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
-		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
-		OPTIM_LD_MMA		= 4,	///< Method of Moving Asymptotes
+		OPTIM_LD_LBFGS			= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
+		OPTIM_LD_VAR1			= 1,	///< Shifted limited-memory variable-metric rank-1 method
+		OPTIM_LD_VAR2			= 2,	///< Shifted limited-memory variable-metric rank-2 method
+		OPTIM_LD_SLSQP			= 3,	///< Sequential quadratic programming (SQP) algorithm
+		OPTIM_LD_MMA			= 4,	///< Method of Moving Asymptotes
 
-		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free (BOBYQA)  
+		OPTIM_LN_BOBYQA			= 11,	///< Derivative-free (BOBYQA)  
 		
-		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
+		OPTIM_LD_MING2			= 22,	///< The optimizer extracted from CodeML
 		
-		OPTIM_SQP			= 42,	///< equential quadratic program
-		OPTIM_NES			= 43,	///< NES optimizer derivative free (natural evolution strategy)
-		OPTIM_SESOP			= 44,	///< SESOP optimizer
+		OPTIM_SQP				= 42,	///< equential quadratic program
+		OPTIM_NES				= 43,	///< NES optimizer derivative free (natural evolution strategy)
+		OPTIM_SESOP				= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
 
-		OPTIM_MLSL_LDS		= 99	///< A global optimizer
+		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};
 
 	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.

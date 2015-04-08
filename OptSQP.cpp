@@ -95,7 +95,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		}
 		
 		// --- solve new linear system
-		
+				
 		// setup the left hand side matrix
 		#pragma omp parallel for
 		for(size_t i(0); i<mN; ++i)
@@ -337,8 +337,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		BFGSupdate();
 		
 		// check convergence
-		convergenceReached = fabs(f_prev - *f) < mAbsoluteError;
-	}
+		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
+							|| mStep >= mMaxIterations;
+	}						
 }
 
 
@@ -395,13 +396,6 @@ void OptSQP::BFGSupdate(void)
 	char trans = 'N';
 	
 	int mN_sq = mN*mN;
-	
-#if 0	
-	// apply scaling against roundoff errors
-	double scale_s = double(mN) / dnrm2_(&mN, mSk, &I1);
-	dscal_(&mN, &scale_s, mSk, &I1);
-	dscal_(&mN, &scale_s, mYk, &I1);
-#endif
 	
 	// compute vector B*mSk
 	Bs = mWorkSpaceVect;
@@ -483,7 +477,7 @@ void OptSQP::BFGSupdate(void)
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
-	double c1 (1e-1);
+	double c1 (2e-1);
 	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
 	double a_prev = *aalpha;

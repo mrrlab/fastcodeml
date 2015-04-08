@@ -91,7 +91,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 				mQPsolverFull->solveQP(mHessian, mGradient, &mN, mP);
 				
 				++fullSpaceCounter;
-				if(fullSpaceCounter > 2)
+				if(fullSpaceCounter > 0)
 				{
 					mSearchSpace = SPACE_BRANCHES_ONLY;
 					fullSpaceCounter = 0;
@@ -104,7 +104,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 				int mNExtra = mN-mNumTimes;
 				dcopy_(&mNExtra, &D0, &I0, &mP[mNumTimes], &I1);
 				++branchSpaceCounter;
-				if(branchSpaceCounter > 2)
+				if(branchSpaceCounter > 0)
 				{
 					mSearchSpace = SPACE_FULL;
 					branchSpaceCounter = 0;
@@ -157,7 +157,8 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		BFGSupdate();
 		
 		// check convergence
-		convergenceReached = fabs(f_prev - *f) < mAbsoluteError;
+		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
+							|| mStep >= mMaxIterations;
 	}
 }
 
@@ -189,7 +190,7 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 {
 	volatile double eh;
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, size_vect);	
 	
 	for(size_t i(0); i<mN; ++i)
 	{

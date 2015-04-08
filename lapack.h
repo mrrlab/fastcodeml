@@ -677,11 +677,11 @@ extern "C" void dgels(const char *TRANS
 ///          		The number of linear equations, i.e., the order of the
 ///          		matrix A.  N >= 0.
 ///
-///  @param[in] NRHS    (input) INTEGER
+///  @param[in] 	NRHS    (input) INTEGER
 ///         		The number of right hand sides, i.e., the number of columns
 ///         		of the matrix B.  NRHS >= 0.
 ///
-///  @param[in, out] AP  (input/output) A is DOUBLE PRECISION array, dimension (LDA,N)
+///  @param[in, out] A  (input/output) A is DOUBLE PRECISION array, dimension (LDA,N)
 ///					On entry, the N-by-N coefficient matrix A.
 ///          		On exit, the factors L and U from the factorization
 ///          		A = P*L*U; the unit diagonal elements of L are not stored.
