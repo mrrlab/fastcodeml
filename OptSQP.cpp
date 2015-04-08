@@ -16,7 +16,6 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 	int INFO;
 	
 	// initialize parameters
-	memcpy(mLHS, B, mN*sizeof(double));
 	
 	// null lagrangian multiplicators
 	dcopy_(&mN, &D0, &I0, mLambda, &I1);
@@ -101,15 +100,15 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 			switch(mSets[i])
 			{
 				case LSET:
-					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
+					dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);
 					mLHS[i*(mN+1)] = -1.0;
 					break;
 				case USET:	
-					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);}
+					dcopy_(&mN, &D0, &I0, &mLHS[i*mN], &I1);
 					mLHS[i*(mN+1)] = 1.0;
 					break;
 				case SSET:
-					for(size_t j(0); j<mN; ++j) {dcopy_(&mN, &B[i*mN], &I1, &mLHS[i*mN], &I1);}
+					dcopy_(&mN, &B[i*mN], &I1, &mLHS[i*mN], &I1);
 					break;
 			};
 		}

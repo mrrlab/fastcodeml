@@ -48,6 +48,7 @@ public:
 	///
 	/// @param[in]  B the matrix B
 	/// @param[in]  d the d vector
+	/// @param[in]	LDA the leading dimension of matrix B
 	/// @param[out] x the solution vector
 	///
 	void solveQP(const double *B, const double *d, double *x);
@@ -84,8 +85,8 @@ private:
 	int 					mN;				//< size of the problem
 	
 	std::vector<double>		mSpace;			//< workspace
-	double*					mRHS;			//< right hand side matrix used for the linear system 
-	double*					mLHS;			//< left hand side vector used for the linear system
+	double*					mRHS;			//< right hand side vector used for the linear system 
+	double*					mLHS;			//< left hand side matrix used for the linear system
 	double*					mx_known;		//<	helper for solving linear system
 	double*					mMu_known;		//<	helper for solving linear system
 	double*					mLambda_known;	//<	helper for solving linear system
