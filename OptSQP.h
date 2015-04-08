@@ -51,7 +51,7 @@ public:
 	/// @param[in]	LDA the leading dimension of matrix B
 	/// @param[out] x the solution vector
 	///
-	void solveQP(const double *B, const double *d, double *x);
+	void solveQP(const double *B, const double *d, const int *LDA, double *x);
 	
 	
 private:

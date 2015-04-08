@@ -709,7 +709,7 @@ extern "C" void dgels(const char *TRANS
 ///
 extern "C" void dgesv(const int *N
 					 ,const int *NRHS
-					 ,const double *A
+					 ,double *A
 					 ,const int *LDA
 					 ,int *IPIV
 					 ,double *B

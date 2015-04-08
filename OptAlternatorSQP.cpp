@@ -48,6 +48,9 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 	double alpha = 1.0;
 	double scale_s;
 	
+	int branchSpaceCounter 	= 0;
+	int fullSpaceCounter	= 0;
+	
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
 	
@@ -85,25 +88,27 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		switch(mSearchSpace)
 		{
 			case SPACE_FULL:
-				mQPsolverFull->solveQP(mHessian, mGradient, mP);
-				mSearchSpace = SPACE_BRANCHES_ONLY;
+				mQPsolverFull->solveQP(mHessian, mGradient, &mN, mP);
+				
+				++fullSpaceCounter;
+				if(fullSpaceCounter > 2)
+				{
+					mSearchSpace = SPACE_BRANCHES_ONLY;
+					fullSpaceCounter = 0;
+				}
 				break;
 				
 			case SPACE_BRANCHES_ONLY:
-				
-				// TODO: avoid copy by adding leading dimension of the subhessian in the solver
-				double *LHS;
-				LHS = &mWorkSpaceMat[0];
-				#pragma omp parallel for
-				for(size_t i(0); i<mNumTimes; ++i)
-				{
-					memcpy(&LHS[i*mNumTimes], &mHessian[i*mN], mNumTimes*sizeof(double));
-				} 
-				mQPsolverBL->solveQP(LHS, mGradient, mP);
-				
+				mQPsolverBL->solveQP(mHessian, mGradient, &mN, mP);
+				// make the search direction only along the branch lengths
 				int mNExtra = mN-mNumTimes;
 				dcopy_(&mNExtra, &D0, &I0, &mP[mNumTimes], &I1);
-				mSearchSpace = SPACE_FULL;
+				++branchSpaceCounter;
+				if(branchSpaceCounter > 2)
+				{
+					mSearchSpace = SPACE_FULL;
+					branchSpaceCounter = 0;
+				}
 				break;
 		}
 		
@@ -137,10 +142,11 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		}
 		
 		// update the system
-		computeGradient(x, *f, mGradient);
-		
+				
 		memcpy(mSk, x, size_vect);
 		daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
+		
+		computeGradient(x, *f, mGradient);
 		
 		memcpy(mYk, mGradient, size_vect);
 		daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
@@ -195,7 +201,7 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 		f = -mModel->computeLikelihood(mXEvaluator, false);
 		aGrad[i] = (f-f0)/eh;
 		mXEvaluator[i] = x[i];
-	}
+	}	
 }
 
 

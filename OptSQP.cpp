@@ -10,7 +10,7 @@
 // ----------------------------------------------------------------------
 
 
-void BOXCQP::solveQP(const double *B, const double *d, double *x)
+void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x)
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
@@ -24,7 +24,10 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 	// solution of the unconstrained problem
 	memcpy(x, d, mN*sizeof(double));
 	dscal_(&mN, &minus_one, x, &I1);
-	memcpy(mLHS, B, mN*mN*sizeof(double));
+	
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+		memcpy(&mLHS[i*mN], &B[i**LDA], mN*sizeof(double));
 	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], x, &mN, &INFO);
 	
 	if(INFO != 0)
@@ -108,7 +111,7 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 					mLHS[i*(mN+1)] = 1.0;
 					break;
 				case SSET:
-					dcopy_(&mN, &B[i*mN], &I1, &mLHS[i*mN], &I1);
+					dcopy_(&mN, &B[i**LDA], &I1, &mLHS[i*mN], &I1);
 					break;
 			};
 		}
@@ -116,7 +119,7 @@ void BOXCQP::solveQP(const double *B, const double *d, double *x)
 		// setup the right hand side vector
 		memcpy(mRHS, d, mN*sizeof(double));
 		char trans = 'N';
-		dgemv_(&trans, &mN, &mN, &D1, B, &mN, mx_known, &I1, &D1, mRHS, &I1);
+		dgemv_(&trans, &mN, &mN, &D1, B, LDA, mx_known, &I1, &D1, mRHS, &I1);
 		daxpy_(&mN, &D1, mMu_known, &I1, mRHS, &I1);
 		daxpy_(&mN, &minus_one, mLambda_known, &I1, mRHS, &I1);
 		dscal_(&mN, &minus_one, mRHS, &I1);
@@ -288,7 +291,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			std::cout << "Quadratic program solving..." << std::endl;
 		
 		// solve quadratic program to get the search direction		
-		mQPsolver->solveQP(mHessian, mGradient, mP);
+		mQPsolver->solveQP(mHessian, mGradient, &mN, mP);
 		
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
