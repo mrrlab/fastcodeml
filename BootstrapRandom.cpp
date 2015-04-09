@@ -58,7 +58,17 @@ void BootstrapRandom::alocateMemory(void)
 	
 #ifdef BOOTSTRAP_ES
 	
-	mPopSize = 70;
+	// choose a population size
+	// we take here a population of:
+	// - 15 for small problems
+	// - 70 for medium to large problems
+	// - linear in between 
+	if(mN < 10)
+		mPopSize = 15;
+	else if(mN < 50)
+		mPopSize = 20 + float(mN-10)*1.25;
+	else
+		mPopSize = 70;
 	
 	mGASpace.resize( mPopSize*(mN+1) );
 	
@@ -76,7 +86,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
 	
 	high = mUpperBound[i];
     low  = mLowerBound[i];
-    randNumber = high+1.;
+    randNumber = high+1.0;
     
 	// branch lengths
 	if (i < mNumTimes)

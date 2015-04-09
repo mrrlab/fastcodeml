@@ -45,6 +45,9 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 	double f_prev;
 	*f = evaluateFunction(x, mTrace);
 	
+	int roundsFullSpace		= 3;
+	int roundsBranchSpace	= 3;
+	
 	double alpha = 1.0;
 	double scale_s;
 	
@@ -91,7 +94,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 				mQPsolverFull->solveQP(mHessian, mGradient, &mN, mP);
 				
 				++fullSpaceCounter;
-				if(fullSpaceCounter > 0)
+				if(fullSpaceCounter > roundsFullSpace)
 				{
 					mSearchSpace = SPACE_BRANCHES_ONLY;
 					fullSpaceCounter = 0;
@@ -104,7 +107,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 				int mNExtra = mN-mNumTimes;
 				dcopy_(&mNExtra, &D0, &I0, &mP[mNumTimes], &I1);
 				++branchSpaceCounter;
-				if(branchSpaceCounter > 0)
+				if(branchSpaceCounter > roundsBranchSpace)
 				{
 					mSearchSpace = SPACE_FULL;
 					branchSpaceCounter = 0;
@@ -189,20 +192,41 @@ double OptAlternatorSQP::evaluateFunctionForLineSearch(const double* x, double a
 void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad)
 {
 	volatile double eh;
+	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);	
+	memcpy(&mXEvaluator[0], x, size_vect);
+	size_t i;
+	double *delta = &mWorkSpaceVect[0];
 	
-	for(size_t i(0); i<mN; ++i)
+	// branch lengths
+	for(i=0; i<mNumTimes; ++i)
 	{
-		eh = sqrt(DBL_EPSILON) * ( 1.0 + fabs(x[i]) );
+		eh = sqrt_eps * ( 1.0 + x[i] );
+		if( x[i] + eh > mUpperBound[i] )
+			eh = -eh;
+		mXEvaluator[i] += eh;
+		delta[i] = mXEvaluator[i] - x[i];
+	}
+	
+	for(i=0; i<mNumTimes; ++i)
+	{
+		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+		aGrad[i] = (f-f0)/delta[i];
+	}
+	
+	// other variables
+	memcpy(&mXEvaluator[0], x, size_vect);
+	for(; i<mN; ++i)
+	{
+		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
 		if( x[i] + eh > mUpperBound[i] )
 			eh = -eh;
 		mXEvaluator[i] += eh;
 		eh = mXEvaluator[i] - x[i];
-		f = -mModel->computeLikelihood(mXEvaluator, false);
+		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 		aGrad[i] = (f-f0)/eh;
 		mXEvaluator[i] = x[i];
-	}	
+	}
 }
 
 
@@ -216,12 +240,6 @@ void OptAlternatorSQP::BFGSupdate(void)
 	
 	int mN_sq = mN*mN;
 	
-#if 0	
-	// apply scaling against roundoff errors
-	double scale_s = double(mN) / dnrm2_(&mN, mSk, &I1);
-	dscal_(&mN, &scale_s, mSk, &I1);
-	dscal_(&mN, &scale_s, mYk, &I1);
-#endif
 	
 	// compute vector B*mSk
 	Bs = mWorkSpaceVect;
@@ -351,8 +369,8 @@ void OptAlternatorSQP::lineSearch(double *aalpha, double *x, double *f)
 		}
 		if(phi_prev < phi)
 		{
-			phi = phi_prev;
 			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
 	}
 	else
@@ -369,8 +387,8 @@ void OptAlternatorSQP::lineSearch(double *aalpha, double *x, double *f)
 		}
 		if(phi_prev < phi)
 		{
-			phi = phi_prev;
 			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
 	}
 	

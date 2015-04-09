@@ -350,7 +350,7 @@ double OptSQP::evaluateFunction(const double *x, bool aTrace)
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
-	if(mStopIfBigger && f >= mThreshold) throw nlopt::forced_stop();
+	if(mStopIfBigger && f >= mThreshold) throw FastCodeMLEarlyStopLRT();
 	
 	return -f;
 }
@@ -372,8 +372,6 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
 	memcpy(&mXEvaluator[0], x, size_vect);
-
-#if 1 // new gradient
 	size_t i;
 	double *delta = &mWorkSpaceVect[0];
 	
@@ -406,19 +404,6 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 		aGrad[i] = (f-f0)/eh;
 		mXEvaluator[i] = x[i];
 	}
-#else // old gradient
-	for(size_t i(0); i<mN; ++i)
-	{
-		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
-		if( x[i] + eh > mUpperBound[i] )
-			eh = -eh;
-		mXEvaluator[i] += eh;
-		eh = mXEvaluator[i] - x[i];
-		f = -mModel->computeLikelihood(mXEvaluator, false);
-		aGrad[i] = (f-f0)/eh;
-		mXEvaluator[i] = x[i];
-	}
-#endif
 }
 
 
@@ -438,7 +423,6 @@ void OptSQP::BFGSupdate(void)
 	
 	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
 	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
-	
 	
 	
 	// Powell-SQP update:
@@ -468,7 +452,6 @@ void OptSQP::BFGSupdate(void)
 			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 		}
 	}
-	
 	
 	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;

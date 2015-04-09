@@ -204,7 +204,7 @@ private:
 	///
 	/// @return the function value
 	///
-	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
+	/// @exception FastCodeMLEarlyStopLRT To force halt the maximization because LRT is already not satisfied
 	///
 	double evaluateFunctionForLineSearch(const double* x, double alpha);
 	
