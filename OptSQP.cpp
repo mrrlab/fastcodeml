@@ -314,7 +314,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Step length found:" << alpha << std::endl;
 		
-		memcpy(&mXEvaluator[0], x, size_vect);
+		//*f = evaluateFunction(x, mTrace);
 		
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
@@ -369,13 +369,47 @@ double OptSQP::evaluateFunctionForLineSearch(const double* x, double alpha)
 void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 {
 	volatile double eh;
+	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
 	memcpy(&mXEvaluator[0], x, size_vect);
+
+#if 1 // new gradient
+	size_t i;
+	double *delta = &mWorkSpaceVect[0];
 	
+	// branch lengths
+	for(i=0; i<mNumTimes; ++i)
+	{
+		eh = sqrt_eps * ( 1.0 + x[i] );
+		if( x[i] + eh > mUpperBound[i] )
+			eh = -eh;
+		mXEvaluator[i] += eh;
+		delta[i] = mXEvaluator[i] - x[i];
+	}
+	
+	for(i=0; i<mNumTimes; ++i)
+	{
+		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+		aGrad[i] = (f-f0)/delta[i];
+	}
+	
+	// other variables
+	memcpy(&mXEvaluator[0], x, size_vect);
+	for(; i<mN; ++i)
+	{
+		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
+		if( x[i] + eh > mUpperBound[i] )
+			eh = -eh;
+		mXEvaluator[i] += eh;
+		eh = mXEvaluator[i] - x[i];
+		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+		aGrad[i] = (f-f0)/eh;
+		mXEvaluator[i] = x[i];
+	}
+#else // old gradient
 	for(size_t i(0); i<mN; ++i)
 	{
-		eh = sqrt(DBL_EPSILON) * ( 1.0 + fabs(x[i]) );
-		//eh = 1e-7 * ( 1.0 + fabs(x[i]) );
+		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
 		if( x[i] + eh > mUpperBound[i] )
 			eh = -eh;
 		mXEvaluator[i] += eh;
@@ -384,6 +418,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 		aGrad[i] = (f-f0)/eh;
 		mXEvaluator[i] = x[i];
 	}
+#endif
 }
 
 
@@ -526,8 +561,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		}
 		if(phi_prev < phi)
 		{
-			phi = phi_prev;
 			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
 	}
 	else
@@ -544,8 +579,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		}
 		if(phi_prev < phi)
 		{
-			phi = phi_prev;
 			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
 	}
 	

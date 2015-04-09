@@ -227,6 +227,10 @@ private:
 	/// perform a line search in th mP direction
 	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf
 	///
+	/// note: be careful, the last computation of the likelihood
+	///		  is the best solution so the gradient computaion is 
+	///		  valid!
+	///
 	/// @param[in,out] aalpha 	in: initial guess of step length
 	///							out: step length
 	/// @param[in,out] x		in: the original position
