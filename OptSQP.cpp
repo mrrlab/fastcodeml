@@ -509,16 +509,28 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	a_prev = 0.;
 	phi = evaluateFunctionForLineSearch(x, a);
 	
-	double sigma = 0.3;
+	double sigma, sigma_bas;
+	int maxIterBack, maxIterUp;
+	
+	// we take a step dependant on the problem size:
+	// if the problem is large, we are able to spend more time 
+	// to find a better solution.
+	// other wise, we consider that the solution is sufficiently 
+	// good and continue. 
+	
+	maxIterBack = maxIterUp = ceil( 3.*log(mN) );
+	sigma_bas 	= pow(1e-3, 1./float(maxIterBack));
+	
 	
 	// begin by a backtrace
 	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < 10)
+	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
 	{
 		++iter;
 		a_prev = a;
 		phi_prev = phi;
-		sigma = 0.3+0.3*randFrom0to1();
+		//sigma = 0.3+0.3*randFrom0to1();
+		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
 		a *= sigma;
 		phi = evaluateFunctionForLineSearch(x, a);
 	}
@@ -538,7 +550,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			
 			a_prev = a;
 			phi_prev = phi;
-			sigma = 0.3+0.4*randFrom0to1();
+			//sigma = 0.3+0.4*randFrom0to1();
+			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
 			a = a + sigma*(a0-a);
 			phi = evaluateFunctionForLineSearch(x, a);
 		}
@@ -550,13 +563,15 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	}
 	else
 	{
-		while(phi < phi_prev && iter < 10)
+		sigma_bas = 0.7;
+		while(phi < phi_prev && iter < maxIterUp)
 		{
 			++iter;
 			
 			a_prev = a;
 			phi_prev = phi;
-			sigma = 0.5+0.5*sqrt(randFrom0to1());
+			//sigma = 0.5+0.5*sqrt(randFrom0to1());
+			sigma = sigma_bas * (0.7 + 0.6*randFrom0to1());
 			a *= sigma;
 			phi = evaluateFunctionForLineSearch(x, a);
 		}
