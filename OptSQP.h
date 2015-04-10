@@ -272,9 +272,7 @@ private:
 #endif
 
 private:
-	
-	//double (f*)(unsigned, const double* x, double* grad, void* f_data); ///< Function to minimize
-	
+		
 	int 						mN;					///< Number of unknown parameters
 	size_t						size_vect;			///< Size in memory of a mN vector
 	
@@ -303,8 +301,10 @@ private:
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
+	
 	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
+	
 	double						mAbsoluteError;		///< The absolute error at which the computation stops
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
 	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold

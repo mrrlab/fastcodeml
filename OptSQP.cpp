@@ -612,7 +612,7 @@ void OptSQP::BFGSupdate(void)
 	double factor = 1.1;
 	double inv_factor = 1.0/factor;
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
-	dscal_(&mN, &factor, mHessian, &diag_stride);	
+	dscal_(&mN, &factor, mHessian, &diag_stride);
 }
 
 
@@ -644,8 +644,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	// other wise, we consider that the solution is sufficiently 
 	// good and continue. 
 	
-	maxIterBack = maxIterUp = ceil( 3.*log(mN) );
-	sigma_bas 	= pow(1e-3, 1./float(maxIterBack));
+	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
+	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
 	
 	
 	// begin by a backtrace
