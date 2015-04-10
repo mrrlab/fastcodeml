@@ -23,6 +23,10 @@
 ///     @version 1.1
 ///
 
+// uncomment this to solve reduced linear systems, at the cost of copying the 
+// values sequentially
+#define USE_SUBMATRIX_QP
+
 class BOXCQP
 {
 public:
@@ -87,15 +91,23 @@ private:
 	std::vector<double>		mSpace;			//< workspace
 	double*					mRHS;			//< right hand side vector used for the linear system 
 	double*					mLHS;			//< left hand side matrix used for the linear system
-	double*					mx_known;		//<	helper for solving linear system
-	double*					mMu_known;		//<	helper for solving linear system
-	double*					mLambda_known;	//<	helper for solving linear system
 	
 	double*					mB;				//< B matrix
 	double*					md;				//< d vector
 	double*					mLambda;		//< Lagrange variables, lower constraints
 	double*					mMu;			//< Lagrange variables, upper constraints
+	
 	std::vector<ActiveSet>	mSets;			//< sets in which each variable belongs
+#ifdef USE_SUBMATRIX_QP
+	std::vector<int>		mListLset;		//< list containing the L set
+	std::vector<int>		mListUset;		//< list containing the U set
+	std::vector<int>		mListSset;		//< list containing the S set
+#else
+	double*					mx_known;		//<	helper for solving linear system
+	double*					mMu_known;		//<	helper for solving linear system
+	double*					mLambda_known;	//<	helper for solving linear system
+#endif //USE_SUBMATRIX_QP
+
 	double*					ma;				//< lower bounds (constraints)
 	double*					mb;				//< upper bounds (constraints)
 };

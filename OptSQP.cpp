@@ -14,6 +14,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
+	char trans = 'N';
 	
 	// initialize parameters
 	
@@ -48,7 +49,95 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		// --- update the sets
 		updateSets(x);
 		
+#ifdef USE_SUBMATRIX_QP
+		
+		std::vector<int>::iterator it, jt;
+		int i, j, k, Nsub;
+		
 		// --- update parameters
+		
+		for(it=mListLset.begin(); it!=mListLset.end(); ++it)
+		{
+			i = *it;
+			x[i]	= ma[i];
+			mMu[i]	= 0.0;
+		}
+		for(it=mListUset.begin(); it!=mListUset.end(); ++it)
+		{
+			i = *it;
+			x[i]		= mb[i];
+			mLambda[i]	= 0.0;
+		}
+		for(it=mListSset.begin(); it!=mListSset.end(); ++it)
+		{
+			i = *it;
+			mMu[i] 		= 0.0;
+			mLambda[i] 	= 0.0;
+		}
+		
+		// --- solve new linear system to get first x
+		
+		// setup the left hand side matrix and right hand side vector
+		Nsub = 0;
+		k = 0;
+		for(it=mListSset.begin(); it!=mListSset.end(); ++it)
+		{
+			i = *it;
+			// LHS
+			for(jt=mListSset.begin(); jt!=mListSset.end(); ++jt)
+			{
+				j = *jt;
+				mLHS[k] = B[i**LDA+j];
+				++k;
+			}
+			// RHS
+			// local variable
+			double rhs_tmp( - d[i] );
+			for(jt=mListLset.begin(); jt!=mListLset.end(); ++jt)
+			{
+				j = *jt;
+				rhs_tmp -= B[i**LDA + j] * ma[j];
+			}
+			for(jt=mListUset.begin(); jt!=mListUset.end(); ++jt)
+			{
+				j = *jt;
+				rhs_tmp -= B[i**LDA + j] * mb[j];
+			}
+			mRHS[Nsub] = rhs_tmp;
+			++Nsub;
+		}
+		
+		// solve linear subsystem
+		dgesv(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &INFO);
+		if(INFO != 0)
+		std::cout << "Error: couldn't solve the linear system in BOXCQP. INFO: " << INFO << std::endl;
+		
+		// update parameters
+		// x
+		k = 0;
+		for(it=mListSset.begin(); it!=mListSset.end(); ++it)
+		{
+			i = *it;
+			x[i] = mRHS[k];
+			++k;
+		}
+		// lambda
+		for(it=mListLset.begin(); it!=mListLset.end(); ++it)
+		{
+			i = *it;
+			mLambda[i] = ddot_(&mN, &B[i**LDA], &I1, x, &I1) + d[i];
+		}
+		// mu
+		for(it=mListUset.begin(); it!=mListUset.end(); ++it)
+		{
+			i = *it;
+			mMu[i] = -ddot_(&mN, &B[i**LDA], &I1, x, &I1) - d[i];
+		}
+		
+#else // NDEF USE_SUBMATRIX_QP
+		
+		// --- update parameters
+		
 		#pragma omp parallel for
 		for(size_t i(0); i<mN; ++i)
 		{
@@ -93,6 +182,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 					break;
 			};
 		}
+
 		
 		// --- solve new linear system
 				
@@ -118,7 +208,6 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		
 		// setup the right hand side vector
 		memcpy(mRHS, d, mN*sizeof(double));
-		char trans = 'N';
 		dgemv_(&trans, &mN, &mN, &D1, B, LDA, mx_known, &I1, &D1, mRHS, &I1);
 		daxpy_(&mN, &D1, mMu_known, &I1, mRHS, &I1);
 		daxpy_(&mN, &minus_one, mLambda_known, &I1, mRHS, &I1);
@@ -148,6 +237,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 					break;
 			};
 		}
+#endif // USE_SUBMATRIX_QP
 		
 		// --- verify validity of the solution
 		convergenceReached = true;
@@ -178,14 +268,25 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 void BOXCQP::alocateMemory(void)
 {
 	mSets.resize(mN);
+#ifdef USE_SUBMATRIX_QP
+	mSpace.resize(mN*mN + 3*mN);
+	mListLset.reserve(mN);
+	mListUset.reserve(mN);
+	mListSset.reserve(mN);
+#else
 	mSpace.resize(mN*mN + 6*mN);
+#endif
 	
 	mLambda = &mSpace[0];
 	mMu 	= mLambda + mN;
+#ifndef USE_SUBMATRIX_QP
 	mx_known 		= mMu + mN;
 	mMu_known 		= mx_known + mN;
 	mLambda_known 	= mMu_known + mN;
 	mRHS	= mLambda_known + mN;
+#else
+	mRHS	= mMu + mN;
+#endif
 	mLHS	= mRHS + mN;
 }
 
@@ -193,6 +294,30 @@ void BOXCQP::alocateMemory(void)
 // ----------------------------------------------------------------------
 void BOXCQP::updateSets(double *ax)
 {
+#ifdef USE_SUBMATRIX_QP
+	mListLset.clear();
+	mListUset.clear();
+	mListSset.clear();
+	
+	for(size_t i(0); i<mN; ++i)
+	{
+		if(  (ax[i] < ma[i])   ||   (ax[i] == ma[i] && mLambda[i] >= 0.0) )
+		{
+			mSets[i] = LSET;
+			mListLset.push_back(i);
+		}
+		else if( (ax[i] > mb[i])   ||   (ax[i] == mb[i] && mMu[i] >= 0.0) )
+		{
+			mSets[i] = USET;
+			mListUset.push_back(i);
+		}
+		else
+		{
+			mSets[i] = SSET;
+			mListSset.push_back(i);
+		}
+	}
+#else
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 	{
@@ -203,6 +328,7 @@ void BOXCQP::updateSets(double *ax)
 		else
 			mSets[i] = SSET;
 	}
+#endif // USE_SUBMATRIX_QP
 }
 // ----------------------------------------------------------------------
 
