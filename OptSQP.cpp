@@ -670,7 +670,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	if(phi_a_prime < 0.0 && a != *aalpha)
 	{
 		double a0 = a_prev;
-		while(phi < phi_prev && iter < 10)
+		while(phi < phi_prev && iter < maxIterBack)
 		{
 			++iter;
 			
