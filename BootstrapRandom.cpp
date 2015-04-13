@@ -25,6 +25,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 		break;
 		
 	case EVOLUTION_STRATEGY:
+		//int numGenerations = static_cast<int> (log(static_cast<double>(mN))*1.5);
 		int numGenerations = 5;
 		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], numGenerations);
 		break;
@@ -59,6 +60,7 @@ void BootstrapRandom::alocateMemory(void)
 #ifdef BOOTSTRAP_ES
 	
 	// choose a population size
+#if 0
 	// we take here a population of:
 	// - 15 for small problems
 	// - 70 for medium to large problems
@@ -69,7 +71,11 @@ void BootstrapRandom::alocateMemory(void)
 		mPopSize = 20 + float(mN-10)*1.25;
 	else
 		mPopSize = 70;
-	
+#else
+	// linear model: the population size is linearly dependant 
+	// on the number of variables
+	 mPopSize = 10 + static_cast<int>( 1.15*static_cast<double>(mN) );
+#endif	
 	mGASpace.resize( mPopSize*(mN+1) );
 	
 	mPopFitness = &mGASpace[0];

@@ -10,7 +10,7 @@
 // ----------------------------------------------------------------------
 
 
-void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x)
+void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder)
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
@@ -42,6 +42,9 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	{
 		convergenceReached = convergenceReached && (ma[i] <= x[i] && x[i] <= mb[i] );
 	}
+	
+	// If the solution is already valid, it means it is within the bounds 
+	*aSolutionOnBorder = convergenceReached;
 	
 	// main loop
 	for(size_t step(0); !convergenceReached; ++step)
@@ -417,12 +420,37 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			std::cout << "Quadratic program solving..." << std::endl;
 		
 		// solve quadratic program to get the search direction		
-		mQPsolver->solveQP(mHessian, mGradient, &mN, mP);
+		bool QPsolutionOnBorder;
+		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
+		
 		
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
 		
+		
 		alpha = 1.0;
+#if 0
+		if(not QPsolutionOnBorder)
+		{
+			
+			// find biggest possible step size
+			alpha = 1e8;
+			double low, high, pi, candidate;
+			
+			for(size_t i(0); i<mN; ++i)
+			{
+				low = mLowerBound[i] - x[i];
+				high = mUpperBound[i] - x[i];
+				pi = mP[i];
+				
+				if(fabs(pi) > 1e-8)
+				{
+					candidate = pi > 0 ? high/pi : low/pi;
+					alpha = candidate < alpha ? candidate : alpha;
+				}
+			}
+		}
+#endif
 		
 		// line search
 		lineSearch(&alpha, x, f);
@@ -641,8 +669,10 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	// we take a step dependant on the problem size:
 	// if the problem is large, we are able to spend more time 
 	// to find a better solution.
-	// other wise, we consider that the solution is sufficiently 
+	// otherwise, we consider that the solution is sufficiently 
 	// good and continue. 
+	// The time of line search should be small compared to the 
+	// gradient computation
 	
 	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
 	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
@@ -718,123 +748,104 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 // ----------------------------------------------------------------------
 void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 {
-	// strong Wolfe conditions constants
-	const double c1(1e-2);
-	const double c2(0.9);
-	
-	mNumCallZoom = 0;
-	
-	// local variables
-	double a_prev = 0.;
-	double a = *aalpha;
-	double amax = 1.0;
-	double phi_0 = *f;
-	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1); 
+	// constants for the Wolfe condition
+	double c1 (2e-1), c2 (0.1);
+	double amax = *aalpha;
+	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
+	double phi_0 = *f, phi, phi_prev;
+	double a_prev = 0.0;//*aalpha;
 	double phi_a_prime;
 	
-	double phi = evaluateFunctionForLineSearch(x, a);
-	double phi_prev = phi_0;
-	
+	double a = randFrom0to1();
+		
 	if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "phi_0_prime : " << phi_0_prime << std::endl;
+		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
+	phi = phi_prev = phi_0;
 	
-	// first perform a backtrace to  avoid too large values
-	double back_multiplier = 0.3;
-	int back_iter(0);
-	for(back_iter = 0; back_iter < 10 && phi > phi_0 + c1*a*phi_0_prime; ++back_iter)
+	double sigma, sigma_bas;
+	int maxIter, iter=0;
+	
+	maxIter = static_cast<int> (ceil( 3.*log(mN+10) ));
+	sigma_bas 	= pow(1e-2, 1./static_cast<double>(maxIter));
+	
+	while(iter < maxIter)
 	{
-		a *= back_multiplier;
+		++iter;
+		phi_prev = phi;
 		phi = evaluateFunctionForLineSearch(x, a);
+		std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
 		
-		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "LINE_SEARCH_DEBUG: backtracking: " << a << " " << phi << std::endl;
-	}
-	
-	if(back_iter==0)
-		a *= back_multiplier;
-	amax = a/back_multiplier;
-	a_prev = a*back_multiplier;
-	
-	bool WolfeSatisfied(false);
-	int iter = 0;
-	while(!WolfeSatisfied && iter<10)
-	{
-		if( (phi > phi_0 + c1*a*phi_0_prime) || (phi >= phi_prev && iter > 0) )
+		if(phi > phi_0 + c1*a*phi_0_prime || ((phi > phi_prev) && (iter > 1)) )
 		{
-			*aalpha = zoom(a_prev, a, x, phi_0, phi_0_prime, c1, c2);
-			WolfeSatisfied = true;
+			a = zoom(a_prev, a, x, phi_0, phi_0_prime, phi_prev, c1, c2);
+			break;
 		}
-		else
+		
+		// compute the derivative at point a
+		double eh = sqrt(DBL_EPSILON);
+		if( a+eh >= 1.0 ) {eh = -eh;}
+		phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
+		
+		if(fabs(phi_a_prime) <= -c2*phi_0_prime)
 		{
-			// evaluate the derivative phi_a_prime
-			double eh = sqrt(DBL_EPSILON);
-			if( a+eh >= 1.0 ) {eh = -eh;}
-			phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
-		
-			if(fabs(phi_a_prime) <= -c2*phi_0_prime)
-			{
-				*aalpha = a;
-				WolfeSatisfied = true;
-			}
-			else if( phi_a_prime >= 0.0 )
-			{
-				*aalpha = a = zoom(a, a_prev, x, phi_0, phi_0_prime, c1, c2);
-				WolfeSatisfied = true;
-			}
-			else
-			{
-				double propa = 0.5;
-				a = propa*a + (1.-propa)*amax;
-				++iter;
-			}
+			// wolfe conditions are satisfied, stop searching
+			break;
 		}
-		phi = evaluateFunctionForLineSearch(x, a);
-		
-		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "LINE_SEARCH_INFO: strong wolfe line search: " << a << " " << phi << std::endl;
+		if(phi_a_prime >= 0.0)
+		{
+			std::cout << "case 3, phi_a_prime: " << phi_a_prime << std::endl;
+			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
+			break;
+		}
+		//sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
+		sigma = randFrom0to1();
+		//sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
+		a_prev = a;
+		a = amax + sigma*(a-amax);
 	}
 	
 	
+	*f = evaluateFunctionForLineSearch(x,a);
 	*aalpha = a;
-	daxpy_(&mN, aalpha, mP, &I1, x, &I1);	
-	*f = phi;
+	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
 }
 
 
 // ----------------------------------------------------------------------
-double OptSQP::zoom(double low, double high, const double *x, 
-					double const& phi_0, double const& phi_0_prime, 
-					double const& c1, double const& c2)
+double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2)
 {
-	// bisection
-	double proplow = 0.5;
-	double a = proplow*low + (1.0-proplow)*high;
-	
-	++ mNumCallZoom;
-	if(mNumCallZoom > 5)
-		return a;
-	
-	double phi = evaluateFunctionForLineSearch(x, a);
-	double phihigh = evaluateFunctionForLineSearch(x, high);
-	
-	if( phi > phi_0 + c1*a*phi_0_prime || phi >= phihigh )
-		return zoom(low, a, x, phi_0, phi_0_prime, c1, c2);
-	else
+	double a, phi, phi_a_prime;
+	double philo = phi_lo;
+	a = 0.5*(alo+ahi);
+	while( fabs(ahi-alo) > 0.01 )
 	{
-		// evaluate the derivative phi_a_prime to verify the second Wolfe condition
-		double eh = sqrt(DBL_EPSILON);
-		if( a+eh >= 1.0 ) {eh = -eh;}
-		double phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
-		
-		if( fabs(phi_a_prime) <= -c2*phi_0_prime)
-			return a;
-		if( phi_a_prime*(high-low) >= 0.0 )
-			return zoom(a, low, x, phi_0, phi_0_prime, c1, c2);
-		return zoom(a, high, x, phi_0, phi_0_prime, c1, c2);
+		double tmp = 0.5;
+		a = tmp*alo + (1.-tmp)*ahi;
+		phi = evaluateFunctionForLineSearch(x, a);
+		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl; 
+		if(phi > phi_0 + a*c1*phi_0_prime || phi > philo)
+		{
+			ahi = a;
+		}	
+		else
+		{
+			double eh = sqrt(DBL_EPSILON);
+			if( a+eh >= 1.0 ) {eh = -eh;}
+			phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
+			
+			if(fabs(phi_a_prime) <= -c2*phi_0_prime)
+				return a;
+				
+			if(phi_a_prime*(ahi-alo) >= 0.0)
+				ahi = alo;
+				
+			alo = a;
+			philo = phi;
+		}
 	}
 	
+	return a;
 }
-
 #endif // STRONG_WOLFE_LINE_SEARCH
 

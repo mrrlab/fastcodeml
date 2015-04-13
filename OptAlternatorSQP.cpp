@@ -87,11 +87,12 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Quadratic program solving..." << std::endl;
 		
-		// solve quadratic program to get the search direction		
+		// solve quadratic program to get the search direction	
+		bool QPsolutionOnBorder;	
 		switch(mSearchSpace)
 		{
 			case SPACE_FULL:
-				mQPsolverFull->solveQP(mHessian, mGradient, &mN, mP);
+				mQPsolverFull->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
 				
 				++fullSpaceCounter;
 				if(fullSpaceCounter > roundsFullSpace)
@@ -102,7 +103,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 				break;
 				
 			case SPACE_BRANCHES_ONLY:
-				mQPsolverBL->solveQP(mHessian, mGradient, &mN, mP);
+				mQPsolverBL->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
 				// make the search direction only along the branch lengths
 				int mNExtra = mN-mNumTimes;
 				dcopy_(&mNExtra, &D0, &I0, &mP[mNumTimes], &I1);

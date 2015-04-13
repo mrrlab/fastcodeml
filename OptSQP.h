@@ -54,8 +54,9 @@ public:
 	/// @param[in]  d the d vector
 	/// @param[in]	LDA the leading dimension of matrix B
 	/// @param[out] x the solution vector
+	/// @param[out] aSolutionOnBorder true if the solution is on the bounds, false otherwise
 	///
-	void solveQP(const double *B, const double *d, const int *LDA, double *x);
+	void solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder);
 	
 	
 private:
@@ -116,7 +117,7 @@ private:
 
 // uncomment to use strong wolfe conditions as a stopping criterion for the line search
 // comment it to use only the first Wolfe condition
-//#define STRONG_WOLFE_LINE_SEARCH
+#define STRONG_WOLFE_LINE_SEARCH
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -236,8 +237,16 @@ private:
 	void BFGSupdate(void);
 	
 	/// lineSearch
-	/// perform a line search in th mP direction
-	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf
+	/// perform a line search in the mP direction
+	///
+	/// two versions implemented:
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
+	/// wolfe condition.
+	///
+	///	The other version is a backtrace followed by a little refinement, consisting
+	/// in a backtrace in the direction of derivative.
+	/// 
 	///
 	/// note: be careful, the last computation of the likelihood
 	///		  is the best solution so the gradient computaion is 
@@ -254,21 +263,23 @@ private:
 	
 #ifdef STRONG_WOLFE_LINE_SEARCH
 	/// zoom
-	///	subroutine used in the lineSearch for the strong Wolfe conditions
-	/// see http://pages.cs.wisc.edu/~ferris/cs730/chap3.pdf pp.60-61 for
-	/// more informations
+	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
 	///
-	/// @param[in]	low			Low value of the step length
-	/// @param[in]	high		High value of the step length
-	/// @param[in]	x			The current position
-	/// @param[in]	phi_0		The function value at point x
-	/// @param[in]	phi_0_prime	The derivative in the mP direction at point x
-	/// @param[in]	c1			Constant for the strong Wolfe conditions
-	/// @param[in]	c2			Constant for the strong Wolfe conditions
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm
 	///
-	/// @return the optimal step length
+	/// @param[in] alo	The lower bound of the interval
+	/// @param[in] ahi	The upper bound of the interval
+	/// @param[in] x	The previous position
+	/// @param[in] phi_0		The value phi(0) = f(x + 0.mP)
+	/// @param[in] phi_0_prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
+	/// @param[in] phi_lo		The value of the function at point alo
+	/// @param[in] c1	The first wolfe variable
+	/// @param[in] c2	The second wolfe variable
 	///
-	double zoom(double low, double high, const double *x, double const& phi_0, double const& phi_0_prime, const double& c1, const double& c2);
+	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
+	///
+	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
 #endif
 
 private:
