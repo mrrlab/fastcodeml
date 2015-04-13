@@ -2,8 +2,7 @@
 - Unit Tests (a general test suite)
 - More details in INSTALL file
   to help users!!!
-- Do a complete FastCodeML run on Primates to compare it
-  large scale with Primate SlimCodeml run
+- For cmake, need a CMakeLists.txt example file with other compilers
 - Add an option to deal with different genetic code
   and maybe user own genetic code file
 - Could we deal with Selenocystein and other "new" Amino acids?
