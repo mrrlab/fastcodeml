@@ -117,7 +117,7 @@ private:
 
 // uncomment to use strong wolfe conditions as a stopping criterion for the line search
 // comment it to use only the first Wolfe condition
-#define STRONG_WOLFE_LINE_SEARCH
+//#define STRONG_WOLFE_LINE_SEARCH
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -300,6 +300,8 @@ private:
 	
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
+	
+	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computaion
 	
 	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix

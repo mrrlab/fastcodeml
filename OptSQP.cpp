@@ -376,6 +376,9 @@ void OptSQP::alocateMemory(void)
 	
 	mXPrev = mYk + mN;
 	mGradPrev = mXPrev + mN;
+	
+	// set active set counters to zero
+	mActiveSet.resize(mN, 0);
 }
 
 
@@ -465,6 +468,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				x[i] = mUpperBound[i];
 		}
 		
+		
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Step length found:" << alpha << std::endl;
 		
@@ -489,6 +493,37 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			std::cout << "BFGS update..." << std::endl;
 			
 		BFGSupdate();
+		
+		
+		// update the active set
+		#pragma omp parallel for
+		for(size_t i(0); i<mN; ++i)
+		{
+			if(mActiveSet[i] > 0)
+			{
+				// reduce counters for active sets
+				--mActiveSet[i];
+			}
+			else
+			{
+				// update active set so we can reduce the gradient computation
+				const double activeSetTol = 1e-4;
+				const int maxCountLow = static_cast<int>(1.3*log (static_cast<double>(mN)/10.)) + 1;
+				const int maxCountUpp = static_cast<int>(2.0*tanh(static_cast<double>(mN)/30.));
+				if(x[i] <= mLowerBound[i] + activeSetTol && mGradient[i] >= 0.0)
+				{
+					mActiveSet[i] = maxCountLow;
+					if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "Variable " << i << " in the (lower) active set.\n";
+				}
+				if(x[i] >= mUpperBound[i] - activeSetTol && mGradient[i] <= 0.0)
+				{
+					mActiveSet[i] = maxCountUpp;
+					if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "Variable " << i << " in the (upper) active set.\n";
+				}
+			}
+		}
 		
 		// check convergence
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
@@ -541,22 +576,29 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	
 	for(i=0; i<mNumTimes; ++i)
 	{
-		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
-		aGrad[i] = (f-f0)/delta[i];
+		if(mActiveSet[i] == 0)
+		{
+			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+			aGrad[i] = (f-f0)/delta[i];
+		}
+		// otherwise we don't change it
 	}
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x, size_vect);
 	for(; i<mN; ++i)
 	{
-		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
-		if( x[i] + eh > mUpperBound[i] )
-			eh = -eh;
-		mXEvaluator[i] += eh;
-		eh = mXEvaluator[i] - x[i];
-		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
-		aGrad[i] = (f-f0)/eh;
-		mXEvaluator[i] = x[i];
+		if(mActiveSet[i] == 0)
+		{
+			eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
+			if( x[i] + eh > mUpperBound[i] )
+				eh = -eh;
+			mXEvaluator[i] += eh;
+			eh = mXEvaluator[i] - x[i];
+			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+			aGrad[i] = (f-f0)/eh;
+			mXEvaluator[i] = x[i];
+		}
 	}
 }
 
