@@ -181,7 +181,6 @@ private:
 	RNGType 										rng;			///< Uniform andom number generator
 	
 	boost::random::gamma_distribution<double> 		gamma_dist_T;	///< distribution of the branchLengths(mixture)
-	//boost::random::normal_distribution<double>		normal_dist_T;	///< distribution of the branchLengths(mixture)
     boost::random::exponential_distribution<double> exp_dist_v0;	///< distribution of 1 - v0
     boost::random::gamma_distribution<double> 		gamma_dist_v1;	///< distribution of 1 - v1
 	boost::random::beta_distribution<double> 		beta_dist_w0;	///< distribution of w0

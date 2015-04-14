@@ -60,7 +60,7 @@ void BootstrapRandom::alocateMemory(void)
 #ifdef BOOTSTRAP_ES
 	
 	// choose a population size
-#if 0
+#if 1
 	// we take here a population of:
 	// - 15 for small problems
 	// - 70 for medium to large problems

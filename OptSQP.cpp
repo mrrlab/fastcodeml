@@ -774,6 +774,8 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		++iter;
 		phi_prev = phi;
 		phi = evaluateFunctionForLineSearch(x, a);
+		
+		if(mVerbose >= VERBOSE_MORE_DEBUG)
 		std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
 		
 		if(phi > phi_0 + c1*a*phi_0_prime || ((phi > phi_prev) && (iter > 1)) )
@@ -794,7 +796,6 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		}
 		if(phi_a_prime >= 0.0)
 		{
-			std::cout << "case 3, phi_a_prime: " << phi_a_prime << std::endl;
 			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
@@ -823,7 +824,9 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 		double tmp = 0.5;
 		a = tmp*alo + (1.-tmp)*ahi;
 		phi = evaluateFunctionForLineSearch(x, a);
-		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl; 
+		if(mVerbose >= VERBOSE_MORE_DEBUG)
+		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
+		 
 		if(phi > phi_0 + a*c1*phi_0_prime || phi > philo)
 		{
 			ahi = a;
