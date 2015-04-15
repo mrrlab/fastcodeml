@@ -32,6 +32,7 @@ set(SRCS
 	OptNES.cpp
 	OptAlternatorSQP.cpp
 	OptSQP.cpp
+	BOXCQP.cpp
 )
 
 

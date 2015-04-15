@@ -7,7 +7,7 @@
 #include <vector>
 #include <memory>
 #include "BranchSiteModel.h"
-#include "OptSQP.h"
+#include "BOXCQP.h"
 
 
 /// OptAlternatorSQP class.
