@@ -11,7 +11,8 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	
 	double likelihoodValue = -1000000;
 	
-	BootstrapType btype = EVOLUTION_STRATEGY; //RANDOM_TRIES_SEPARATE_VARS;//
+	BootstrapType btype = EVOLUTION_STRATEGY;
+	//BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS;
 	switch(btype)
 	{
 	case ONLY_RANDOM_TRIES:
@@ -21,7 +22,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	case RANDOM_TRIES_SEPARATE_VARS:
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN);
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
-		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
+		//bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
 		break;
 		
 	case EVOLUTION_STRATEGY:
@@ -179,7 +180,7 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 	double *rand_x = &mSpace[0];
 	memcpy(rand_x, x, size_vect);
 	
-	unsigned int numTriesPerVar = ceil(log(mN));
+	size_t numTriesPerVar = static_cast<size_t>(ceil(log(mN)));
 	
 	// look in each direction the "best" variable
 	for(unsigned int i(0); i<mN; ++i)
@@ -187,7 +188,8 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 		for(unsigned int j(0); j<numTriesPerVar; ++j)
 		{
 			rand_x[i] = generateRandom(i);
-			rand_f = evaluateLikelihood(rand_x);
+			memcpy(&x_[0], rand_x, size_vect);
+			rand_f = mModel->computeLikelihoodForGradient(x_, false, i);
 			
 			if( rand_f > *f )
 			{

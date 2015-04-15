@@ -430,12 +430,11 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
 		
-		
 		alpha = 1.0;
 #if 0
+		// attempt to get a longer step if possible. 
 		if(not QPsolutionOnBorder)
 		{
-			
 			// find biggest possible step size
 			alpha = 1e8;
 			double low, high, pi, candidate;
@@ -681,6 +680,7 @@ void OptSQP::BFGSupdate(void)
 	// make the diagonal more important in order to avoid non positive definite matrix, 
 	// due to roundoff errors
 	int diag_stride = mN+1;
+	//double factor = 1.1;
 	double factor = 1.1;
 	double inv_factor = 1.0/factor;
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
