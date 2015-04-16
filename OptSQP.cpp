@@ -14,6 +14,24 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	
 	alocateMemory();
 	
+	// set the scaling
+	int i;
+	for(i=0; i<mNumTimes; ++i)
+	{
+		mUpperBound[i] = 200.;
+	}
+	++i; // v0
+	//mUpperBound[i] = 10.;
+	++i; // v1
+	//mUpperBound[i] = 10.;
+	
+	i = mNumTimes+4; // w2
+	if(mN > i)
+	{
+		mLowerBound[i] = 0.0;
+		mUpperBound[i] = 1.0;
+	}
+	
 	double maxl = 1e7;
 	SQPminimizer(&maxl, &aVars[0]);
 	return -maxl;
@@ -48,9 +66,43 @@ void OptSQP::alocateMemory(void)
 
 
 // ----------------------------------------------------------------------
+void OptSQP::scaleVariables(double *x)
+{
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		double slb = mLowerBound[i];
+		double sub = mUpperBound[i];
+		double lb = mLowerBoundUnscaled[i];
+		double ub = mUpperBoundUnscaled[i];
+		
+		x[i] = slb + (x[i] - lb) * (sub-slb)/(ub-lb);
+	}
+}
+
+
+// ----------------------------------------------------------------------
+void OptSQP::unscaleVariables(double *x)
+{
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		double slb = mLowerBound[i];
+		double sub = mUpperBound[i];
+		double lb = mLowerBoundUnscaled[i];
+		double ub = mUpperBoundUnscaled[i];
+		
+		x[i] = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
+	}
+}
+
+
+// ----------------------------------------------------------------------
 void OptSQP::SQPminimizer(double *f, double *x)
 {
 	double f_prev;
+	scaleVariables(x);
+	
 	*f = evaluateFunction(x, mTrace);
 	
 	double alpha = 1.0;
@@ -144,8 +196,46 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			mModel->printVar(mXEvaluator, *f);
 		}
 		
+#if 0
+		// try to select a better solution around the new point
+		const size_t max_rand_tries = static_cast<const size_t>(sqrt(mN));
+		
+		double new_f(*f);
+		
+		for(size_t rand_try(0); rand_try<max_rand_tries; ++rand_try)
+		{
+			// build a random point
+			for(size_t i(0); i<mN; ++i)
+			{
+				double my_rand_x_i = x[i];
+				
+				if (mActiveSet[i] == 0)
+				{
+					my_rand_x_i += 1. * mP[i] * alpha * (0.5-randFrom0to1());
+				
+					if (my_rand_x_i < mLowerBound[i])
+						my_rand_x_i = mLowerBound[i];
+					if (my_rand_x_i > mUpperBound[i])
+						my_rand_x_i = mUpperBound[i];
+				}
+				
+				mXEvaluator[i] = my_rand_x_i;
+			}
+			new_f = -mModel->computeLikelihood(mXEvaluator, mTrace);
+			std::cout << "RANDOM TRY: f=" << *f << std::endl;
+			if (new_f <= *f)
+			{
+				memcpy(x, &mXEvaluator[0], size_vect);
+				*f = new_f;
+			}
+		}
+		*f = evaluateFunction(x, mTrace);
+#endif		
+		
 		// update the system
 		computeGradient(x, *f, mGradient);
+		
+		std::cout << "Gradient at comp. w2: " << mGradient[mNumTimes+4] << std::endl;
 		
 		memcpy(mSk, x, size_vect);
 		daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
@@ -160,7 +250,6 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		
 		// update the active set
-		const double active_set_tol = 1e-4;
 		//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
 		const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;
 		const int max_count_upper = (mN > 30 ? 1 : 0);
@@ -175,6 +264,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			}
 			else
 			{
+				const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
 				// update active set so we can reduce the gradient computation				
 				if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 				{
@@ -194,7 +284,8 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		// check convergence
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
-	}						
+	}
+	unscaleVariables(x);	
 }
 
 
@@ -202,6 +293,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 double OptSQP::evaluateFunction(const double *x, bool aTrace)
 {
 	memcpy(&mXEvaluator[0], x, size_vect);
+	unscaleVariables(&mXEvaluator[0]);
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
@@ -239,6 +331,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 		mXEvaluator[i] += eh;
 		delta[i] = mXEvaluator[i] - x[i];
 	}
+	unscaleVariables(&mXEvaluator[0]);
 	
 	for(i=0; i<mNumTimes; ++i)
 	{
@@ -261,9 +354,11 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 				eh = -eh;
 			mXEvaluator[i] += eh;
 			eh = mXEvaluator[i] - x[i];
+			unscaleVariables(&mXEvaluator[0]);
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 			aGrad[i] = (f-f0)/eh;
-			mXEvaluator[i] = x[i];
+			//mXEvaluator[i] = x[i];
+			memcpy(&mXEvaluator[0], x, size_vect);
 		}
 	}
 }

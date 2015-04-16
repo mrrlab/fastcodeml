@@ -41,8 +41,8 @@ public:
 	OptSQP(BranchSiteModel* aModel
 		  ,bool aTrace
 		  ,unsigned int aVerbose
-		  ,const std::vector<double>& aLowerBound
-		  ,const std::vector<double>& aUpperBound
+		  ,std::vector<double> aLowerBound
+		  ,std::vector<double> aUpperBound
 		  ,double aAbsoluteError
 		  ,bool aStopIfBigger
 		  ,double aThreshold
@@ -51,6 +51,8 @@ public:
 		:mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
+		,mLowerBoundUnscaled(aLowerBound)
+		,mUpperBoundUnscaled(aUpperBound)
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
 		,mAbsoluteError(aAbsoluteError)
@@ -78,6 +80,20 @@ private:
 	/// alocate the space for storage
 	///
 	void alocateMemory(void);
+	
+	/// scaleVariables
+	/// scale the variables of the problem linearly so it is more adapted to the optimization method
+	///
+	/// @param[in,out] x The variables to be scaled
+	/// 
+	void scaleVariables(double *x);
+	
+	/// unscaleVariables
+	/// unscale the variables of the problem linearly to recover the "true" values of the variables
+	///
+	/// @param[in,out] x The variables to be unscaled
+	/// 
+	void unscaleVariables(double *x);
 	
 	
 	/// SQPminimizer
@@ -209,8 +225,11 @@ private:
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
 	
-	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
-	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
+	const std::vector<double>	mLowerBoundUnscaled;	///< original lower bounds, before scaling	
+	const std::vector<double>	mUpperBoundUnscaled;	///< original upper bounds, before scaling
+	
+	std::vector<double>			mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
+	std::vector<double>			mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	
 	double						mAbsoluteError;		///< The absolute error at which the computation stops
 	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class

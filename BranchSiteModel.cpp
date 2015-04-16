@@ -322,7 +322,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
 	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
 	if(aNumVariables >= 5)
 	{
-		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2
+		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2 // TODO: check if possible to reduce from 999 to 199
 	}
 }
 
@@ -480,6 +480,8 @@ void BranchSiteModel::initVariables(void)
         double tot = x0 + x1 + 0.1;
         double p0 = x0/tot;
         double p1 = x1/tot;
+        mVar[index_vars_other+0] = p0+p1;								// p0+p1
+        mVar[index_vars_other+1] = p0/(p0+p1);							// p0/(p0+p1)
 	#endif // USE_ORIGINAL_PROPORTIONS
 #else
 		double p0 = -1.0;
@@ -494,9 +496,11 @@ void BranchSiteModel::initVariables(void)
         double tot = p0+p1+0.1;
         p0 /= tot;
         p1 /= tot;
-#endif // OLD_INITIALIZATION
+        
         mVar[index_vars_other+0] = p0+p1;								// p0+p1
         mVar[index_vars_other+1] = p0/(p0+p1);							// p0/(p0+p1)
+#endif // OLD_INITIALIZATION
+        
 
 	#ifdef OLD_INITIALIZATION
         mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();				// w0

@@ -105,6 +105,44 @@ double BootstrapRandom::generateRandom(unsigned int i)
 	{
 		switch(i-mNumTimes)
 		{
+#ifdef USE_ORIGINAL_PROPORTIONS
+		case 0:
+        case 1:
+        	double v0(2.0),v1(2.0);
+        	low = 0.0;
+        	high = 1.0;
+        	while(v0 >= high || v0 <= low)
+        		v0 = 1.0 - exp_dist_v0( rng );
+			while(v1 >= high || v1 <= low)
+        		v1 = 1.0 - gamma_dist_v1( rng );
+        	
+        	// convert to original proportion variables
+        	double a,b, w0, w1;
+        	
+        	a = v0*v1;
+        	b = v0*(1.0-v1);
+        	a = a/(1.0-a);
+        	b = b/(1.0-b);
+        	
+        	w0 = a * (1.0+b)/(1.0-a*b);
+        	w1 = b * (1.0+a)/(1.0-a*b);
+        	
+        	if ( (i-mNumTimes) == 0 )	// v0
+        	{
+        		randNumber = log(w0);
+        		std::cout << "v0:"<<randNumber << std::endl;
+        	}
+        	else						// v1
+        	{
+        		randNumber = log(w1);
+        		std::cout << "v1:"<<randNumber << std::endl;
+        	}
+        	if(randNumber < mLowerBound[i])
+        		randNumber = mLowerBound[i];
+        	if(randNumber > mUpperBound[i])
+        		randNumber = mUpperBound[i];
+        	break;
+#else
 		case 0: // v0
 			while(randNumber >= high || randNumber <= low)
         		randNumber = 1.0 - exp_dist_v0( rng );
@@ -114,7 +152,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
 			while(randNumber >= high || randNumber <= low)
         		randNumber = 1.0 - gamma_dist_v1( rng );
         	break;
-        
+#endif
         case 2: // w0
 			randNumber = beta_dist_w0( rng ); // always between 0 and 1
         	break;
