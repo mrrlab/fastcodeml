@@ -95,7 +95,6 @@ private:
 	/// 
 	void unscaleVariables(double *x);
 	
-	
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
 	///	uses quadratic programming to solve local constrained subproblems 

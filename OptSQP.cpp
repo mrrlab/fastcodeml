@@ -15,15 +15,26 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	alocateMemory();
 	
 	// set the scaling
+#define SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES
 	int i;
+	// get a better scaling for the branch lengths variables.
+	// it is often near ~0.25, multiply it by 4 so it is "more" around 1
 	for(i=0; i<mNumTimes; ++i)
 	{
-		mUpperBound[i] = 200.;
+		//mUpperBound[i] = 500.; // very quick but a bit less robust
+		//mUpperBound[i] = 200.; // a bit quick and very robust
+		mLowerBound[i] = 0.5;
+		mUpperBound[i] *= 4.0;
 	}
-	++i; // v0
-	//mUpperBound[i] = 10.;
-	++i; // v1
-	//mUpperBound[i] = 10.;
+	
+	/*
+	i = mNumTimes + 1; // v1
+	mUpperBound[i] = 10.0;
+	
+	i = mNumTimes + 2; // w0
+	mUpperBound[i] = 100.0;
+	*/
 	
 	i = mNumTimes+4; // w2
 	if(mN > i)
@@ -31,6 +42,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 		mLowerBound[i] = 0.0;
 		mUpperBound[i] = 1.0;
 	}
+#endif
 	
 	double maxl = 1e7;
 	SQPminimizer(&maxl, &aVars[0]);
@@ -95,7 +107,6 @@ void OptSQP::unscaleVariables(double *x)
 		x[i] = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
 	}
 }
-
 
 // ----------------------------------------------------------------------
 void OptSQP::SQPminimizer(double *f, double *x)
@@ -234,24 +245,29 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// update the system
 		computeGradient(x, *f, mGradient);
-		
-		std::cout << "Gradient at comp. w2: " << mGradient[mNumTimes+4] << std::endl;
-		
+				
 		memcpy(mSk, x, size_vect);
 		daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
 		memcpy(mYk, mGradient, size_vect);
 		daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
+		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "BFGS update..." << std::endl;
 			
 		BFGSupdate();
 		
+		std::cout << "Hessian diagonal at step " << mStep << ":\n";
+		for(size_t i(0); i<mN; ++i)
+		{
+			std::cout << mHessian[i*(mN+1)] << " ";
+		}
+		std::cout << std::endl;
 		
 		// update the active set
 		//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
-		const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;
+		const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
 		const int max_count_upper = (mN > 30 ? 1 : 0);
  
 		#pragma omp parallel for
