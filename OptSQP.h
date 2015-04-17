@@ -13,6 +13,9 @@
 // comment it to use only the first Wolfe condition
 //#define STRONG_WOLFE_LINE_SEARCH
 
+// uncomment to rescale the variables before the optimization process
+//#define SCALE_OPT_VARIABLES
+
 /// OptSQP class.
 /// sequential quadratic programming optimizer
 /// see http://www.neos-guide.org/content/sequential-quadratic-programming

@@ -14,18 +14,14 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	
 	alocateMemory();
 	
-	// set the scaling
-#define SCALE_OPT_VARIABLES
 #ifdef SCALE_OPT_VARIABLES
+	// set the scaling
 	int i;
 	// get a better scaling for the branch lengths variables.
 	// it is often near ~0.25, multiply it by 4 so it is "more" around 1
 	for(i=0; i<mNumTimes; ++i)
 	{
-		//mUpperBound[i] = 500.; // very quick but a bit less robust
-		//mUpperBound[i] = 200.; // a bit quick and very robust
-		mLowerBound[i] = 0.5;
-		mUpperBound[i] *= 4.0;
+		mUpperBound[i] = 200.0;
 	}
 	
 	/*
@@ -77,6 +73,7 @@ void OptSQP::alocateMemory(void)
 }
 
 
+#ifdef SCALE_OPT_VARIABLES
 // ----------------------------------------------------------------------
 void OptSQP::scaleVariables(double *x)
 {
@@ -88,7 +85,13 @@ void OptSQP::scaleVariables(double *x)
 		double lb = mLowerBoundUnscaled[i];
 		double ub = mUpperBoundUnscaled[i];
 		
-		x[i] = slb + (x[i] - lb) * (sub-slb)/(ub-lb);
+		double x_ = slb + (x[i] - lb) * (sub-slb)/(ub-lb);
+		
+		if (x_ < slb)
+			x_ = slb;
+		if (x_ > sub)
+			x_ = sub;
+		x[i] = x_;
 	}
 }
 
@@ -104,15 +107,25 @@ void OptSQP::unscaleVariables(double *x)
 		double lb = mLowerBoundUnscaled[i];
 		double ub = mUpperBoundUnscaled[i];
 		
-		x[i] = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
+		double x_ = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
+		
+		if (x_ < lb)
+			x_ = lb;
+		if (x_ > ub)
+			x_ = ub;
+		x[i] = x_;
 	}
 }
+#endif // SCALE_OPT_VARIABLES
+
 
 // ----------------------------------------------------------------------
 void OptSQP::SQPminimizer(double *f, double *x)
 {
 	double f_prev;
+#ifdef SCALE_OPT_VARIABLES
 	scaleVariables(x);
+#endif // SCALE_OPT_VARIABLES
 	
 	*f = evaluateFunction(x, mTrace);
 	
@@ -301,7 +314,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 	}
-	unscaleVariables(x);	
+#ifdef SCALE_OPT_VARIABLES
+	unscaleVariables(x);
+#endif // SCALE_OPT_VARIABLES	
 }
 
 
@@ -309,7 +324,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 double OptSQP::evaluateFunction(const double *x, bool aTrace)
 {
 	memcpy(&mXEvaluator[0], x, size_vect);
+#ifdef SCALE_OPT_VARIABLES
 	unscaleVariables(&mXEvaluator[0]);
+#endif // SCALE_OPT_VARIABLES
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
@@ -336,19 +353,28 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	double f;
 	memcpy(&mXEvaluator[0], x, size_vect);
 	size_t i;
-	double *delta = &mWorkSpaceVect[0];
+	double *delta = mWorkSpaceVect;
+	
+	
+#ifdef SCALE_OPT_VARIABLES
+	double *x_ = mWorkSpaceMat;
+	memcpy(x_, x, size_vect);
+	unscaleVariables(&mXEvaluator[0]);
+	unscaleVariables(x_);
+#else
+	const double *x_ = x;
+#endif // SCALE_OPT_VARIABLES
 	
 	// branch lengths
 	for(i=0; i<mNumTimes; ++i)
 	{
-		eh = sqrt_eps * ( 1.0 + x[i] );
-		if( x[i] + eh > mUpperBound[i] )
+		eh = sqrt_eps * ( 1.0 + x_[i] );
+		if( x_[i] + eh > mUpperBoundUnscaled[i] )
 			eh = -eh;
 		mXEvaluator[i] += eh;
-		delta[i] = mXEvaluator[i] - x[i];
+		delta[i] = mXEvaluator[i] - x_[i];
 	}
-	unscaleVariables(&mXEvaluator[0]);
-	
+
 	for(i=0; i<mNumTimes; ++i)
 	{
 		if(mActiveSet[i] == 0)
@@ -360,23 +386,34 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	}
 	
 	// other variables
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x_, size_vect);
 	for(; i<mN; ++i)
 	{
 		if (mActiveSet[i] == 0)
 		{
-			eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
-			if ( x[i] + eh > mUpperBound[i] )
+			eh = sqrt_eps * ( 1.0 + fabs(x_[i]) );
+			if ( x_[i] + eh > mUpperBoundUnscaled[i] )
 				eh = -eh;
 			mXEvaluator[i] += eh;
-			eh = mXEvaluator[i] - x[i];
-			unscaleVariables(&mXEvaluator[0]);
+			eh = mXEvaluator[i] - x_[i];
+
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 			aGrad[i] = (f-f0)/eh;
-			//mXEvaluator[i] = x[i];
-			memcpy(&mXEvaluator[0], x, size_vect);
+			mXEvaluator[i] = x_[i];
 		}
 	}
+#ifdef SCALE_OPT_VARIABLES
+	#pragma omp parallel for
+	for (size_t j(0); j<mN; ++j)
+	{
+		double slb = mLowerBound[j];
+		double sub = mUpperBound[j];
+		double lb = mLowerBoundUnscaled[j];
+		double ub = mUpperBoundUnscaled[j];
+		
+		aGrad[j] *= (ub-lb)/(sub-slb);
+	}
+#endif // SCALE_OPT_VARIABLES
 }
 
 
