@@ -19,20 +19,20 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	int i;
 	// get a better scaling for the branch lengths variables.
 	// it is often near ~0.25, multiply it by 4 so it is "more" around 1
-	for(i=0; i<mNumTimes; ++i)
-	{
-		mUpperBound[i] = 200.0;
-	}
+	// in the new space representation
+	mUpperBound.assign(mNumTimes, 200.0);
 	
-	/*
-	i = mNumTimes + 1; // v1
-	mUpperBound[i] = 10.0;
 	
-	i = mNumTimes + 2; // w0
-	mUpperBound[i] = 100.0;
-	*/
+	i = mNumTimes + 1; 		// v1
+	mUpperBound[i] = 20.0;
 	
-	i = mNumTimes+4; // w2
+	i = mNumTimes + 2; 		// w0
+	mUpperBound[i] = 50.0;
+	
+	
+	// shrink the w2 variable between 0 and 1 so it is about the same scale as 
+	// the other variables in the new space representation
+	i = mNumTimes+4; 		// w2
 	if(mN > i)
 	{
 		mLowerBound[i] = 0.0;
@@ -106,8 +106,13 @@ void OptSQP::unscaleVariables(double *x)
 		double sub = mUpperBound[i];
 		double lb = mLowerBoundUnscaled[i];
 		double ub = mUpperBoundUnscaled[i];
+		double x_;
 		
-		double x_ = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
+		// assume slb = sb = 0
+		if (i<mNumTimes)
+			x_ = x[i] * (ub-lb)/(sub-slb);
+		else
+			x_ = lb + (x[i] - slb) * ub/sub;
 		
 		if (x_ < lb)
 			x_ = lb;
@@ -116,25 +121,69 @@ void OptSQP::unscaleVariables(double *x)
 		x[i] = x_;
 	}
 }
+
+
+#ifdef ADAPT_SCALED
+// ----------------------------------------------------------------------
+void OptSQP::adaptativeScale(double *x)
+{
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		if (mHessian[i*(mN+1)] > 1e1 || mHessian[i*(mN+1)] < 1e-1)
+		{
+			double slb = mLowerBound[i];
+			double sub = mUpperBound[i];
+			double lb = mLowerBoundUnscaled[i];
+			double ub = mUpperBoundUnscaled[i];
+		
+			double x_ = x[i];
+		
+			double scale = sqrt( mHessian[i*(mN+1)] );
+		
+		
+			// scale the position like variables
+			mUpperBound[i] = slb + (sub-slb)*scale;
+			x[i] = slb + (x_-slb)*scale;
+		
+			x_ = mXPrev[i];
+			mXPrev[i] = slb + (x_-slb)*scale;
+		
+			// scale the differential variables
+			scale = 1.0/scale;
+		
+			mGradient[i] *= scale;
+			mGradPrev[i] *= scale;
+		
+			dscal_(&mN, &scale, &mHessian[i*mN], &I1);
+			dscal_(&mN, &scale, &mHessian[i],	 &mN);
+		}
+	}
+}
+#endif // ADAPT_SCALED
 #endif // SCALE_OPT_VARIABLES
 
 
 // ----------------------------------------------------------------------
 void OptSQP::SQPminimizer(double *f, double *x)
 {
-	double f_prev;
 #ifdef SCALE_OPT_VARIABLES
 	scaleVariables(x);
 #endif // SCALE_OPT_VARIABLES
 	
+	double f_prev;
 	*f = evaluateFunction(x, mTrace);
 	
-	double alpha = 1.0;
-	double scale_s;
+	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+	{
+		std::cout << "Solution after Bootstrap:";
+		mModel->printVar(mXEvaluator, *f);
+	}
 	
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
 	
+	// bounds for the QP subproblem
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
 	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
@@ -143,6 +192,25 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	int N_sq( mN*mN ), diag_stride( mN+1 );
 	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
+	
+	
+#ifdef SCALE_OPT_VARIABLES
+	// change the space of the hessian approximation representation
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		double slb = mLowerBound[i];
+		double sub = mUpperBound[i];
+		double lb = mLowerBoundUnscaled[i];
+		double ub = mUpperBoundUnscaled[i];
+		
+		double scale = (ub-lb)/(sub-slb);
+		scale = scale*scale;
+		
+		mHessian[i*(mN+1)] *= scale;
+	}		
+#endif // SCALE_OPT_VARIABLES
+
 	
 	// main loop
 	bool convergenceReached = false;
@@ -171,7 +239,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
 		
-		alpha = 1.0;
+		double alpha = 1.0;
 #if 0
 		// attempt to get a longer step if possible. 
 		if(not QPsolutionOnBorder)
@@ -212,8 +280,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Step length found:" << alpha << std::endl;
 		
-		//*f = evaluateFunction(x, mTrace);
-		
+				
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
 			std::cout << "New Solution:";
@@ -269,7 +336,15 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "BFGS update..." << std::endl;
 			
+		
+		// update the B matrix
 		BFGSupdate();
+
+#ifdef ADAPT_SCALED
+		// adaptative rescale only every 5 iterations
+		//if ( (mStep%5 == 0) && mStep > 0 )
+		adaptativeScale(x);
+#endif // ADAPT_SCALED
 		
 		std::cout << "Hessian diagonal at step " << mStep << ":\n";
 		for(size_t i(0); i<mN; ++i)
@@ -316,7 +391,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	}
 #ifdef SCALE_OPT_VARIABLES
 	unscaleVariables(x);
-#endif // SCALE_OPT_VARIABLES	
+#endif // SCALE_OPT_VARIABLES
 }
 
 

@@ -14,7 +14,8 @@
 //#define STRONG_WOLFE_LINE_SEARCH
 
 // uncomment to rescale the variables before the optimization process
-//#define SCALE_OPT_VARIABLES
+#define SCALE_OPT_VARIABLES
+#define ADAPT_SCALED
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -84,6 +85,7 @@ private:
 	///
 	void alocateMemory(void);
 	
+#ifdef SCALE_OPT_VARIABLES
 	/// scaleVariables
 	/// scale the variables of the problem linearly so it is more adapted to the optimization method
 	///
@@ -98,6 +100,19 @@ private:
 	/// 
 	void unscaleVariables(double *x);
 	
+#ifdef ADAPT_SCALED
+	/// adaptativeScale
+	/// perform a scale of the variables with respect to the hessian diagonal matrix.
+	/// The modified values are:
+	/// mLowerBound, mUpperBound, current vector x,
+	/// mXPrev, mGradPrev, mHessian, mGradient
+	///
+	/// @param[in,out] x The current solution
+	///
+	void adaptativeScale(double *x);
+#endif // ADAPT_SCALED
+#endif // SCALE_OPT_VARIABLES
+
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
 	///	uses quadratic programming to solve local constrained subproblems 
@@ -143,7 +158,7 @@ private:
 	void computeGradient(const double *x, double f0, double *aGrad);
 	
 	/// BFGSupdate
-	/// perform the BFGS formula to update the hessian matrix.
+	/// performs the BFGS formula to update the hessian matrix.
 	/// uses a modified version of BFGS to keep the matrix positive definite
 	///
 	void BFGSupdate(void);
