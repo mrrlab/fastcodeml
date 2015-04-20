@@ -14,8 +14,8 @@
 //#define STRONG_WOLFE_LINE_SEARCH
 
 // uncomment to rescale the variables before the optimization process
-#define SCALE_OPT_VARIABLES
-#define ADAPT_SCALED
+//#define SCALE_OPT_VARIABLES
+//#define ADAPT_SCALED
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer

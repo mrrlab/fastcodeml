@@ -130,12 +130,10 @@ void OptSQP::adaptativeScale(double *x)
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 	{
-		if (mHessian[i*(mN+1)] > 1e1 || mHessian[i*(mN+1)] < 1e-1)
+		if (mHessian[i*(mN+1)] > 1e3 || mHessian[i*(mN+1)] < 1e-3)
 		{
 			double slb = mLowerBound[i];
 			double sub = mUpperBound[i];
-			double lb = mLowerBoundUnscaled[i];
-			double ub = mUpperBoundUnscaled[i];
 		
 			double x_ = x[i];
 		
@@ -323,71 +321,78 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		*f = evaluateFunction(x, mTrace);
 #endif		
 		
-		// update the system
-		computeGradient(x, *f, mGradient);
-				
-		memcpy(mSk, x, size_vect);
-		daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
-		memcpy(mYk, mGradient, size_vect);
-		daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
-		
-		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "BFGS update..." << std::endl;
-			
-		
-		// update the B matrix
-		BFGSupdate();
-
-#ifdef ADAPT_SCALED
-		// adaptative rescale only every 5 iterations
-		//if ( (mStep%5 == 0) && mStep > 0 )
-		adaptativeScale(x);
-#endif // ADAPT_SCALED
-		
-		std::cout << "Hessian diagonal at step " << mStep << ":\n";
-		for(size_t i(0); i<mN; ++i)
-		{
-			std::cout << mHessian[i*(mN+1)] << " ";
-		}
-		std::cout << std::endl;
-		
-		// update the active set
-		//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
-		const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
-		const int max_count_upper = (mN > 30 ? 1 : 0);
- 
-		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
-		{
-			if (mActiveSet[i] > 0)
-			{
-				// reduce counters for active sets
-				--mActiveSet[i];
-			}
-			else
-			{
-				const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
-				// update active set so we can reduce the gradient computation				
-				if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
-				{
-					mActiveSet[i] = max_count_lower;
-					if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-					std::cout << "Variable " << i << " in the (lower) active set.\n";
-				}
-				if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
-				{
-					mActiveSet[i] = max_count_upper;
-					if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-					std::cout << "Variable " << i << " in the (upper) active set.\n";
-				}
-			}
-		}
 		
 		// check convergence
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
+		
+		if (not convergenceReached)
+		{
+			// update the system
+		
+#ifdef ADAPT_SCALED
+			// adaptative rescale 
+			// do it before the gradient calculation so it gives more precise results
+			adaptativeScale(x);
+#endif // ADAPT_SCALED
+
+			computeGradient(x, *f, mGradient);
+				
+			memcpy(mSk, x, size_vect);
+			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
+		
+			memcpy(mYk, mGradient, size_vect);
+			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
+		
+		
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "BFGS update..." << std::endl;
+			
+		
+			// update the B matrix
+			BFGSupdate();
+
+		
+			std::cout << "Hessian diagonal at step " << mStep << ":\n";
+			for(size_t i(0); i<mN; ++i)
+			{
+				std::cout << mHessian[i*(mN+1)] << " ";
+			}
+			std::cout << std::endl;
+		
+			// update the active set
+			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
+			const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
+			const int max_count_upper = (mN > 30 ? 1 : 0);
+	 
+			#pragma omp parallel for
+			for(size_t i(0); i<mN; ++i)
+			{
+				if (mActiveSet[i] > 0)
+				{
+					// reduce counters for active sets
+					--mActiveSet[i];
+				}
+				else
+				{
+					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+					// update active set so we can reduce the gradient computation				
+					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
+					{
+						mActiveSet[i] = max_count_lower;
+						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+						std::cout << "Variable " << i << " in the (lower) active set.\n";
+					}
+					if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+					{
+						mActiveSet[i] = max_count_upper;
+						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+						std::cout << "Variable " << i << " in the (upper) active set.\n";
+					}
+				}
+			}
+		}
 	}
 #ifdef SCALE_OPT_VARIABLES
 	unscaleVariables(x);
