@@ -121,44 +121,6 @@ void OptSQP::unscaleVariables(double *x)
 		x[i] = x_;
 	}
 }
-
-
-#ifdef ADAPT_SCALED
-// ----------------------------------------------------------------------
-void OptSQP::adaptativeScale(double *x)
-{
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
-	{
-		if (mHessian[i*(mN+1)] > 1e3 || mHessian[i*(mN+1)] < 1e-3)
-		{
-			double slb = mLowerBound[i];
-			double sub = mUpperBound[i];
-		
-			double x_ = x[i];
-		
-			double scale = sqrt( mHessian[i*(mN+1)] );
-		
-		
-			// scale the position like variables
-			mUpperBound[i] = slb + (sub-slb)*scale;
-			x[i] = slb + (x_-slb)*scale;
-		
-			x_ = mXPrev[i];
-			mXPrev[i] = slb + (x_-slb)*scale;
-		
-			// scale the differential variables
-			scale = 1.0/scale;
-		
-			mGradient[i] *= scale;
-			mGradPrev[i] *= scale;
-		
-			dscal_(&mN, &scale, &mHessian[i*mN], &I1);
-			dscal_(&mN, &scale, &mHessian[i],	 &mN);
-		}
-	}
-}
-#endif // ADAPT_SCALED
 #endif // SCALE_OPT_VARIABLES
 
 
@@ -330,13 +292,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		if (not convergenceReached)
 		{
 			// update the system
-		
-#ifdef ADAPT_SCALED
-			// adaptative rescale 
-			// do it before the gradient calculation so it gives more precise results
-			adaptativeScale(x);
-#endif // ADAPT_SCALED
-
+			
 			computeGradient(x, *f, mGradient);
 				
 			memcpy(mSk, x, size_vect);
@@ -514,6 +470,54 @@ void OptSQP::BFGSupdate(void)
 	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
 	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 	
+#ifdef SELECTIVE_SIZING_STRATEGY
+	double ss = ddot_(&mN, mSk, &I1, mSk, &I1);
+	double YS_SS = ys/ss;
+	double SBS_SS = sBs/ss;
+	
+	double thetaSS, gammaSS;
+	
+	double eps1 = 1e-3;
+	double eps2 = 7e-1;
+	double tau1 = 0.5;
+	double tau2 = 1e6;
+	
+	bool apply_sizing_factor = false;
+	
+	// compute the sizing factor
+	if (mStep == 0)
+	{
+		gammaSS = ys/sBs;
+		gammaSS = max2(gammaSS, eps2);
+		apply_sizing_factor = true;
+	}
+	else
+	{
+		thetaSS = min2(tau1, tau2*ss);
+		gammaSS  = ( (1.0-thetaSS)*mYS_SS_prev  + (thetaSS)*YS_SS );
+		gammaSS /= ( (1.0-thetaSS)*mSBS_SS_prev + (thetaSS)*SBS_SS);
+		if (gammaSS < 1.0-eps1)
+		{
+			gammaSS = max2(eps2, gammaSS);
+			apply_sizing_factor = true;
+		}
+	}
+	
+	// apply the sizing factor if needed
+	if (apply_sizing_factor)
+	{
+		dscal_(&mN_sq, &gammaSS, mHessian, &I1);
+	
+		// update the BFGS variables
+		sBs *= gammaSS;
+		dscal_(&mN, &gammaSS, Bs, &I1);
+	}
+	
+	// save previous variables for next update
+	mYS_SS_prev = YS_SS;
+	mSBS_SS_prev = SBS_SS;	
+#endif // SELECTIVE_SIZING_STRATEGY	
+	
 	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
@@ -566,14 +570,12 @@ void OptSQP::BFGSupdate(void)
 		dscal_(&mN, &prefactor, &yy[i*mN], &I1);
 	}
 	
-	
 	// add the yy / ys contribution
 	daxpy_(&mN_sq, &D1, yy, &I1, mHessian, &I1);
 	
 	// make the diagonal more important in order to avoid non positive definite matrix, 
 	// due to roundoff errors
 	int diag_stride = mN+1;
-	//double factor = 1.1;
 	double factor = 1.1;
 	double inv_factor = 1.0/factor;
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);

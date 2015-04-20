@@ -15,7 +15,11 @@
 
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
-//#define ADAPT_SCALED
+
+// uncomment this to use a sizing on the hessian matrix approximation
+// see http://www.caam.rice.edu/tech_reports/1991/TR91-19.pdf for more
+// informations
+#define SELECTIVE_SIZING_STRATEGY
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -67,6 +71,10 @@ public:
 		,mNumTimes(aNumTimes)
 		,mN(0)
 		,mStep(0)
+#ifdef SELECTIVE_SIZING_STRATEGY
+		,mYS_SS_prev(0.0)
+		,mSBS_SS_prev(0.0)
+#endif // SELECTIVE_SIZING_STRATEGY
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -99,18 +107,6 @@ private:
 	/// @param[in,out] x The variables to be unscaled
 	/// 
 	void unscaleVariables(double *x);
-	
-#ifdef ADAPT_SCALED
-	/// adaptativeScale
-	/// perform a scale of the variables with respect to the hessian diagonal matrix.
-	/// The modified values are:
-	/// mLowerBound, mUpperBound, current vector x,
-	/// mXPrev, mGradPrev, mHessian, mGradient
-	///
-	/// @param[in,out] x The current solution
-	///
-	void adaptativeScale(double *x);
-#endif // ADAPT_SCALED
 #endif // SCALE_OPT_VARIABLES
 
 	/// SQPminimizer
@@ -224,6 +220,11 @@ private:
 	
 	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
 	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1
+
+#ifdef SELECTIVE_SIZING_STRATEGY
+	double						mYS_SS_prev;		///< variable used to apply the selective sizing strategy
+	double						mSBS_SS_prev;		///< variable used to apply the selective sizing strategy
+#endif // SELECTIVE_SIZING_STRATEGY
 	
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
