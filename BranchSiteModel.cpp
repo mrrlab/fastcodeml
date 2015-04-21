@@ -27,6 +27,7 @@
 #include "OptAlternatorSQP.h"
 #include "OptNES.h"
 #include "OptSQP.h"
+#include "OptTrustRegion.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
 
@@ -1524,10 +1525,10 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
-	case OPTIM_NES:
 	case OPTIM_SESOP:
 	case OPTIM_ALTERNATOR_SQP:
 	case OPTIM_SQP:
+	case OPTIM_TRUST_REGION:
 		return;
 
 	default:
@@ -1776,58 +1777,20 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		return maxl;
 	}
 	
-	
-	std::auto_ptr<nlopt::opt> opt;
-	
-	
-	// Special case for the NES optimizer
-	if(mOptAlgo == OPTIM_NES)
+	if(mOptAlgo == OPTIM_TRUST_REGION)
 	{
-		// Create the optimizer instance
-		OptNES optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
-		
-		double maxl = optim.maximizeFunction(mVar, 100);
-		
-		
-		// finish problem with a NLopt algo
-		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << ". Current Likelihood: " << maxl << std::endl;
-		
-		if (mFixedBranchLength)
-		{
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
-        }
-        else
-        {
-            opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
-            //opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
-        }
-        opt->set_vector_storage(20);
-        
-        // Initialize bounds and termination criteria
-		opt->set_lower_bounds(mLowerBound);
-		opt->set_upper_bounds(mUpperBound);
-		
-#ifdef FTOL_REL_ERROR
-	    opt->set_ftol_rel(mAbsoluteError);
-#else
-	    opt->set_ftol_abs(mAbsoluteError);
-#endif // FTOL_REL_ERROR
-		
-		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
-		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
-				
-		// If the user has set a maximum number of iterations set it
-		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
-		
-		optimize_using_nlopt(opt, maxl);
-		
+		OptTrustRegion optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
 		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
 		printVar(mVar);
 		return maxl;
 	}
 	
+	
+	std::auto_ptr<nlopt::opt> opt;
+	
+		
 	// Special case for the Alternator optimizer
 	if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
 	{

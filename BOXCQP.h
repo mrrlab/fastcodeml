@@ -25,7 +25,7 @@
 
 // uncomment this to solve reduced linear systems, at the cost of copying the 
 // values sequentially
-#define USE_SUBMATRIX_QP
+//#define USE_SUBMATRIX_QP
 
 class BOXCQP
 {

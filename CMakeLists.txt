@@ -33,6 +33,7 @@ set(SRCS
 	OptAlternatorSQP.cpp
 	OptSQP.cpp
 	BOXCQP.cpp
+	OptTrustRegion.cpp
 )
 
 

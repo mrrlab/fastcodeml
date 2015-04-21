@@ -32,6 +32,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 		memcpy(&mLHS[i*mN], &B[i**LDA], mN*sizeof(double));
+	
 	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], x, &mN, &INFO);
 	
 	if (INFO != 0)
@@ -114,6 +115,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		}
 		
 		// solve linear subsystem
+		
 		dgesv(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &INFO);
 		if (INFO != 0)
 		std::cout << "Error: couldn't solve the linear system in BOXCQP. INFO: " << INFO << std::endl;

@@ -284,8 +284,8 @@ private:
 		
 		OPTIM_LD_MING2			= 22,	///< The optimizer extracted from CodeML
 		
-		OPTIM_SQP				= 42,	///< equential quadratic program
-		OPTIM_NES				= 43,	///< NES optimizer derivative free (natural evolution strategy)
+		OPTIM_SQP				= 42,	///< sequential quadratic program
+		OPTIM_TRUST_REGION		= 43,	///< trust region algorithm
 		OPTIM_SESOP				= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
 
