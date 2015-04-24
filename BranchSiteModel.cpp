@@ -1785,11 +1785,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
 		printVar(mVar);
 		return maxl;
-	}
-	
-	
-	std::auto_ptr<nlopt::opt> opt;
-	
+	}	
 		
 	// Special case for the Alternator optimizer
 	if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
@@ -1806,6 +1802,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 	
 	
+	std::auto_ptr<nlopt::opt> opt;
+	
+		
 	// Special case for the SESOP optimizer
 	if(mOptAlgo == OPTIM_SESOP)
 	{

@@ -15,7 +15,6 @@
 
 /// OptTrustRegion class.
 /// trust region optimizer
-/// see http://www.optimization-online.org/DB_FILE/2010/06/2643.pdf
 ///
 ///     @author Lucas Amoudruz - EPFL.
 ///     @date 2015-04-21 (initial version)
@@ -120,6 +119,18 @@ private:
 	///
 	double evaluateFunction(const double *x, bool aTrace);
 	
+	/// evaluateFunctionForLineSearch
+	///	evaluates the function at point x + alpha*mP
+	///
+	/// @param[in]	x the point x
+	/// @param[in]	alpha the step length
+	///
+	/// @return the function value
+	///
+	/// @exception FastCodeMLEarlyStopLRT To force halt the maximization because LRT is already not satisfied
+	///
+	double evaluateFunctionForLineSearch(const double* x, double alpha);
+	
 	/// computeRatio
 	///	compute the improvement ratio between the function value and the model
 	///
@@ -140,12 +151,54 @@ private:
 	///
 	void computeGradient(const double *x, double f0, double *aGrad);
 	
-	/// BFGSupdate
-	/// performs the BFGS formula to update the hessian matrix.
-	/// uses a modified version of BFGS to keep the matrix positive definite
+	/// hessianUpdate
+	/// update the approximation of the hessian matrix.
+	/// uses a Symmetric rank 1 update. This does not guarantee a positive definite
+	/// matrix!
 	///
-	void BFGSupdate(void);
+	void hessianUpdate(void);
 	
+	
+	/// CG_Steihaug
+	///
+	/// finds a descent direction from subproblem 
+	/// min mk(p)
+	///  p
+	/// s.t. l<p<u and |p|<Delta
+	/// See http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf
+	/// p.75
+	///
+	/// @param[in]	localLowerBound		The lower bound for the solution
+	/// @param[in]	localUpperBound		The upper bound for the solution
+	/// @param[out] search_direction	The search direction
+	///
+	void CG_Steihaug(const double *localLowerBound, const double *localUpperBound, double *search_direction);
+	
+	
+	/// lineSearch
+	/// perform a line search in the mP direction
+	///
+	/// two versions implemented:
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
+	/// wolfe condition.
+	///
+	///	The other version is a backtrace followed by a little refinement, consisting
+	/// in a backtrace in the direction of derivative.
+	/// 
+	///
+	/// note: be careful, the last computation of the likelihood
+	///		  is the best solution so the gradient computaion is 
+	///		  valid!
+	///
+	/// @param[in,out] aalpha 	in: initial guess of step length
+	///							out: step length
+	/// @param[in,out] x		in: the original position
+	///							out: if success, the new position
+	/// @param[in,out] f		in: the original function value
+	///							out: if success, the new value
+	///
+	void lineSearch(double *aalpha, double *x, double *f);
 
 private:
 		
@@ -166,7 +219,7 @@ private:
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
 	
-	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computaion
+	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computation; 0 if free, >=1 otherwise. gradient computed when < 2
 	
 	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix

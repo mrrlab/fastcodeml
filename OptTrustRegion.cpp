@@ -3,7 +3,7 @@
 #include "blas.h"
 #include "lapack.h"
 #include <cfloat>
-
+#include <iomanip>
 
 // ----------------------------------------------------------------------
 //	Class members definition: OptTrustRegion
@@ -159,24 +159,15 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		double ub = mUpperBoundUnscaled[i];
 		
 		double scale = (ub-lb)/(sub-slb);
-		scale = scale*scale;
-		
-		std::cout << slb << " " << " " << sub << " " << lb << " " << ub << std::endl;
+		scale = scale*scale;		
 		mHessian[i*diag_stride] *= scale;
-		std::cout << i << " : " << mHessian[i*diag_stride] << std::endl;
 	}		
 #endif // SCALE_OPT_TRUST_REGION_VARIABLES
 
 	// trust region algorithm parameters
-	double eta1, _eta1_, _eta2_;
-	double gamma1, gamma2, gamma3;
-	eta1 = 0.25;
-	_eta1_ = 0.25;
-	_eta2_ = 0.75;
-	gamma1 = 2.5e-1;
-	gamma2 = 7.5e-1;
-	gamma3 = 2.0e+0;
-	double trust_region_radius = 0.05;
+	const double threshold_acceptance_ratio = 0.2;
+	const double max_trust_region_radius = 1.2;
+	double trust_region_radius = 0.1;
 	double improvement_ratio = 1.0;
 	
 	// main loop
@@ -190,38 +181,16 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		memcpy(mXPrev, x, size_vect);
 		
 		
-		// compute the next step using a trust region strategy
-		bool trust_region_step_found = false;
-		int trust_region_tries = 0;
-		int trust_region_max_tries = 10;
-		while(!trust_region_step_found)
+		// compute the next step using a trust region strategy	
+		int rejected_trust_region_radius = 0;
+		const int max_rejected_trust_region_radius = 20;
+		bool found_improvement = false;
+		while (rejected_trust_region_radius < max_rejected_trust_region_radius
+			   && not found_improvement)
 		{
-			++ trust_region_tries;
-			// --- choose the trust region radius
-			if (mStep > 0)
-			{
-				double retrospective_ratio = improvement_ratio; // computeRatio(*f, mP, f_prev);
-				std::cout << "retrospective_ratio : " << retrospective_ratio << std::endl;
-				if (retrospective_ratio < _eta1_)
-				{
-					// take trust radius between gamma1 and gamma2 * radius (randomly)
-					trust_region_radius = (gamma1 + randFrom0to1()*(gamma2-gamma1))*trust_region_radius;
-				}
-				else if (retrospective_ratio > _eta2_)
-				{
-					// take trust radius between 1 and gamma3 * radius (randomly)
-					trust_region_radius = (1.0 + randFrom0to1()*(gamma3-1.0))*trust_region_radius;
-				}
-				else
-				{
-					// take trust radius between gamma2 and 1 * radius (randomly)
-					trust_region_radius = (gamma2 + randFrom0to1()*(1.0-gamma2))*trust_region_radius;
-				}
-			}
-	
-	
+			++rejected_trust_region_radius;
+			
 			// --- compute the step in trust region
-		
 			// update local bounds
 			memcpy(&localLowerBound[0], &mLowerBound[0], size_vect);
 			memcpy(&localUpperBound[0], &mUpperBound[0], size_vect);
@@ -237,41 +206,77 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			}
 		
 			// solve quadratic program in l-infinity norm
-			bool QPsolutionOnBorder;
-			double *x_candidate = mWorkSpaceVect;
-			
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Quadratic program solving..." << std::endl;
-			mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
+				std::cout << "conjugate gradient Steihaug algorithm..." << std::endl;
+			CG_Steihaug(&localLowerBound[0], &localUpperBound[0], mP);
 		
 			// candidate solution
+			double *x_candidate = mWorkSpaceVect;
 			memcpy(x_candidate, x, size_vect);
 			daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
 			double f_candidate = evaluateFunction(x_candidate, mTrace);
 		
-			// --- update the solution accordingly to the expected improvement
-			improvement_ratio = computeRatio(*f, mP, f_candidate);
-			std::cout << "improvement_ratio : " << improvement_ratio << std::endl;
-			std::cout << "trust_region_radius : " << trust_region_radius << std::endl;
+			// --- choose the trust region radius
+			improvement_ratio = computeRatio(f_prev, mP, f_candidate);
+			std::cout << "improvement_ratio : " << std::setprecision(4) << std::scientific << improvement_ratio << std::endl;
 			
+			// compute the l-infinity norm of the previous step
+			double length_prev_step = 0.0;
+			for(size_t i(0); i<mN; ++i)
+			{
+				if (fabs(mP[i]) > length_prev_step)
+					length_prev_step = fabs(mP[i]);
+			}
+			std::cout << "trust_region_radius : " << std::setprecision(4) << std::scientific << trust_region_radius << ", |mP| : " << std::setprecision(4) << std::scientific << length_prev_step << std::endl;
+			
+			if (improvement_ratio < 0.25)
+			{
+				// reduce trust region radius
+				trust_region_radius = 0.25*length_prev_step;
+			}
+			else if (improvement_ratio > 0.75 && fabs(trust_region_radius - length_prev_step) <= 1e-8)
+			{
+				// increase trust region radius
+				trust_region_radius = min2(2.0*trust_region_radius, max_trust_region_radius);
+				std::cout << trust_region_radius << " <= " << max_trust_region_radius << std::endl;
+			}
+			// otherwise we don't change the trust region radius
 		
-			if (improvement_ratio >= eta1)
+			// update the solution
+			if (improvement_ratio > threshold_acceptance_ratio)
 			{
 				memcpy(x, x_candidate, size_vect);
 				*f = f_candidate;
-				trust_region_step_found = true;
+				found_improvement = true;
 			}
-			else
+		}			
+		
+#if 0		
+		// line search
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Line search:";
+		
+		
+		double alpha = 1e8;
+		// find biggest possible step size
+		double low, high, pi, candidate;
+			
+		for(size_t i(0); i<mN; ++i)
+		{
+			low = mLowerBound[i] - x[i];
+			high = mUpperBound[i] - x[i];
+			pi = mP[i];
+				
+			if(fabs(pi) > 1e-8)
 			{
-				if (trust_region_tries > trust_region_max_tries)
-				{
-					memcpy(x, x_candidate, size_vect);
-					*f = f_candidate;
-					break;
-				}
+				candidate = pi > 0 ? high/pi : low/pi;
+				alpha = candidate < alpha ? candidate : alpha;
 			}
 		}
 		
+		
+		lineSearch(&alpha, x, f);
+#endif	
 				
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
@@ -297,10 +302,10 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "BFGS update..." << std::endl;
+				std::cout << "hessian update..." << std::endl;
 			
 			// update the B matrix
-			BFGSupdate();
+			hessianUpdate();
 		
 			// update the active set
 			const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
@@ -309,7 +314,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			#pragma omp parallel for
 			for(size_t i(0); i<mN; ++i)
 			{
-				if (mActiveSet[i] > 0)
+				if (mActiveSet[i] > 1)
 				{
 					// reduce counters for active sets
 					--mActiveSet[i];
@@ -320,15 +325,19 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 					// update active set so we can reduce the gradient computation				
 					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 					{
-						mActiveSet[i] = max_count_lower;
+						mActiveSet[i] = 1+max_count_lower;
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 						std::cout << "Variable " << i << " in the (lower) active set.\n";
 					}
-					if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+					else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
 					{
-						mActiveSet[i] = max_count_upper;
+						mActiveSet[i] = 1+max_count_upper;
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 						std::cout << "Variable " << i << " in the (upper) active set.\n";
+					}
+					else
+					{
+						mActiveSet[i] = 0;
 					}
 				}
 			}
@@ -357,18 +366,47 @@ double OptTrustRegion::evaluateFunction(const double *x, bool aTrace)
 
 
 // ----------------------------------------------------------------------
+double OptTrustRegion::evaluateFunctionForLineSearch(const double* x, double alpha)
+{
+	memcpy(mWorkSpaceVect, x, size_vect);
+	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
+	return evaluateFunction(mWorkSpaceVect, mTrace);
+}
+
+
+// ----------------------------------------------------------------------
 double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 {	
-	double dm = ddot_(&mN, dx, &I1, mGradient, &I1);
+	double *dx_proj = mWorkSpaceVect;
+	memcpy(dx_proj, dx, size_vect);
 	
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		if (mActiveSet[i] > 0)
+		{
+			dx_proj[i] = 0.0;
+		}
+	}
+		
 	// compute vector B*dx
 	double *Bdx = mWorkSpaceMat;
 	char trans = 'N';
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, dx, &I1, &D0, Bdx, &I1); 
-		
+	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, dx_proj, &I1, &D0, Bdx, &I1); 
 	
+	
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		if (mActiveSet[i] > 0)
+		{
+			Bdx[i] = 0.0;
+		}
+	}
+		
+	double dm = ddot_(&mN, dx, &I1, mGradient, &I1);
 	dm += ddot_(&mN, Bdx, &I1, dx,  &I1);
-	if (fabs(dm) < 1e-12) {dm = 1e-12;}
+	if (fabs(dm) < 1e-16) {dm = 1e-16;}
 	return (f-f0)/dm;
 }
 
@@ -405,7 +443,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 
 	for(i=0; i<mNumTimes; ++i)
 	{
-		if(mActiveSet[i] == 0)
+		if(mActiveSet[i] < 2)
 		{
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 			aGrad[i] = (f-f0)/delta[i];
@@ -417,7 +455,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 	memcpy(&mXEvaluator[0], x_, size_vect);
 	for(; i<mN; ++i)
 	{
-		if (mActiveSet[i] == 0)
+		if (mActiveSet[i] < 2)
 		{
 			eh = sqrt_eps * ( 1.0 + fabs(x_[i]) );
 			if ( x_[i] + eh > mUpperBoundUnscaled[i] )
@@ -446,11 +484,12 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 
 
 // ----------------------------------------------------------------------
-void OptTrustRegion::BFGSupdate(void)
+void OptTrustRegion::hessianUpdate(void)
 {
 	// local variables
-	double ys, sBs, inverse_sBs, inverse_ys, theta, sigma, theta_tmp;
-	double *Bs, *BssB, *yy;
+	double *v, *Bs;
+	double vs, inverse_vs;
+	double *vvT;
 	char trans = 'N';
 	
 	int mN_sq = mN*mN;
@@ -459,71 +498,297 @@ void OptTrustRegion::BFGSupdate(void)
 	Bs = mWorkSpaceVect;
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
 	
-	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
-	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
+	// compute vector v = -y + Bs
+	v = Bs;
+	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
 	
-
-	// Powell-SQP update:
-	// change y so the matrix is positive definite
-	sigma = 0.2; // empirical value
+	vs = -ddot_(&mN, v, &I1, mSk, &I1);
+	inverse_vs = 1.0/vs;
 	
-	if (ys < sigma * sBs)
+	// compute Matrix v.v^T / vs
+	vvT = mWorkSpaceMat;
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
 	{
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
-		
-		theta = sBs - ys;
-		
-		if (fabs(theta) > 1e-8)
+		double prefactor = v[i] * inverse_vs;
+		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
+		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
+	}
+	
+	// add the v.v^T / vs contribution
+	daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+}
+
+
+/// find_t_CG_S
+/// find t > 0 such that |p+td| = Delta
+///
+/// @param[in]		localLowerBound The lower bound for p+td
+/// @param[in]		localUpperBound	The Upper bound for p+td
+/// @param[in]		p				vector p
+/// @param[in]		d				vector d
+/// @param[in,out]	t				in: high value. out: the solution
+///
+void find_t_CG_S(const int N, const std::vector<int>& ActiveSet, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, double &t)
+{
+	for (size_t i(0); i<N; ++i)
+	{
+		if (ActiveSet[i] < 2)
 		{
-			do
+			double low  = localLowerBound[i] - p[i];
+			double high = localUpperBound[i] - p[i];
+			double di = d[i];
+			if (fabs(di) < 1e-6)
 			{
-				theta_tmp = (1.0 - sigma) * sBs / theta;
-				sigma = 0.9*sigma;
-			} while(theta_tmp >= 1.0);
+				continue;
+			}
+			if (di > 0.0)
+			{
+				if (t > high/di)
+					t = high/di;
+				else if (t < low/di)
+					t = low/di;
+			}
+			else
+			{
+				if (t < high/di)
+					t = high/di;
+				else if (t > low/di)
+					t = low/di;
+			}
+		}
+	}
+}
+
+
+// ----------------------------------------------------------------------
+void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *localUpperBound, double *search_direction)
+{
+	const double r_tol = 1e-8;
+	char trans = 'N';
+	
+	double *p = search_direction;	// search direction
+	double *r = mWorkSpaceMat;		// residual
+	double *d = r + mN;				// improvement direction 
+	double *proj_grad = d+mN;
+	
+	// set p0 = 0
+	dcopy_(&mN, &D0, &I0, p, &I1);
+	// set r0 = gradient
+	memcpy(proj_grad, mGradient, size_vect);
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		if (mActiveSet[i] > 0)
+		{
+			proj_grad[i] = 0.0;
+		}
+	}
+	memcpy(r, proj_grad, size_vect);
+	// set d0 = -gradient
+	memcpy(d, mGradient, size_vect);
+	dscal_(&mN, &minus_one, d, &I1);
+	
+	
+	double r0_norm = dnrm2_(&mN, r, &I1);
+	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		std::cout << "\tr0_norm = " << std::setprecision(4) << std::scientific << r0_norm << std::endl;
+	
+	if (r0_norm < r_tol)
+	{
+		return;
+	}
+	bool search_direction_found = false;
+	while (not search_direction_found)
+	{
+		// compute dT B d
+		double *Bd = mWorkSpaceVect;
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+		#pragma omp parallel for
+		for (size_t i(0); i<mN; ++i)
+		{
+			if (mActiveSet[i] < 1)
+			{
+				Bd[i] = 0.0;
+			}
+		}
+		double dBd = ddot_(&mN, d, &I1, Bd, &I1);
+		
+		if (dBd < 0.0)
+		{
+			// find t such that it minimizes m(p_)
+			// for p_ = p+td
+			// There is only two possibilities: t<0 and t>0, we compare both
+			double t_positive = 1e16;
+			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_positive);
+			double M_positive = t_positive * ( t_positive*dBd
+											 + ddot_(&mN, d, &I1, proj_grad, &I1)
+											 + ddot_(&mN, d, &I1, Bd, &I1));			
 			
-			theta = theta_tmp;
-			theta_tmp = 1.0 - theta;
+			dscal_(&mN, &minus_one, d, &I1);
+			double t_negative = 1e16;
+			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_negative);
 			
-			dscal_(&mN, &theta, mYk, &I1);
-			daxpy_(&mN, &theta_tmp, Bs, &I1, mYk, &I1);
-			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
+			double M_negative = t_negative * ( t_negative*dBd
+											 - ddot_(&mN, d, &I1, proj_grad, &I1)
+											 - ddot_(&mN, d, &I1, Bd, &I1));
+			
+			if (M_negative < M_positive)
+			{
+				daxpy_(&mN, &t_negative, d, &I1, p, &I1);
+			}
+			else
+			{
+				t_positive = -t_positive; // d has been set to -d
+				daxpy_(&mN, &t_positive, d, &I1, p, &I1);
+			}			
+			return;
+		}
+		
+		// compute a new direction
+		double rr = ddot_(&mN, r, &I1, r, &I1);
+		double alpha = rr / dBd;
+		double *p_next = mWorkSpaceVect;
+		memcpy(p_next, p, size_vect);
+		daxpy_(&mN, &alpha, d, &I1, p_next, &I1);
+		
+		// verify if it satisfies the constraints
+		bool constraints_satisfied = true;
+		for (size_t i(0); i<mN; ++i)
+		{
+			double low  = localLowerBound[i];
+			double high = localUpperBound[i];
+			if (p_next[i] < low || p_next[i] > high)
+			{
+				constraints_satisfied = false;
+				break;
+			}
+		}
+		if (not constraints_satisfied)
+		{
+			// find t such that |p+td| satisfies the bounds
+			double t = alpha;
+			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t);
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tconstraints not satisfied, t found : " << std::setprecision(4) << std::scientific << t << std::endl;
+			// update the solution
+			daxpy_(&mN, &t, d, &I1, p, &I1);
+			return;
+		}
+		// otherwise keep the new update
+		memcpy(p, p_next, size_vect);
+		// update r
+		daxpy_(&mN, &alpha, Bd, &I1, r, &I1);
+		double r_norm = dnrm2_(&mN, r, &I1);
+		if (r_norm < r_tol*r0_norm)
+		{
+			return;
+		}
+		// update d
+		double beta = ddot_(&mN, r, &I1, r, &I1)/rr;
+		dscal_(&mN, &beta, d, &I1);
+		daxpy_(&mN, &D1, r, &I1, d, &I1);
+	}
+}
+
+
+
+// ----------------------------------------------------------------------
+void OptTrustRegion::lineSearch(double *aalpha, double *x, double *f)
+{
+	// constants for the Wolfe condition
+	double c1 (2e-1);
+	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
+	double phi_0 = *f, phi, phi_prev;
+	double a_prev = *aalpha;
+	double phi_a_prime;
+	double a = *aalpha;
+	
+	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
+	
+	phi_prev = phi_0;
+	a_prev = 0.;
+	phi = evaluateFunctionForLineSearch(x, a);
+	
+	double sigma, sigma_bas;
+	int maxIterBack, maxIterUp;
+	
+	// we take a step dependant on the problem size:
+	// if the problem is large, we are able to spend more time 
+	// to find a better solution.
+	// otherwise, we consider that the solution is sufficiently 
+	// good and continue. 
+	// The time of line search should be small compared to the 
+	// gradient computation
+	
+	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
+	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
+	
+	
+	// begin by a backtrace
+	size_t iter = 0;
+	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
+	{
+		++iter;
+		a_prev = a;
+		phi_prev = phi;
+		//sigma = 0.3+0.3*randFrom0to1();
+		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
+		a *= sigma;
+		phi = evaluateFunctionForLineSearch(x, a);
+	}
+	
+	// compute the derivative
+	double eh = sqrt(DBL_EPSILON);
+	if ( a+eh >= 1.0 ) {eh = -eh;}
+	phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
+	
+	iter = 0;
+	if (phi_a_prime < 0.0 && a != *aalpha)
+	{
+		double a0 = a_prev;
+		while(phi < phi_prev && iter < maxIterBack)
+		{
+			++iter;
+			
+			a_prev = a;
+			phi_prev = phi;
+			//sigma = 0.3+0.4*randFrom0to1();
+			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
+			a = a + sigma*(a0-a);
+			phi = evaluateFunctionForLineSearch(x, a);
+		}
+		if (phi_prev < phi)
+		{
+			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
+		}
+	}
+	else
+	{
+		sigma_bas = 0.7;
+		while(phi < phi_prev && iter < maxIterUp)
+		{
+			++iter;
+			
+			a_prev = a;
+			phi_prev = phi;
+			//sigma = 0.5+0.5*sqrt(randFrom0to1());
+			sigma = sigma_bas * (0.7 + 0.6*randFrom0to1());
+			a *= sigma;
+			phi = evaluateFunctionForLineSearch(x, a);
+		}
+		if (phi_prev < phi)
+		{
+			a = a_prev;
+			phi = evaluateFunctionForLineSearch(x, a);
 		}
 	}
 	
-	// compute Matrix B*mSk * mSk^T*B
-	BssB = mWorkSpaceMat;
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
-	{
-		double prefactor = - Bs[i] / sBs;
-		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
-		dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
-	}
 	
-	// add the BssB / sBs contribution
-	daxpy_(&mN_sq, &D1, BssB, &I1, mHessian, &I1);
-	
-	// compute matrix y**T * y
-	yy = mWorkSpaceMat;
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
-	{
-		double prefactor = mYk[i] / ys;
-		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
-		dscal_(&mN, &prefactor, &yy[i*mN], &I1);
-	}
-	
-	// add the yy / ys contribution
-	daxpy_(&mN_sq, &D1, yy, &I1, mHessian, &I1);
-	
-	// make the diagonal more important in order to avoid non positive definite matrix, 
-	// due to roundoff errors
-	int diag_stride = mN+1;
-	double factor = 1.1;
-	double inv_factor = 1.0/factor;
-	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
-	dscal_(&mN, &factor, mHessian, &diag_stride);
+	*f = phi;
+	*aalpha = a;
+	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
 }
-
 

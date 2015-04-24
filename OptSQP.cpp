@@ -171,7 +171,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	}		
 #endif // SCALE_OPT_VARIABLES
 
-	
+		
 	// main loop
 	bool convergenceReached = false;
 	for(mStep = 0; !convergenceReached; ++mStep)
@@ -252,7 +252,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		const size_t max_rand_tries = static_cast<const size_t>(sqrt(mN));
 		
 		double new_f(*f);
-		
+		double move_distance = alpha*dnrm2_(&mN, mP, &I1);
 		for(size_t rand_try(0); rand_try<max_rand_tries; ++rand_try)
 		{
 			// build a random point
@@ -262,7 +262,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				
 				if (mActiveSet[i] == 0)
 				{
-					my_rand_x_i += 1. * mP[i] * alpha * (0.5-randFrom0to1());
+					double tmp = 0.5-randFrom0to1();
+					tmp *= square(tmp);
+					my_rand_x_i += move_distance * (0.3*tmp);
 				
 					if (my_rand_x_i < mLowerBound[i])
 						my_rand_x_i = mLowerBound[i];
@@ -273,12 +275,16 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				mXEvaluator[i] = my_rand_x_i;
 			}
 			new_f = -mModel->computeLikelihood(mXEvaluator, mTrace);
-			std::cout << "RANDOM TRY: f=" << *f << std::endl;
-			if (new_f <= *f)
+
+			std::cout << "RANDOM TRY: f=" << *f << ", attempt : " << new_f << std::endl;
+			double df = new_f - *f;
+			//std::cout << "df" << df << ", prob barrier : " << exp(-df/Temperature) << std::endl;
+			if (df <= 0.0 || randFrom0to1() <= exp(-df/Temperature))
 			{
 				memcpy(x, &mXEvaluator[0], size_vect);
 				*f = new_f;
-			}
+			}			
+			Temperature *= 0.9;
 		}
 		*f = evaluateFunction(x, mTrace);
 #endif		
@@ -309,13 +315,6 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			// update the B matrix
 			BFGSupdate();
 
-		
-			std::cout << "Hessian diagonal at step " << mStep << ":\n";
-			for(size_t i(0); i<mN; ++i)
-			{
-				std::cout << mHessian[i*(mN+1)] << " ";
-			}
-			std::cout << std::endl;
 		
 			// update the active set
 			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
