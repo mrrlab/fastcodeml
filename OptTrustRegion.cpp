@@ -167,8 +167,9 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	// trust region algorithm parameters
 	const double threshold_acceptance_ratio = 0.2;
 	const double max_trust_region_radius = 1.2;
-	double trust_region_radius = 0.1;
+	double trust_region_radius = 0.5;
 	double improvement_ratio = 1.0;
+	std::vector<double> x_candidate_(mN);
 	
 	// main loop
 	bool convergenceReached = false;
@@ -211,30 +212,42 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			CG_Steihaug(&localLowerBound[0], &localUpperBound[0], mP);
 		
 			// candidate solution
-			double *x_candidate = mWorkSpaceVect;
+			double *x_candidate = &x_candidate_[0];
 			memcpy(x_candidate, x, size_vect);
 			daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
+			#pragma omp parallel for
+			for (size_t i(0); i<mN; ++i)
+			{
+				if (x_candidate[i] < mLowerBound[i])
+					x_candidate[i] = mLowerBound[i];
+				else if (x_candidate[i] > mUpperBound[i])
+					x_candidate[i] = mUpperBound[i];
+			}
 			double f_candidate = evaluateFunction(x_candidate, mTrace);
 		
 			// --- choose the trust region radius
 			improvement_ratio = computeRatio(f_prev, mP, f_candidate);
 			std::cout << "improvement_ratio : " << std::setprecision(4) << std::scientific << improvement_ratio << std::endl;
 			
-			// compute the l-infinity norm of the previous step
+			// compute the l-infinity norm of the step mP
 			double length_prev_step = 0.0;
+			std::cout << " Search direction:" << std::endl;
 			for(size_t i(0); i<mN; ++i)
 			{
+				std::cout << mP[i] << " ";
 				if (fabs(mP[i]) > length_prev_step)
 					length_prev_step = fabs(mP[i]);
 			}
+			std::cout << std::endl;
 			std::cout << "trust_region_radius : " << std::setprecision(4) << std::scientific << trust_region_radius << ", |mP| : " << std::setprecision(4) << std::scientific << length_prev_step << std::endl;
 			
 			if (improvement_ratio < 0.25)
 			{
 				// reduce trust region radius
 				trust_region_radius = 0.25*length_prev_step;
+				std::cout << "trust_region_radius reduced to " << trust_region_radius << std::endl;
 			}
-			else if (improvement_ratio > 0.75 && fabs(trust_region_radius - length_prev_step) <= 1e-8)
+			else if (improvement_ratio > 0.75 && fabs(trust_region_radius - length_prev_step)/trust_region_radius <= 1e-3)
 			{
 				// increase trust region radius
 				trust_region_radius = min2(2.0*trust_region_radius, max_trust_region_radius);
@@ -251,7 +264,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			}
 		}			
 		
-#if 0		
+#if 0	
 		// line search
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line search:";
@@ -277,7 +290,8 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		
 		lineSearch(&alpha, x, f);
 #endif	
-				
+		
+		*f = evaluateFunction(x, mTrace);
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
 			std::cout << "New Solution:";
@@ -291,6 +305,8 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		
 		if (not convergenceReached)
 		{
+			
+			
 			// update the system
 			computeGradient(x, *f, mGradient);
 				
@@ -308,8 +324,8 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			hessianUpdate();
 		
 			// update the active set
-			const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
-			const int max_count_upper = (mN > 30 ? 1 : 0);
+			const int max_count_lower = 0;//static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
+			const int max_count_upper = 0;//(mN > 30 ? 1 : 0);
 	 
 			#pragma omp parallel for
 			for(size_t i(0); i<mN; ++i)
@@ -405,8 +421,9 @@ double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 	}
 		
 	double dm = ddot_(&mN, dx, &I1, mGradient, &I1);
-	dm += ddot_(&mN, Bdx, &I1, dx,  &I1);
-	if (fabs(dm) < 1e-16) {dm = 1e-16;}
+	dm += 0.5*ddot_(&mN, Bdx, &I1, dx,  &I1);
+	dm = (dm<0.0) ? dm:-dm;
+	if (-dm < 1e-16) {dm = 1e-16;}
 	return (f-f0)/dm;
 }
 
@@ -494,15 +511,15 @@ void OptTrustRegion::hessianUpdate(void)
 	
 	int mN_sq = mN*mN;
 	
-	// compute vector B*mSk
-	Bs = mWorkSpaceVect;
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
+	// compute vector v = y-B*mSk
+	v = mWorkSpaceVect;
+	memcpy(v, mYk, size_vect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mSk, &I1, &D1, v, &I1); 	
 	
-	// compute vector v = -y + Bs
-	v = Bs;
-	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
 	
-	vs = -ddot_(&mN, v, &I1, mSk, &I1);
+	vs = ddot_(&mN, v, &I1, mSk, &I1);
+	
+	//std::cout << "v.s = " << vs << std::endl;
 	inverse_vs = 1.0/vs;
 	
 	// compute Matrix v.v^T / vs
@@ -511,6 +528,7 @@ void OptTrustRegion::hessianUpdate(void)
 	for(size_t i(0); i<mN; ++i)
 	{
 		double prefactor = v[i] * inverse_vs;
+		std::cout << "i=" << i << ", prefactor=" << prefactor << ", v[i]="<< v[i] << ", y[i] = " << mYk[i] << ", s[i]=" << mSk[i] << std::endl;
 		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
 		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 	}
@@ -533,28 +551,27 @@ void find_t_CG_S(const int N, const std::vector<int>& ActiveSet, const double *l
 {
 	for (size_t i(0); i<N; ++i)
 	{
-		if (ActiveSet[i] < 2)
+		if (ActiveSet[i] < 1)
 		{
-			double low  = localLowerBound[i] - p[i];
-			double high = localUpperBound[i] - p[i];
 			double di = d[i];
-			if (fabs(di) < 1e-6)
+			if (fabs(di) > 1e-16)
 			{
-				continue;
-			}
-			if (di > 0.0)
-			{
-				if (t > high/di)
-					t = high/di;
-				else if (t < low/di)
-					t = low/di;
-			}
-			else
-			{
-				if (t < high/di)
-					t = high/di;
-				else if (t > low/di)
-					t = low/di;
+				double low  = localLowerBound[i] - p[i];
+				double high = localUpperBound[i] - p[i];
+				if (di > 0.0)
+				{
+					if (t > high/di)
+						t = high/di;
+					else if (t < low/di)
+						t = low/di;
+				}
+				else
+				{
+					if (t < high/di)
+						t = high/di;
+					else if (t > low/di)
+						t = low/di;
+				}
 			}
 		}
 	}
@@ -564,7 +581,7 @@ void find_t_CG_S(const int N, const std::vector<int>& ActiveSet, const double *l
 // ----------------------------------------------------------------------
 void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *localUpperBound, double *search_direction)
 {
-	const double r_tol = 1e-8;
+	const double r_tol = mAbsoluteError;
 	char trans = 'N';
 	
 	double *p = search_direction;	// search direction
@@ -586,7 +603,8 @@ void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *lo
 	}
 	memcpy(r, proj_grad, size_vect);
 	// set d0 = -gradient
-	memcpy(d, mGradient, size_vect);
+	//memcpy(d, mGradient, size_vect);
+	memcpy(d, proj_grad, size_vect);
 	dscal_(&mN, &minus_one, d, &I1);
 	
 	
@@ -601,17 +619,19 @@ void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *lo
 	bool search_direction_found = false;
 	while (not search_direction_found)
 	{
-		// compute dT B d
+		// compute d^T B d
 		double *Bd = mWorkSpaceVect;
 		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+		
+		/*
 		#pragma omp parallel for
 		for (size_t i(0); i<mN; ++i)
 		{
-			if (mActiveSet[i] < 1)
+			if (mActiveSet[i] > 0)
 			{
 				Bd[i] = 0.0;
 			}
-		}
+		}*/
 		double dBd = ddot_(&mN, d, &I1, Bd, &I1);
 		
 		if (dBd < 0.0)
@@ -621,33 +641,48 @@ void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *lo
 			// There is only two possibilities: t<0 and t>0, we compare both
 			double t_positive = 1e16;
 			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_positive);
-			double M_positive = t_positive * ( t_positive*dBd
+			double M_positive = t_positive * ( 0.5*t_positive*dBd
 											 + ddot_(&mN, d, &I1, proj_grad, &I1)
-											 + ddot_(&mN, d, &I1, Bd, &I1));			
+											 + ddot_(&mN, p, &I1, Bd, &I1));			
 			
+			// set d <- -d to simplify the calculations
 			dscal_(&mN, &minus_one, d, &I1);
 			double t_negative = 1e16;
 			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_negative);
 			
-			double M_negative = t_negative * ( t_negative*dBd
-											 - ddot_(&mN, d, &I1, proj_grad, &I1)
-											 - ddot_(&mN, d, &I1, Bd, &I1));
+			double M_negative = t_negative * ( 0.5*t_negative*dBd
+											 + ddot_(&mN, d, &I1, proj_grad, &I1)
+											 - ddot_(&mN, p, &I1, Bd, &I1));
 			
+			double M;
 			if (M_negative < M_positive)
 			{
 				daxpy_(&mN, &t_negative, d, &I1, p, &I1);
+				M = M_negative;
 			}
 			else
 			{
 				t_positive = -t_positive; // d has been set to -d
 				daxpy_(&mN, &t_positive, d, &I1, p, &I1);
-			}			
+				M = M_positive;
+			}
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tExit CG at negative curvature ( dBd = " << dBd << " ), with M = " << M << std::endl;
 			return;
 		}
 		
 		// compute a new direction
 		double rr = ddot_(&mN, r, &I1, r, &I1);
-		double alpha = rr / dBd;
+		double alpha = rr;
+		if (dBd > 1e-16)
+			alpha = rr/dBd;
+		else
+		{
+			for (size_t i(0); i<mN; ++i)
+				std::cout << mActiveSet[i] << " ";
+			std::cout << std::endl;
+			return;
+		}
 		double *p_next = mWorkSpaceVect;
 		memcpy(p_next, p, size_vect);
 		daxpy_(&mN, &alpha, d, &I1, p_next, &I1);
@@ -667,12 +702,14 @@ void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *lo
 		if (not constraints_satisfied)
 		{
 			// find t such that |p+td| satisfies the bounds
-			double t = alpha;
+			double t = 1e16;
 			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t);
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "\tconstraints not satisfied, t found : " << std::setprecision(4) << std::scientific << t << std::endl;
 			// update the solution
 			daxpy_(&mN, &t, d, &I1, p, &I1);
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tExit CG at constraints" << std::endl;
 			return;
 		}
 		// otherwise keep the new update
@@ -682,6 +719,8 @@ void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *lo
 		double r_norm = dnrm2_(&mN, r, &I1);
 		if (r_norm < r_tol*r0_norm)
 		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tExit CG after convergence" << std::endl;
 			return;
 		}
 		// update d
