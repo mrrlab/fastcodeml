@@ -119,18 +119,6 @@ private:
 	///
 	double evaluateFunction(const double *x, bool aTrace);
 	
-	/// evaluateFunctionForLineSearch
-	///	evaluates the function at point x + alpha*mP
-	///
-	/// @param[in]	x the point x
-	/// @param[in]	alpha the step length
-	///
-	/// @return the function value
-	///
-	/// @exception FastCodeMLEarlyStopLRT To force halt the maximization because LRT is already not satisfied
-	///
-	double evaluateFunctionForLineSearch(const double* x, double alpha);
-	
 	/// computeRatio
 	///	compute the improvement ratio between the function value and the model
 	///
@@ -158,48 +146,32 @@ private:
 	///
 	void hessianUpdate(void);
 	
-	
-	/// CG_Steihaug
+	/// generalCauchyPoint
 	///
-	/// finds a descent direction from subproblem 
-	/// min mk(p)
-	///  p
+	/// compute general cauchy point
 	/// s.t. l<p<u and |p|<Delta
-	/// See http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf
-	/// p.75
+	/// using algorithm described in 
+	/// http://www.ams.org/journals/mcom/1988-50-182/S0025-5718-1988-0929544-3/S0025-5718-1988-0929544-3.pdf
 	///
 	/// @param[in]	localLowerBound		The lower bound for the solution
 	/// @param[in]	localUpperBound		The upper bound for the solution
-	/// @param[out] search_direction	The search direction
+	/// @param[out] cauchy_point_from_x	The general Cauchy point relative to x
 	///
-	void CG_Steihaug(const double *localLowerBound, const double *localUpperBound, double *search_direction);
+	void generalCauchyPoint(const double *localLowerBound, const double *localUpperBound, double *cauchy_point_from_x);
+	
+	/// modifiedConjugateGradient
+	///
+	/// improve the approximate solution of min mk(x)
+	/// s.t. l<p<u and |p|<Delta
+	/// from the general Cauchy point using algorithm described in 
+	/// http://www.ams.org/journals/mcom/1988-50-182/S0025-5718-1988-0929544-3/S0025-5718-1988-0929544-3.pdf
+	///
+	/// @param[in]	localLowerBound		The lower bound for the solution
+	/// @param[in]	localUpperBound		The upper bound for the solution
+	///
+	void modifiedConjugateGradient(const double *localLowerBound, const double *localUpperBound);
 	
 	
-	/// lineSearch
-	/// perform a line search in the mP direction
-	///
-	/// two versions implemented:
-	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
-	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
-	/// wolfe condition.
-	///
-	///	The other version is a backtrace followed by a little refinement, consisting
-	/// in a backtrace in the direction of derivative.
-	/// 
-	///
-	/// note: be careful, the last computation of the likelihood
-	///		  is the best solution so the gradient computaion is 
-	///		  valid!
-	///
-	/// @param[in,out] aalpha 	in: initial guess of step length
-	///							out: step length
-	/// @param[in,out] x		in: the original position
-	///							out: if success, the new position
-	/// @param[in,out] f		in: the original function value
-	///							out: if success, the new value
-	///
-	void lineSearch(double *aalpha, double *x, double *f);
-
 private:
 		
 	int 						mN;					///< Number of unknown parameters
@@ -209,6 +181,7 @@ private:
 	std::vector<double> 		mXEvaluator;		///< Workspace for function evaluations
 	
 	double*						mGradient;			///< Gradient of the function. mN components
+	double*						mProjectedGradient; ///< Projected gradient
 	double*						mHessian;			///< positive definite hessian approximation using BFGS; mN*mN components
 	
 	double*						mP;					///< search direction
@@ -219,16 +192,14 @@ private:
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
 	
-	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computation; 0 if free, >=1 otherwise. gradient computed when < 2
+	std::vector<int>			mActiveSet;			///< active set in "global" coordinates
+	std::vector<bool>			mLocalActiveSet;	///< local active set, i.e. in the trust region
 	
 	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
-	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
-	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver
-
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()

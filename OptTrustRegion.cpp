@@ -52,14 +52,15 @@ void OptTrustRegion::alocateMemory(void)
 	size_vect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
-	mSpace.resize(2*mN*mN + mN*7);
+	mSpace.resize(2*mN*mN + mN*8);
 	
 	
 	mWorkSpaceVect = &mSpace[0];
 	mWorkSpaceMat = mWorkSpaceVect + mN;
 	
 	mGradient = mWorkSpaceMat + mN*mN;
-	mP = mGradient + mN;
+	mProjectedGradient = mGradient + mN;
+	mP = mProjectedGradient + mN;
 	mHessian = mP + mN;
 	
 	mSk = mHessian + mN*mN;
@@ -70,6 +71,7 @@ void OptTrustRegion::alocateMemory(void)
 	
 	// set active set counters to zero
 	mActiveSet.resize(mN, 0);
+	mLocalActiveSet.resize(mN, false);
 }
 
 
@@ -133,6 +135,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	
 	double f_prev;
 	*f = evaluateFunction(x, mTrace);
+	f_prev = *f;
 	
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
@@ -140,7 +143,6 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	// bounds for the QP subproblem
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
-	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
 	
 	// initialize hessian matrix to identity
 	int N_sq( mN*mN ), diag_stride( mN+1 );
@@ -166,196 +168,165 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 
 	// trust region algorithm parameters
 	const double threshold_acceptance_ratio = 0.2;
-	const double max_trust_region_radius = 1.2;
-	double trust_region_radius = 0.5;
+	const double gamma1 = 0.3;
+	const double gamma2 = 1.8;
+	double trust_region_radius = 0.3;
+	const double max_trust_region_radius = 2.0;
 	double improvement_ratio = 1.0;
 	std::vector<double> x_candidate_(mN);
 	
+	const double activeSetTolerance = 1e-5;
+	
 	// main loop
 	bool convergenceReached = false;
-	for(mStep = 0; !convergenceReached; ++mStep)
+	for(mStep = 0; mStep < mMaxIterations; ++mStep)
 	{
 	
-		// save current parameters
-		f_prev = *f;
-		memcpy(mGradPrev, mGradient, size_vect);
-		memcpy(mXPrev, x, size_vect);
+		// ---- check convergence
 		
-		
-		// compute the next step using a trust region strategy	
-		int rejected_trust_region_radius = 0;
-		const int max_rejected_trust_region_radius = 20;
-		bool found_improvement = false;
-		while (rejected_trust_region_radius < max_rejected_trust_region_radius
-			   && not found_improvement)
+		// compute the projected gradient
+		memcpy(mProjectedGradient, mGradient, size_vect);
+		#pragma omp parallel for 
+		for (size_t i(0); i<mN; ++i)
 		{
-			++rejected_trust_region_radius;
-			
-			// --- compute the step in trust region
-			// update local bounds
-			memcpy(&localLowerBound[0], &mLowerBound[0], size_vect);
-			memcpy(&localUpperBound[0], &mUpperBound[0], size_vect);
-			daxpy_(&mN, &minus_one, x, &I1, &localLowerBound[0], &I1);
-			daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
-			#pragma omp parallel for
-			for(size_t i(0); i<mN; ++i)
+			if (mActiveSet[i] != 0)
 			{
-				double& l = localLowerBound[i];
-				double& u = localUpperBound[i];
-				l = max2(l, -trust_region_radius);
-				u = min2(u,  trust_region_radius);
+				mProjectedGradient[i] = 0.0;
 			}
-		
-			// solve quadratic program in l-infinity norm
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "conjugate gradient Steihaug algorithm..." << std::endl;
-			CG_Steihaug(&localLowerBound[0], &localUpperBound[0], mP);
-		
-			// candidate solution
-			double *x_candidate = &x_candidate_[0];
-			memcpy(x_candidate, x, size_vect);
-			daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
-			#pragma omp parallel for
-			for (size_t i(0); i<mN; ++i)
-			{
-				if (x_candidate[i] < mLowerBound[i])
-					x_candidate[i] = mLowerBound[i];
-				else if (x_candidate[i] > mUpperBound[i])
-					x_candidate[i] = mUpperBound[i];
-			}
-			double f_candidate = evaluateFunction(x_candidate, mTrace);
-		
-			// --- choose the trust region radius
-			improvement_ratio = computeRatio(f_prev, mP, f_candidate);
-			std::cout << "improvement_ratio : " << std::setprecision(4) << std::scientific << improvement_ratio << std::endl;
-			
-			// compute the l-infinity norm of the step mP
-			double length_prev_step = 0.0;
-			std::cout << " Search direction:" << std::endl;
-			for(size_t i(0); i<mN; ++i)
-			{
-				std::cout << mP[i] << " ";
-				if (fabs(mP[i]) > length_prev_step)
-					length_prev_step = fabs(mP[i]);
-			}
-			std::cout << std::endl;
-			std::cout << "trust_region_radius : " << std::setprecision(4) << std::scientific << trust_region_radius << ", |mP| : " << std::setprecision(4) << std::scientific << length_prev_step << std::endl;
-			
-			if (improvement_ratio < 0.25)
-			{
-				// reduce trust region radius
-				trust_region_radius = 0.25*length_prev_step;
-				std::cout << "trust_region_radius reduced to " << trust_region_radius << std::endl;
-			}
-			else if (improvement_ratio > 0.75 && fabs(trust_region_radius - length_prev_step)/trust_region_radius <= 1e-3)
-			{
-				// increase trust region radius
-				trust_region_radius = min2(2.0*trust_region_radius, max_trust_region_radius);
-				std::cout << trust_region_radius << " <= " << max_trust_region_radius << std::endl;
-			}
-			// otherwise we don't change the trust region radius
-		
-			// update the solution
-			if (improvement_ratio > threshold_acceptance_ratio)
-			{
-				memcpy(x, x_candidate, size_vect);
-				*f = f_candidate;
-				found_improvement = true;
-			}
-		}			
-		
-#if 0	
-		// line search
+		}
+		double projected_gradient_norm = dnrm2_(&mN, mProjectedGradient, &I1);
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Line search:";
-		
-		
-		double alpha = 1e8;
-		// find biggest possible step size
-		double low, high, pi, candidate;
+				std::cout << "Convergence check: |g_projected| = " << projected_gradient_norm << std::endl;
 			
+		
+		if (projected_gradient_norm < mAbsoluteError)
+			break;
+				
+		
+		// ---- Compute next step
+		
+		// update local bounds
+		dcopy_(&mN, &mLowerBound[0], &I1, &localLowerBound[0], &I1);
+		daxpy_(&mN, &minus_one, x, &I1, &localLowerBound[0], &I1);
+		dcopy_(&mN, &mUpperBound[0], &I1, &localUpperBound[0], &I1);
+		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
+		#pragma omp parallel for
 		for(size_t i(0); i<mN; ++i)
 		{
-			low = mLowerBound[i] - x[i];
-			high = mUpperBound[i] - x[i];
-			pi = mP[i];
+			double& l = localLowerBound[i];
+			double& u = localUpperBound[i];
+			l = max2(l, -trust_region_radius);
+			u = min2(u,  trust_region_radius);
+		}
+		
+		// compute the general Cauchy point
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Compute the General Cauchy Point..." << std::endl;
+		generalCauchyPoint(&localLowerBound[0], &localUpperBound[0], mP);
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "General cauchy Point computed. " << std::endl;
 				
-			if(fabs(pi) > 1e-8)
+		// compute the local active set for the GCP
+		#pragma omp parallel for
+		for (size_t i(0); i<mN; ++i)
+		{
+			double x_GCP_i = x[i] + mP[i];
+			if (   fabs(x_GCP_i - localLowerBound[i]) < activeSetTolerance
+				|| fabs(x_GCP_i - localUpperBound[i]) < activeSetTolerance )
 			{
-				candidate = pi > 0 ? high/pi : low/pi;
-				alpha = candidate < alpha ? candidate : alpha;
+				mLocalActiveSet[i] = true;
+			}
+			else
+			{
+				mLocalActiveSet[i] = false;
 			}
 		}
 		
-		
-		lineSearch(&alpha, x, f);
-#endif	
-		
-		*f = evaluateFunction(x, mTrace);
+		// refine the new iterate using a modified conjugate gradient algorithm
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Refine the General Cauchy Point using modified conjugate gradient..." << std::endl;
+		modifiedConjugateGradient(&localLowerBound[0], &localUpperBound[0]);
+		
+		
+		// candidate solution
+		double *x_candidate = &x_candidate_[0];
+		memcpy(x_candidate, x, size_vect);
+		daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
+		#pragma omp parallel for
+		for (size_t i(0); i<mN; ++i)
 		{
-			std::cout << "New Solution:";
-			mModel->printVar(mXEvaluator, *f);
-		}	
+			if (x_candidate[i] < mLowerBound[i])
+				x_candidate[i] = mLowerBound[i];
+			else if (x_candidate[i] > mUpperBound[i])
+				x_candidate[i] = mUpperBound[i];
+		}
+		double f_candidate = evaluateFunction(x_candidate, mTrace);
 		
+		// compute the improvement ratio
+		double improvement_ratio = computeRatio(f_prev, mP, f_candidate);
 		
-		// check convergence
-		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
-							|| mStep >= mMaxIterations;
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Improvement ratio of the candidate function : " << improvement_ratio << std::endl;
 		
-		if (not convergenceReached)
+		// change the trust region radius accordingly
+		if (improvement_ratio <= threshold_acceptance_ratio)
 		{
+			trust_region_radius *= gamma1;
+		}
+		else if (improvement_ratio > 0.75)
+		{
+			trust_region_radius = min2(gamma2*trust_region_radius, max_trust_region_radius);
+		}
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Trust region radius : " << trust_region_radius << std::endl;
+		
+		// update the solution if needed
+		if (improvement_ratio > threshold_acceptance_ratio)
+		{
+			// save previous solution
+			f_prev = *f;
+			memcpy(mGradPrev, mGradient, size_vect);
+			memcpy(mXPrev, x, size_vect);
 			
-			
-			// update the system
+			// update solution
+			memcpy(x, x_candidate, size_vect);
+			*f = evaluateFunction(x, mTrace);
 			computeGradient(x, *f, mGradient);
+			
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			{
+				std::cout << "New Solution:";
+				mModel->printVar(mXEvaluator, *f);
+			}	
 				
+			// update the hessian matrix
 			memcpy(mSk, x, size_vect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
 			memcpy(mYk, mGradient, size_vect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
-		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "hessian update..." << std::endl;
-			
-			// update the B matrix
 			hessianUpdate();
+			
+		}
 		
-			// update the active set
-			const int max_count_lower = 0;//static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
-			const int max_count_upper = 0;//(mN > 30 ? 1 : 0);
-	 
-			#pragma omp parallel for
-			for(size_t i(0); i<mN; ++i)
+		// update the active set
+		#pragma omp parallel for
+		for (size_t i(0); i<mN; ++i)
+		{
+			double x_i = x[i];
+			if (   fabs(x_i - mLowerBound[i]) < activeSetTolerance
+				|| fabs(x_i - mUpperBound[i]) < activeSetTolerance )
 			{
-				if (mActiveSet[i] > 1)
-				{
-					// reduce counters for active sets
-					--mActiveSet[i];
-				}
-				else
-				{
-					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
-					// update active set so we can reduce the gradient computation				
-					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
-					{
-						mActiveSet[i] = 1+max_count_lower;
-						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "Variable " << i << " in the (lower) active set.\n";
-					}
-					else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
-					{
-						mActiveSet[i] = 1+max_count_upper;
-						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "Variable " << i << " in the (upper) active set.\n";
-					}
-					else
-					{
-						mActiveSet[i] = 0;
-					}
-				}
+				mActiveSet[i] = 1;
+			}
+			else
+			{
+				mActiveSet[i] = 0;
 			}
 		}
 	}
@@ -378,15 +349,6 @@ double OptTrustRegion::evaluateFunction(const double *x, bool aTrace)
 	if (mStopIfBigger && f >= mThreshold) throw FastCodeMLEarlyStopLRT();
 	
 	return -f;
-}
-
-
-// ----------------------------------------------------------------------
-double OptTrustRegion::evaluateFunctionForLineSearch(const double* x, double alpha)
-{
-	memcpy(mWorkSpaceVect, x, size_vect);
-	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
-	return evaluateFunction(mWorkSpaceVect, mTrace);
 }
 
 
@@ -452,7 +414,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 	for(i=0; i<mNumTimes; ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + x_[i] );
-		if( x_[i] + eh > mUpperBoundUnscaled[i] )
+		if( x_[i] + 1e8*eh > mUpperBoundUnscaled[i] )
 			eh = -eh;
 		mXEvaluator[i] += eh;
 		delta[i] = mXEvaluator[i] - x_[i];
@@ -528,306 +490,285 @@ void OptTrustRegion::hessianUpdate(void)
 	for(size_t i(0); i<mN; ++i)
 	{
 		double prefactor = v[i] * inverse_vs;
-		std::cout << "i=" << i << ", prefactor=" << prefactor << ", v[i]="<< v[i] << ", y[i] = " << mYk[i] << ", s[i]=" << mSk[i] << std::endl;
+		//std::cout << "i=" << i << ", prefactor=" << prefactor << ", v[i]="<< v[i] << ", y[i] = " << mYk[i] << ", s[i]=" << mSk[i] << std::endl;
 		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
 		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 	}
 	
-	// add the v.v^T / vs contribution
-	daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
-}
+	
+	// add the v.v^T / vs contribution only if the modification is not too large
+	// Frobenius norm:
+	double modification_norm = dnrm2_(&mN_sq, vvT, &I1)/static_cast<double>(mN);
+	double previous_hessian_norm = dnrm2_(&mN_sq, mHessian, &I1)/static_cast<double>(mN);
+	
+	const double epsilon_ = 1e-8;
+	const double gamma_	= 1e5;
+	
+	if (  (fabs(vs) < epsilon_) || (modification_norm > gamma_*(previous_hessian_norm+1.0))  )
+		std::cout << "------------ Matrix update skipped! ---------------" << std::endl;
+	else
+		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+}	
 
 
-/// find_t_CG_S
-/// find t > 0 such that |p+td| = Delta
+// ----------------------------------------------------------------------
+/// find_t_GCP
+/// find higher t > 0 such that (l <= p+td <= u)
 ///
+/// @param[in]		N				Size of the vectors
 /// @param[in]		localLowerBound The lower bound for p+td
 /// @param[in]		localUpperBound	The Upper bound for p+td
 /// @param[in]		p				vector p
 /// @param[in]		d				vector d
 /// @param[in,out]	t				in: high value. out: the solution
 ///
-void find_t_CG_S(const int N, const std::vector<int>& ActiveSet, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, double &t)
+void find_t_GCP(const int N, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, double &t)
 {
 	for (size_t i(0); i<N; ++i)
 	{
-		if (ActiveSet[i] < 1)
+		double di = d[i];
+		if (fabs(di) > 1e-16)
 		{
-			double di = d[i];
-			if (fabs(di) > 1e-16)
+			double low  = localLowerBound[i] - p[i];
+			double high = localUpperBound[i] - p[i];
+			if (di > 0.0)
 			{
-				double low  = localLowerBound[i] - p[i];
-				double high = localUpperBound[i] - p[i];
-				if (di > 0.0)
-				{
-					if (t > high/di)
-						t = high/di;
-					else if (t < low/di)
-						t = low/di;
-				}
-				else
-				{
-					if (t < high/di)
-						t = high/di;
-					else if (t > low/di)
-						t = low/di;
-				}
-			}
-		}
-	}
-}
-
-
-// ----------------------------------------------------------------------
-void OptTrustRegion::CG_Steihaug(const double *localLowerBound, const double *localUpperBound, double *search_direction)
-{
-	const double r_tol = mAbsoluteError;
-	char trans = 'N';
-	
-	double *p = search_direction;	// search direction
-	double *r = mWorkSpaceMat;		// residual
-	double *d = r + mN;				// improvement direction 
-	double *proj_grad = d+mN;
-	
-	// set p0 = 0
-	dcopy_(&mN, &D0, &I0, p, &I1);
-	// set r0 = gradient
-	memcpy(proj_grad, mGradient, size_vect);
-	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
-	{
-		if (mActiveSet[i] > 0)
-		{
-			proj_grad[i] = 0.0;
-		}
-	}
-	memcpy(r, proj_grad, size_vect);
-	// set d0 = -gradient
-	//memcpy(d, mGradient, size_vect);
-	memcpy(d, proj_grad, size_vect);
-	dscal_(&mN, &minus_one, d, &I1);
-	
-	
-	double r0_norm = dnrm2_(&mN, r, &I1);
-	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "\tr0_norm = " << std::setprecision(4) << std::scientific << r0_norm << std::endl;
-	
-	if (r0_norm < r_tol)
-	{
-		return;
-	}
-	bool search_direction_found = false;
-	while (not search_direction_found)
-	{
-		// compute d^T B d
-		double *Bd = mWorkSpaceVect;
-		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
-		
-		/*
-		#pragma omp parallel for
-		for (size_t i(0); i<mN; ++i)
-		{
-			if (mActiveSet[i] > 0)
-			{
-				Bd[i] = 0.0;
-			}
-		}*/
-		double dBd = ddot_(&mN, d, &I1, Bd, &I1);
-		
-		if (dBd < 0.0)
-		{
-			// find t such that it minimizes m(p_)
-			// for p_ = p+td
-			// There is only two possibilities: t<0 and t>0, we compare both
-			double t_positive = 1e16;
-			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_positive);
-			double M_positive = t_positive * ( 0.5*t_positive*dBd
-											 + ddot_(&mN, d, &I1, proj_grad, &I1)
-											 + ddot_(&mN, p, &I1, Bd, &I1));			
-			
-			// set d <- -d to simplify the calculations
-			dscal_(&mN, &minus_one, d, &I1);
-			double t_negative = 1e16;
-			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t_negative);
-			
-			double M_negative = t_negative * ( 0.5*t_negative*dBd
-											 + ddot_(&mN, d, &I1, proj_grad, &I1)
-											 - ddot_(&mN, p, &I1, Bd, &I1));
-			
-			double M;
-			if (M_negative < M_positive)
-			{
-				daxpy_(&mN, &t_negative, d, &I1, p, &I1);
-				M = M_negative;
+				if (t > high/di)
+					t = high/di;
+				else if (t < low/di)
+					t = low/di;
 			}
 			else
 			{
-				t_positive = -t_positive; // d has been set to -d
-				daxpy_(&mN, &t_positive, d, &I1, p, &I1);
-				M = M_positive;
-			}
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tExit CG at negative curvature ( dBd = " << dBd << " ), with M = " << M << std::endl;
-			return;
-		}
-		
-		// compute a new direction
-		double rr = ddot_(&mN, r, &I1, r, &I1);
-		double alpha = rr;
-		if (dBd > 1e-16)
-			alpha = rr/dBd;
-		else
-		{
-			for (size_t i(0); i<mN; ++i)
-				std::cout << mActiveSet[i] << " ";
-			std::cout << std::endl;
-			return;
-		}
-		double *p_next = mWorkSpaceVect;
-		memcpy(p_next, p, size_vect);
-		daxpy_(&mN, &alpha, d, &I1, p_next, &I1);
-		
-		// verify if it satisfies the constraints
-		bool constraints_satisfied = true;
-		for (size_t i(0); i<mN; ++i)
-		{
-			double low  = localLowerBound[i];
-			double high = localUpperBound[i];
-			if (p_next[i] < low || p_next[i] > high)
-			{
-				constraints_satisfied = false;
-				break;
+				if (t < high/di)
+					t = high/di;
+				else if (t > low/di)
+					t = low/di;
 			}
 		}
-		if (not constraints_satisfied)
-		{
-			// find t such that |p+td| satisfies the bounds
-			double t = 1e16;
-			find_t_CG_S(mN, mActiveSet, localLowerBound, localUpperBound, p, d, t);
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tconstraints not satisfied, t found : " << std::setprecision(4) << std::scientific << t << std::endl;
-			// update the solution
-			daxpy_(&mN, &t, d, &I1, p, &I1);
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tExit CG at constraints" << std::endl;
-			return;
-		}
-		// otherwise keep the new update
-		memcpy(p, p_next, size_vect);
-		// update r
-		daxpy_(&mN, &alpha, Bd, &I1, r, &I1);
-		double r_norm = dnrm2_(&mN, r, &I1);
-		if (r_norm < r_tol*r0_norm)
-		{
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tExit CG after convergence" << std::endl;
-			return;
-		}
-		// update d
-		double beta = ddot_(&mN, r, &I1, r, &I1)/rr;
-		dscal_(&mN, &beta, d, &I1);
-		daxpy_(&mN, &D1, r, &I1, d, &I1);
 	}
 }
 
+// ----------------------------------------------------------------------
+/// updateJSet
+/// Find the variables that "block" the progression of the general cauchy point calculation, i.e. 
+/// variables x=p+td : x==l or x==u (componentwise)
+///
+/// @param[in]		N				Size of the vectors
+/// @param[in]		localLowerBound The lower bound for p+td
+/// @param[in]		localUpperBound	The Upper bound for p+td
+/// @param[in]		p				vector p
+/// @param[in]		d				vector d
+/// @param[in]		t				parameter t
+/// @param[out]		aSetJ			The set J containing the "blocking variables"
+///
+void updateJSet(const int N, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, const double t, std::vector<int>& aSetJ, int step_GCP)
+{
+	const double tolerance = 1e-8;
+	#pragma omp parallel for
+	for (size_t i(0); i<N; ++i)
+	{
+		double xi = p[i] + t*d[i];
+		if ( aSetJ[i] == 0 && ((fabs(xi-localLowerBound[i]) < tolerance) || (fabs(xi-localUpperBound[i]) < tolerance))  )
+		{
+			aSetJ[i] = step_GCP;
+				//std::cout << "\t\tVariable " << i << " in the set J (step " << step_GCP << ")." << std::endl;
+		}
+	}
+}
 
 
 // ----------------------------------------------------------------------
-void OptTrustRegion::lineSearch(double *aalpha, double *x, double *f)
+void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const double *localUpperBound, double *cauchy_point_from_x)
 {
-	// constants for the Wolfe condition
-	double c1 (2e-1);
-	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	double phi_0 = *f, phi, phi_prev;
-	double a_prev = *aalpha;
-	double phi_a_prime;
-	double a = *aalpha;
+	char trans = 'N';
 	
-	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
+	// Initialization
+	double *d = mWorkSpaceVect;
+	double *g = mWorkSpaceMat;
+	double *Bd = g+mN;
+	double *active_part_d = Bd+mN;
+	double f_prime, f_double_prime;
 	
-	phi_prev = phi_0;
-	a_prev = 0.;
-	phi = evaluateFunctionForLineSearch(x, a);
+	// set J
+	// contains the variables indices which block the progression of the alg., i.e. which reach the local bounds.
+	// setJ[i] is 0 if the variable is not blocking, n if it blocks at step n
+	std::vector<int> setJ(mN, 0);	
+	int step_GCP = 1;
 	
-	double sigma, sigma_bas;
-	int maxIterBack, maxIterUp;
+	dcopy_(&mN, &D0, &I0, cauchy_point_from_x, &I1);
 	
-	// we take a step dependant on the problem size:
-	// if the problem is large, we are able to spend more time 
-	// to find a better solution.
-	// otherwise, we consider that the solution is sufficiently 
-	// good and continue. 
-	// The time of line search should be small compared to the 
-	// gradient computation
+	memcpy(d, mProjectedGradient, size_vect);
+	//memcpy(d, mGradient, size_vect);
+	//double scale_d = -sqrt(DBL_EPSILON)/dnrm2_(&mN, mGradient, &I1);
+	dscal_(&mN, &minus_one, d, &I1);	
+	memcpy(g, mGradient, size_vect);
 	
-	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
-	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
+	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+	f_prime = ddot_(&mN, g, &I1, d, &I1);
+	f_double_prime = ddot_(&mN, Bd, &I1, d, &I1);
+	
+	std::cout << "\tDEBUG : f_prime = " << f_prime << ", f_double_prime = " << f_double_prime << std::endl;
 	
 	
-	// begin by a backtrace
-	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
+	if (f_prime < 0)
 	{
-		++iter;
-		a_prev = a;
-		phi_prev = phi;
-		//sigma = 0.3+0.3*randFrom0to1();
-		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		a *= sigma;
-		phi = evaluateFunctionForLineSearch(x, a);
-	}
-	
-	// compute the derivative
-	double eh = sqrt(DBL_EPSILON);
-	if ( a+eh >= 1.0 ) {eh = -eh;}
-	phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
-	
-	iter = 0;
-	if (phi_a_prime < 0.0 && a != *aalpha)
-	{
-		double a0 = a_prev;
-		while(phi < phi_prev && iter < maxIterBack)
+		bool GCP_found = false;
+		while (not GCP_found)
 		{
-			++iter;
+			// find the next breakpoint
+			double delta_t = 1e16;
+			find_t_GCP(mN, localLowerBound, localUpperBound, cauchy_point_from_x, d, delta_t);
 			
-			a_prev = a;
-			phi_prev = phi;
-			//sigma = 0.3+0.4*randFrom0to1();
-			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
-			a = a + sigma*(a0-a);
-			phi = evaluateFunctionForLineSearch(x, a);
-		}
-		if (phi_prev < phi)
-		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(x, a);
-		}
-	}
-	else
-	{
-		sigma_bas = 0.7;
-		while(phi < phi_prev && iter < maxIterUp)
-		{
-			++iter;
+			//if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				//std::cout << "\tdelta_t found :" << delta_t << std::endl;
+				
+			// update J set
+			//if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				//std::cout << "\tUpdating set J:" << std::endl;
+			updateJSet(mN, localLowerBound, localUpperBound, cauchy_point_from_x, d, delta_t, setJ, step_GCP);
 			
-			a_prev = a;
-			phi_prev = phi;
-			//sigma = 0.5+0.5*sqrt(randFrom0to1());
-			sigma = sigma_bas * (0.7 + 0.6*randFrom0to1());
-			a *= sigma;
-			phi = evaluateFunctionForLineSearch(x, a);
-		}
-		if (phi_prev < phi)
-		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(x, a);
+			// test if the GCP has been found
+			const double ratio_f = -f_prime/f_double_prime;
+			if ( (f_double_prime > 0.0) && (0.0 < ratio_f && ratio_f < delta_t) )
+			{
+				daxpy_(&mN, &ratio_f, d, &I1, cauchy_point_from_x, &I1);
+				GCP_found = true;
+			}
+			else
+			{
+				// update line derivatives
+				memcpy(active_part_d, d, size_vect);
+				#pragma omp parallel for
+				for (size_t i(0); i<mN; ++i)
+				{
+					if (setJ[i] != step_GCP)
+					{
+						active_part_d[i] = 0.0;
+					}
+				}
+				dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, active_part_d, &I1, &D0, Bd, &I1);
+				daxpy_(&mN, &delta_t, d, &I1, cauchy_point_from_x, &I1);
+				f_prime += delta_t*f_double_prime - ddot_(&mN, Bd, &I1, cauchy_point_from_x, &I1) - ddot_(&mN, active_part_d, &I1, g, &I1);
+				f_double_prime += ddot_(&mN, Bd, &I1, active_part_d, &I1) - 2.0*ddot_(&mN, Bd, &I1, d, &I1);
+				
+				//#pragma omp parallel for
+				//std::cout << "d = ";
+				for (size_t i(0); i<mN; ++i)
+				{
+					if (setJ[i] == step_GCP)
+					{
+						d[i] = 0.0;
+					}
+					//std::cout << d[i] << " ";
+				}
+				//std::cout << std::endl;
+				
+				if (f_prime >= 0.0 || step_GCP >= 2*mN)
+					GCP_found = true;
+				
+				//std::cout << "\tf_prime : " << std::setprecision(15) << f_prime << std::endl; 
+				++ step_GCP;
+			}
 		}
 	}
-	
-	
-	*f = phi;
-	*aalpha = a;
-	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
 }
+
+
+// ----------------------------------------------------------------------
+void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, const double *localUpperBound)
+{
+	char trans = 'N';
+
+	// initialization
+	double *r = mWorkSpaceVect;
+	double *p = mWorkSpaceMat;
+	double *y = p+mN;
+	
+	double rho_1, rho_2;
+	
+	double eta_sq = dnrm2_(&mN, mProjectedGradient, &I1);
+	eta_sq *= min2(0.1, sqrt(eta_sq));
+	eta_sq *= eta_sq; 
+	
+	memcpy(r, mGradient, size_vect);
+	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mP, &I1, &D1, r, &I1);
+	dscal_(&mN, &minus_one, r, &I1);
+	dcopy_(&mN, &D0, &I0, p, &I1);
+	
+	// restrict the computaion to the free variables, i.e. not in the local active set
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		if (mLocalActiveSet[i])
+		{
+			r[i] = 0.0;
+		}
+	}
+	
+	rho_1 = 1.0;
+	rho_2 = ddot_(&mN, r, &I1, r, &I1);
+	
+	bool CG_terminated = (rho_2 < eta_sq);
+	while (not CG_terminated)
+	{
+		double beta = rho_2 / rho_1;
+		// set p <- r + beta * p
+		dscal_(&mN, &beta, p, &I1);
+		daxpy_(&mN, &D1, r, &I1, p, &I1);
+		// set y <- Bp (we use it as dot products with p, which is 0 at I so we don't have to put p to 0 at I) 
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, y, &I1);
+		// compute largest a1 s.t. l<=x+a1*p<=u for the FREE variables
+		double a1 = 1e16;
+		const double tol__ = 1e-8;
+		for (size_t i(0); i<mN; ++i)
+		{
+			if (not mLocalActiveSet[i])
+			{
+				double pi = p[i];
+				double maxa;
+				if (pi < -tol__)
+				{
+					maxa = (localLowerBound[i]-mP[i]) / pi;
+				}
+				else if (pi > tol__)
+				{
+					maxa = (localUpperBound[i]-mP[i]) / pi;
+				}
+				
+				if (a1 > maxa)
+				{
+					a1 = maxa;
+				}
+			}
+		}
+		
+		double py = ddot_(&mN, p, &I1, y, &I1);
+		if (py <= 0.0)
+		{
+			daxpy_(&mN, &a1, p, &I1, mP, &I1);
+			CG_terminated = true;
+		}
+		else
+		{
+			double a2 = rho_2/py;
+			if (a2 > a1)
+			{
+				daxpy_(&mN, &a1, p, &I1, mP, &I1);
+				CG_terminated = true;
+			}
+			else
+			{
+				daxpy_(&mN, &a2, p, &I1, mP, &I1);
+				a2 = -a2;
+				daxpy_(&mN, &a2, y, &I1, r, &I1);
+				rho_1 = rho_2;
+				rho_2 = ddot_(&mN, r, &I1, r, &I1);
+			}
+		}		
+	}
+}
+
+
+
 
