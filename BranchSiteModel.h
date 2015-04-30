@@ -288,6 +288,7 @@ private:
 		OPTIM_TRUST_REGION		= 43,	///< trust region with SR1 update
 		OPTIM_SESOP				= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
+		OPTIM_SR1				= 46,	///< SQP with SR1 update
 
 		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};

@@ -32,6 +32,7 @@ set(SRCS
 	OptNES.cpp
 	OptAlternatorSQP.cpp
 	OptSQP.cpp
+	OptSQPSR1.cpp
 	BOXCQP.cpp
 	OptTrustRegion.cpp
 )

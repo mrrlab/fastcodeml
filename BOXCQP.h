@@ -11,7 +11,7 @@
 
 
 /// BOXCQP class
-/// solves a box constrained quadratic program using the BOXCQP algorithm
+/// solves a box constrained convex quadratic program using the BOXCQP algorithm
 /// problems of type
 /// 			find min 1/2 x^t B x + d^t x 
 ///				      x

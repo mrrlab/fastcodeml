@@ -16,10 +16,8 @@
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
 
-// uncomment this to use a sizing on the hessian matrix approximation
-// see http://www.caam.rice.edu/tech_reports/1991/TR91-19.pdf for more
-// informations
-//#define SELECTIVE_SIZING_STRATEGY
+#define NON_IDENTITY_HESSIAN
+
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
@@ -153,6 +151,12 @@ private:
 	///
 	void computeGradient(const double *x, double f0, double *aGrad);
 	
+	/// hessianInitialization
+	///
+	/// initialize the hessian matrix
+	///
+	void hessianInitialization(void);
+	
 	/// BFGSupdate
 	/// performs the BFGS formula to update the hessian matrix.
 	/// uses a modified version of BFGS to keep the matrix positive definite
@@ -221,11 +225,6 @@ private:
 	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
 	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1
 
-#ifdef SELECTIVE_SIZING_STRATEGY
-	double						mYS_SS_prev;		///< variable used to apply the selective sizing strategy
-	double						mSBS_SS_prev;		///< variable used to apply the selective sizing strategy
-#endif // SELECTIVE_SIZING_STRATEGY
-	
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
 	

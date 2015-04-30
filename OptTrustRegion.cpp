@@ -20,14 +20,14 @@ double OptTrustRegion::maximizeFunction(std::vector<double>& aVars)
 	// get a better scaling for the branch lengths variables.
 	// it is often near ~0.25, multiply it by 4 so it is "more" around 1
 	// in the new space representation
-	mUpperBound.assign(mNumTimes, 500.0);
+	mUpperBound.assign(mNumTimes, 100.0);
 	
 	
 	i = mNumTimes + 1; 		// v1
-	mUpperBound[i] = 20.0;
+	mUpperBound[i] = 10.0;
 	
 	i = mNumTimes + 2; 		// w0
-	mUpperBound[i] = 20.0;
+	mUpperBound[i] = 10.0;
 	
 	
 	// shrink the w2 variable between 0 and 1 so it is about the same scale as 
@@ -170,8 +170,8 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	const double threshold_acceptance_ratio = 0.2;
 	const double gamma1 = 0.3;
 	const double gamma2 = 1.8;
-	double trust_region_radius = 0.3;
-	const double max_trust_region_radius = 2.0;
+	double trust_region_radius = 0.5;
+	const double max_trust_region_radius = 5.0;
 	double improvement_ratio = 1.0;
 	std::vector<double> x_candidate_(mN);
 	
@@ -263,8 +263,23 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		}
 		double f_candidate = evaluateFunction(x_candidate, mTrace);
 		
+		// compute the infinity-norm of mP
+		double mP_infinity_norm = 0.0;
+		int highest_direction = 0;
+		for (size_t i(0); i<mN; ++i)
+		{
+			double abs_mPi = fabs(mP[i]);
+			if (abs_mPi > mP_infinity_norm)
+			{
+				mP_infinity_norm = abs_mPi;
+				highest_direction = i;
+			}
+		}
+		
+		std::cout << "The limiting variable is the variable " << highest_direction << "/" << mN << std::endl;
+		
 		// compute the improvement ratio
-		double improvement_ratio = computeRatio(f_prev, mP, f_candidate);
+		double improvement_ratio = computeRatio(*f, mP, f_candidate);
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "Improvement ratio of the candidate function : " << improvement_ratio << std::endl;
@@ -274,13 +289,13 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		{
 			trust_region_radius *= gamma1;
 		}
-		else if (improvement_ratio > 0.75)
+		else if (improvement_ratio > 0.95 && fabs(mP_infinity_norm-trust_region_radius) < 1e-3*trust_region_radius)
 		{
 			trust_region_radius = min2(gamma2*trust_region_radius, max_trust_region_radius);
 		}
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "Trust region radius : " << trust_region_radius << std::endl;
+				std::cout << "Trust region radius : " << trust_region_radius << ", |mP| = " << mP_infinity_norm << std::endl;
 		
 		// update the solution if needed
 		if (improvement_ratio > threshold_acceptance_ratio)
@@ -290,6 +305,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			memcpy(mGradPrev, mGradient, size_vect);
 			memcpy(mXPrev, x, size_vect);
 			
+
 			// update solution
 			memcpy(x, x_candidate, size_vect);
 			*f = evaluateFunction(x, mTrace);
@@ -384,9 +400,10 @@ double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 		
 	double dm = ddot_(&mN, dx, &I1, mGradient, &I1);
 	dm += 0.5*ddot_(&mN, Bdx, &I1, dx,  &I1);
-	dm = (dm<0.0) ? dm:-dm;
-	if (-dm < 1e-16) {dm = 1e-16;}
-	return (f-f0)/dm;
+	double df = f-f0;
+	if (fabs(dm) < 1e-16) {dm = 1e-16;}
+	
+	return (df < 0.0)? fabs(df/dm) : -fabs(df/dm);
 }
 
 
@@ -465,6 +482,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 // ----------------------------------------------------------------------
 void OptTrustRegion::hessianUpdate(void)
 {
+#ifdef TRUST_REGION_SR1_MATRIX_UPDATE
 	// local variables
 	double *v, *Bs;
 	double vs, inverse_vs;
@@ -481,7 +499,7 @@ void OptTrustRegion::hessianUpdate(void)
 	
 	vs = ddot_(&mN, v, &I1, mSk, &I1);
 	
-	//std::cout << "v.s = " << vs << std::endl;
+	std::cout << "v.s = " << vs << std::endl;
 	inverse_vs = 1.0/vs;
 	
 	// compute Matrix v.v^T / vs
@@ -501,13 +519,18 @@ void OptTrustRegion::hessianUpdate(void)
 	double modification_norm = dnrm2_(&mN_sq, vvT, &I1)/static_cast<double>(mN);
 	double previous_hessian_norm = dnrm2_(&mN_sq, mHessian, &I1)/static_cast<double>(mN);
 	
+	std::cout << "\tModif norm: " << std::scientific << std::setprecision(12) << modification_norm << std::endl;
+	std::cout << "\tprev norm: " << std::scientific << std::setprecision(12) << previous_hessian_norm << std::endl;
+	
 	const double epsilon_ = 1e-8;
-	const double gamma_	= 1e5;
+	const double gamma_	= 1e8;
 	
 	if (  (fabs(vs) < epsilon_) || (modification_norm > gamma_*(previous_hessian_norm+1.0))  )
 		std::cout << "------------ Matrix update skipped! ---------------" << std::endl;
 	else
 		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+	
+#endif // TRUST_REGION_SR1_MATRIX_UPDATE
 }	
 
 
@@ -689,11 +712,25 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 	
 	double eta_sq = dnrm2_(&mN, mProjectedGradient, &I1);
 	eta_sq *= min2(0.1, sqrt(eta_sq));
-	eta_sq *= eta_sq; 
+	eta_sq *= eta_sq;
 	
+	// set r <- -B * cauchy_from_x - g
+#if 0
 	memcpy(r, mGradient, size_vect);
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mP, &I1, &D1, r, &I1);
-	dscal_(&mN, &minus_one, r, &I1);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &minus_one, r, &I1);
+#else
+	memcpy(y, mP, size_vect);
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		if (mLocalActiveSet[i])
+		{
+			y[i] = 0.0;
+		}
+	}
+	memcpy(r, mProjectedGradient, size_vect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, y, &I1, &minus_one, r, &I1);
+#endif
 	dcopy_(&mN, &D0, &I0, p, &I1);
 	
 	// restrict the computaion to the free variables, i.e. not in the local active set
@@ -712,11 +749,12 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 	bool CG_terminated = (rho_2 < eta_sq);
 	while (not CG_terminated)
 	{
+		std::cout << "\t\t rho_2 = " << rho_2 << "/" << eta_sq << std::endl;
 		double beta = rho_2 / rho_1;
 		// set p <- r + beta * p
 		dscal_(&mN, &beta, p, &I1);
 		daxpy_(&mN, &D1, r, &I1, p, &I1);
-		// set y <- Bp (we use it as dot products with p, which is 0 at I so we don't have to put p to 0 at I) 
+		// set y <- Bp 
 		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, y, &I1);
 		// compute largest a1 s.t. l<=x+a1*p<=u for the FREE variables
 		double a1 = 1e16;
@@ -764,11 +802,10 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 				daxpy_(&mN, &a2, y, &I1, r, &I1);
 				rho_1 = rho_2;
 				rho_2 = ddot_(&mN, r, &I1, r, &I1);
+				CG_terminated = (rho_2 < eta_sq);
 			}
 		}		
 	}
 }
-
-
 
 

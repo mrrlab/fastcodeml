@@ -1,6 +1,6 @@
 
-#ifndef OPT_TRUST_REGION_H
-#define OPT_TRUST_REGION_H
+#ifndef OPTSQPSR1_H
+#define OPTSQPSR1_H
 
 #include <cstdio>
 #include <vector>
@@ -8,22 +8,27 @@
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
 
+// uncomment to use strong wolfe conditions as a stopping criterion for the line search
+// comment it to use only the first Wolfe condition
+//#define STRONG_WOLFE_LINE_SEARCH_SR1
 
 // uncomment to rescale the variables before the optimization process
-//#define SCALE_OPT_TRUST_REGION_VARIABLES
+//#define SCALE_OPT_VARIABLES_SR1
 
 
-#define TRUST_REGION_SR1_MATRIX_UPDATE
-
-/// OptTrustRegion class.
-/// trust region optimizer
+/// OptSQPSR1 class.
+/// sequential quadratic programming optimizer with an SR1 update instead of the standard 
+/// BFGS update. It should be more appropriate for constrained optimization as the hessian
+/// approximation can converge to the hessian, while the BFGS update does not guarantee this
+/// result. The drawback of SR1 update is a non positive definite matrix.
+/// see http://www.meregold.com/abstract.html
 ///
 ///     @author Lucas Amoudruz - EPFL.
-///     @date 2015-04-21 (initial version)
+///     @date 2015-04-23 (initial version)
 ///     @version 1.1
 ///
 
-class OptTrustRegion
+class OptSQPSR1
 {
 public:
 	/// Constructor
@@ -39,16 +44,16 @@ public:
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	/// @param[in] aNumTimes			Number of branches
 	/// 
-	OptTrustRegion(BranchSiteModel* aModel
-				  ,bool aTrace
-				  ,unsigned int aVerbose
-				  ,std::vector<double> aLowerBound
-				  ,std::vector<double> aUpperBound
-				  ,double aAbsoluteError
-				  ,bool aStopIfBigger
-				  ,double aThreshold
-				  ,int aMaxIterations
-				  ,int aNumTimes) 
+	OptSQPSR1(BranchSiteModel* aModel
+		  	 ,bool aTrace
+		  	 ,unsigned int aVerbose
+		  	 ,std::vector<double> aLowerBound
+		  	 ,std::vector<double> aUpperBound
+		  	 ,double aAbsoluteError
+			 ,bool aStopIfBigger
+			 ,double aThreshold
+			 ,int aMaxIterations
+			 ,int aNumTimes) 
 		:mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
@@ -82,7 +87,7 @@ private:
 	///
 	void alocateMemory(void);
 	
-#ifdef SCALE_OPT_TRUST_REGION_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	/// scaleVariables
 	/// scale the variables of the problem linearly so it is more adapted to the optimization method
 	///
@@ -96,7 +101,7 @@ private:
 	/// @param[in,out] x The variables to be unscaled
 	/// 
 	void unscaleVariables(double *x);
-#endif // SCALE_OPT_TRUST_REGION_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
@@ -121,16 +126,17 @@ private:
 	///
 	double evaluateFunction(const double *x, bool aTrace);
 	
-	/// computeRatio
-	///	compute the improvement ratio between the function value and the model
+	/// evaluateFunctionForLineSearch
+	///	evaluates the function at point x + alpha*mP
 	///
-	/// @param[in]	f0	The function value at origin point x0
-	/// @param[in]	dx	The step for which we want to measure the improvement
-	/// @param[in]	f	The function value at point x0+dx
+	/// @param[in]	x the point x
+	/// @param[in]	alpha the step length
 	///
-	/// @return the improvement ratio
+	/// @return the function value
 	///
-	double computeRatio(double f0, double *dx, double f);
+	/// @exception FastCodeMLEarlyStopLRT To force halt the maximization because LRT is already not satisfied
+	///
+	double evaluateFunctionForLineSearch(const double* x, double alpha);
 	
 	/// computeGradient
 	///	compute the gradient at point x using finite differences aproximation
@@ -141,38 +147,64 @@ private:
 	///
 	void computeGradient(const double *x, double f0, double *aGrad);
 	
-	/// hessianUpdate
-	/// update the approximation of the hessian matrix.
-	/// uses a Symmetric rank 1 update. This does not guarantee a positive definite
-	/// matrix!
+	/// SR1update
+	/// performs the a symmetric rank one (SR1) update to approximate the hessian matrix
 	///
-	void hessianUpdate(void);
+	void SR1update(void);
 	
-	/// generalCauchyPoint
+	/// lineSearch
+	/// perform a line search in the mP direction
 	///
-	/// compute general cauchy point
-	/// s.t. l<p<u and |p|<Delta
-	/// using algorithm described in 
-	/// http://www.ams.org/journals/mcom/1988-50-182/S0025-5718-1988-0929544-3/S0025-5718-1988-0929544-3.pdf
+	/// two versions implemented:
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
+	/// wolfe condition.
 	///
-	/// @param[in]	localLowerBound		The lower bound for the solution
-	/// @param[in]	localUpperBound		The upper bound for the solution
-	/// @param[out] cauchy_point_from_x	The general Cauchy point relative to x
+	///	The other version is a backtrace followed by a little refinement, consisting
+	/// in a backtrace in the direction of derivative.
+	/// 
 	///
-	void generalCauchyPoint(const double *localLowerBound, const double *localUpperBound, double *cauchy_point_from_x);
+	/// note: be careful, the last computation of the likelihood
+	///		  is the best solution so the gradient computaion is 
+	///		  valid!
+	///
+	/// @param[in,out] aalpha 	in: initial guess of step length
+	///							out: step length
+	/// @param[in,out] x		in: the original position
+	///							out: if success, the new position
+	/// @param[in,out] f		in: the original function value
+	///							out: if success, the new value
+	///
+	void lineSearch(double *aalpha, double *x, double *f);
 	
-	/// modifiedConjugateGradient
+#ifdef STRONG_WOLFE_LINE_SEARCH_SR1
+	/// zoom
+	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
 	///
-	/// improve the approximate solution of min mk(x)
-	/// s.t. l<p<u and |p|<Delta
-	/// from the general Cauchy point using algorithm described in 
-	/// http://www.ams.org/journals/mcom/1988-50-182/S0025-5718-1988-0929544-3/S0025-5718-1988-0929544-3.pdf
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm
 	///
-	/// @param[in]	localLowerBound		The lower bound for the solution
-	/// @param[in]	localUpperBound		The upper bound for the solution
+	/// @param[in] alo	The lower bound of the interval
+	/// @param[in] ahi	The upper bound of the interval
+	/// @param[in] x	The previous position
+	/// @param[in] phi_0		The value phi(0) = f(x + 0.mP)
+	/// @param[in] phi_0_prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
+	/// @param[in] phi_lo		The value of the function at point alo
+	/// @param[in] c1	The first wolfe variable
+	/// @param[in] c2	The second wolfe variable
 	///
-	void modifiedConjugateGradient(const double *localLowerBound, const double *localUpperBound);
-	
+	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
+	///
+	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
+#endif // STRONG_WOLFE_LINE_SEARCH_SR1
+
+	/// solveUndefinedQP
+	///
+	/// solve the Quadratic Program (QP) 
+	///   min 0.5 p.Bp + p.g 
+	/// l<=p<=u
+	/// approximately to obtain a search direction
+	void solveUndefinedQP(double *localLowerBound, double *localUpperBound);
 
 private:
 		
@@ -180,11 +212,10 @@ private:
 	size_t						size_vect;			///< Size in memory of a mN vector
 	
 	std::vector<double>			mSpace;				///< Work and storage space
-	std::vector<double> 		mXEvaluator;		///< Workspace for function evaluations
+	std::vector<double>			mXEvaluator;		///< Workspace for function evaluations
 	
 	double*						mGradient;			///< Gradient of the function. mN components
-	double*						mProjectedGradient; ///< Projected gradient
-	double*						mHessian;			///< positive definite hessian approximation using BFGS; mN*mN components
+	double*						mHessian;			///< hessian approximation using SR1 update; mN*mN components
 	
 	double*						mP;					///< search direction
 	
@@ -194,20 +225,22 @@ private:
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
 	
-	std::vector<int>			mActiveSet;			///< active set in "global" coordinates
-	std::vector<bool>			mLocalActiveSet;	///< local active set, i.e. in the trust region
+	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computaion
 	
 	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
+	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
+	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver for undefined matrix
+
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
 	
-	const std::vector<double>	mLowerBoundUnscaled;	///< original lower bounds, before scaling	
-	const std::vector<double>	mUpperBoundUnscaled;	///< original upper bounds, before scaling
+	const std::vector<double>&	mLowerBoundUnscaled;	///< original lower bounds, before scaling	
+	const std::vector<double>&	mUpperBoundUnscaled;	///< original upper bounds, before scaling
 	
 	std::vector<double>			mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	std::vector<double>			mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
@@ -220,4 +253,4 @@ private:
 	int							mNumTimes;			///< Number of branches in the optimizer
 };
 
-#endif // OPT_TRUST_REGION_H
+#endif // OPTSQPSR1_H

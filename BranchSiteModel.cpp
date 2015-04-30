@@ -27,6 +27,7 @@
 #include "OptAlternatorSQP.h"
 #include "OptNES.h"
 #include "OptSQP.h"
+#include "OptSQPSR1.h"
 #include "OptTrustRegion.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
@@ -1529,6 +1530,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_ALTERNATOR_SQP:
 	case OPTIM_SQP:
 	case OPTIM_TRUST_REGION:
+	case OPTIM_SR1:
 		return;
 
 	default:
@@ -1770,6 +1772,16 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOptAlgo == OPTIM_SQP)
 	{
 		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	
+	if(mOptAlgo == OPTIM_SR1)
+	{
+		OptSQPSR1 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		double maxl = optim.maximizeFunction(mVar);
 		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
 		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;

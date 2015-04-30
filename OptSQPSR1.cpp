@@ -1,20 +1,21 @@
 
-#include "OptSQP.h"
+#include "OptSQPSR1.h"
 #include "blas.h"
 #include "lapack.h"
 #include <cfloat>
+#include <assert.h>
 
 
 // ----------------------------------------------------------------------
 //	Class members definition: OptSQP
 // ----------------------------------------------------------------------
-double OptSQP::maximizeFunction(std::vector<double>& aVars)
+double OptSQPSR1::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
 	
 	alocateMemory();
 	
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	// set the scaling
 	int i;
 	// get a better scaling for the branch lengths variables.
@@ -38,7 +39,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 		mLowerBound[i] = 0.0;
 		mUpperBound[i] = 1.0;
 	}
-#endif
+#endif // SCALE_OPT_VARIABLES_SR1
 	
 	double maxl = 1e7;
 	SQPminimizer(&maxl, &aVars[0]);
@@ -47,7 +48,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptSQP::alocateMemory(void)
+void OptSQPSR1::alocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	
@@ -73,9 +74,9 @@ void OptSQP::alocateMemory(void)
 }
 
 
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 // ----------------------------------------------------------------------
-void OptSQP::scaleVariables(double *x)
+void OptSQPSR1::scaleVariables(double *x)
 {
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
@@ -97,7 +98,7 @@ void OptSQP::scaleVariables(double *x)
 
 
 // ----------------------------------------------------------------------
-void OptSQP::unscaleVariables(double *x)
+void OptSQPSR1::unscaleVariables(double *x)
 {
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
@@ -121,19 +122,17 @@ void OptSQP::unscaleVariables(double *x)
 		x[i] = x_;
 	}
 }
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 
 
 // ----------------------------------------------------------------------
-void OptSQP::SQPminimizer(double *f, double *x)
+void OptSQPSR1::SQPminimizer(double *f, double *x)
 {
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	scaleVariables(x);
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 	
 	double f_prev;
-	double df, df_prev, mean_df;
-	mean_df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -145,16 +144,36 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
 	
-	// bounds for the QP subproblem
+	// bounds for the QP subproblem (l-x0 <= p <= u-x0)
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
 	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
 	
-	// initialize the hessian matrix
-	hessianInitialization();
-
+	// initialize hessian matrix to identity
+	int N_sq( mN*mN ), diag_stride( mN+1 );
+	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
+	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
+	
+	
+#ifdef SCALE_OPT_VARIABLES_SR1
+	// change the space of the hessian approximation representation
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		double slb = mLowerBound[i];
+		double sub = mUpperBound[i];
+		double lb = mLowerBoundUnscaled[i];
+		double ub = mUpperBoundUnscaled[i];
 		
-	// ----------------------------------------- main loop
+		double scale = (ub-lb)/(sub-slb);
+		scale = scale*scale;
+		
+		mHessian[i*(mN+1)] *= scale;
+	}		
+#endif // SCALE_OPT_VARIABLES_SR1
+
+	
+	// main loop
 	bool convergenceReached = false;
 	for(mStep = 0; !convergenceReached; ++mStep)
 	{
@@ -164,9 +183,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		daxpy_(&mN, &minus_one, x, &I1, &localLowerBound[0], &I1);
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		
+		
 		// save current parameters
 		f_prev = *f;
-		df_prev = df;
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
@@ -175,38 +194,13 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			std::cout << "Quadratic program solving..." << std::endl;
 		
 		// solve quadratic program to get the search direction		
-		bool QPsolutionOnBorder;
-		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
+		solveUndefinedQP(&localLowerBound[0], &localUpperBound[0]);
 		
-		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Line Search..." << std::endl;
-		
-		double alpha = 1.0;
-#if 0
-		// attempt to get a longer step if possible. 
-		if(not QPsolutionOnBorder)
-		{
-			// find biggest possible step size
-			alpha = 1e8;
-			double low, high, pi, candidate;
-			
-			for(size_t i(0); i<mN; ++i)
-			{
-				low = mLowerBound[i] - x[i];
-				high = mUpperBound[i] - x[i];
-				pi = mP[i];
-				
-				if(fabs(pi) > 1e-8)
-				{
-					candidate = pi > 0 ? high/pi : low/pi;
-					alpha = candidate < alpha ? candidate : alpha;
-				}
-			}
-		}
-#endif
 		
 		// line search
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Line Search..." << std::endl;
+		double alpha = 1.0;
 		lineSearch(&alpha, x, f);
 		
 		// avoid unsatisfied bounds due to roundoff errors 
@@ -228,79 +222,12 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		{
 			std::cout << "New Solution:";
 			mModel->printVar(mXEvaluator, *f);
-		}
-		
-		
-		
-#if 0
-		// try to select a better solution around the new point (try to achiev global convergence...)
-		const size_t max_rand_tries = static_cast<const size_t>(sqrt(mN));
-		
-		double new_f(*f);
-		double move_distance = alpha*dnrm2_(&mN, mP, &I1);
-		for(size_t rand_try(0); rand_try<max_rand_tries; ++rand_try)
-		{
-			// build a random point
-			for(size_t i(0); i<mN; ++i)
-			{
-				double my_rand_x_i = x[i];
-				
-				if (mActiveSet[i] == 0)
-				{
-					double tmp = 0.5-randFrom0to1();
-					tmp *= square(tmp);
-					my_rand_x_i += move_distance * (0.3*tmp);
-				
-					if (my_rand_x_i < mLowerBound[i])
-						my_rand_x_i = mLowerBound[i];
-					if (my_rand_x_i > mUpperBound[i])
-						my_rand_x_i = mUpperBound[i];
-				}
-				
-				mXEvaluator[i] = my_rand_x_i;
-			}
-			new_f = -mModel->computeLikelihood(mXEvaluator, mTrace);
-
-			std::cout << "RANDOM TRY: f=" << *f << ", attempt : " << new_f << std::endl;
-			double df = new_f - *f;
-			//std::cout << "df" << df << ", prob barrier : " << exp(-df/Temperature) << std::endl;
-			if (df <= 0.0 || randFrom0to1() <= exp(-df/Temperature))
-			{
-				memcpy(x, &mXEvaluator[0], size_vect);
-				*f = new_f;
-			}			
-			Temperature *= 0.9;
-		}
-		*f = evaluateFunction(x, mTrace);
-#endif		
-		
+		}		
 		
 		
 		// check convergence
-		df_prev = df;
-		df = f_prev - *f;
-		convergenceReached =   fabs(df) < mAbsoluteError
+		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
-		
-		
-		if (mStep > 0)
-		{
-			mean_df = (mean_df*static_cast<double>(mStep-1)+df/df_prev)/static_cast<double>(mStep);
-		}
-		if (mStep > 1 && mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		{
-			std::cout << "\t\tdf/df_prev = " << df/df_prev << std::endl;
-			std::cout << "\t\tmean df/df_prev = " << mean_df << std::endl;
-		}
-#if 0		
-		// restart (TEST)
-		if ( mStep > 1 && df/df_prev > 2.0*mean_df)
-		{
-			if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "Reinitializing the hessian...\n";
-			hessianInitialization();
-		}
-#endif
 		
 		if (not convergenceReached)
 		{
@@ -316,12 +243,19 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "BFGS update..." << std::endl;
+				std::cout << "SR1 update..." << std::endl;
 			
 		
 			// update the B matrix
-			BFGSupdate();
+			SR1update();
 
+		
+			std::cout << "Hessian diagonal at step " << mStep << ":\n";
+			for(size_t i(0); i<mN; ++i)
+			{
+				std::cout << mHessian[i*(mN+1)] << " ";
+			}
+			std::cout << std::endl;
 		
 			// update the active set
 			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
@@ -338,11 +272,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				}
 				else
 				{
-#ifdef SCALE_OPT_VARIABLES
 					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
-#else
-					const double active_set_tol = 1e-4;
-#endif // SCALE_OPT_VARIABLES
 					// update active set so we can reduce the gradient computation				
 					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 					{
@@ -350,7 +280,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 						std::cout << "Variable " << i << " in the (lower) active set.\n";
 					}
-					else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+					if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
 					{
 						mActiveSet[i] = max_count_upper;
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -360,19 +290,19 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			}
 		}
 	}
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	unscaleVariables(x);
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 }
 
 
 // ----------------------------------------------------------------------
-double OptSQP::evaluateFunction(const double *x, bool aTrace)
+double OptSQPSR1::evaluateFunction(const double *x, bool aTrace)
 {
 	memcpy(&mXEvaluator[0], x, size_vect);
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	unscaleVariables(&mXEvaluator[0]);
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
@@ -383,7 +313,7 @@ double OptSQP::evaluateFunction(const double *x, bool aTrace)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::evaluateFunctionForLineSearch(const double* x, double alpha)
+double OptSQPSR1::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
 	memcpy(mWorkSpaceVect, x, size_vect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
@@ -392,7 +322,7 @@ double OptSQP::evaluateFunctionForLineSearch(const double* x, double alpha)
 
 
 // ----------------------------------------------------------------------
-void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
+void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 {
 	volatile double eh;
 	double sqrt_eps = sqrt(DBL_EPSILON);
@@ -402,14 +332,14 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	double *delta = mWorkSpaceVect;
 	
 	
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	double *x_ = mWorkSpaceMat;
 	memcpy(x_, x, size_vect);
 	unscaleVariables(&mXEvaluator[0]);
 	unscaleVariables(x_);
 #else
 	const double *x_ = x;
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 	
 	// branch lengths
 	for(i=0; i<mNumTimes; ++i)
@@ -448,7 +378,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 			mXEvaluator[i] = x_[i];
 		}
 	}
-#ifdef SCALE_OPT_VARIABLES
+#ifdef SCALE_OPT_VARIABLES_SR1
 	#pragma omp parallel for
 	for (size_t j(0); j<mN; ++j)
 	{
@@ -459,56 +389,17 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 		
 		aGrad[j] *= (ub-lb)/(sub-slb);
 	}
-#endif // SCALE_OPT_VARIABLES
+#endif // SCALE_OPT_VARIABLES_SR1
 }
 
 
 // ----------------------------------------------------------------------
-void OptSQP::hessianInitialization(void)
-{
-	// initialize hessian matrix to identity
-	int N_sq( mN*mN ), diag_stride( mN+1 );
-	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
-	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
-	
-	size_t i;
-#ifdef NON_IDENTITY_HESSIAN
-	for (i = 0; i<mN; ++i)
-	{
-		mHessian[i*diag_stride] = 4.0;	// Htt
-	}
-	++i; mHessian[i*diag_stride] = 1.0; // Hv0v0
-	++i; mHessian[i*diag_stride] = 2.0; // Hv1v1
-	++i; mHessian[i*diag_stride] = 1.0; // Hww
-	++i; mHessian[i*diag_stride] = 0.5; // Hkk
-#endif // NON_IDENTITY_HESSIAN
-	
-	
-#ifdef SCALE_OPT_VARIABLES
-	// change the space of the hessian approximation representation
-	#pragma omp parallel for
-	for(size_t i=0; i<mN; ++i)
-	{
-		double slb = mLowerBound[i];
-		double sub = mUpperBound[i];
-		double lb = mLowerBoundUnscaled[i];
-		double ub = mUpperBoundUnscaled[i];
-		
-		double scale = (ub-lb)/(sub-slb);
-		scale = scale*scale;
-		
-		mHessian[i*(mN+1)] *= scale;
-	}		
-#endif // SCALE_OPT_VARIABLES
-}
-
-
-// ----------------------------------------------------------------------
-void OptSQP::BFGSupdate(void)
+void OptSQPSR1::SR1update(void)
 {
 	// local variables
-	double ys, sBs, inverse_sBs, inverse_ys, theta, sigma, theta_tmp;
-	double *Bs, *BssB, *yy;
+	double *v, *Bs;
+	double vs, inverse_vs;
+	double *vvT;
 	char trans = 'N';
 	
 	int mN_sq = mN*mN;
@@ -517,77 +408,31 @@ void OptSQP::BFGSupdate(void)
 	Bs = mWorkSpaceVect;
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
 	
-	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
-	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
+	// compute vector v = -y + Bs
+	v = Bs;
+	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
 	
+	vs = -ddot_(&mN, v, &I1, mSk, &I1);
+	inverse_vs = 1.0/vs;
 	
-	// Powell-SQP update:
-	// change y so the matrix is positive definite
-	sigma = 0.2; // empirical value
-	
-	if (ys < sigma * sBs)
-	{
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
-		
-		theta = sBs - ys;
-		
-		if (fabs(theta) > 1e-8)
-		{
-			do
-			{
-				theta_tmp = (1.0 - sigma) * sBs / theta;
-				sigma = 0.9*sigma;
-			} while(theta_tmp >= 1.0);
-			
-			theta = theta_tmp;
-			theta_tmp = 1.0 - theta;
-			
-			dscal_(&mN, &theta, mYk, &I1);
-			daxpy_(&mN, &theta_tmp, Bs, &I1, mYk, &I1);
-			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
-		}
-	}
-	
-	// compute Matrix B*mSk * mSk^T*B
-	BssB = mWorkSpaceMat;
+	// compute Matrix v.v^T / vs
+	vvT = mWorkSpaceMat;
 	#pragma omp parallel for
 	for(size_t i(0); i<mN; ++i)
 	{
-		double prefactor = - Bs[i] / sBs;
-		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
-		dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
+		double prefactor = v[i] * inverse_vs;
+		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
+		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 	}
 	
-	// add the BssB / sBs contribution
-	daxpy_(&mN_sq, &D1, BssB, &I1, mHessian, &I1);
-	
-	// compute matrix y**T * y
-	yy = mWorkSpaceMat;
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
-	{
-		double prefactor = mYk[i] / ys;
-		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
-		dscal_(&mN, &prefactor, &yy[i*mN], &I1);
-	}
-	
-	// add the yy / ys contribution
-	daxpy_(&mN_sq, &D1, yy, &I1, mHessian, &I1);
-	
-	// make the diagonal more important in order to avoid non positive definite matrix, 
-	// due to roundoff errors
-	int diag_stride = mN+1;
-	double factor = 1.1;
-	double inv_factor = 1.0/factor;
-	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
-	dscal_(&mN, &factor, mHessian, &diag_stride);
+	// add the v.v^T / vs contribution
+	daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
 }
 
 
-#ifndef STRONG_WOLFE_LINE_SEARCH
+#ifndef STRONG_WOLFE_LINE_SEARCH_SR1
 // ----------------------------------------------------------------------
-void OptSQP::lineSearch(double *aalpha, double *x, double *f)
+void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
 	double c1 (2e-1);
@@ -687,7 +532,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 
 #else
 // ----------------------------------------------------------------------
-void OptSQP::lineSearch(double *aalpha, double *x, double *f)
+void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
 	// note that there must be 0 < c1 < c2 < 1
@@ -759,7 +604,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
+double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
 {
 	double a, phi, phi_a_prime;
 	double philo = aphi_lo;
@@ -795,5 +640,120 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 	
 	return a;
 }
-#endif // STRONG_WOLFE_LINE_SEARCH
+#endif // STRONG_WOLFE_LINE_SEARCH_SR1
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBound)
+{
+	int mN_sq = mN*mN;
+	// create a working copy of the hessian
+	double *eigenVectors = mWorkSpaceMat;
+	memcpy(eigenVectors, mHessian, mN*size_vect);
+	
+	// find the eigenvalues and eigenvectors of B
+	const char jobz = 'V';
+	const char uplo = 'U';
+	std::vector<double> eigenValues_(mN);
+	double *eigenValues = &eigenValues_[0];
+	
+	const int lwork = 1 + 6*mN + 2*mN*mN;
+	std::vector<double> work(lwork);
+	
+	const int liwork = 3+5*mN;
+	std::vector<int> iwork(liwork);
+	
+	int info;
+	
+	dsyevd_(&jobz
+		   ,&uplo
+		   ,&mN
+		   ,eigenVectors
+		   ,&mN
+		   ,eigenValues
+		   ,&work[0]
+		   ,&lwork
+		   ,&iwork[0]
+		   ,&liwork
+		   ,&info);
+	
+	assert(info == 0);
+	
+	// find lower index M such that the M first eigenvalues are not strictly positive
+	// M=-1 means no eigenvalue is not strictly positive
+	int M = -1;
+	while (M < mN && eigenValues[M+1] <= 0.0) {++M;}
+	int number_positive_eigenvalues = mN - M - 1;
+	
+	std::cout << "\t\t" << M << " negative eigen values, " << number_positive_eigenvalues << " strictly positive." << std::endl;
+	
+	// -- solve the QP in convex part
+	
+	if (M < mN-1)
+	{
+		// form the modified hessian matrix
+		double *lambda_p_S = &work[0];
+		double *convex_hessian = lambda_p_S + mN_sq;
+		memcpy(lambda_p_S, eigenVectors, mN*size_vect);
+		
+		double *gradient = convex_hessian + mN_sq;
+		dcopy_(&M, &D0, &I0, gradient, &I1);
+		dcopy_(&number_positive_eigenvalues, &mGradient[M], &I1, &gradient[M], &I1);
+		
+		//#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			double prefactor = (i <= M) ? 0.0001 : eigenValues[i];
+			dscal_(&mN, &prefactor, &lambda_p_S[i*mN], &I1);
+			
+			char trans = 'T';
+			dgemv_(&trans, &mN, &mN, &D1, eigenVectors, &mN, &lambda_p_S[i*mN], &I1, &D0, &convex_hessian[i*mN], &I1);
+		}
+		
+		// use BOXQP to solve the sub problem
+		bool solution_on_border;
+		mQPsolver->solveQP(convex_hessian, gradient, &mN, mP, &solution_on_border);
+	}
+	else
+	{
+		dcopy_(&mN, &D0, &I0, mP, &I1);
+	}
+	
+	// -- finish by selecting a weighted sum of the the negative curvatures directions
+	if (false && M != -1)
+	{
+		double *negative_curv_direction = &work[0];
+		dcopy_(&mN, &D0, &I0, negative_curv_direction, &I1);
+		for (size_t i(0); i<=M; ++i)
+		{
+			// - |lambdai| * <g,Si>
+			const double proportion = eigenValues[i] * ddot_(&mN, mGradient, &I1, &eigenVectors[i*mN], &I1);
+			daxpy_(&mN, &proportion, &eigenVectors[i*mN], &I1, negative_curv_direction, &I1);
+		}
+		// scale the new direction
+		double scale = 1.0 / dnrm2_(&mN, negative_curv_direction, &I1);
+		dscal_(&mN, &scale, negative_curv_direction, &I1);
+	
+		// find largest a such that l <= mP + alpha <= u
+		double a = 1e16;
+		for (size_t i(0); i<mN; ++i)
+		{
+			double di = negative_curv_direction[i];
+			double maxa;
+			if (di < 0.0)
+			{
+				maxa = (localLowerBound[i]-mP[i]) / di;
+			}
+			else
+			{
+				maxa = (localUpperBound[i]-mP[i]) / di;
+			}
+			a = min2(a, maxa);
+		}
+		std::cout << "\tNegative space: alpha found = " << a << std::endl;
+		// update mP
+		daxpy_(&mN, &a, negative_curv_direction, &I1, mP, &I1);
+	}
+}
+
 
