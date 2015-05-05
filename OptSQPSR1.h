@@ -217,7 +217,8 @@ private:
 	double*						mGradient;			///< Gradient of the function. mN components
 	double*						mHessian;			///< hessian approximation using SR1 update; mN*mN components
 	
-	double*						mP;					///< search direction
+	double*						mP;					///< search direction (convex part)
+	double*						mD;					///< search direction (non convex part)
 	
 	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
 	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1

@@ -477,8 +477,8 @@ void OptSQP::hessianInitialization(void)
 	{
 		mHessian[i*diag_stride] = 4.0;	// Htt
 	}
-	++i; mHessian[i*diag_stride] = 1.0; // Hv0v0
-	++i; mHessian[i*diag_stride] = 2.0; // Hv1v1
+	++i; mHessian[i*diag_stride] = 2.0; // Hv0v0
+	++i; mHessian[i*diag_stride] = 3.5; // Hv1v1
 	++i; mHessian[i*diag_stride] = 1.0; // Hww
 	++i; mHessian[i*diag_stride] = 0.5; // Hkk
 #endif // NON_IDENTITY_HESSIAN

@@ -53,7 +53,7 @@ void OptSQPSR1::alocateMemory(void)
 	size_vect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
-	mSpace.resize(2*mN*mN + mN*7);
+	mSpace.resize(2*mN*mN + mN*8);
 	
 	
 	mWorkSpaceVect = &mSpace[0];
@@ -61,7 +61,8 @@ void OptSQPSR1::alocateMemory(void)
 	
 	mGradient = mWorkSpaceMat + mN*mN;
 	mP = mGradient + mN;
-	mHessian = mP + mN;
+	mD = mP + mN;
+	mHessian = mD + mN;
 	
 	mSk = mHessian + mN*mN;
 	mYk = mSk + mN;
@@ -315,8 +316,17 @@ double OptSQPSR1::evaluateFunction(const double *x, bool aTrace)
 // ----------------------------------------------------------------------
 double OptSQPSR1::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
+#if 0
 	memcpy(mWorkSpaceVect, x, size_vect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
+#else
+	memcpy(mWorkSpaceVect, x, size_vect);
+	
+	double a_2 = alpha*0.5;
+	double a_sq_2 = square(alpha)*0.5;
+	daxpy_(&mN, &a_2, mP, &I1, mWorkSpaceVect, &I1);
+	daxpy_(&mN, &a_sq_2, mD, &I1, mWorkSpaceVect, &I1);
+#endif
 	return evaluateFunction(mWorkSpaceVect, mTrace);
 }
 
@@ -413,20 +423,30 @@ void OptSQPSR1::SR1update(void)
 	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
 	
 	vs = -ddot_(&mN, v, &I1, mSk, &I1);
-	inverse_vs = 1.0/vs;
 	
-	// compute Matrix v.v^T / vs
-	vvT = mWorkSpaceMat;
-	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	// only update if vs is big enough
+	if (fabs(vs) > 1e-8)
 	{
-		double prefactor = v[i] * inverse_vs;
-		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
-		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
-	}
+		inverse_vs = 1.0/vs;
 	
-	// add the v.v^T / vs contribution
-	daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+		// compute Matrix v.v^T / vs
+		vvT = mWorkSpaceMat;
+		#pragma omp parallel for
+		for(size_t i(0); i<mN; ++i)
+		{
+			double prefactor = v[i] * inverse_vs;
+			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
+			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
+		}
+	
+		// add the v.v^T / vs contribution if it is not too big compared to B_prev
+		
+		double Frob_prev = dnrm2_(&mN_sq, mHessian, &I1);
+		double Frob_modif = dnrm2_(&mN_sq, vvT, &I1);
+		
+		if (Frob_modif < 1e8 * (Frob_prev+1.0))
+			daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+	}
 }
 
 
@@ -435,8 +455,8 @@ void OptSQPSR1::SR1update(void)
 void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
-	double c1 (2e-1);
-	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
+	double c1 (2e-4);
+	double phi_0_prime = 0.5*ddot_(&mN, mP, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
 	double a_prev = *aalpha;
 	double phi_a_prime;
@@ -475,6 +495,7 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
 		a *= sigma;
 		phi = evaluateFunctionForLineSearch(x, a);
+		std::cout << "\tDEBUG: a = " << a << ", phi = " << phi << std::endl; 
 	}
 	
 	// compute the derivative
@@ -528,6 +549,8 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	*f = phi;
 	*aalpha = a;
 	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
+	a = a*a*0.5;
+	daxpy_(&mN, &a, mD, &I1, x, &I1);
 }
 
 #else
@@ -697,9 +720,10 @@ void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBoun
 		memcpy(lambda_p_S, eigenVectors, mN*size_vect);
 		
 		double *gradient = convex_hessian + mN_sq;
-		dcopy_(&M, &D0, &I0, gradient, &I1);
-		dcopy_(&number_positive_eigenvalues, &mGradient[M], &I1, &gradient[M], &I1);
-		
+		memcpy(gradient, mGradient, size_vect);
+		//dcopy_(&mN, &D0, &I0, gradient, &I1);
+		//dcopy_(&number_positive_eigenvalues, &mGradient[M+1], &I1, &gradient[M+1], &I1);
+
 		//#pragma omp parallel for
 		for (int i(0); i<mN; ++i)
 		{
@@ -719,22 +743,22 @@ void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBoun
 		dcopy_(&mN, &D0, &I0, mP, &I1);
 	}
 	
-	// -- finish by selecting a weighted sum of the the negative curvatures directions
-	if (false && M != -1)
+	
+	dcopy_(&mN, &D0, &I0, mD, &I1);
+	// -- weighted sum of the the negative curvatures directions
+	if (M != -1)
 	{
 		double *negative_curv_direction = &work[0];
 		dcopy_(&mN, &D0, &I0, negative_curv_direction, &I1);
 		for (size_t i(0); i<=M; ++i)
 		{
 			// - |lambdai| * <g,Si>
-			const double proportion = eigenValues[i] * ddot_(&mN, mGradient, &I1, &eigenVectors[i*mN], &I1);
+			const double proportion = - ddot_(&mN, mGradient, &I1, &eigenVectors[i*mN], &I1);
+			std::cout << "\tProportion for eigen value " << i << "(" << eigenValues[i] << ") : " << proportion << std::endl;
 			daxpy_(&mN, &proportion, &eigenVectors[i*mN], &I1, negative_curv_direction, &I1);
 		}
-		// scale the new direction
-		double scale = 1.0 / dnrm2_(&mN, negative_curv_direction, &I1);
-		dscal_(&mN, &scale, negative_curv_direction, &I1);
 	
-		// find largest a such that l <= mP + alpha <= u
+		// find largest a such that l <= a*mD <= u
 		double a = 1e16;
 		for (size_t i(0); i<mN; ++i)
 		{
@@ -742,17 +766,17 @@ void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBoun
 			double maxa;
 			if (di < 0.0)
 			{
-				maxa = (localLowerBound[i]-mP[i]) / di;
+				maxa = localLowerBound[i] / di;
 			}
 			else
 			{
-				maxa = (localUpperBound[i]-mP[i]) / di;
+				maxa = localUpperBound[i] / di;
 			}
 			a = min2(a, maxa);
 		}
 		std::cout << "\tNegative space: alpha found = " << a << std::endl;
-		// update mP
-		daxpy_(&mN, &a, negative_curv_direction, &I1, mP, &I1);
+		// update mD
+		daxpy_(&mN, &a, negative_curv_direction, &I1, mD, &I1);
 	}
 }
 
