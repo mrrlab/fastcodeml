@@ -55,8 +55,9 @@ public:
 	/// @param[in]	LDA the leading dimension of matrix B
 	/// @param[out] x the solution vector
 	/// @param[out] aSolutionOnBorder true if the solution is on the bounds, false otherwise
+	/// @param[in,out]	 unconstrained_direction	Solution for the unconstrained problem if not NULL.
 	///
-	void solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder);
+	void solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder, double *unconstrained_direction = NULL);
 	
 	
 private:

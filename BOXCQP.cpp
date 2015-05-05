@@ -13,7 +13,7 @@
 //	Class members definition: BOXCQP
 // ----------------------------------------------------------------------
 
-void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder)
+void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder, double *unconstrained_direction)
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
@@ -38,6 +38,10 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	if (INFO != 0)
 		std::cout << "Error: couldn't solve the initial linear system in BOXCQP. INFO: " << INFO << std::endl;
 	
+	if (unconstrained_direction != NULL)
+	{
+		memcpy(unconstrained_direction, x, mN*sizeof(double));
+	}
 	
 	// verify if the solution is valide
 	bool convergenceReached(true);

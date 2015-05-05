@@ -16,7 +16,10 @@
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
 
-#define NON_IDENTITY_HESSIAN
+// uncomment this to start with a diagonal matrix different than identity.
+// found empirically.
+// comment this to keep the default identity initial hessian matrix
+//#define NON_IDENTITY_HESSIAN
 
 
 /// OptSQP class.
@@ -47,8 +50,8 @@ public:
 	OptSQP(BranchSiteModel* aModel
 		  ,bool aTrace
 		  ,unsigned int aVerbose
-		  ,std::vector<double> aLowerBound
-		  ,std::vector<double> aUpperBound
+		  ,const std::vector<double>& aLowerBound
+		  ,const std::vector<double>& aUpperBound
 		  ,double aAbsoluteError
 		  ,bool aStopIfBigger
 		  ,double aThreshold
@@ -69,10 +72,6 @@ public:
 		,mNumTimes(aNumTimes)
 		,mN(0)
 		,mStep(0)
-#ifdef SELECTIVE_SIZING_STRATEGY
-		,mYS_SS_prev(0.0)
-		,mSBS_SS_prev(0.0)
-#endif // SELECTIVE_SIZING_STRATEGY
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -207,7 +206,7 @@ private:
 	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
 	///
 	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
-#endif
+#endif //STRONG_WOLFE_LINE_SEARCH
 
 private:
 		
@@ -221,7 +220,7 @@ private:
 	double*						mHessian;			///< positive definite hessian approximation using BFGS; mN*mN components
 	
 	double*						mP;					///< search direction
-	
+
 	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
 	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1
 

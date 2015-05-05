@@ -38,7 +38,8 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 		mLowerBound[i] = 0.0;
 		mUpperBound[i] = 1.0;
 	}
-#endif
+	
+#endif // SCALE_OPT_VARIABLES
 	
 	double maxl = 1e7;
 	SQPminimizer(&maxl, &aVars[0]);
@@ -53,7 +54,6 @@ void OptSQP::alocateMemory(void)
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*7);
-	
 	
 	mWorkSpaceVect = &mSpace[0];
 	mWorkSpaceMat = mWorkSpaceVect + mN;
@@ -87,10 +87,9 @@ void OptSQP::scaleVariables(double *x)
 		
 		double x_ = slb + (x[i] - lb) * (sub-slb)/(ub-lb);
 		
-		if (x_ < slb)
-			x_ = slb;
-		if (x_ > sub)
-			x_ = sub;
+		x_ = min2(x_, sub);
+		x_ = max2(x_, slb);
+		
 		x[i] = x_;
 	}
 }
@@ -108,16 +107,11 @@ void OptSQP::unscaleVariables(double *x)
 		double ub = mUpperBoundUnscaled[i];
 		double x_;
 		
-		// assume slb = sb = 0
-		if (i<mNumTimes)
-			x_ = x[i] * (ub-lb)/(sub-slb);
-		else
-			x_ = lb + (x[i] - slb) * ub/sub;
+		x_ = lb + (x[i] - slb) * (ub-lb)/(sub-slb);
 		
-		if (x_ < lb)
-			x_ = lb;
-		if (x_ > ub)
-			x_ = ub;
+		x_ = min2(x_, ub);
+		x_ = max2(x_, lb);
+		
 		x[i] = x_;
 	}
 }
@@ -145,14 +139,14 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
 	
+	// initialize the hessian matrix
+	hessianInitialization();
+	
 	// bounds for the QP subproblem
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
 	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
 	
-	// initialize the hessian matrix
-	hessianInitialization();
-
 		
 	// ----------------------------------------- main loop
 	bool convergenceReached = false;
@@ -176,35 +170,14 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// solve quadratic program to get the search direction		
 		bool QPsolutionOnBorder;
+
 		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
-		
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
 		
 		double alpha = 1.0;
-#if 0
-		// attempt to get a longer step if possible. 
-		if(not QPsolutionOnBorder)
-		{
-			// find biggest possible step size
-			alpha = 1e8;
-			double low, high, pi, candidate;
-			
-			for(size_t i(0); i<mN; ++i)
-			{
-				low = mLowerBound[i] - x[i];
-				high = mUpperBound[i] - x[i];
-				pi = mP[i];
-				
-				if(fabs(pi) > 1e-8)
-				{
-					candidate = pi > 0 ? high/pi : low/pi;
-					alpha = candidate < alpha ? candidate : alpha;
-				}
-			}
-		}
-#endif
+		
 		
 		// line search
 		lineSearch(&alpha, x, f);
@@ -232,50 +205,6 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		
 		
-#if 0
-		// try to select a better solution around the new point (try to achiev global convergence...)
-		const size_t max_rand_tries = static_cast<const size_t>(sqrt(mN));
-		
-		double new_f(*f);
-		double move_distance = alpha*dnrm2_(&mN, mP, &I1);
-		for(size_t rand_try(0); rand_try<max_rand_tries; ++rand_try)
-		{
-			// build a random point
-			for(size_t i(0); i<mN; ++i)
-			{
-				double my_rand_x_i = x[i];
-				
-				if (mActiveSet[i] == 0)
-				{
-					double tmp = 0.5-randFrom0to1();
-					tmp *= square(tmp);
-					my_rand_x_i += move_distance * (0.3*tmp);
-				
-					if (my_rand_x_i < mLowerBound[i])
-						my_rand_x_i = mLowerBound[i];
-					if (my_rand_x_i > mUpperBound[i])
-						my_rand_x_i = mUpperBound[i];
-				}
-				
-				mXEvaluator[i] = my_rand_x_i;
-			}
-			new_f = -mModel->computeLikelihood(mXEvaluator, mTrace);
-
-			std::cout << "RANDOM TRY: f=" << *f << ", attempt : " << new_f << std::endl;
-			double df = new_f - *f;
-			//std::cout << "df" << df << ", prob barrier : " << exp(-df/Temperature) << std::endl;
-			if (df <= 0.0 || randFrom0to1() <= exp(-df/Temperature))
-			{
-				memcpy(x, &mXEvaluator[0], size_vect);
-				*f = new_f;
-			}			
-			Temperature *= 0.9;
-		}
-		*f = evaluateFunction(x, mTrace);
-#endif		
-		
-		
-		
 		// check convergence
 		df_prev = df;
 		df = f_prev - *f;
@@ -283,6 +212,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 							|| mStep >= mMaxIterations;
 		
 		
+
 		if (mStep > 0)
 		{
 			mean_df = (mean_df*static_cast<double>(mStep-1)+df/df_prev)/static_cast<double>(mStep);
@@ -348,13 +278,13 @@ void OptSQP::SQPminimizer(double *f, double *x)
 					{
 						mActiveSet[i] = max_count_lower;
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "Variable " << i << " in the (lower) active set.\n";
+						std::cout << "\tVariable " << i << " in the (lower) active set.\n";
 					}
 					else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
 					{
 						mActiveSet[i] = max_count_upper;
 						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "Variable " << i << " in the (upper) active set.\n";
+						std::cout << "\tVariable " << i << " in the (upper) active set.\n";
 					}
 				}
 			}
@@ -471,16 +401,17 @@ void OptSQP::hessianInitialization(void)
 	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
 	
-	size_t i;
 #ifdef NON_IDENTITY_HESSIAN
-	for (i = 0; i<mN; ++i)
+	size_t i_;
+	for (i_ = 0; i_<mNumTimes; ++i_)
 	{
-		mHessian[i*diag_stride] = 4.0;	// Htt
+		mHessian[i_*diag_stride]  = 5.0;	// Htt
 	}
-	++i; mHessian[i*diag_stride] = 2.0; // Hv0v0
-	++i; mHessian[i*diag_stride] = 3.5; // Hv1v1
-	++i; mHessian[i*diag_stride] = 1.0; // Hww
-	++i; mHessian[i*diag_stride] = 0.5; // Hkk
+	--i_;
+	++i_; mHessian[i_*diag_stride] = 1.0; // Hv0v0
+	++i_; mHessian[i_*diag_stride] = 2.0; // Hv1v1
+	++i_; mHessian[i_*diag_stride] = 1.0; // Hww
+	++i_; mHessian[i_*diag_stride] = 0.5; // Hkk
 #endif // NON_IDENTITY_HESSIAN
 	
 	
@@ -497,7 +428,7 @@ void OptSQP::hessianInitialization(void)
 		double scale = (ub-lb)/(sub-slb);
 		scale = scale*scale;
 		
-		mHessian[i*(mN+1)] *= scale;
+		mHessian[i*diag_stride] *= scale;
 	}		
 #endif // SCALE_OPT_VARIABLES
 }

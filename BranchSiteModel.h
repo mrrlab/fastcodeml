@@ -11,7 +11,7 @@
 #define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
-#define BOOTSTRAP
+//#define BOOTSTRAP
 
 #include <vector>
 #include <cstdlib>
