@@ -17,6 +17,7 @@
 #define dsyrk_  _dsyrk_
 #define dnrm2_  _dnrm2_
 #define daxpy_  _daxpy_
+#define dgemm_	_dgemm_
 #else
 #define ddot_   DDOT
 #define dcopy_	DCOPY
@@ -29,6 +30,7 @@
 #define dnrm2_  DNRM2
 #define daxpy_  DAXPY
 #define dgemv_	DGEMV
+#define dgemm_	DGEMM
 #endif
 #endif
 
@@ -42,6 +44,7 @@
 #define dsymv_ dsymv
 #define daxpy_ daxpy
 #define dgemv_ dgemv
+#define dgemm_ dgemm
 #endif
 
 
@@ -419,6 +422,118 @@ void dgemv_(const char *trans,
 			const int *incy); 	
 
 
+
+
+/// dgemm_ performs one of the matrix-matrix operations
+///    C := alpha*op( A )*op( B ) + beta*C,
+/// where  op( X ) is one of
+///    op( X ) = X   or   op( X ) = X**T,
+///
+/// alpha and beta are scalars, and A, B and C are matrices, with op( A )
+/// an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
+///
+///  Arguments:
+///  ==========
+///
+/// @param[in] TRANSA
+///          TRANSA is CHARACTER*1
+///           On entry, TRANSA specifies the form of op( A ) to be used in
+///           the matrix multiplication as follows:
+///              TRANSA = 'N' or 'n',  op( A ) = A.
+///              TRANSA = 'T' or 't',  op( A ) = A**T.
+///              TRANSA = 'C' or 'c',  op( A ) = A**T.
+///
+/// @param[in] TRANSB
+///          TRANSB is CHARACTER*1
+///           On entry, TRANSB specifies the form of op( B ) to be used in
+///           the matrix multiplication as follows:
+///              TRANSB = 'N' or 'n',  op( B ) = B.
+///              TRANSB = 'T' or 't',  op( B ) = B**T.
+///              TRANSB = 'C' or 'c',  op( B ) = B**T.
+///
+/// @param[in] M
+///          M is INTEGER
+///           On entry,  M  specifies  the number  of rows  of the  matrix
+///           op( A )  and of the  matrix  C.  M  must  be at least  zero.
+///
+/// @param[in] N
+///          N is INTEGER
+///           On entry,  N  specifies the number  of columns of the matrix
+///           op( B ) and the number of columns of the matrix C. N must be
+///           at least zero.
+///
+/// @param[in] K
+///          K is INTEGER
+///           On entry,  K  specifies  the number of columns of the matrix
+///           op( A ) and the number of rows of the matrix op( B ). K must
+///           be at least  zero.
+///
+/// @param[in] ALPHA
+///          ALPHA is DOUBLE PRECISION.
+///           On entry, ALPHA specifies the scalar alpha.
+///
+/// @param[in] A
+///          A is DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is
+///           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.
+///           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k
+///           part of the array  A  must contain the matrix  A,  otherwise
+///           the leading  k by m  part of the array  A  must contain  the
+///           matrix A.
+///
+/// @param[in] LDA
+///          LDA is INTEGER
+///           On entry, LDA specifies the first dimension of A as declared
+///           in the calling (sub) program. When  TRANSA = 'N' or 'n' then
+///           LDA must be at least  max( 1, m ), otherwise  LDA must be at
+///           least  max( 1, k ).
+///
+/// @param[in] B
+///          B is DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is
+///           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.
+///           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n
+///           part of the array  B  must contain the matrix  B,  otherwise
+///           the leading  n by k  part of the array  B  must contain  the
+///           matrix B.
+///
+/// @param[in] LDB
+///          LDB is INTEGER
+///           On entry, LDB specifies the first dimension of B as declared
+///           in the calling (sub) program. When  TRANSB = 'N' or 'n' then
+///           LDB must be at least  max( 1, k ), otherwise  LDB must be at
+///           least  max( 1, n ).
+///
+/// @param[in] BETA
+///          BETA is DOUBLE PRECISION.
+///           On entry,  BETA  specifies the scalar  beta.  When  BETA  is
+///           supplied as zero then C need not be set on input.
+///
+/// @param[in,out] C
+///          C is DOUBLE PRECISION array of DIMENSION ( LDC, n ).
+///           Before entry, the leading  m by n  part of the array  C must
+///           contain the matrix  C,  except when  beta  is zero, in which
+///           case C need not be set on entry.
+///           On exit, the array  C  is overwritten by the  m by n  matrix
+///           ( alpha*op( A )*op( B ) + beta*C ).
+///
+/// @param[in] LDC
+///          LDC is INTEGER
+///           On entry, LDC specifies the first dimension of C as declared
+///           in  the  calling  (sub)  program.   LDC  must  be  at  least
+///           max( 1, m ).
+///
+void dgemm_(const char *transA
+	,const char *transB
+	,const int *M
+	,const int *N
+	,const int *K
+	,const double *ALPHA
+	,const double *A
+	,const int *LDA
+	,const double *B
+	,const int *LDB
+	,const double *BETA
+	,double *C
+	,const int *LDC);
 
 
 #ifdef __cplusplus

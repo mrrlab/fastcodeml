@@ -192,10 +192,8 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				x[i] = mUpperBound[i];
 		}
 		
-		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Step length found:" << alpha << std::endl;
-		
 				
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
@@ -203,16 +201,13 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			mModel->printVar(mXEvaluator, *f);
 		}
 		
-		
-		
 		// check convergence
 		df_prev = df;
 		df = f_prev - *f;
 		convergenceReached =   fabs(df) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
-		
-
+#if 0	
 		if (mStep > 0)
 		{
 			mean_df = (mean_df*static_cast<double>(mStep-1)+df/df_prev)/static_cast<double>(mStep);
@@ -222,7 +217,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			std::cout << "\t\tdf/df_prev = " << df/df_prev << std::endl;
 			std::cout << "\t\tmean df/df_prev = " << mean_df << std::endl;
 		}
-#if 0		
+	
 		// restart (TEST)
 		if ( mStep > 1 && df/df_prev > 2.0*mean_df)
 		{
@@ -405,13 +400,13 @@ void OptSQP::hessianInitialization(void)
 	size_t i_;
 	for (i_ = 0; i_<mNumTimes; ++i_)
 	{
-		mHessian[i_*diag_stride]  = 5.0;	// Htt
+		mHessian[i_*diag_stride]  = 3.0;	// Htt
 	}
 	--i_;
 	++i_; mHessian[i_*diag_stride] = 1.0; // Hv0v0
 	++i_; mHessian[i_*diag_stride] = 2.0; // Hv1v1
 	++i_; mHessian[i_*diag_stride] = 1.0; // Hww
-	++i_; mHessian[i_*diag_stride] = 0.5; // Hkk
+	++i_; mHessian[i_*diag_stride] = 1.5; // Hkk
 #endif // NON_IDENTITY_HESSIAN
 	
 	

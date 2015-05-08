@@ -11,7 +11,7 @@
 #define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
-//#define BOOTSTRAP
+#define BOOTSTRAP
 
 #include <vector>
 #include <cstdlib>
@@ -289,6 +289,7 @@ private:
 		OPTIM_SESOP				= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
 		OPTIM_SR1				= 46,	///< SQP with SR1 update
+		OPTIM_ARC				= 47,	///< SR1 update with arc search
 
 		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};

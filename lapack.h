@@ -313,7 +313,7 @@ extern "C" void dgeqrf(const int *m
 
 /// The pdorgqr routine generates the whole or part of m-by-n real distributed matrix Q denoting 
 /// A(ia:ia+m-1, ja:ja+n-1) with orthonormal columns, which is defined as the first n columns of 
-/// a product of k elementary reflectors of order m Q= H(1)*H(2)*...*H(k) as returned by p?geqrf.
+/// a product of k elementary reflectors of order m Q= H(1)*H(2)*...*H(k) as returned by pdgeqrf.
 ///
 /// @param[in] m  INTEGER. The order of the orthogonal matrix Q (m ≥ 0). 
 ///
@@ -537,7 +537,7 @@ extern "C" void dspsv(const char *UPLO
 					 
 
 /// DGELS solves overdetermined or underdetermined real linear systems
-/// involving an M-by-N matrix A, or its transpose, using a QR or LQ
+/// involving an M-by-N matrix	A, or its transpose, using a QR or LQ
 /// factorization of A. It is assumed that A has full rank.
 /// 
 /// The following options are provided:

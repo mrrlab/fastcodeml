@@ -16,9 +16,9 @@
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
 
-// uncomment this to start with a diagonal matrix different than identity.
+// uncomment this to start with a diagonal matrix different than identity (takes less time for large problems).
 // found empirically.
-// comment this to keep the default identity initial hessian matrix
+// comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
 //#define NON_IDENTITY_HESSIAN
 
 

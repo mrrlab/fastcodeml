@@ -35,6 +35,7 @@ set(SRCS
 	OptSQPSR1.cpp
 	BOXCQP.cpp
 	OptTrustRegion.cpp
+	OptArc.cpp
 )
 
 
