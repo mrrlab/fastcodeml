@@ -141,6 +141,27 @@ private:
 	///						  out: The function value after the arc search
 	///
 	void arcSearch(double *aalpha, double *x, double *f);
+	
+#if 0
+	/// zoom
+	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
+	///
+	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
+	/// chap3 pp.59-60 for more informations on the line search algorithm
+	///
+	/// @param[in] alo	The lower bound of the interval
+	/// @param[in] ahi	The upper bound of the interval
+	/// @param[in] x	The previous position
+	/// @param[in] phi_0		The value phi(0) = f(x + 0.mP)
+	/// @param[in] phi_0_prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
+	/// @param[in] phi_lo		The value of the function at point alo
+	/// @param[in] c1	The first wolfe variable
+	/// @param[in] c2	The second wolfe variable
+	///
+	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
+	///
+	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
+#endif 
 
 	/// findMaxStep
 	/// finds the maximum step a such that l <= x+Gamma(a) <= u
@@ -166,6 +187,13 @@ private:
 	///
 	void projectActiveSet(double *aVect);
 	
+	/// projectedDirection
+	/// computes the projected direction at point x
+	///
+	/// @param[in]  x The current position
+	/// @param[in, out] p in: The direction to project, out: The projected direction
+	///
+	void projectedDirection(const double *x, double *p);
 private:
 		
 	int 						mN;					///< Number of unknown parameters

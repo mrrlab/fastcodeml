@@ -82,20 +82,20 @@ void OptArc::ArcMinimizer(double *f, double *x)
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
-		
 		// prepare the arc search
 		computeSubspaceArcSearch(x);
 		
 		// arc search
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Arc Search..." << std::endl;
-		const double alpha_max = 1.0;
+		double alpha_max = (fabs(mLambdaMin) > 1e-1) ? 1.0/fabs(mLambdaMin) : 1.0;
 		double alpha = alpha_max;
 		
 		// find the maximum step size alpha so it stays in the bounds
-		//findMaxStep(x, &alpha);
-		alpha = 0.05;//min2(alpha, alpha_max);
+		findMaxStep(x, &alpha);
+		alpha = min2(alpha, alpha_max);
 		std::cout << std::setprecision(14) <<  "alpha_max = " << alpha << std::endl;
+		std::cout << "1/vmin = " << 1.0/mLambdaMin << std::endl;
 		
 		arcSearch(&alpha, x, f);
 		
@@ -169,31 +169,36 @@ double OptArc::evaluateFunctionForArcSearch(const double* x, double alpha)
 		rho[j] = alpha / (1.0 + alpha*(mV[j]-mLambdaMin));
 	
 	// introduce perturbation if the gradient and search direction are too similar
-	double *gradient_perturbed = mWorkSpaceMat;
-	double *Bp = gradient_perturbed+mN;
-	memcpy(gradient_perturbed, mGradient, size_vect);
-	projectActiveSet(gradient_perturbed);
+	double *g_perturbed = mWorkSpaceMat;
+	double *Bp = g_perturbed+mN;
+	memcpy(g_perturbed, mGradient, size_vect);
+	
+	//dscal_(&mN, &minus_one, g_perturbed, &I1);
+	//projectedDirection(x, g_perturbed);
+	//dscal_(&mN, &minus_one, g_perturbed, &I1);
+	projectActiveSet(g_perturbed);
+	
 	char trans = 'N';
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mGradient, &I1, &D0, Bp, &I1);
 	double dp = fabs(ddot_(&mN, mP, &I1, mGradient, &I1));
 	double pBp = fabs(ddot_(&mN, mP, &I1, Bp, &I1));
-	if (dp > 1e-3*pBp)
+	if (dp > 1e-4*pBp)
 	{
 		// add perturbation
-		daxpy_(&mN, &D1, mP, &I1, gradient_perturbed, &I1);
+		daxpy_(&mN, &D1, mP, &I1, g_perturbed, &I1);
 	}
 	
 	// compute gamma(alpha)
-	double *w = gradient_perturbed+mNs;
+	double *w = g_perturbed+mNs;
 	double *w_tmp = w+mN;
 	trans = 'T';
-	dgemv_(&trans, &mN, &mNs, &D1, mQ, &mN, gradient_perturbed, &I1, &D0, w, &I1);	// multiply by QT
-	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w, &I1, &D0, w_tmp, &I1);				// multiply by UT
-	for (size_t i(0); i<mNs; ++i) {w_tmp[i] *= rho[i];}								// multiply by diagonal matrix rho(V, alpha)
+	dgemv_(&trans, &mN, &mNs, &D1, mQ, &mN, g_perturbed, &I1, &D0, w, &I1);	// multiply by QT
+	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w, &I1, &D0, w_tmp, &I1);		// multiply by UT
+	for (size_t i(0); i<mNs; ++i) {w_tmp[i] *= rho[i];}						// multiply by diagonal matrix rho(V, alpha)
 	trans = 'N';
 	double *x_arc = mWorkSpaceVect;
-	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w_tmp, &I1, &D0, w, &I1);				// multiply by U
-	dgemv_(&trans, &mN, &mNs, &minus_one, mQ, &mN, w, &I1, &D0, x_arc, &I1);		// multiply by Q
+	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w_tmp, &I1, &D0, w, &I1);		// multiply by U
+	dgemv_(&trans, &mN, &mNs, &minus_one, mQ, &mN, w, &I1, &D0, x_arc, &I1);// multiply by Q
 	
 	// compute f(x+gamma(alpha))
 	daxpy_(&mN, &D1, x, &I1, x_arc, &I1);
@@ -316,7 +321,7 @@ void OptArc::SR1update(void)
 void OptArc::arcSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
-	double c1 (2e-4);
+	double c1 (2e-1);
 	
 	// compute derivative of arc at alpha=0
 	double *QTg = mWorkSpaceMat;
@@ -356,6 +361,8 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	
 	
 	// begin by a backtrace
+	double a_min = a;
+	double phi_min = phi_0;
 	size_t iter = 0;
 	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
 	{
@@ -366,7 +373,13 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 		a *= sigma;
 		phi = evaluateFunctionForArcSearch(x, a);
 		std::cout << "\tDEBUG: a = " << a << ", phi = " << phi << std::endl; 
+		a_min = (phi<phi_min)?a:a_min;
 	}
+	
+	a = a_min;
+	a_prev = a;
+	phi = phi_min;
+	phi_prev = phi;
 	
 	// compute the derivative
 	double eh = sqrt(DBL_EPSILON);
@@ -377,14 +390,14 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	if (phi_a_prime < 0.0 && a != *aalpha)
 	{
 		double a0 = a_prev;
-		while(phi < phi_prev && iter < maxIterBack)
+		while(phi <= phi_prev && iter < maxIterBack)
 		{
 			++iter;
 			
 			a_prev = a;
 			phi_prev = phi;
-			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
-			a = a + sigma*(a0-a);
+			sigma = sigma_bas * (0.55 + 0.3*randFrom0to1());
+			a = a + sigma*(a*0.5+a0-a);
 			phi = evaluateFunctionForArcSearch(x, a);
 		}
 		if (phi_prev < phi)
@@ -396,7 +409,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	else
 	{
 		sigma_bas = 0.7;
-		while(phi < phi_prev && iter < maxIterUp)
+		while(phi <= phi_prev && iter < maxIterUp)
 		{
 			++iter;
 			
@@ -480,33 +493,29 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 			std::cout << "ERROR : dgesv in OptArc::computeSubspaceArcSearch: info = " << info << std::endl;
 		dscal_(&mN, &minus_one, mP, &I1);
 		// project the search direction
-		#pragma omp parallel for
-		for (size_t i(0); i<mN; ++i)
-		{
-			double l = mLowerBound[i]-x[i];
-			double u = mUpperBound[i]-x[i];
-			double p = mP[i];
-			p = min2(p, u);
-			p = max2(p, l);
-			mP[i] = p;
-		}
+		projectedDirection(x, mP);
 	}
 	else
 	{
 		// take the direction such that mP.mGradient < 0 (descent direction)
 		if (ddot_(&mN, mP, &I1, mGradient, &I1) > 0.0)
 			dscal_(&mN, &minus_one, mP, &I1);
+		// project the negative curvature direction
+		projectedDirection(x, mP);	
 	}
 	
 	
 	// form subspace S
 	double *S = mQ;
 	memcpy(S, mGradient, size_vect);
+	dscal_(&mN, &minus_one, S, &I1);
 	memcpy(S+mN, mP, size_vect);
 	
-	// only consider unactive variables
-	projectActiveSet(S);
-	projectActiveSet(S+mN);
+	// only consider free variables
+	//projectActiveSet(S);
+	//projectActiveSet(S+mN);
+	projectedDirection(x, S);
+	projectedDirection(x, S+mN);
 	
 	// form the matrix Q from subspace S
 	std::vector<double> tau(mNs);
@@ -578,21 +587,26 @@ void OptArc::findMaxStep(const double *x, double *amax)
 	double *Bp = g_perturbed+mN;
 	
 	memcpy(g_perturbed, mGradient, size_vect);
+	
+	//dscal_(&mN, &minus_one, g_perturbed, &I1);
+	//projectedDirection(x, g_perturbed);
+	//dscal_(&mN, &minus_one, g_perturbed, &I1);
 	projectActiveSet(g_perturbed);
 	
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, g_perturbed, &I1, &D0, Bp, &I1);
 	
 	double dp = fabs(ddot_(&mN, mP, &I1, g_perturbed, &I1));
 	double pBp = fabs(ddot_(&mN, g_perturbed, &I1, Bp, &I1));
-	if (dp > 1e-3*pBp)
+	if (dp > 1e-4*pBp)
 	{
 		// add perturbation
 		daxpy_(&mN, &D1, mP, &I1, g_perturbed, &I1);
 	}
 	
 	
-	double beta1_ = ddot_(&mN, QU, &I1, g_perturbed, &I1);
+	double beta1_ = ddot_(&mN, &QU[0] , &I1, g_perturbed, &I1);
 	double beta2_ = ddot_(&mN, &QU[mN], &I1, g_perturbed, &I1);
+	const double tol_alpha = 1e-6;
 	
 	for (size_t i(0); i<mN; ++i)
 	{
@@ -617,11 +631,11 @@ void OptArc::findMaxStep(const double *x, double *amax)
 			double a1 = 1.0/(pi1+mLambdaMin);
 			double a2 = 1.0/(pi2+mLambdaMin);
 			
-			std::cout << i << " gamma = " << gamma << ", lin = " << linear_term << ", const = " << const_term << std::endl;
-			std::cout << i << " Lower: " << a1 << " " << a2 << std::endl;
+			//std::cout << i << " gamma = " << gamma << ", lin = " << linear_term << ", const = " << const_term << std::endl;
+			//std::cout << i << " Lower: " << a1 << " " << a2 << std::endl;
 			a2 = max2(a1,a2);
 			
-			if (a2 >= 0.0)
+			if (a2 >= tol_alpha)
 				a = min2(a2, a);		
 		}		
 		
@@ -642,11 +656,11 @@ void OptArc::findMaxStep(const double *x, double *amax)
 			double a1 = 1.0/(pi1+mLambdaMin);
 			double a2 = 1.0/(pi2+mLambdaMin);
 			
-			std::cout << i << " gamma = " << gamma << ", lin = " << linear_term << ", const = " << const_term << std::endl;
-			std::cout << i << " Upper: " << a1 << " " << a2 << std::endl;
+			//std::cout << i << " gamma = " << gamma << ", lin = " << linear_term << ", const = " << const_term << std::endl;
+			//std::cout << i << " Upper: " << a1 << " " << a2 << std::endl;
 			a2 = max2(a1,a2);
 			
-			if (a2 >= 0.0)
+			if (a2 >= tol_alpha)
 				a = min2(a2, a);
 		}
 	}
@@ -694,6 +708,23 @@ void OptArc::projectActiveSet(double *aVect)
 	}
 }
 
+// ----------------------------------------------------------------------
+void OptArc::projectedDirection(const double *x, double *p)
+{
+	// set p <- x+p
+	daxpy_(&mN, &D1, x, &I1, p, &I1);
+	// projection step
+	#pragma omp parallel for
+	for (size_t i(0); i<mN; ++i)
+	{
+		double pi = p[i];
+		pi = max2(pi, mLowerBound[i]);
+		pi = min2(pi, mUpperBound[i]);
+		p[i] = pi;
+	}
+	// set p <- P(x+g) - x
+	daxpy_(&mN, &minus_one, x, &I1, p, &I1);
+}
 
 // ----------------------------------------------------------------------
 
