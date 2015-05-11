@@ -54,7 +54,7 @@ void OptSQP::alocateMemory(void)
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*7);
-	
+
 	mWorkSpaceVect = &mSpace[0];
 	mWorkSpaceMat = mWorkSpaceVect + mN;
 	
@@ -238,7 +238,27 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 			memcpy(mYk, mGradient, size_vect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
-		
+				
+#ifdef GRADIENT_HISTORY_LIMITING_COMPUTATION
+			// set mHistoryGradient <- mLGH mHistoryGradient + (1-mLGH)mYk:mYk
+			mLHG = 0.3;
+			if (mStep == 0)
+			{
+				memcpy(mHistoryGradient, mYk, size_vect);
+			}
+			else
+			{
+				std::cout << "mHistoryGradient :" << std::endl;
+				#pragma omp parallel for
+				for (size_t i(0); i<mN; ++i)
+				{
+					mHistoryGradient[i] = mLHG*mHistoryGradient[i] + (1.0-mLHG)*square(mYk[i]);
+					std::cout << mHistoryGradient[i] << " "; 
+				}
+				std::cout << std::endl;
+			}
+			
+#endif // GRADIENT_HISTORY_LIMITING_COMPUTATION	
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "BFGS update..." << std::endl;
@@ -264,9 +284,9 @@ void OptSQP::SQPminimizer(double *f, double *x)
 				else
 				{
 #ifdef SCALE_OPT_VARIABLES
-					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+					const double active_set_tol = 1e-2 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
 #else
-					const double active_set_tol = 1e-4;
+					const double active_set_tol = 1e-2;
 #endif // SCALE_OPT_VARIABLES
 					// update active set so we can reduce the gradient computation				
 					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
@@ -326,7 +346,6 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	size_t i;
 	double *delta = mWorkSpaceVect;
 	
-	
 #ifdef SCALE_OPT_VARIABLES
 	double *x_ = mWorkSpaceMat;
 	memcpy(x_, x, size_vect);
@@ -348,7 +367,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 
 	for(i=0; i<mNumTimes; ++i)
 	{
-		if(mActiveSet[i] == 0)
+		if (mActiveSet[i] == 0)
 		{
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 			aGrad[i] = (f-f0)/delta[i];
