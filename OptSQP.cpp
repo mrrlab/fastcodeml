@@ -11,6 +11,7 @@
 double OptSQP::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
+	mH1Optimization = (mN == mNumTimes+5);
 	
 	alocateMemory();
 	
@@ -33,7 +34,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	// shrink the w2 variable between 0 and 1 so it is about the same scale as 
 	// the other variables in the new space representation
 	i = mNumTimes+4; 		// w2
-	if(mN > i)
+	if(mH1Optimization)
 	{
 		mLowerBound[i] = 0.0;
 		mUpperBound[i] = 1.0;
@@ -170,8 +171,10 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// solve quadratic program to get the search direction		
 		bool QPsolutionOnBorder;
-
 		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
+		 
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
@@ -238,71 +241,15 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 			memcpy(mYk, mGradient, size_vect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
-				
-#ifdef GRADIENT_HISTORY_LIMITING_COMPUTATION
-			// set mHistoryGradient <- mLGH mHistoryGradient + (1-mLGH)mYk:mYk
-			mLHG = 0.3;
-			if (mStep == 0)
-			{
-				memcpy(mHistoryGradient, mYk, size_vect);
-			}
-			else
-			{
-				std::cout << "mHistoryGradient :" << std::endl;
-				#pragma omp parallel for
-				for (size_t i(0); i<mN; ++i)
-				{
-					mHistoryGradient[i] = mLHG*mHistoryGradient[i] + (1.0-mLHG)*square(mYk[i]);
-					std::cout << mHistoryGradient[i] << " "; 
-				}
-				std::cout << std::endl;
-			}
-			
-#endif // GRADIENT_HISTORY_LIMITING_COMPUTATION	
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "BFGS update..." << std::endl;
-			
 		
 			// update the B matrix
 			BFGSupdate();
-
 		
 			// update the active set
-			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
-			const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
-			const int max_count_upper = (mN > 30 ? 1 : 0);
-	 
-			#pragma omp parallel for
-			for(size_t i(0); i<mN; ++i)
-			{
-				if (mActiveSet[i] > 0)
-				{
-					// reduce counters for active sets
-					--mActiveSet[i];
-				}
-				else
-				{
-#ifdef SCALE_OPT_VARIABLES
-					const double active_set_tol = 1e-2 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
-#else
-					const double active_set_tol = 1e-2;
-#endif // SCALE_OPT_VARIABLES
-					// update active set so we can reduce the gradient computation				
-					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
-					{
-						mActiveSet[i] = max_count_lower;
-						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "\tVariable " << i << " in the (lower) active set.\n";
-					}
-					else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
-					{
-						mActiveSet[i] = max_count_upper;
-						if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-						std::cout << "\tVariable " << i << " in the (upper) active set.\n";
-					}
-				}
-			}
+			activeSetUpdate(x, 1e-4);
 		}
 	}
 #ifdef SCALE_OPT_VARIABLES
@@ -388,6 +335,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 			eh = mXEvaluator[i] - x_[i];
 
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
+
 			aGrad[i] = (f-f0)/eh;
 			mXEvaluator[i] = x_[i];
 		}
@@ -465,7 +413,8 @@ void OptSQP::BFGSupdate(void)
 	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
 	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 	
-	
+
+#if 1	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
 	sigma = 0.2; // empirical value
@@ -493,7 +442,8 @@ void OptSQP::BFGSupdate(void)
 			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 		}
 	}
-	
+#endif
+
 	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for
@@ -527,8 +477,79 @@ void OptSQP::BFGSupdate(void)
 	double inv_factor = 1.0/factor;
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
 	dscal_(&mN, &factor, mHessian, &diag_stride);
+	
+#if 0
+	// compute the minimum eigenValue in order to verify the positive definiteness of the matrix.
+	char job = 'N';
+	char range = 'I';
+	char uplo = 'U';
+	double *B = mWorkSpaceMat;
+	memcpy(B, mHessian, mN*size_vect);
+	
+	double *vl_not_used = NULL, *vu_not_used = NULL;
+	int M;
+	double *eigenValues = mWorkSpaceVect;
+	int *isupz_not_used = NULL;
+	
+	int lwork = 26*mN;
+	std::vector<double> work(lwork);
+	int liwork = 10*mN;
+	std::vector<int> iwork(liwork);
+	int info;
+	
+	dsyevr_(&job, &range, &uplo, &mN, B, &mN, vl_not_used, vu_not_used, &I1, &I1, &mAbsoluteError, &M, eigenValues, mP, &mN
+		   ,isupz_not_used, &work[0], &lwork, &iwork[0], &liwork, &info);
+	
+	// modify the matrix accordingly if needed
+	double min_eigen_value = eigenValues[0];
+	if (min_eigen_value < 1e-6)
+	{
+		double diagonal_ = max2(-min_eigen_value*1.01, 1e-2);
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Not positive definite matrix ("<<min_eigen_value<<"), adding " << diagonal_ << "...\n"; 
+		daxpy_(&mN, &D1, &diagonal_, &I0, mHessian, &diag_stride);
+	}
+#endif
 }
 
+
+// ----------------------------------------------------------------------
+void OptSQP::activeSetUpdate(const double *x, const double tolerance)
+{
+	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
+	const int max_count_upper = (mN > 30 ? 1 : 0);
+	 
+	#pragma omp parallel for
+	for(size_t i(0); i<mN; ++i)
+	{
+		if (mActiveSet[i] > 0)
+		{
+			// reduce counters for active sets
+			--mActiveSet[i];
+		}
+		else
+		{
+#ifdef SCALE_OPT_VARIABLES
+			const double active_set_tol = tolerance * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+#else
+			const double active_set_tol = tolerance;
+#endif // SCALE_OPT_VARIABLES
+			// update active set so we can reduce the gradient computation				
+			if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
+			{
+				mActiveSet[i] = max_count_lower;
+				if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tVariable " << i << " in the (lower) active set.\n";
+			}
+			else if (x[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+			{
+				mActiveSet[i] = max_count_upper;
+				if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+			}
+		}
+	}
+}
 
 #ifndef STRONG_WOLFE_LINE_SEARCH
 // ----------------------------------------------------------------------
@@ -741,4 +762,6 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 	return a;
 }
 #endif // STRONG_WOLFE_LINE_SEARCH
+
+
 

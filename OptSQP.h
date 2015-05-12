@@ -162,6 +162,15 @@ private:
 	///
 	void BFGSupdate(void);
 	
+	/// activeSetUpdate
+	/// updates the activeSet and sets counters so the gradient is not always calculated 
+	/// when it is not needed 
+	///
+	/// @param[in] x The current variables
+	/// @param[in] tolerance The tolerance for a variable to be in the active set
+	///
+	void activeSetUpdate(const double *x, const double tolerance);
+	
 	/// lineSearch
 	/// perform a line search in the mP direction
 	///
@@ -187,6 +196,7 @@ private:
 	///
 	void lineSearch(double *aalpha, double *x, double *f);
 	
+	
 #ifdef STRONG_WOLFE_LINE_SEARCH
 	/// zoom
 	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
@@ -209,7 +219,9 @@ private:
 #endif //STRONG_WOLFE_LINE_SEARCH
 
 private:
-		
+	
+	bool 						mH1Optimization;	///< true if performing the optimization for H1 hypothesis	
+	
 	int 						mN;					///< Number of unknown parameters
 	size_t						size_vect;			///< Size in memory of a mN vector
 	
@@ -221,8 +233,8 @@ private:
 	
 	double*						mP;					///< search direction
 
-	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
-	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1
+	double*						mSk;				///< position change, i.e. mSk = xk+1 - xk
+	double*						mYk;				///< gradient change, i.e. mYk = gk+1 - gk
 
 	double*						mXPrev;				///< previous position
 	double*						mGradPrev;			///< previous gradient
