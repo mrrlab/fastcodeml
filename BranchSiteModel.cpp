@@ -534,7 +534,7 @@ void BranchSiteModel::initVariables(void)
             mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
         }
 	#else
-        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 274.5372468800901);
+        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.5); //(0.209740957, 274.5372468800901);
         mVar[index_vars_other+4] = 1.0 + gamma_dist_w2( rng );				// w2
     #endif // OLD_INITIALIZATION
     }
@@ -547,7 +547,7 @@ void BranchSiteModel::initVariables(void)
     if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
     {
         unsigned int nv = mNumVariables;
-        for(i=0; i < nv; ++i)
+        for(i=index_vars_other; i < nv; ++i)
         {
             double range = mUpperBound[i]-mLowerBound[i];
             if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
