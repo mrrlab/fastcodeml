@@ -18,6 +18,9 @@
 #include <cmath>
 #endif
 
+//#include <random>
+#include <cstdlib>
+
 //#ifdef USE_MKL_VML
 //#include <mkl_vml_functions.h>
 //#endif
@@ -144,6 +147,143 @@ inline double normalizeVector(double* RESTRICT aVector)
 
 #endif
 
+/// Normalize a vector (length N).
+///
+///	@param[in] aN The Vector length
+/// @param[in,out] aVector The vector to be scaled
+///
+/// @return The length of the vector
+///
+inline double normalizeVector(const int *aN, double* RESTRICT aVector)
+{
+#ifdef USE_LAPACK
+	double norm = dnrm2_(aN, aVector, &I1);
+	double inv_norm = 1./norm;
 
+	dscal_(aN, &inv_norm, aVector, &I1);
+#else
+	double norm = 0.;
+	for(int i=0; i < *aN; ++i) norm += aVector[i]*aVector[i];
+	norm = sqrt(norm);
+	for(int i=0; i < *aN; ++i) aVector[i] /= norm;
 #endif
+	return norm;
+}
+
+
+/// swap_content: swaps the content of two vectors
+///
+/// @param[in,out] x1 first vector
+/// @param[in,out] x2 second vector
+/// @param[in] N size of the vectors
+///
+inline void swap_content(double *x1, double *x2, int const& N)
+{
+	double tmp;
+	for(int i(0); i<N; i++)
+	{
+		tmp = x1[i];
+		x1[i] = x2[i];
+		x2[i] = tmp;
+	}
+}
+
+/// distance: distance between two vectors x1 and alpha*x2 using the Euclidian-norm
+///
+/// @param[in] x1 first vector
+/// @param[in] x2 second vector
+/// @param[out] workspace should have size m (m>n)
+/// @param[in] N size of the vectors
+/// @param[in] alpha coefficient 
+///
+/// @return The euclidian norm |x1-alpha*x2|
+///
+inline double distance(double *x1, double *x2, double *workspace, int const& N, double alpha=-1.)
+{	
+	const int n(N);
+	memcpy(workspace, x1, n*sizeof(double));
+	const double a(alpha);
+	daxpy_(&n, &a, x1, &I1, workspace, &I1);
+	return dnrm2_(&n, workspace, &I1);
+}
+
+
+
+inline static double min2(double a, double b) {return (a < b) ? a : b;}
+inline static double max2(double a, double b) {return (a > b) ? a : b;}
+inline static double square(double a) {return a*a;}
+inline static double cube(double a) {return a*a*a;}
+inline static double sign(double a) {return (a >= 0.) ? 1. : -1.;}
+inline static void   zero(double x[], int n) {memset(x, 0, n*sizeof(double));}
+inline static void   xtoy(const double x[], double y[], int n) {memcpy(y, x, n*sizeof(double));}
+
+inline static void identityMatrix(double* x, int n) 
+{
+	memset(x, 0, n*n*sizeof(double));
+	for(int i = 0; i < n; i++) x[i*n + i] = 1.0;
+}
+
+static inline double norm(const double x[], int n) 
+{
+#ifdef USE_LAPACK
+	return dnrm2_(&n, x, &I1);
+#else
+	double t = 0;
+
+	for(int i = 0; i < n; ++i) t += square(x[i]);
+
+	return sqrt(t);
+#endif
+}
+
+static inline double innerp(const double x[], const double y[], int n) 
+{
+#ifdef USE_LAPACK
+	return ddot_(&n, x, &I1, y, &I1);
+#else
+	double t = 0.;
+
+	for(int i=0; i < n; ++i) t += x[i] * y[i];
+
+	return t;
+#endif
+}
+
+static inline double distance(const double* RESTRICT x, const double* RESTRICT y, int n) 
+{
+	double t = 0;
+
+	for(int i = 0; i < n; ++i) t += square(x[i] - y[i]);
+
+	return sqrt(t);
+}
+
+/// Generate a double random number between 0 and 1
+///
+/// @return The random number
+///
+static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
+
+
+/*
+/// Generate a double random number between 0 andd 1 according to the beta distribution
+///
+/// @param[in] a a parameter 
+/// @param[in] b b parameter
+/// @param[in] seed Seed of the generator
+/// 
+/// @return The random number
+///
+static double randBeta(double a, double b, unsigned int seed)
+{
+	std::default_random_engine generator (seed);
+	std::gamma_distribution<double> gen_gamma_a(a, 1.0);
+	std::gamma_distribution<double> gen_gamma_b(b, 1.0);
+	double gamma_a( gen_gamma_a(generator) ), 
+		   gamma_b( gen_gamma_b(generator) );
+	std::cout << "gamma_a = " << gamma_a << "gamma_b = " << gamma_b << "result = " << gamma_a / (gamma_a+gamma_b) << std::endl;
+	return gamma_a / (gamma_a+gamma_b);
+}*/
+
+#endif // MATHSUPPORT_H
 

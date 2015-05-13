@@ -125,7 +125,7 @@ int main(int aRgc, char **aRgv)
 		if(!cmd.mNoMaximization)					std::cout << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
 		if(cmd.mMaxIterations != MAX_ITERATIONS)	std::cout << "Max iterations: " << cmd.mMaxIterations << std::endl;
 		if(cmd.mDeltaValueForGradient > 0.0)		std::cout << "Delta value:    " << cmd.mDeltaValueForGradient << std::endl;
-													std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
+													std::cout << "Absolute error: " << cmd.mAbsoluteError << std::endl;
 		if(cmd.mResultsFile)						std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
         if(cmd.mFixedBranchLength)                        std::cerr << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
@@ -607,8 +607,8 @@ Usage:
 -x  --extra-debug (required argument)
         Extra debug parameter (zero disables it)
 
--re  --relative-error (required argument)
-        Relative error where to stop maximization (default: 1e-3)
+-re  --absolute-error (required argument)
+        Absolute error where to stop maximization (default: 1e-3)
 
 -ou  --output (required argument)
         Write results formatted to this file

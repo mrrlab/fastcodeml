@@ -27,6 +27,15 @@ set(SRCS
 	DAGScheduler.cpp
 	TreeAndSetsDependencies.cpp
 	WriteResults.cpp
+	OptSESOP.cpp
+	BootstrapRandom.cpp
+	OptNES.cpp
+	OptAlternatorSQP.cpp
+	OptSQP.cpp
+	OptSQPSR1.cpp
+	BOXCQP.cpp
+	OptTrustRegion.cpp
+	OptArc.cpp
 )
 
 
@@ -38,6 +47,16 @@ if(Boost_FOUND)
 else(Boost_FOUND)
 	message(SEND_ERROR "Boost::spirit required")
 endif(Boost_FOUND)
+
+# Search for Boost
+#set(Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0" "1.57" "1.57.0")
+find_package(Boost 1.56 COMPONENTS random)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+else(Boost_FOUND)
+    message(SEND_ERROR "Boost (version >= 1.55) required")
+endif(Boost_FOUND) 
 
 
 # Get the configuration switches
@@ -79,6 +98,7 @@ if(USE_MPI)
 		set(MPI_FOUND YES)
 	endif(BUILD_SEARCH_MPI)
 endif(USE_MPI)
+
 
 
 # Load the needed paths
@@ -196,15 +216,15 @@ endif(NOT WIN32)
 add_executable(fast ${SRCS})
 
 # Link libraries
-target_link_libraries(fast nlopt)
+target_link_libraries(fast nlopt ${Boost_LIBRARIES})
 if(MATH_LIB_NAMES AND USE_LAPACK)
-	target_link_libraries(fast ${MATH_LIB_NAMES})
+	target_link_libraries(fast ${MATH_LIB_NAMES} ${Boost_LIBRARIES})
 endif(MATH_LIB_NAMES AND USE_LAPACK)
 
-target_link_libraries(fast ${EXTRA_LIBS})
+target_link_libraries(fast ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
 if(MPI_LIBRARY)
-	target_link_libraries(fast ${MPI_LIBRARY})
+	target_link_libraries(fast ${MPI_LIBRARY} ${Boost_LIBRARIES})
 endif(MPI_LIBRARY)
 
 # Make documentation

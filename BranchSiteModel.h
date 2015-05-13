@@ -2,6 +2,17 @@
 #ifndef BRANCHSITEMODEL_H
 #define BRANCHSITEMODEL_H
 
+// uncomment this to use (old) relative error stopping criterion with nlopt optimizers
+// comment it to use the absolute error stopping criterion
+//#define FTOL_REL_ERROR
+
+// uncomment this to use the old randomized initialization of parameters
+// otherwise use initialization based on distribution of the parameters
+#define OLD_INITIALIZATION
+
+// uncomment this to use the bootstrap before optimizing
+#define BOOTSTRAP
+
 #include <vector>
 #include <cstdlib>
 #include <cfloat>
@@ -10,6 +21,8 @@
 #include "ProbabilityMatrixSet.h"
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
+#include "nlopt.hpp"
+#include <memory>
 
 /// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
@@ -34,7 +47,7 @@ protected:
 	/// @param[in] aTrace If set print a trace of the maximization process
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
-	/// @param[in] aRelativeError Relative error for convergence
+	/// @param[in] aAbsoluteError Absolute error for convergence
 	/// @param[in] aNoParallel If true no parallel execution support is setup
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
@@ -50,7 +63,7 @@ protected:
 					bool         aTrace,
 					unsigned int aOptAlgo,
 					double       aDeltaValueForGradient,
-					double       aRelativeError,
+					double       aAbsoluteError,
 					bool	     aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
@@ -76,11 +89,11 @@ protected:
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
 //		  mSeed(aSeed),
-//		  mRelativeError(aRelativeError),
+//		  mAbsoluteError(aAbsoluteError),
 		  mFixedBranchLength(aFixedBranchLength),
 		  mBranches(aNumBranches),
                   mSeed(aSeed),
-                  mRelativeError(aRelativeError)
+                  mAbsoluteError(aAbsoluteError)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}
@@ -257,26 +270,28 @@ private:
 	///
 	void setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength);
 
-	/// Generate a double random number between 0 and 1
-	///
-	/// @return The random number
-	///
-	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
-
 	/// Valid values (on the command line) for the optimization algorithm
 	///
 	enum OptimAlgoIdentifier
 	{
-		OPTIM_LD_LBFGS		= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
-		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
-		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
-		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
+		OPTIM_LD_LBFGS			= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
+		OPTIM_LD_VAR1			= 1,	///< Shifted limited-memory variable-metric rank-1 method
+		OPTIM_LD_VAR2			= 2,	///< Shifted limited-memory variable-metric rank-2 method
+		OPTIM_LD_SLSQP			= 3,	///< Sequential quadratic programming (SQP) algorithm
+		OPTIM_LD_MMA			= 4,	///< Method of Moving Asymptotes
 
-		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
+		OPTIM_LN_BOBYQA			= 11,	///< Derivative-free (BOBYQA)  
+		
+		OPTIM_LD_MING2			= 22,	///< The optimizer extracted from CodeML
+		
+		OPTIM_SQP				= 42,	///< sequential quadratic program
+		OPTIM_TRUST_REGION		= 43,	///< trust region with SR1 update
+		OPTIM_SESOP				= 44,	///< SESOP optimizer
+		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
+		OPTIM_SR1				= 46,	///< SQP with SR1 update
+		OPTIM_ARC				= 47,	///< SR1 update with arc search
 
-		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
-
-		OPTIM_MLSL_LDS		= 99	///< A global optimizer
+		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};
 
 	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.
@@ -290,6 +305,14 @@ private:
 		INIT_PARAMS=6,			///< w0, w2, k, v0, v1 (or x0, x1) have been initialized (it is INIT_PARAMS_H1 | INIT_PARAM_W2)
 		INIT_TIMES_FROM_FILE=8	///< The times come from the tree file
 	};
+	
+	/// optimize calling the nlopt 'optimize function'
+	/// manages all the try/catch
+	///
+	/// @param[in] aopt The optimizer to use, already containing all the parameters
+	/// @param[in,out] amaxl The value of the maximum likelihood
+	///
+	void optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
 
 public:
 	/// Initialize the times from the input phylogenetic tree.
@@ -351,7 +374,7 @@ protected:
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
-	double						mRelativeError;		///< Relative error to stop maximization
+	double						mAbsoluteError;		///< Absolute error to stop maximization
 };
 
 
@@ -375,7 +398,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
@@ -466,7 +489,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)

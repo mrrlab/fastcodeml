@@ -4,6 +4,9 @@
 #include <cfloat>
 #include <cmath>
 #include <memory>
+#include "blas.h"
+#include "lapack.h"
+#include "time.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -20,7 +23,27 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
+#include "OptSESOP.h"
+#include "OptAlternatorSQP.h"
+#include "OptNES.h"
+#include "OptSQP.h"
+#include "OptSQPSR1.h"
+#include "OptArc.h"	
+#include "OptTrustRegion.h"
 #include "ParseParameters.h"
+#include "BootstrapRandom.h"
+
+#ifndef OLD_INITIALIZATION
+// boost random generation
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/beta_distribution.hpp>
+#include <boost/random/gamma_distribution.hpp>
+#include <boost/random/exponential_distribution.hpp>
+typedef boost::random::mt19937 RNGType;
+#endif // OLD_INITIALIZATION
+
+
+
 
 /// Starting value for the computed maximum likelihood.
 /// Beware: -HUGE_VAL is too low and on Linux it is converted to -Inf (with subsequent NLopt crash)
@@ -208,7 +231,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
     {
         mLowerBound.reserve(aNumTimes+aNumVariables);	mUpperBound.reserve(aNumTimes+aNumVariables);
        	// Set lower constrains							// Set upper constrains
-        mLowerBound.assign(aNumTimes, 0);				mUpperBound.assign(aNumTimes, 50.0);	// T
+        mLowerBound.assign(aNumTimes, 0.);				mUpperBound.assign(aNumTimes, 50.0);	// T
     }
 
 	// Set lower constrains							// Set upper constrains
@@ -223,7 +246,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
 	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
 	if(aNumVariables >= 5)
 	{
-		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2
+		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2 // TODO: check if possible to reduce from 999 to 199
 	}
 }
 
@@ -300,149 +323,119 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
 void BranchSiteModel::initVariables(void)
 {
-	unsigned int i;
-
-    if(mFixedBranchLength)
+	unsigned int i, index_vars_other;
+	
+	// index of the variables other than branchlengths 
+	index_vars_other = mFixedBranchLength ? 0 : mNumTimes;
+	
+#ifndef OLD_INITIALIZATION
+	// uniform random generator used to generate random numbers according to distributions
+	RNGType rng(mSeed);
+	// working variable for local accesses
+	double low, high; // bounds
+	double randGen;   // random variable generated
+#endif
+	
+    // Initialize times (if not already initialized)
+#ifdef OLD_INITIALIZATION
+	if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
+	{
+        for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
+#else
+    if(true)
     {
-        // Initialize w0, k, v1, v2 (if not already initialized)
-        if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+        boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
+        for(i=0; i < mNumTimes; ++i)
         {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
-                mVar[1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
-#else
-                double x0 =  exp(1.0 + 0.2 * randFrom0to1());
-                double x1 =  exp(0.0 + 0.2 * randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[0] = p0+p1;											// p0+p1
-                mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[2] = 0.2  + 0.1 * randFrom0to1();						// w0
-                mVar[3] = 0.35 + 0.1 * randFrom0to1();						// k
-            }
-            else
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[0] = 0.5  +       randFrom0to1();						// x0 -> p0
-                mVar[1] = 0.5  +       randFrom0to1();						// x1 -> p1
-#else
-                double x0 =  exp(0.5 + randFrom0to1());
-                double x1 =  exp(0.5 + randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[0] = p0+p1;											// p0+p1
-                mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[2] = 0.2  + 0.6 * randFrom0to1();						// w0
-                mVar[3] = 0.5  +       randFrom0to1();						// k
-            }
+        	high = mUpperBound[i];
+        	low  = mLowerBound[i];
+        	randGen = high+1.;
+        	while(randGen >= high || randGen <= low)
+        		randGen = gamma_dist_T( rng );
+        	mVar[i] = randGen;											// T
         }
-
-        // Initialize w2 if needed
-        if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
-        {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-                mVar[4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-            else
-            {
-                mVar[4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-        }
-
-        // Re-initialize the next time
-        mInitStatus = INIT_NONE;
-
-        // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
-        // Don't clamp the results if they came from H1
-        if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
-        {
-			unsigned int nv = mNumVariables;
-            for(i=0; i < nv; ++i)
-            {
-                double range = mUpperBound[i]-mLowerBound[i];
-                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
-                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
-            }
-        }
+#endif // OLD_INITIALIZATION
     }
-    else
+     // Initialize w0, k, v1, v2 (if not already initialized)
+    if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
     {
-        // Initialize times (if not already initialized)
-        if((mInitStatus & INIT_TIMES) != INIT_TIMES)
-        {
-            for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();	// T
-        }
-
-        // Initialize w0, k, v1, v2 (if not already initialized)
-        if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
-        {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[mNumTimes+0] = 1.0 + 0.2 * randFrom0to1();						// x0 -> p0
-                mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+        RNGType rng(mSeed);
+#ifdef OLD_INITIALIZATION
+	#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[index_vars_other+0] = 0.5  +       randFrom0to1();			// x0 -> p0
+        mVar[index_vars_other+1] = 0.5  +       randFrom0to1();			// x1 -> p1
+	#else
+	
+        double x0 =  exp(0.5 + randFrom0to1());
+        double x1 =  exp(0.5 + randFrom0to1());
+        double tot = x0 + x1 + 0.1;
+        double p0 = x0/tot;
+        double p1 = x1/tot;
+        mVar[index_vars_other+0] = p0+p1;								// p0+p1
+        mVar[index_vars_other+1] = p0/(p0+p1);							// p0/(p0+p1)
+	#endif // USE_ORIGINAL_PROPORTIONS
 #else
-                double x0 =  exp(1.0 + 0.2 * randFrom0to1());
-                double x1 =  exp(0.0 + 0.2 * randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
+		double p0 = -1.0;
+		double p1 = 2.0;
+        boost::random::exponential_distribution<double> exp_dist_p0(4.605203);
+        boost::random::exponential_distribution<double> exp_dist_p1(5.807218);
+        while(p0 < 0.0)
+          	p0 = 1.0 - exp_dist_p0( rng );
+        while(p1 > 1.0)
+           	p1 = exp_dist_p1( rng );
+            
+        double tot = p0+p1+0.1;
+        p0 /= tot;
+        p1 /= tot;
+        
+        mVar[index_vars_other+0] = p0+p1;								// p0+p1
+        mVar[index_vars_other+1] = p0/(p0+p1);							// p0/(p0+p1)
+#endif // OLD_INITIALIZATION
+        
 
-                mVar[mNumTimes+0] = p0+p1;											// p0+p1
-                mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[mNumTimes+2] = 0.2  + 0.1 * randFrom0to1();						// w0
-                mVar[mNumTimes+3] = 0.35 + 0.1 * randFrom0to1();						// k
-            }
-            else
-            {
-#ifdef USE_ORIGINAL_PROPORTIONS
-                mVar[mNumTimes+0] = 0.5  +       randFrom0to1();					// x0 -> p0
-                mVar[mNumTimes+1] = 0.5  +       randFrom0to1();					// x1 -> p1
-#else
-                double x0 =  exp(0.5 + randFrom0to1());
-                double x1 =  exp(0.5 + randFrom0to1());
-                double tot = x0 + x1 + 1.0;
-                double p0 = x0/tot;
-                double p1 = x1/tot;
-
-                mVar[mNumTimes+0] = p0+p1;											// p0+p1
-                mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
-#endif
-                mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();					// w0
-                mVar[mNumTimes+3] = 0.5  +       randFrom0to1();					// k
-            }
-        }
-
-        // Initialize w2 if needed
-        if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+	#ifdef OLD_INITIALIZATION
+        mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();				// w0
+        mVar[index_vars_other+3] = 0.5  +       randFrom0to1();			// k
+    #else    
+        boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);
+        boost::random::gamma_distribution<double> gamma_dist_k(7.547445, 0.5789037);
+        
+        mVar[index_vars_other+2] = beta_dist( rng );					// w0
+        
+        high = mUpperBound[index_vars_other+3];
+        randGen = high+1.;
+        while (randGen > high)
+        	randGen = gamma_dist_k( rng );				
+        mVar[index_vars_other+3] = randGen;								// k
+    #endif // OLD_INITIALIZATION
+    }
+    // Initialize w2 if needed
+    if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+    {
+	#ifdef OLD_INITIALIZATION
+        if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
         {
-			mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();								// w2
-           //if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-           // {
-           //     mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-           // }
-           // else
-           // {
-           //     mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-           // }
+            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
         }
+        else
+        {
+            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
+        }
+	#else
+        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.5); //(0.209740957, 274.5372468800901);
+        mVar[index_vars_other+4] = 1.0 + gamma_dist_w2( rng );				// w2
+    #endif // OLD_INITIALIZATION
+    }
+    // Re-initialize the next time
+    mInitStatus = INIT_NONE;
 
-        // Re-initialize the next time
-        mInitStatus = INIT_NONE;
-
-        // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
-        // Don't clamp the results if they came from H1
-        if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+#ifdef OLD_INITIALIZATION
+    // Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
+    // Don't clamp the results if they came from H1
+    if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+    {
+        unsigned int nv = mNumVariables;
+        for(i=index_vars_other; i < nv; ++i)
         {
             for(i=0; i < mNumTimes; ++i)
             {
@@ -459,6 +452,7 @@ void BranchSiteModel::initVariables(void)
             }
         }
     }
+#endif // OLD_INITIALIZATION
 }
 
 
@@ -474,7 +468,7 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, 
 	// Initialize the matrix set and the matrix set used for gradient computation
 	mSet.initializeSet(mForest.adjustFgBranchIdx(aFgBranch));
 	mSetForGradient.initializeFgBranch(mForest.adjustFgBranchIdx(aFgBranch));
-
+	
 	// Run the optimizer
 	return maximizeLikelihood(aFgBranch, aStopIfBigger, aThreshold);
 }
@@ -1428,15 +1422,21 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_VAR1:
 	case OPTIM_LD_VAR2:
 	case OPTIM_LD_SLSQP:
+	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
+	case OPTIM_SESOP:
+	case OPTIM_ALTERNATOR_SQP:
+	case OPTIM_SQP:
+	case OPTIM_TRUST_REGION:
+	case OPTIM_SR1:
+	case OPTIM_ARC:
 		return;
 
 	default:
 		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line.");
 	}
 }
-
 
 /// Adapter class to pass the routine to the optimizer.
 ///
@@ -1464,7 +1464,7 @@ public:
 		              : mModel(aModel), mTrace(aTrace), mUpper(aUpper), mDeltaForGradient(aDeltaForGradient),
 					    mTotalNumVariables(aUpper.size()), mNumBranchLengths(aUpper.size() - aNumMatrixParams),
 						mStopIfBigger(aStopIfBigger), mThreshold(aThreshold)
-						{}
+	{}
 
 	/// Wrapper to be passed to the optimizer
 	///
@@ -1488,7 +1488,7 @@ public:
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad) const
+	double operator()(const std::vector<double>& aVars, std::vector<double>& aGrad)
 	{
 		// Compute the function at the requested point
 		double f0 = mModel->computeLikelihood(aVars, mTrace);
@@ -1563,6 +1563,7 @@ private:
 		}
 	}
 
+
 #if 0
 	/// Compute the function gradient (original method)
 	///
@@ -1626,13 +1627,21 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
 	// If only the initial step is requested, do it and return
 	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
+	
+#ifdef BOOTSTRAP
+	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
+	double maxL = bootstrapper.bootstrap(mVar);
+	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "value after bootstrap: " << maxL << std::endl;
+#endif
 
 	// Special case for the CodeML optimizer
 	if(mOptAlgo == OPTIM_LD_MING2)
 	{
 		try
 		{
-			// Create the optimizer (instead of mRelativeError is used the fixed value from CodeML)
+			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
 			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
 
 			// Do the maximization
@@ -1658,9 +1667,111 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			throw FastCodeMLFatal(o);
 		}
 	}
+	else if(mOptAlgo == OPTIM_SQP)
+	{
+		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	else if(mOptAlgo == OPTIM_SR1)
+	{
+		OptSQPSR1 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	else if(mOptAlgo == OPTIM_TRUST_REGION)
+	{
+		OptTrustRegion optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}	
+	else if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
+	{
+		// Create the optimizer instance
+		OptAlternatorSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		
+		double maxl = optim.maximizeFunction(mVar);
+		
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	else if(mOptAlgo == OPTIM_ARC)
+	{
+		OptArc optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		double maxl = optim.maximizeFunction(mVar);
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	
+	std::auto_ptr<nlopt::opt> opt;
+	
+		
+	// Special case for the SESOP optimizer
+	if(mOptAlgo == OPTIM_SESOP)
+	{
+		// Create the optimizer instance
+		OptSESOP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+		
+		double maxl = optim.maximizeFunction(mVar);
+		
+		
+		
+		
+		// finish problem with a NLopt algo
+#if 1
+		std::cout << std::endl << "Function invocations before the final optimization:       " << mNumEvaluations << std::endl;
+		
+		if (mFixedBranchLength)
+		{
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+        }
+        else
+        {
+            //opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
+            opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes+mNumVariables));
+        }
+        opt->set_vector_storage(20);
+        
+        // Initialize bounds and termination criteria
+		opt->set_lower_bounds(mLowerBound);
+		opt->set_upper_bounds(mUpperBound);
+		
+#ifdef FTOL_REL_ERROR
+	    opt->set_ftol_rel(mAbsoluteError);
+#else
+	    opt->set_ftol_abs(mAbsoluteError);
+#endif // FTOL_REL_ERROR
+		
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+				
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+		
+		optimize_using_nlopt(opt, maxl);
+#endif	
+		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
+		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
+		printVar(mVar);
+		return maxl;
+	}
+	
 
 	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
-	std::auto_ptr<nlopt::opt> opt;
 	switch(mOptAlgo)
 	{
 	case OPTIM_LD_LBFGS:
@@ -1697,6 +1808,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes+mNumVariables));
 
 		opt->set_vector_storage(20);
+		break;
+	
+	case OPTIM_LD_MMA:
+        if (mFixedBranchLength)
+            opt.reset(new nlopt::opt(nlopt::LD_MMA, mNumVariables));
+        else
+			opt.reset(new nlopt::opt(nlopt::LD_MMA, mNumTimes+mNumVariables));
 		break;
 
 	case OPTIM_LN_BOBYQA:
@@ -1738,7 +1856,11 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	// Initialize bounds and termination criteria
 	opt->set_lower_bounds(mLowerBound);
 	opt->set_upper_bounds(mUpperBound);
-    opt->set_ftol_rel(mRelativeError);
+#ifdef FTOL_REL_ERROR
+    opt->set_ftol_rel(mAbsoluteError);
+#else
+    opt->set_ftol_abs(mAbsoluteError);
+#endif // FTOL_REL_ERROR
 	nlopt::srand(static_cast<unsigned long>(mSeed));
 
 	// Optimize the function
@@ -1820,6 +1942,42 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	}
 
 	return maxl;
+}
+
+
+
+void BranchSiteModel::optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl)
+{
+	try
+	{
+		nlopt::result result = aopt->optimize(mVar, amaxl);
+	}
+	catch(const nlopt::forced_stop&)
+	{
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+	}
+	catch(const nlopt::roundoff_limited&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+	}
+	catch(const std::runtime_error&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Generic failure, equivalent to NLOPT_FAILURE.");
+	}
+	catch(const std::invalid_argument&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Invalid arguments (e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etcetera), equivalent to NLOPT_INVALID_ARGS.");
+	}
+	catch(const std::bad_alloc&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Ran out of memory (a memory allocation failed), equivalent to NLOPT_OUT_OF_MEMORY.");
+	}
+	catch(const std::exception& e)
+	{
+		std::ostringstream o;
+		o << "Exception in computation: " << e.what();
+		throw FastCodeMLFatal(o);
+	}
 }
 
 /// @page vars_page Layout of free variables
