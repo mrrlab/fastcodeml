@@ -439,7 +439,6 @@ void BranchSiteModel::initVariables(void)
         {
             for(i=0; i < mNumTimes; ++i)
             {
-                double range = mUpperBound[i]-mLowerBound[i];
                 if(mVar[i] < mLowerBound[i]+1e-6)      mVar[i] = mLowerBound[i] + 1e-6;
                 else if(mVar[i] > mUpperBound[i]-1e-6) mVar[i] = mUpperBound[i] - 1e-6;
             }

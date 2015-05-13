@@ -40,17 +40,17 @@ set(SRCS
 
 
 # Search for Boost version 1.55 minimum
-set(Boost_ADDITIONAL_VERSIONS "1.42" "1.42.0" "1.54" "1.55")
-find_package(Boost 1.42)
-if(Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS})
-else(Boost_FOUND)
-	message(SEND_ERROR "Boost::spirit required")
-endif(Boost_FOUND)
+#SET(Boost_DEBUG TRUE)
 
-# Search for Boost
-#set(Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0" "1.57" "1.57.0")
-find_package(Boost 1.56 COMPONENTS random)
+IF(WIN32)
+	SET(Boost_USE_STATIC_LIBS        ON)
+	SET(Boost_USE_MULTITHREADED      ON)
+	SET(BOOST_INCLUDEDIR    "C:/Program Files/boost_1_57_0"                  CACHE "Boost include path" PATH)
+	SET(BOOST_LIBRARYDIR    "C:/Program Files/boost_1_57_0/lib64-msvc-10.0"  CACHE "Boost lib path" PATH)
+ENDIF(WIN32)
+	
+set(Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0" "1.56" "1.56.0" "1.57" "1.57.0")
+find_package(Boost 1.55 COMPONENTS random)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
@@ -201,14 +201,6 @@ if(USE_LAPACK)
 endif(USE_LAPACK)
 link_directories(${LINK_DIR_NLOPT})
 include_directories(${INCLUDE_DIR_NLOPT})
-
-###########################################################
-if(NOT WIN32)
-
-#set(CMAKE_VERBOSE_MAKEFILE ON)
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -error -pg -O -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused" CACHE "Debug mode options" STRING)
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -g -pg -O0 -Wall -std=c++98 -Wextra -Wno-unused-parameter -Wunused")
-endif(NOT WIN32)
 
 ###########################################################
 

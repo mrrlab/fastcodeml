@@ -80,7 +80,7 @@ void OptTrustRegion::alocateMemory(void)
 void OptTrustRegion::scaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -102,7 +102,7 @@ void OptTrustRegion::scaleVariables(double *x)
 void OptTrustRegion::unscaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -153,7 +153,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 #ifdef SCALE_OPT_TRUST_REGION_VARIABLES
 	// change the space of the hessian approximation representation
 	//#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -172,13 +172,13 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	const double gamma2 = 1.8;
 	double trust_region_radius = 0.5;
 	const double max_trust_region_radius = 5.0;
-	double improvement_ratio = 1.0;
+	//double improvement_ratio = 1.0;
 	std::vector<double> x_candidate_(mN);
 	
 	const double activeSetTolerance = 1e-5;
 	
 	// main loop
-	bool convergenceReached = false;
+	//bool convergenceReached = false;
 	for(mStep = 0; mStep < mMaxIterations; ++mStep)
 	{
 	
@@ -187,7 +187,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		// compute the projected gradient
 		memcpy(mProjectedGradient, mGradient, size_vect);
 		#pragma omp parallel for 
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			if (mActiveSet[i] != 0)
 			{
@@ -211,7 +211,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		dcopy_(&mN, &mUpperBound[0], &I1, &localUpperBound[0], &I1);
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			double& l = localLowerBound[i];
 			double& u = localUpperBound[i];
@@ -229,7 +229,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 				
 		// compute the local active set for the GCP
 		#pragma omp parallel for
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double x_GCP_i = x[i] + mP[i];
 			if (   fabs(x_GCP_i - localLowerBound[i]) < activeSetTolerance
@@ -254,7 +254,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		memcpy(x_candidate, x, size_vect);
 		daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
 		#pragma omp parallel for
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			if (x_candidate[i] < mLowerBound[i])
 				x_candidate[i] = mLowerBound[i];
@@ -266,7 +266,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		// compute the infinity-norm of mP
 		double mP_infinity_norm = 0.0;
 		int highest_direction = 0;
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double abs_mPi = fabs(mP[i]);
 			if (abs_mPi > mP_infinity_norm)
@@ -332,7 +332,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		
 		// update the active set
 		#pragma omp parallel for
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double x_i = x[i];
 			if (   fabs(x_i - mLowerBound[i]) < activeSetTolerance
@@ -375,7 +375,7 @@ double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 	memcpy(dx_proj, dx, size_vect);
 	
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		if (mActiveSet[i] > 0)
 		{
@@ -390,7 +390,7 @@ double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 	
 	
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		if (mActiveSet[i] > 0)
 		{
@@ -484,7 +484,7 @@ void OptTrustRegion::hessianUpdate(void)
 {
 #ifdef TRUST_REGION_SR1_MATRIX_UPDATE
 	// local variables
-	double *v, *Bs;
+	double *v;
 	double vs, inverse_vs;
 	double *vvT;
 	char trans = 'N';
@@ -505,7 +505,7 @@ void OptTrustRegion::hessianUpdate(void)
 	// compute Matrix v.v^T / vs
 	vvT = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = v[i] * inverse_vs;
 		//std::cout << "i=" << i << ", prefactor=" << prefactor << ", v[i]="<< v[i] << ", y[i] = " << mYk[i] << ", s[i]=" << mSk[i] << std::endl;
@@ -547,7 +547,7 @@ void OptTrustRegion::hessianUpdate(void)
 ///
 void find_t_GCP(const int N, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, double &t)
 {
-	for (size_t i(0); i<N; ++i)
+	for (int i=0; i<N; ++i)
 	{
 		double di = d[i];
 		if (fabs(di) > 1e-16)
@@ -589,7 +589,7 @@ void updateJSet(const int N, const double *localLowerBound, const double *localU
 {
 	const double tolerance = 1e-8;
 	#pragma omp parallel for
-	for (size_t i(0); i<N; ++i)
+	for (int i=0; i<N; ++i)
 	{
 		double xi = p[i] + t*d[i];
 		if ( aSetJ[i] == 0 && ((fabs(xi-localLowerBound[i]) < tolerance) || (fabs(xi-localUpperBound[i]) < tolerance))  )
@@ -637,7 +637,7 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 	if (f_prime < 0)
 	{
 		bool GCP_found = false;
-		while (not GCP_found)
+		while (!GCP_found)
 		{
 			// find the next breakpoint
 			double delta_t = 1e16;
@@ -663,7 +663,7 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 				// update line derivatives
 				memcpy(active_part_d, d, size_vect);
 				#pragma omp parallel for
-				for (size_t i(0); i<mN; ++i)
+				for (int i=0; i<mN; ++i)
 				{
 					if (setJ[i] != step_GCP)
 					{
@@ -677,7 +677,7 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 				
 				//#pragma omp parallel for
 				//std::cout << "d = ";
-				for (size_t i(0); i<mN; ++i)
+				for (int i=0; i<mN; ++i)
 				{
 					if (setJ[i] == step_GCP)
 					{
@@ -721,7 +721,7 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 #else
 	memcpy(y, mP, size_vect);
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		if (mLocalActiveSet[i])
 		{
@@ -735,7 +735,7 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 	
 	// restrict the computaion to the free variables, i.e. not in the local active set
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		if (mLocalActiveSet[i])
 		{
@@ -747,7 +747,7 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 	rho_2 = ddot_(&mN, r, &I1, r, &I1);
 	
 	bool CG_terminated = (rho_2 < eta_sq);
-	while (not CG_terminated)
+	while (!CG_terminated)
 	{
 		std::cout << "\t\t rho_2 = " << rho_2 << "/" << eta_sq << std::endl;
 		double beta = rho_2 / rho_1;
@@ -759,12 +759,12 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 		// compute largest a1 s.t. l<=x+a1*p<=u for the FREE variables
 		double a1 = 1e16;
 		const double tol__ = 1e-8;
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
-			if (not mLocalActiveSet[i])
+			if (!mLocalActiveSet[i])
 			{
 				double pi = p[i];
-				double maxa;
+				double maxa = 1e16;
 				if (pi < -tol__)
 				{
 					maxa = (localLowerBound[i]-mP[i]) / pi;

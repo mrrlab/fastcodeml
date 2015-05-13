@@ -451,19 +451,19 @@ const std::vector<int>& Genes::getPositions(const char* aCodon) const
 	if(aCodon[0] == '-') codon[0] = 'N';
 	else
 	{
-		char b = toupper(aCodon[0]);
+		char b = static_cast<char>(toupper(aCodon[0]));
 		codon[0] = (b == 'U') ? 'T' : b;
 	}
 	if(aCodon[1] == '-') codon[1] = 'N';
 	else
 	{
-		char b = toupper(aCodon[1]);
+		char b = static_cast<char>(toupper(aCodon[1]));
 		codon[1] = (b == 'U') ? 'T' : b;
 	}
 	if(aCodon[2] == '-') codon[2] = 'N';
 	else
 	{
-		char b = toupper(aCodon[2]);
+		char b = static_cast<char>(toupper(aCodon[2]));
 		codon[2] = (b == 'U') ? 'T' : b;
 	}
 	codon[3] = '\0';

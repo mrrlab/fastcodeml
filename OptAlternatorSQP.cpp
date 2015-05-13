@@ -49,7 +49,6 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 	int roundsBranchSpace	= 3;
 	
 	double alpha = 1.0;
-	double scale_s;
 	
 	int branchSpaceCounter 	= 0;
 	int fullSpaceCounter	= 0;
@@ -126,7 +125,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			if(x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
@@ -235,7 +234,7 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 void OptAlternatorSQP::BFGSupdate(void)
 {
 	// local variables
-	double ys, sBs, inverse_sBs, inverse_ys, theta, sigma, theta_tmp;
+	double ys, sBs, theta, sigma, theta_tmp;
 	double *Bs, *BssB, *yy;
 	char trans = 'N';
 	
@@ -283,7 +282,7 @@ void OptAlternatorSQP::BFGSupdate(void)
 	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = - Bs[i] / sBs;
 		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
@@ -296,7 +295,7 @@ void OptAlternatorSQP::BFGSupdate(void)
 	// compute matrix y**T * y
 	yy = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = mYk[i] / ys;
 		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);

@@ -17,7 +17,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
-	char trans = 'N';
+	//char trans = 'N';
 	
 	// initialize parameters
 	
@@ -30,7 +30,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	dscal_(&mN, &minus_one, x, &I1);
 	
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 		memcpy(&mLHS[i*mN], &B[i**LDA], mN*sizeof(double));
 	
 	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], x, &mN, &INFO);
@@ -46,7 +46,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	// verify if the solution is valide
 	bool convergenceReached(true);
 	#pragma omp parallel for reduction(&&: convergenceReached)
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		convergenceReached = convergenceReached && (ma[i] <= x[i] && x[i] <= mb[i] );
 	}
@@ -151,7 +151,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		// --- update parameters
 		
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			switch(mSets[i])
 			{
@@ -177,7 +177,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		memcpy(mMu_known, 		mMu, 		mN*sizeof(double));
 		memcpy(mx_known, 		x, 			mN*sizeof(double));
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			switch(mSets[i])
 			{
@@ -200,7 +200,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 				
 		// setup the left hand side matrix
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			switch(mSets[i])
 			{
@@ -232,7 +232,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		
 		// update solutions
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			switch(mSets[i])
 			{
@@ -254,10 +254,10 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		// --- verify validity of the solution
 		convergenceReached = true;
 		#pragma omp parallel for reduction(&&: convergenceReached)
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			// local variable
-			bool iVariableCorrect;
+			bool iVariableCorrect = false;
 			switch(mSets[i])
 			{
 				case LSET:
@@ -311,7 +311,7 @@ void BOXCQP::updateSets(double *ax)
 	mListUset.clear();
 	mListSset.clear();
 	
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		if ( (ax[i] < ma[i])   ||   (ax[i] == ma[i] && mLambda[i] >= 0.0) )
 		{
@@ -331,7 +331,7 @@ void BOXCQP::updateSets(double *ax)
 	}
 #else
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		if ( (ax[i] < ma[i])   ||   (ax[i] == ma[i] && mLambda[i] >= 0.0) )
 			mSets[i] = LSET;

@@ -92,7 +92,7 @@ void BootstrapRandom::alocateMemory(void)
 	if(mN < 10)
 		mPopSize = 15;
 	else if(mN < 50)
-		mPopSize = 20 + float(mN-10)*1.25;
+		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
 	else
 		mPopSize = 70;
 #else
@@ -206,7 +206,7 @@ void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTr
 	*f = evaluateLikelihood(x);
 	double *rand_x = &mSpace[0];
 	
-	bool optimize_w2 = (mN-mNumTimes) == 5;
+	//bool optimize_w2 = (mN-mNumTimes) == 5;
     
     // local variables
     double rand_f;
@@ -216,7 +216,7 @@ void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTr
 	{	
 		// generate the random variables
 		
-		for(unsigned int i(0); i<mN; ++i) rand_x[i] = generateRandom(i);
+		for(int i=0; i<mN; ++i) rand_x[i] = generateRandom(i);
 		  	
         
         // verify if it is a better choice
@@ -241,12 +241,12 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 	double *rand_x = &mSpace[0];
 	memcpy(rand_x, x, size_vect);
 	
-	size_t numTriesPerVar = static_cast<size_t>(ceil(log(mN)));
+	size_t numTriesPerVar = static_cast<size_t>(ceil(log(static_cast<double>(mN))));
 	
 	// look in each direction the "best" variable
-	for(unsigned int i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
-		for(unsigned int j(0); j<numTriesPerVar; ++j)
+		for(unsigned int j=0; j<numTriesPerVar; ++j)
 		{
 			rand_x[i] = generateRandom(i);
 			memcpy(&x_[0], rand_x, size_vect);
@@ -281,7 +281,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		individual_pos = &mPopPos[individual_id*mN];
 		
 		// generate the initial position of individuals
-		for(size_t i( 0 ); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 			individual_pos[i] = generateRandom(i);
 			
 		// compute its likelihood
@@ -292,7 +292,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		if( fmax<mPopFitness[individual_id] )
 		{
 			fmax = ftmp;
-			best_individual = individual_id;
+			best_individual = static_cast<int>(individual_id);
 		}
 		ftot += ftmp;
 		fmin = (ftmp < fmin) ? ftmp : fmin;
@@ -322,10 +322,10 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		// --children generation from random parents
 		
 		/*
-		for(size_t i(0); i<lambda<<1; ++i)
+		for(int i=0; i<lambda<<1; ++i)
 			selected[i] = int( randFrom0to1()*(mPopSize-1) );			
 		*/
-		for(size_t i(0); i<lambda; ++i)
+		for(int i=0; i<lambda; ++i)
 		{
 			selected[i<<1] = int( randFrom0to1()*(mPopSize-1) );	
 			selected[(i<<1)+1] = best_individual;
@@ -351,7 +351,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		
 		// --mutations
 		
-		for(size_t i(0); i<lambda*mN; ++i)
+		for(int i=0; i<lambda*mN; ++i)
 		{	
 			// apply a "little" mutation
 			double prop = 0.8 + 0.15*randFrom0to1();
@@ -378,7 +378,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 					if(fmax < childFitness)
 					{
 						fmax = childFitness;
-						best_individual = selectTry;
+						best_individual = static_cast<int>(selectTry);
 					}
 					break;
 				}

@@ -35,7 +35,7 @@ int OptNES::NESminimizer(double *f, double *x)
 	double scale( 0.0 ), extra_term( 1.0/double(mLambda) );
 	
 	#pragma omp parallel for reduction(+:scale)
-	for(size_t k(0); k<mLambda; ++k)
+	for(int k=0; k<mLambda; ++k)
 	{
 		double kthValue = log(double(mLambda)*0.5 + 1.0) - log(double(k+1));
 		kthValue = (kthValue > 0.) ? kthValue : 0.0 ;
@@ -46,13 +46,13 @@ int OptNES::NESminimizer(double *f, double *x)
 	scale = 1./scale;
 	
 	#pragma omp parallel for
-	for(size_t k(0); k<mLambda; ++k)
+	for(int k=0; k<mLambda; ++k)
 	{
 		mUtility[k] = mUtility[k]*scale - extra_term;
 	}	
 	
 	std::cout << "Utility:\n";
-	for(size_t k(0); k<mLambda; ++k)
+	for(int k=0; k<mLambda; ++k)
 		std::cout << std::setprecision(10) << mUtility[k] << std::endl;
 	
 	
@@ -64,10 +64,10 @@ int OptNES::NESminimizer(double *f, double *x)
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		{
 			std::cout << "Parameters:\n--Mu:\n";
-			for(size_t i(0); i<mN; ++i)
+			for(int i=0; i<mN; ++i)
 				std::cout << std::setprecision(10) << mMu[i] << std::endl;
 			std::cout << "\n--Sigma:\n";
-			for(size_t i(0); i<mN; ++i)
+			for(int i=0; i<mN; ++i)
 				std::cout << std::setprecision(10) << mSigma[i] << std::endl;
 		}
 		
@@ -124,7 +124,7 @@ void OptNES::initializeDistribution(void)
 	shape = 0.5031126;
 	rate  = 0.1844347;
 	#pragma omp parallel for
-	for(size_t k(0); k<mNumTimes; ++k)
+	for(int k=0; k<mNumTimes; ++k)
 	{
 		mMu[k] 		= mf * shape*rate;
 		mSigma[k]	= sf * shape*rate*rate;
@@ -198,7 +198,7 @@ void OptNES::generatePopulation(void)
 void OptNES::sortFitness(void)
 {	
 	#pragma omp parallel for
-	for(size_t k( 0 ); k<mLambda; ++k) {mPermutation[k] = k;}
+	for(int k=0; k<mLambda; ++k) {mPermutation[k] = k;}
 	
 	std::sort(mPermutation.begin(), mPermutation.end(), CompareFitness(mPopFitness));
 }
@@ -207,7 +207,7 @@ void OptNES::sortFitness(void)
 void OptNES::computeGradients(void)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double partialValueMu(0.);
 		double partialValueSigma(0.);
@@ -235,7 +235,7 @@ void OptNES::updateParameters(void)
 	
 	// effect of the natural gradient
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		mMu[i] += eta_mu * mSigma[i]*mGradMu[i];
 		mSigma[i] *= exp( half_eta_sigma * mGradSigma[i] );		
@@ -244,7 +244,7 @@ void OptNES::updateParameters(void)
 	// effect of the bounds: require (mu +/- alpha*sigma) in the bounds
 	const double alpha = 3.;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double sd = mSigma[i];
 		double mn = mMu[i];

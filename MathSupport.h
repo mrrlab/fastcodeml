@@ -203,7 +203,7 @@ inline double distance(double *x1, double *x2, double *workspace, int const& N, 
 	const int n(N);
 	memcpy(workspace, x1, n*sizeof(double));
 	const double a(alpha);
-	daxpy_(&n, &a, x1, &I1, workspace, &I1);
+	daxpy_(&n, &a, x2, &I1, workspace, &I1);
 	return dnrm2_(&n, workspace, &I1);
 }
 

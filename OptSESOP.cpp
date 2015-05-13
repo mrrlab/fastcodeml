@@ -2,7 +2,16 @@
 #include "OptSESOP.h"
 #include "MathSupport.h"
 #include "lapack.h"
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4267) // warning C4267: 'argument' : conversion from 'size_t' to 'unsigned int', possible loss of data
+#endif
+
 #include "nlopt.hpp"
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 
 // ----------------------------------------------------------------------
 //	Utility functions
@@ -70,12 +79,12 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	
 	// Initialize the Hessian matrix to identity
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i) mHdiag[i] = 1.;
+	for(int i=0; i<mN; ++i) mHdiag[i] = 1.;
 #endif	
 	
 	// mGradient_others
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i) mGradient_others[i] = 0.;
+	for(int i=0; i<mN; ++i) mGradient_others[i] = 0.;
 		
 	mGradient_others[mNumTimes+1] = mGradient[mNumTimes+1];	// v1
 	mGradient_others[mNumTimes+2] = mGradient[mNumTimes+2]; // w0
@@ -88,8 +97,8 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	// loop until convergene reached
 	// local variables
 	double f_diff, stepTolerance;
-	size_t numIterBeforeConverged( 0 ),
-		   maxNumIterBeforeConverged( 1 );
+	size_t numIterBeforeConverged = 0,
+		   maxNumIterBeforeConverged = 1;
 	
 	bool convergence_reached( false );
 	while(!convergence_reached)
@@ -160,7 +169,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			double sum_s_sq = 0.;
 			double sTDs		= 0.;
 			#pragma omp parallel for reduction(+:sum_s_sq) reduction(+:sTDs)
-			for(size_t i(0); i<mN; ++i)
+			for(int i = 0; i<mN; ++i)
 			{
 				// local variable
 				double s_sq = square(mS[i]);
@@ -220,7 +229,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		
 		
 		// initialize alpha to 0 so the optimizer starts at current point x
-		for(size_t i(0); i<mM; ++i)	alpha[i] = 0.;
+		for(int i=0; i<mM; ++i)	alpha[i] = 0.;
 		
 		try
 		{
@@ -246,7 +255,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 				// compute the minumum step length we can do
 				minStepPossible = step_length + 1.;
 				//#pragma omp paralel for reduction(min:minStepPossible)
-				for(size_t i(0); i<mN; ++i)
+				for(int i=0; i<mN; ++i)
 				{
 					double minTmp;
 					if(fabs(p[i]) > 1e-5)
@@ -272,7 +281,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 			
 				if(step_length < 0.)
 				{
-					for(size_t i(0); i<mM; ++i) mInitStepCobyla[i] = 0.;
+					for(int i=0; i<mM; ++i) mInitStepCobyla[i] = 0.;
 					mInitStepCobyla[0] = step_length;
 					std::cout << "Size of the first step: " << step_length << ", array of size " << mInitStepCobyla.size() << "\n";
 					opt->set_initial_step(mInitStepCobyla);
@@ -319,7 +328,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &alpha[0], &I1, &D1, x, &I1);
 		
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			if(x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
@@ -343,7 +352,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 		for(; iter_move < num_iter_move; ++iter_move)
 		{
 			memcpy(&x_[0], x, size_vect);
-			for(size_t i(0); i<mNumTimes; ++i)
+			for(int i=0; i<mNumTimes; ++i)
 			{				
 				x_[i] += 1e-1 * square(x[i])*square(randFrom0to1()) * mGradient[i];
 							
@@ -506,7 +515,7 @@ void OptSESOP::alocateMemory(void)
 	data_constraints.resize(2*mN);
 	
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		data_constraints[2*i  ].sesop = this;
 		data_constraints[2*i  ].line = i;
@@ -529,7 +538,7 @@ void OptSESOP::updateDMatrix(void)
 	
 #ifdef SESOP_HESSIAN_APPROX
 	#pragma omp parallel for	
-	for(size_t i(0); i<mN; ++i) 
+	for(int i=0; i<mN; ++i) 
 	{
 		if(fabs(mHdiag[i]) > 1e-3)
 			mD[i] /= mHdiag[i];
@@ -612,12 +621,12 @@ void OptSESOP::selectCorrVariables(void)
 	// randomly choose the search directions for the matrix parameters using the correlation:
 	
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i) columnCorrVar[i] = 0.;
+	for(int i=0; i<mN; ++i) columnCorrVar[i] = 0.;
 		
 	size_t numVarSelected(sqrt(mN));
 	
 	#pragma omp parallel for
-	for(size_t i(0); i<numVarSelected; ++i)
+	for(int i=0; i<numVarSelected; ++i)
 	{
 		size_t id1, id2, k;
  #ifdef SESOP_CORR_MEM_OPTIM
@@ -689,7 +698,6 @@ double OptSESOP::eValuateConstraintsSubspace(const std::vector<double> &alpha, s
 	else
 	{
 		throw FastCodeMLFatal("Exception in computation: Constraint evaluation: Wrong data[1] (corresponding to the bound type, low or up): should be either 0 or 1.\n");
-		return 0.;
 	}
 }
 
@@ -699,7 +707,7 @@ void OptSESOP::computeGradient(double aPointValue, const double *aVars, double* 
 	memcpy(&x_[0], aVars, size_vect);
 	double eh, delta;
 	
-	for(size_t i(0); i < mN; ++i)
+	for(int i=0; i < mN; ++i)
 	{
 #ifdef SESOP_STOCHASTIC_GRADIENT
 		if( i>=mNumTimes || randFrom0to1() <= (mStep == 0 ? 1. : 0.4 + 0.6*randFrom0to1())) //TODO
@@ -755,7 +763,7 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 		double eh, fp;		
 		char trans = 'N';
 		
-		for(size_t i(0); i < mM; ++i)
+		for(int i=0; i < mM; ++i)
 		{
 			eh = 1e-6 * (1. + randFrom0to1());// * max2(fabs(aAlpha[i]), 1.);
 			
@@ -777,14 +785,14 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	else
 	{
 		// try with a huge approximation, works only if |alpha| << 1
-		for(size_t i(0); i<mM; ++i)
+		for(int i=0; i<mM; ++i)
 			aGrad[i] = ddot_(&mN, mGradient, &I1, &mD[i*mN], &I1);
 	}
 
 	if(mVerbose > 2)
 	{
 		std::cout << "\n Subspace Gradient: \n df/dalpha = [ ";
-		for(size_t i(0); i<mM; i++)
+		for(int i=0; i<mM; i++)
 			std::cout << aGrad[i] << " ";
 		std::cout << "].\n";
 	}

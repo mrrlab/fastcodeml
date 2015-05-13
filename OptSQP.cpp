@@ -79,7 +79,7 @@ void OptSQP::alocateMemory(void)
 void OptSQP::scaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -100,7 +100,7 @@ void OptSQP::scaleVariables(double *x)
 void OptSQP::unscaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -127,7 +127,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 #endif // SCALE_OPT_VARIABLES
 	
 	double f_prev;
-	double df, df_prev, mean_df;
+	double df=0., df_prev, mean_df;
 	mean_df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
@@ -187,7 +187,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			if (x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
@@ -230,7 +230,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		}
 #endif
 		
-		if (not convergenceReached)
+		if (!convergenceReached)
 		{
 			// update the system
 			
@@ -400,7 +400,7 @@ void OptSQP::hessianInitialization(void)
 void OptSQP::BFGSupdate(void)
 {
 	// local variables
-	double ys, sBs, inverse_sBs, inverse_ys, theta, sigma, theta_tmp;
+	double ys, sBs, theta, sigma, theta_tmp;
 	double *Bs, *BssB, *yy;
 	char trans = 'N';
 	
@@ -447,7 +447,7 @@ void OptSQP::BFGSupdate(void)
 	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = - Bs[i] / sBs;
 		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
@@ -460,7 +460,7 @@ void OptSQP::BFGSupdate(void)
 	// compute matrix y**T * y
 	yy = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = mYk[i] / ys;
 		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
@@ -520,7 +520,7 @@ void OptSQP::activeSetUpdate(const double *x, const double tolerance)
 	const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		if (mActiveSet[i] > 0)
 		{
@@ -581,7 +581,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	// The time of line search should be small compared to the 
 	// gradient computation
 	
-	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
+	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
 	
 	

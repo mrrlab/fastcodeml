@@ -104,7 +104,7 @@ void OptArc::ArcMinimizer(double *f, double *x)
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			double x_ = x[i];
 			x_ = max2(x_, mLowerBound[i]);
@@ -123,7 +123,7 @@ void OptArc::ArcMinimizer(double *f, double *x)
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
-		if (not convergenceReached)
+		if (!convergenceReached)
 		{
 			// update the system
 			
@@ -194,7 +194,7 @@ double OptArc::evaluateFunctionForArcSearch(const double* x, double alpha)
 	trans = 'T';
 	dgemv_(&trans, &mN, &mNs, &D1, mQ, &mN, g_perturbed, &I1, &D0, w, &I1);	// multiply by QT
 	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w, &I1, &D0, w_tmp, &I1);		// multiply by UT
-	for (size_t i(0); i<mNs; ++i) {w_tmp[i] *= rho[i];}						// multiply by diagonal matrix rho(V, alpha)
+	for (int i=0; i<mNs; ++i) {w_tmp[i] *= rho[i];}						// multiply by diagonal matrix rho(V, alpha)
 	trans = 'N';
 	double *x_arc = mWorkSpaceVect;
 	dgemv_(&trans, &mNs, &mNs, &D1, mU, &mNs, w_tmp, &I1, &D0, w, &I1);		// multiply by U
@@ -206,7 +206,7 @@ double OptArc::evaluateFunctionForArcSearch(const double* x, double alpha)
 #if 1
 	// project on the search space
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double x_ = x_arc[i];
 		x_ = max2(x_, mLowerBound[i]);
@@ -299,7 +299,7 @@ void OptArc::SR1update(void)
 		// compute Matrix v.v^T / vs
 		vvT = mWorkSpaceMat;
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			double prefactor = v[i] * inverse_vs;
 			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
@@ -356,7 +356,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	// The time of line search should be small compared to the 
 	// gradient computation
 	
-	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
+	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
 	
 	
@@ -608,11 +608,11 @@ void OptArc::findMaxStep(const double *x, double *amax)
 	double beta2_ = ddot_(&mN, &QU[mN], &I1, g_perturbed, &I1);
 	const double tol_alpha = 1e-6;
 	
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		// compute the limiting alpha for the ith variable
 		double beta1, beta2, gamma, linear_term, const_term;
-		double D, pi;
+		double D;
 		
 		// lower bound
 		beta1 = QU[i]*beta1_;
@@ -672,7 +672,7 @@ void OptArc::findMaxStep(const double *x, double *amax)
 void OptArc::updateActiveSet(const double *x)
 {
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double x_ = x[i];
 		double g_ = mGradient[i];
@@ -701,7 +701,7 @@ void OptArc::updateActiveSet(const double *x)
 void OptArc::projectActiveSet(double *aVect)
 {
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		if (mActiveSet[i] != 0)
 			aVect[i] = 0.0;
@@ -715,7 +715,7 @@ void OptArc::projectedDirection(const double *x, double *p)
 	daxpy_(&mN, &D1, x, &I1, p, &I1);
 	// projection step
 	#pragma omp parallel for
-	for (size_t i(0); i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double pi = p[i];
 		pi = max2(pi, mLowerBound[i]);

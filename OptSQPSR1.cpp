@@ -80,7 +80,7 @@ void OptSQPSR1::alocateMemory(void)
 void OptSQPSR1::scaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -102,7 +102,7 @@ void OptSQPSR1::scaleVariables(double *x)
 void OptSQPSR1::unscaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -159,7 +159,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 #ifdef SCALE_OPT_VARIABLES_SR1
 	// change the space of the hessian approximation representation
 	#pragma omp parallel for
-	for(size_t i(0); i<mN; ++i)
+	for(int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -206,7 +206,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			if (x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
@@ -230,7 +230,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
-		if (not convergenceReached)
+		if (!convergenceReached)
 		{
 			// update the system
 			
@@ -252,7 +252,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 
 		
 			std::cout << "Hessian diagonal at step " << mStep << ":\n";
-			for(size_t i(0); i<mN; ++i)
+			for(int i=0; i<mN; ++i)
 			{
 				std::cout << mHessian[i*(mN+1)] << " ";
 			}
@@ -264,7 +264,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
 			#pragma omp parallel for
-			for(size_t i(0); i<mN; ++i)
+			for(int i=0; i<mN; ++i)
 			{
 				if (mActiveSet[i] > 0)
 				{
@@ -432,7 +432,7 @@ void OptSQPSR1::SR1update(void)
 		// compute Matrix v.v^T / vs
 		vvT = mWorkSpaceMat;
 		#pragma omp parallel for
-		for(size_t i(0); i<mN; ++i)
+		for(int i=0; i<mN; ++i)
 		{
 			double prefactor = v[i] * inverse_vs;
 			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
@@ -480,7 +480,7 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	// The time of line search should be small compared to the 
 	// gradient computation
 	
-	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10) ));
+	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
 	
 	
@@ -750,7 +750,7 @@ void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBoun
 	{
 		double *negative_curv_direction = &work[0];
 		dcopy_(&mN, &D0, &I0, negative_curv_direction, &I1);
-		for (size_t i(0); i<=M; ++i)
+		for (int i=0; i<=M; ++i)
 		{
 			// - |lambdai| * <g,Si>
 			const double proportion = - ddot_(&mN, mGradient, &I1, &eigenVectors[i*mN], &I1);
@@ -760,7 +760,7 @@ void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBoun
 	
 		// find largest a such that l <= a*mD <= u
 		double a = 1e16;
-		for (size_t i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double di = negative_curv_direction[i];
 			double maxa;
