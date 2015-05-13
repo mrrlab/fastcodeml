@@ -365,7 +365,7 @@ void BranchSiteModel::initVariables(void)
         // Don't clamp the results if they came from H1
         if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
         {
-            unsigned int nv = mNumVariables;
+			unsigned int nv = mNumVariables;
             for(i=0; i < nv; ++i)
             {
                 double range = mUpperBound[i]-mLowerBound[i];
@@ -426,14 +426,15 @@ void BranchSiteModel::initVariables(void)
         // Initialize w2 if needed
         if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
         {
-            if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-            {
-                mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
-            else
-            {
-                mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
-            }
+			mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();								// w2
+           //if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+           // {
+           //     mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
+           // }
+           // else
+           // {
+           //     mVar[mNumTimes+4] = 1.0 + 0.5 * randFrom0to1();						// w2
+           // }
         }
 
         // Re-initialize the next time
@@ -443,8 +444,14 @@ void BranchSiteModel::initVariables(void)
         // Don't clamp the results if they came from H1
         if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
         {
-            unsigned int nv = mNumVariables;
-            for(i=0; i < nv; ++i)
+            for(i=0; i < mNumTimes; ++i)
+            {
+                double range = mUpperBound[i]-mLowerBound[i];
+                if(mVar[i] < mLowerBound[i]+1e-6)      mVar[i] = mLowerBound[i] + 1e-6;
+                else if(mVar[i] > mUpperBound[i]-1e-6) mVar[i] = mUpperBound[i] - 1e-6;
+            }
+            unsigned int nv = mNumTimes+mNumVariables;
+            for(i=mNumTimes; i < nv; ++i)
             {
                 double range = mUpperBound[i]-mLowerBound[i];
                 if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
