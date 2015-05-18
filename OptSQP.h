@@ -11,7 +11,7 @@
 
 // uncomment to use strong wolfe conditions as a stopping criterion for the line search
 // comment it to use only the first Wolfe condition
-//#define STRONG_WOLFE_LINE_SEARCH
+#define STRONG_WOLFE_LINE_SEARCH
 
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
