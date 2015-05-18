@@ -125,8 +125,8 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	scaleVariables(x);
 #endif // SCALE_OPT_VARIABLES
 	
-	double df=0., mean_df;
-	mean_df = 0.0;
+	double f_prev;
+	double df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -159,7 +159,6 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// save current parameters
 		double f_prev = *f;
-		double df_prev = df;
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
@@ -203,30 +202,10 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		}
 		
 		// check convergence
-		df_prev = df;
 		df = f_prev - *f;
 		convergenceReached =   fabs(df) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
-#if 0	
-		if (mStep > 0)
-		{
-			mean_df = (mean_df*static_cast<double>(mStep-1)+df/df_prev)/static_cast<double>(mStep);
-		}
-		if (mStep > 1 && mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		{
-			std::cout << "\t\tdf/df_prev = " << df/df_prev << std::endl;
-			std::cout << "\t\tmean df/df_prev = " << mean_df << std::endl;
-		}
-	
-		// restart (TEST)
-		if ( mStep > 1 && df/df_prev > 2.0*mean_df)
-		{
-			if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "Reinitializing the hessian...\n";
-			hessianInitialization();
-		}
-#endif
 		
 		if (!convergenceReached)
 		{
@@ -468,6 +447,7 @@ void OptSQP::BFGSupdate(void)
 	// add the yy / ys contribution
 	daxpy_(&mN_sq, &D1, yy, &I1, mHessian, &I1);
 	
+#if 1
 	// make the diagonal more important in order to avoid non positive definite matrix, 
 	// due to roundoff errors
 	int diag_stride = mN+1;
@@ -475,7 +455,8 @@ void OptSQP::BFGSupdate(void)
 	double inv_factor = 1.0/factor;
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
 	dscal_(&mN, &factor, mHessian, &diag_stride);
-	
+#endif
+
 #if 0
 	// compute the minimum eigenValue in order to verify the positive definiteness of the matrix.
 	char job = 'N';
@@ -669,11 +650,10 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	phi = phi_prev = phi_0;
 	
-	double sigma_bas;
+	double sigma;
 	int iter = 0;
 	
 	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
-	sigma_bas = pow(1e-2, 1./static_cast<double>(max_iter));
 	
 	while(iter < max_iter)
 	{
@@ -707,9 +687,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
-		//double sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		double sigma = randFrom0to1();
-		//double sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
+		sigma = randFrom0to1();
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
@@ -759,6 +737,5 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 	return a;
 }
 #endif // STRONG_WOLFE_LINE_SEARCH
-
 
 

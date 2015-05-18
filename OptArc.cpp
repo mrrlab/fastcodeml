@@ -402,7 +402,6 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 		if (phi_prev < phi)
 		{
 			a = a_prev;
-			phi = evaluateFunctionForArcSearch(x, a);
 		}
 	}
 	else
@@ -421,7 +420,6 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 		if (phi_prev < phi)
 		{
 			a = a_prev;
-			phi = evaluateFunctionForArcSearch(x, a);
 		}
 	}
 	

@@ -11,7 +11,7 @@
 #define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
-#define BOOTSTRAP
+//#define BOOTSTRAP
 
 #include <vector>
 #include <cfloat>
@@ -295,7 +295,6 @@ private:
 		
 		OPTIM_SQP				= 42,	///< sequential quadratic program
 		OPTIM_TRUST_REGION		= 43,	///< trust region with SR1 update
-		OPTIM_SESOP				= 44,	///< SESOP optimizer
 		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
 		OPTIM_SR1				= 46,	///< SQP with SR1 update
 		OPTIM_ARC				= 47,	///< SR1 update with arc search
