@@ -297,7 +297,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		for (int i=0; i<lambda; ++i)
 		{
 			selected[i<<1] = i<<2; //static_cast<int>( randFrom0to1()*(mPopSize-1) );	
-			if (randFrom0to1() < 0.6)
+			if (randFrom0to1() < 0.9)
 				selected[(i<<1)+1] = best_individual;
 			else
 				selected[(i<<1)+1] = i<<2 + 1;
@@ -348,7 +348,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 					if (fmax < childFitness)
 					{
 						fmax = childFitness;
-						best_individual = static_cast<int>(selectTry);
+						best_individual = static_cast<int>(selected_oponent);
 					}
 					break;
 				}
