@@ -689,7 +689,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
-		sigma = 0.3 + 0.4*randFrom0to1();
+		sigma = randFrom0to1();
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
