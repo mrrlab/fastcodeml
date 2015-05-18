@@ -112,7 +112,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
         	low = 0.0;
         	high = 1.0;
         	while(v0 >= high || v0 <= low)
-        		v0 = 1.0 - exp_dist_v0( rng );
+        		v0 = 1.0 - gamma_dist_v0( rng );
 			while(v1 >= high || v1 <= low)
         		v1 = 1.0 - gamma_dist_v1( rng );
         	
@@ -145,7 +145,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
 #else
 		case 0: // v0
 			while(randNumber >= high || randNumber <= low)
-        		randNumber = 1.0 - exp_dist_v0( rng );
+        		randNumber = 1.0 - gamma_dist_v0( rng );
         	break;
         	
         case 1: // v1
