@@ -407,14 +407,7 @@ void BranchSiteModel::initVariables(void)
     if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
     {
 	#ifdef OLD_INITIALIZATION
-        if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-        {
-            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
-        }
-        else
-        {
-            mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
-        }
+        mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
 	#else
         boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.5); //(0.209740957, 274.5372468800901);
         mVar[index_vars_other+4] = 1.0 + gamma_dist_w2( rng );				// w2
@@ -1836,7 +1829,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
             else
             {
-                nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
+                nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumVariables);
                 opt->set_local_optimizer(local_opt);
             }
 		}

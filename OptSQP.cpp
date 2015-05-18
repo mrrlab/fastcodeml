@@ -125,8 +125,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	scaleVariables(x);
 #endif // SCALE_OPT_VARIABLES
 	
-	double f_prev;
-	double df=0., df_prev, mean_df;
+	double df=0., mean_df;
 	mean_df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
@@ -159,8 +158,8 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		
 		// save current parameters
-		f_prev = *f;
-		df_prev = df;
+		double f_prev = *f;
+		double df_prev = df;
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
@@ -662,7 +661,6 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	const double phi_0 = *f;
 	double phi, phi_prev;
 	double a_prev = 0.0;
-	double phi_a_prime;
 	
 	double a = randFrom0to1();
 		
@@ -671,7 +669,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	phi = phi_prev = phi_0;
 	
-	double sigma, sigma_bas;
+	double sigma_bas;
 	int iter = 0;
 	
 	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
@@ -696,7 +694,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		// compute the derivative at point a
 		double eh = sqrt(DBL_EPSILON);
 		if ( a+eh >= 1.0 ) {eh = -eh;}
-		phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
+		double phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
 		
 		if (fabs(phi_a_prime) <= -c2*phi_0_prime)
 		{
@@ -709,9 +707,9 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
-		//sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		sigma = randFrom0to1();
-		//sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
+		//double sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
+		double sigma = randFrom0to1();
+		//double sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
@@ -726,14 +724,14 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 // ----------------------------------------------------------------------
 double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
 {
-	double a, phi, phi_a_prime;
+	double a, phi_a_prime;
 	double philo = aphi_lo;
 	a = 0.5*(alo+ahi);
 	while( fabs(ahi-alo) > 0.01 )
 	{
 		double tmp = 0.5;
 		a = tmp*alo + (1.-tmp)*ahi;
-		phi = evaluateFunctionForLineSearch(x, a);
+		double phi = evaluateFunctionForLineSearch(x, a);
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
 		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
 		 

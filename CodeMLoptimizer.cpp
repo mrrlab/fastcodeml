@@ -365,7 +365,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
     return 0;
 }
 
-bool Ming2::H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n) const
+bool Ming2::H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n)
 {
 	// Himmelblau termination rule. Return true for stop, false otherwise.
     double r = norm(x0, n);

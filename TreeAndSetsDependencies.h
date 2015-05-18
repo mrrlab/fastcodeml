@@ -64,7 +64,7 @@ private:
 	///
 	/// @return The ratio between the time spent by doTransition and doTransitionAtLeaf.
 	///
-	unsigned int measureRelativeEffort(void);
+	//unsigned int measureRelativeEffort(void);
 
 public:
 	/// Given the combined entry in the dependency list, extract the site number.

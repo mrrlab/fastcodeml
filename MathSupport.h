@@ -178,10 +178,9 @@ inline double normalizeVector(const int *aN, double* RESTRICT aVector)
 ///
 inline void swap_content(double *x1, double *x2, int const& N)
 {
-	double tmp;
 	for(int i(0); i<N; i++)
 	{
-		tmp = x1[i];
+		double tmp = x1[i];
 		x1[i] = x2[i];
 		x2[i] = tmp;
 	}

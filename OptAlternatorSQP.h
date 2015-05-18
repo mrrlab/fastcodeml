@@ -89,7 +89,7 @@ private:
 	/// @param[out]	idFirstVar	The index of first variable of the space
 	/// @param[out]	idLastVar	The index of last variable of the space
 	///
-	void getSpaceProperties(int& idFirstVar, int& idLastVar) const;
+	//void getSpaceProperties(int& idFirstVar, int& idLastVar) const;
 
 private:
 

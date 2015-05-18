@@ -128,7 +128,7 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 	}
 }
 
-
+#if 0
 unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 {
 #ifdef USE_LAPACK
@@ -170,7 +170,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 #endif
 	return effort_ratio;
 }
-
+#endif
 
 void TreeAndSetsDependencies::optimizeDependencies(void)
 {

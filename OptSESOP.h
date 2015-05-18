@@ -55,7 +55,8 @@ public:
 			,double aThreshold
 			,int aMaxIterations
 			,int aNumTimes) 
-		:mModel(aModel)
+		:		mN(0)
+		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
 		,mLowerBound(aLowerBound)
@@ -66,7 +67,6 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
-		,mN(0)
 		,mStep(0)
 		,mOmega(1.)
 		{}
@@ -172,7 +172,7 @@ private:
 	///
 	static double myconstraintWrapper(const std::vector<double> &alpha, std::vector<double> &grad, void *data)
 	{
-		data_constraint *data_ = (data_constraint*)(data);
+		data_constraint *data_ = static_cast<data_constraint*>(data);
 		return (reinterpret_cast<OptSESOP*>(data_->sesop))->eValuateConstraintsSubspace(alpha, grad, data);
 	}
 	

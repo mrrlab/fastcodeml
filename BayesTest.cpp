@@ -135,7 +135,7 @@ double BayesTest::getGridParams(const std::vector<double>& aVars, const std::vec
 	return scale;
 }
 
-void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx) const
+void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTriangleIdx)
 {
 	unsigned int ix = static_cast<unsigned int>(sqrt(static_cast<double>(aTriangleIdx)));
 	unsigned int iy = aTriangleIdx - ix*ix;

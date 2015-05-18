@@ -414,9 +414,9 @@ void TransitionMatrix::eigenQREV(void)
 
        Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
     */
-    int i, j;
 
 	try {
+    int i, j;
     if(mNumGoodFreq == N)
     {
 		// The S matrix is defined as Q = S*pi

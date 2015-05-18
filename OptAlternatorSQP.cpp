@@ -42,7 +42,6 @@ void OptAlternatorSQP::alocateMemory(void)
 // ----------------------------------------------------------------------
 void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 {
-	double f_prev;
 	*f = evaluateFunction(x, mTrace);
 	
 	int roundsFullSpace		= 3;
@@ -78,7 +77,7 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		
 		// save current parameters
-		f_prev = *f;
+		double f_prev = *f;
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
@@ -404,6 +403,7 @@ void OptAlternatorSQP::lineSearch(double *aalpha, double *x, double *f)
 
 
 // ----------------------------------------------------------------------
+#if 0
 void OptAlternatorSQP::getSpaceProperties(int& idFirstVar, int& idLastVar) const
 {
 	switch(mSearchSpace)
@@ -424,4 +424,4 @@ void OptAlternatorSQP::getSpaceProperties(int& idFirstVar, int& idLastVar) const
 			break;		
 	}
 }
-
+#endif

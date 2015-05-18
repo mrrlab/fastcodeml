@@ -56,7 +56,6 @@ void OptArc::alocateMemory(void)
 // ----------------------------------------------------------------------
 void OptArc::ArcMinimizer(double *f, double *x)
 {
-	double f_prev;
 	*f = evaluateFunction(x, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -78,7 +77,7 @@ void OptArc::ArcMinimizer(double *f, double *x)
 	for(mStep = 0; !convergenceReached; ++mStep)
 	{
 		// save current parameters
-		f_prev = *f;
+		double f_prev = *f;
 		memcpy(mGradPrev, mGradient, size_vect);
 		memcpy(mXPrev, x, size_vect);
 		
@@ -275,7 +274,7 @@ void OptArc::SR1update(void)
 {
 	// local variables
 	double *v, *Bs;
-	double vs, inverse_vs;
+	double vs;
 	double *vvT;
 	char trans = 'N';
 	
@@ -294,7 +293,7 @@ void OptArc::SR1update(void)
 	// only update if vs is big enough
 	if (fabs(vs) > 1e-8)
 	{
-		inverse_vs = 1.0/vs;
+		double inverse_vs = 1.0/vs;
 	
 		// compute Matrix v.v^T / vs
 		vvT = mWorkSpaceMat;

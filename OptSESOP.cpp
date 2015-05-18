@@ -96,18 +96,17 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 	
 	// loop until convergene reached
 	// local variables
-	double f_diff, stepTolerance;
 	size_t numIterBeforeConverged = 0,
 		   maxNumIterBeforeConverged = 1;
 	
 	bool convergence_reached( false );
 	while(!convergence_reached)
 	{
-		f_diff = fabs(*f - f_prev);
+		double f_diff = fabs(*f - f_prev);
 		f_prev = *f;
 		
 		// adaptative tolerance so we don't spend too much time at each iteration
-		stepTolerance = max2(mAbsoluteError, exp(-double(mStep)));
+		double stepTolerance = max2(mAbsoluteError, exp(-double(mStep)));
 		
 		if(mVerbose > 2)
 			std::cout << "Starting step " << mStep << ":\n";
@@ -670,7 +669,7 @@ void OptSESOP::selectCorrVariables(void)
 // ----------------------------------------------------------------------
 double OptSESOP::eValuateConstraintsSubspace(const std::vector<double> &alpha, std::vector<double> &grad, void *data)
 {
-	data_constraint *data_ = (data_constraint*)(data);
+	data_constraint *data_ = static_cast<data_constraint*>(data);
 	int i = data_->line;
 	int bound_type = data_->bound_type;
 	
@@ -705,7 +704,7 @@ double OptSESOP::eValuateConstraintsSubspace(const std::vector<double> &alpha, s
 void OptSESOP::computeGradient(double aPointValue, const double *aVars, double* aGrad)
 {
 	memcpy(&x_[0], aVars, size_vect);
-	double eh, delta;
+	double delta;
 	
 	for(int i=0; i < mN; ++i)
 	{
@@ -713,7 +712,7 @@ void OptSESOP::computeGradient(double aPointValue, const double *aVars, double* 
 		if( i>=mNumTimes || randFrom0to1() <= (mStep == 0 ? 1. : 0.4 + 0.6*randFrom0to1())) //TODO
 		{
 #endif
-		eh = 1e-7 * max2(abs(x_[i]), 1.);
+		double eh = 1e-7 * max2(abs(x_[i]), 1.);
 			
 		// If it is going over the upper limit reverse the delta
 		x_[i] += eh;
@@ -759,26 +758,24 @@ void OptSESOP::computeGradientSubspace(double aPointValue, const std::vector<dou
 	
 	if(alpha_norm > 1e-5)
 	{
-		volatile double da;
-		double eh, fp;		
 		char trans = 'N';
 		
 		for(int i=0; i < mM; ++i)
 		{
-			eh = 1e-6 * (1. + randFrom0to1());// * max2(fabs(aAlpha[i]), 1.);
+			double eh = 1e-6 * (1. + randFrom0to1());// * max2(fabs(aAlpha[i]), 1.);
 			
 			// take only points between x and x+alpha so we have more chance to be in the 
 			if(aAlpha[i] > 0.) eh = -eh; 
 			
 			// compute in the forward finite differences
 			vars_working_copy[i] += eh;
-			da = vars_working_copy[i]-aAlpha[i];
+			double da = vars_working_copy[i]-aAlpha[i];
 			
 			// compute x + D*(alpha+da)
 			memcpy(&x_[0], &mSpace[0], size_vect);
 			dgemv_(&trans, &mN, &mM, &D1, mD, &mN, &vars_working_copy[0], &I1, &D1, &x_[0], &I1);
 		
-			fp = mModel->computeLikelihood(x_, false);
+			double fp = mModel->computeLikelihood(x_, false);
 			aGrad[i] = (fp-aPointValue)/da;
 		}
 	}

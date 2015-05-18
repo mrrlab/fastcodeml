@@ -37,10 +37,28 @@ public:
 	///
 	BOXCQP(const int& aN
 		  ,double* aLowerBound
-		  ,double* aUpperBound)
-		:mN(aN)
-		,ma(aLowerBound)
-		,mb(aUpperBound)
+		  ,double* aUpperBound) :
+
+			mN(aN),
+			mSpace(),
+			mRHS(NULL),
+			mLHS(NULL),
+			mB(NULL),
+			md(NULL),
+			mLambda(NULL),
+			mMu(NULL),
+			mSets(),
+#ifdef USE_SUBMATRIX_QP
+			mListLset(),
+			mListUset(),
+			mListSset(),
+#else
+			mx_known(NULL),
+			mMu_known(NULL),
+			mLambda_known(NULL),
+#endif //USE_SUBMATRIX_QP
+			ma(aLowerBound),
+			mb(aUpperBound)
 	{
 		alocateMemory();
 	}

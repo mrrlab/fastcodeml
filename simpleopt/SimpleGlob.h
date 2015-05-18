@@ -690,9 +690,8 @@ CSimpleGlobTempl<SOCHAR>::Add(
     const SOCHAR * const *  a_rgpszFileSpec
     )
 {
-    int nResult;
     for (int n = 0; n < a_nCount; ++n) {
-        nResult = Add(a_rgpszFileSpec[n]);
+        int nResult = Add(a_rgpszFileSpec[n]);
         if (nResult != SG_SUCCESS) {
             return nResult;
         }

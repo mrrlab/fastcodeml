@@ -62,7 +62,8 @@ public:
 				   ,int aMaxIterations
 				   ,int aNumTimes
 				   ,unsigned int aSeed) 
-		:mModel(aModel)
+		:rng(aSeed)
+		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
 		,mLowerBound(aLowerBound)
@@ -72,7 +73,6 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
-		,rng(aSeed)
 		,gamma_dist_T(0.5031126, 0.1844347)
 		,exp_dist_v0(9.441686)
 		,gamma_dist_v1(0.8764469, 0.126567)

@@ -181,7 +181,7 @@ struct ForestNode
 	///
 	/// @param[in] aPtr Pointer to the memory area to be released
 	///
-	void operator delete(void* aPtr)
+	static void operator delete(void* aPtr)
 	{
 		alignedFree(aPtr);
 	}
@@ -208,7 +208,7 @@ struct ForestNode
 	/// @param[in] aPtr Pointer to the memory area to be released (ignored)
 	/// @param[in] aHere Where the placement new should go (ignored)
 	///
-	void operator delete(void* /* aPtr */, ForestNode* /* aHere */)
+	static void operator delete(void* /* aPtr */, ForestNode* /* aHere */)
 	{
 		// Do nothing
 	}

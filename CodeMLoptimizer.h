@@ -96,7 +96,7 @@ private:
 	///
 	/// @return True for stop, false otherwise.
 	///
-	bool H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n) const;
+	static bool H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n);
 
 	/// Compute the function moving along p starting from x0 by a percentage t.
 	///
