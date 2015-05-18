@@ -3,7 +3,6 @@
 #define BOXCQP_H
 
 #include <vector>
-#include <memory>
 
 #ifdef _OPENMP
 #include <omp.h>

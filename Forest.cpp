@@ -1,21 +1,8 @@
 
 #include <map>
-#include <set>
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include <fstream>
-#include <cstring>
-#include <cstdio>
-#include <limits>
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wlong-long"
-#endif
-#include <boost/dynamic_bitset.hpp>
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#pragma GCC diagnostic pop
-#endif
 #include "Forest.h"
 #include "ForestNode.h"
 #include "Exceptions.h"

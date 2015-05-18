@@ -2,12 +2,10 @@
 #ifndef OPTSQP_H
 #define OPTSQP_H
 
-#include <cstdio>
 #include <vector>
 #include <memory>
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
-
 
 // uncomment to use strong wolfe conditions as a stopping criterion for the line search
 // comment it to use only the first Wolfe condition

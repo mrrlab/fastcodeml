@@ -3,7 +3,6 @@
 #define PHYLIP_H
 
 #include <vector>
-#include <string>
 #include "Genes.h"
 
 /// The genes of the set of species under analysis.

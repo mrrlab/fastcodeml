@@ -3,9 +3,7 @@
 
 #include "blas.h"
 #include "lapack.h"
-#include <cfloat>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <iostream>
 

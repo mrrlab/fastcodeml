@@ -2,7 +2,6 @@
 #ifndef PHYLOTREE_H
 #define PHYLOTREE_H
 
-#include <string>
 #include <vector>
 #include <fstream>
 #include "TreeNode.h"

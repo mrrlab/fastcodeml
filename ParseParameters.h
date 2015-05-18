@@ -4,7 +4,6 @@
 
 #include <map>
 #include <fstream>
-#include <string>
 
 /// Parse and accumulate initial values for parameters.
 /// New values for the parameters came in the form name=value or name:value

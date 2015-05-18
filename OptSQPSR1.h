@@ -2,7 +2,6 @@
 #ifndef OPTSQPSR1_H
 #define OPTSQPSR1_H
 
-#include <cstdio>
 #include <vector>
 #include <memory>
 #include "BranchSiteModel.h"

@@ -1,7 +1,6 @@
 
 #include "OptSQP.h"
 #include "blas.h"
-#include "lapack.h"
 #include <cfloat>
 
 

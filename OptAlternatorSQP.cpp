@@ -104,8 +104,10 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 			case SPACE_BRANCHES_ONLY:
 				mQPsolverBL->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
 				// make the search direction only along the branch lengths
+				{
 				int mNExtra = mN-mNumTimes;
 				dcopy_(&mNExtra, &D0, &I0, &mP[mNumTimes], &I1);
+				}
 				++branchSpaceCounter;
 				if(branchSpaceCounter > roundsBranchSpace)
 				{
@@ -113,6 +115,8 @@ void OptAlternatorSQP::AlternatorSQPminimizer(double *f, double *x)
 					branchSpaceCounter = 0;
 				}
 				break;
+			default:
+				throw "Wrong mSearchSpace";
 		}
 		
 		if(mVerbose >= VERBOSE_MORE_INFO_OUTPUT)

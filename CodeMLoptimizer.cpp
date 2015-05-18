@@ -1,16 +1,8 @@
 
 #include <cmath>
 #include <cstdio>
-#include <cstring>
 #include <vector>
 #include "CodeMLoptimizer.h"
-#include "CompilerHints.h"
-
-#ifdef USE_LAPACK
-#include "blas.h"
-#endif
-
-
 
 double Ming2::minimizeFunction(std::vector<double>& aVars)
 {

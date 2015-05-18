@@ -1,7 +1,7 @@
 
 #include "OptSESOP.h"
 #include "MathSupport.h"
-#include "lapack.h"
+
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable: 4267) // warning C4267: 'argument' : conversion from 'size_t' to 'unsigned int', possible loss of data

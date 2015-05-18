@@ -2,21 +2,9 @@
 #ifndef NEWICK_H
 #define NEWICK_H
 
-#include <string>
 #include "TreeNode.h"
 #include "PhyloTree.h"
-
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-//#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wlong-long"
-#endif
-
-#include <boost/spirit/include/classic_core.hpp>
-#include <boost/spirit/include/classic_parse_tree.hpp>
-
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-//#pragma GCC diagnostic pop
-#endif
+#include "boost/spirit/home/classic/tree/common.hpp"
 
 /// %Newick format file specific functionalities.
 ///

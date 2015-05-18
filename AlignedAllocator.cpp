@@ -18,7 +18,6 @@ static int posix_memalign(void **memptr, size_t alignment, size_t size)
 #include "AlignedMalloc.h"
 
 #ifndef _MSC_VER
-//#include <stdint.h>  // for uintptr_t
 #include <malloc.h>
 #endif
 

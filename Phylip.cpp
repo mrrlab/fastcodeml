@@ -1,7 +1,5 @@
 
-#include <iostream>
 #include <fstream>
-#include <iomanip>
 #include <cstdlib>
 #include "Phylip.h"
 #include "Exceptions.h"

@@ -1,7 +1,5 @@
 #include "BootstrapRandom.h"
 #include "MathSupport.h"
-#include "lapack.h"
-#include "blas.h"
 
 // --------------------------------------------------------------------
 double BootstrapRandom::bootstrap(std::vector<double>& aVars)

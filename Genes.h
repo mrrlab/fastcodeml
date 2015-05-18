@@ -2,7 +2,6 @@
 #ifndef GENES_H
 #define GENES_H
 
-#include <string>
 #include <vector>
 #include <map>
 

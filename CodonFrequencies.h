@@ -5,7 +5,6 @@
 #include <vector>
 #include <bitset>
 #include <cmath>
-#include <cfloat>
 #include "MatrixSize.h"
 #include "Types.h"
 

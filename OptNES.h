@@ -2,12 +2,8 @@
 #ifndef OPTNES_H
 #define OPTNES_H
 
-
-#include <cstdio>
 #include <vector>
 #include "BranchSiteModel.h"
-
-
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/normal_distribution.hpp>
 typedef boost::random::mt19937 RNGType;

@@ -2,16 +2,11 @@
 #ifndef OPT_TRUST_REGION_H
 #define OPT_TRUST_REGION_H
 
-#include <cstdio>
 #include <vector>
-#include <memory>
 #include "BranchSiteModel.h"
-#include "BOXCQP.h"
-
 
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_TRUST_REGION_VARIABLES
-
 
 #define TRUST_REGION_SR1_MATRIX_UPDATE
 

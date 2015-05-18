@@ -2,8 +2,6 @@
 #ifndef OPTSESOP_H
 #define OPTSESOP_H
 
-
-#include <cstdio>
 #include <vector>
 #include "BranchSiteModel.h"
 

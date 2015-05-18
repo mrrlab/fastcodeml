@@ -2,9 +2,7 @@
 #ifndef OPTARC_H
 #define OPTARC_H
 
-#include <cstdio>
 #include <vector>
-#include <memory>
 #include "BranchSiteModel.h"
 
 

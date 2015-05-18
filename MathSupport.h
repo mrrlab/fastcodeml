@@ -18,7 +18,6 @@
 #include <cmath>
 #endif
 
-//#include <random>
 #include <cstdlib>
 
 //#ifdef USE_MKL_VML

@@ -2,7 +2,6 @@
 #ifndef TREENODE_H
 #define TREENODE_H
 
-#include <string>
 #include <vector>
 #include "MatrixSize.h"
 

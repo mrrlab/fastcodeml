@@ -5,7 +5,6 @@
 #endif
 
 #include <iostream>
-#include <fstream>
 #include "Newick.h"
 #include "NewickGrammar.h"
 #include "Exceptions.h"

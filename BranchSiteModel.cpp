@@ -4,9 +4,6 @@
 #include <cfloat>
 #include <cmath>
 #include <memory>
-#include "blas.h"
-#include "lapack.h"
-#include "time.h"
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -25,7 +22,6 @@
 #include "CodeMLoptimizer.h"
 #include "OptSESOP.h"
 #include "OptAlternatorSQP.h"
-#include "OptNES.h"
 #include "OptSQP.h"
 #include "OptSQPSR1.h"
 #include "OptArc.h"	
@@ -41,8 +37,6 @@
 #include <boost/random/exponential_distribution.hpp>
 typedef boost::random::mt19937 RNGType;
 #endif // OLD_INITIALIZATION
-
-
 
 
 /// Starting value for the computed maximum likelihood.

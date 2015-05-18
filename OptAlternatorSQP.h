@@ -2,8 +2,6 @@
 #ifndef OPTALTERNATORSQP_H
 #define OPTALTERNATORSQP_H
 
-
-#include <cstdio>
 #include <vector>
 #include <memory>
 #include "BranchSiteModel.h"

@@ -1,7 +1,6 @@
 
 #include "OptNES.h"
 #include "MathSupport.h"
-#include "lapack.h"
 #include <algorithm>
 #include <iomanip>
 

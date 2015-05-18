@@ -4,7 +4,6 @@
 
 #include <cstring>
 #include <cmath>
-#include <vector>
 #include <bitset>
 #include "MatrixSize.h"
 #include "CompilerHints.h"

@@ -1,11 +1,7 @@
 
-#include <cmath>
-#include <cstring>
 #include <stdexcept>
 #include <iostream>
-#include <iomanip>
 #include "MatrixSize.h"
-
 #include "TransitionMatrix.h"
 
 // Now the size of the workareas for DSYEVR are hardcoded.

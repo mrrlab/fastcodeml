@@ -3,7 +3,6 @@
 #define BAYESTEST_H
 
 #include <vector>
-#include <cstdlib>
 #include "TreeAndSetsDependencies.h"
 #include "ProbabilityMatrixSet.h"
 #include "VerbosityLevels.h"

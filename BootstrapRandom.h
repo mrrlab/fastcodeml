@@ -2,8 +2,6 @@
 #ifndef BOOTSTRAP_RANDOM_H
 #define BOOTSTRAP_RANDOM_H
 
-
-#include <cstdio>
 #include <vector>
 #include "BranchSiteModel.h"
 

@@ -14,7 +14,6 @@
 #define BOOTSTRAP
 
 #include <vector>
-#include <cstdlib>
 #include <cfloat>
 #include "TransitionMatrix.h"
 #include "Forest.h"
