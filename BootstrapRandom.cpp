@@ -46,30 +46,7 @@ double BootstrapRandom::evaluateLikelihood(double *x)
 // --------------------------------------------------------------------
 double BootstrapRandom::evaluateLikelihood(const std::vector<double> &x)
 {
-#if 0
-	double penality = 0.0;
-	if (mN == mNumTimes+5)
-	{
-		// compute the proportions
-		double v0 = x[mNumTimes+0];
-		double v1 = x[mNumTimes+1];
-		double p2a = (1.-v0)*v1;
-		double p2b = (1.-v0)*(1.-v1);
-	
-		const double lim_p = 5e-1;
-		const double rho = 1e2;
-	
-		if (p2b < lim_p)
-			 penality = fabs( (p2b-lim_p)/lim_p );
-		if (p2a < lim_p)
-			penality *= fabs( (p2a-lim_p)/lim_p );
-	
-		penality *= rho;
-	}
-	return mModel->computeLikelihood(x, mTrace) - penality;
-#else
 	return mModel->computeLikelihood(x, mTrace);
-#endif
 }
 
 
