@@ -675,7 +675,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	double sigma, sigma_bas;
 	int iter = 0;
 	
-	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10) ));
+	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	sigma_bas = pow(1e-2, 1./static_cast<double>(max_iter));
 	
 	while(iter < max_iter)
