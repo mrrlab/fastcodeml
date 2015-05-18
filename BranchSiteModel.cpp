@@ -1949,7 +1949,7 @@ void BranchSiteModel::optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, doub
 {
 	try
 	{
-		nlopt::result result = aopt->optimize(mVar, amaxl);
+		/*nlopt::result result = */ aopt->optimize(mVar, amaxl);
 	}
 	catch(const nlopt::forced_stop&)
 	{

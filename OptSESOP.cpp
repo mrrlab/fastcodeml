@@ -45,7 +45,7 @@ double OptSESOP::maximizeFunction(std::vector<double>& aVars)
 	alocateMemory();
 	
 	double maxl = -1000000;
-	int success = SESOPminimizer(&maxl, &aVars[0]);
+	/*int success = */ SESOPminimizer(&maxl, &aVars[0]);
 	return -maxl;
 }
 
@@ -292,7 +292,7 @@ int OptSESOP::SESOPminimizer(double *f, double *x)
 				std::cout << "Optimizer set, optimizing...\n";
 			
 			
-			nlopt::result result = opt->optimize(alpha, *f);
+			/* nlopt::result result = */ opt->optimize(alpha, *f);
 			opt->remove_inequality_constraints();
 		}
 			catch(const nlopt::forced_stop&)

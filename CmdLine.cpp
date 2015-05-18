@@ -188,7 +188,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H0_FROM_H1,	"-i1",					SO_NONE,	"Start H0 optimization from H1 results" },
 		{ OPT_INIT_H0_FROM_H1,	"--init-from-h1",		SO_NONE,	"" },
-		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)" },
+		{ OPT_OPTIM_ALGO,		"-m",					SO_REQ_SEP,	"Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 42: SQP, 99:MLSL_LDS) (default: 22)" },
 		{ OPT_OPTIM_ALGO,		"--maximizer",			SO_REQ_SEP,	"" },
 		{ OPT_DELTA_VAL,		"-sd",					SO_REQ_SEP,	"Delta used in gradient computation (default: 1.49e-8)" },
 		{ OPT_DELTA_VAL,		"--small-diff",			SO_REQ_SEP,	"" },

@@ -593,7 +593,7 @@ Usage:
         Start H0 optimization from H1 results
 
 -m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)
+        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 42: SQP, 99:MLSL_LDS) (default: 22)
 
 -sd  --small-diff (required argument)
         Delta used in gradient computation (default: 1.49e-8)

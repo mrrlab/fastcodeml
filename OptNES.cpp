@@ -20,7 +20,7 @@ double OptNES::maximizeFunction(std::vector<double>& aVars, unsigned int popSize
 	
 	
 	double maxl = 1000000;
-	int success = NESminimizer(&maxl, &aVars[0]);
+	/*int success = */ NESminimizer(&maxl, &aVars[0]);
 	return maxl;
 }
 
