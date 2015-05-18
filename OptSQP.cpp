@@ -125,7 +125,6 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	scaleVariables(x);
 #endif // SCALE_OPT_VARIABLES
 	
-	double f_prev;
 	double df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
