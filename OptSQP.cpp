@@ -34,7 +34,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	// shrink the w2 variable between 0 and 1 so it is about the same scale as 
 	// the other variables in the new space representation
 	i = mNumTimes+4; 		// w2
-	if(mH1Optimization)
+	if (mH1Optimization)
 	{
 		mLowerBound[i] = 0.0;
 		mUpperBound[i] = 1.0;
@@ -79,7 +79,7 @@ void OptSQP::allocateMemory(void)
 void OptSQP::scaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -100,7 +100,7 @@ void OptSQP::scaleVariables(double *x)
 void OptSQP::unscaleVariables(double *x)
 {
 	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -149,7 +149,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 	// ----------------------------------------- main loop
 	bool convergenceReached = false;
-	for(mStep = 0; !convergenceReached; ++mStep)
+	for (mStep = 0; !convergenceReached; ++mStep)
 	{
 		// update local bounds
 		memcpy(&localLowerBound[0], &mLowerBound[0], size_vect);
@@ -183,7 +183,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
-		for(int i=0; i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			if (x[i] < mLowerBound[i])
 				x[i] = mLowerBound[i];
@@ -312,7 +312,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x_, size_vect);
-	for(; i<mN; ++i)
+	for (; i<mN; ++i)
 	{
 		if (mActiveSet[i] == 0)
 		{
@@ -368,7 +368,7 @@ void OptSQP::hessianInitialization(void)
 #ifdef SCALE_OPT_VARIABLES
 	// change the space of the hessian approximation representation
 	#pragma omp parallel for
-	for(size_t i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double slb = mLowerBound[i];
 		double sub = mUpperBound[i];
@@ -435,7 +435,7 @@ void OptSQP::BFGSupdate(void)
 	// compute Matrix B*mSk * mSk^T*B
 	BssB = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double prefactor = - Bs[i] / sBs;
 		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
@@ -448,7 +448,7 @@ void OptSQP::BFGSupdate(void)
 	// compute matrix y**T * y
 	yy = mWorkSpaceMat;
 	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		double prefactor = mYk[i] / ys;
 		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
@@ -478,7 +478,7 @@ void OptSQP::activeSetUpdate(const double *x, const double tolerance)
 	const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
 	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
+	for (int i=0; i<mN; ++i)
 	{
 		if (mActiveSet[i] > 0)
 		{
@@ -545,7 +545,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	// begin by a backtrace
 	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
+	while (phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
 	{
 		++iter;
 		a_prev = a;
@@ -564,7 +564,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	if (phi_a_prime < 0.0 && a != *aalpha)
 	{
 		double a0 = a_prev;
-		while(phi < phi_prev && iter < maxIterBack)
+		while (phi < phi_prev && iter < maxIterBack)
 		{
 			++iter;
 			
@@ -584,7 +584,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	else
 	{
 		sigma_bas = 0.7;
-		while(phi < phi_prev && iter < maxIterUp)
+		while (phi < phi_prev && iter < maxIterUp)
 		{
 			++iter;
 			
@@ -632,7 +632,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	
-	while(iter < max_iter)
+	while (iter < max_iter)
 	{
 		++iter;
 		phi_prev = phi;
@@ -685,7 +685,7 @@ double OptSQP::zoom(double alo, double ahi, const double *x, const double& phi_0
 	const double tolerance = 0.4 / static_cast<double>(mN);
 	double phi = phi_0;
 	
-	while( fabs(ahi-alo) > tolerance )
+	while (fabs(ahi-alo) > tolerance)
 	{
 		double tmp = 0.5;
 		a = tmp*alo + (1.-tmp)*ahi;
