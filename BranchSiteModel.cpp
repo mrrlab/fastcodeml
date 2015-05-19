@@ -296,7 +296,7 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
 	// Too long, cut. Too short, ignore. Remember H0 has 4 variables.
 	if(aValidLen > start + mNumVariables) aValidLen = start + mNumVariables;
-	else if((int)aValidLen < start)
+	else if(aValidLen < start)
 	{
 		mInitStatus = INIT_NONE;
 		return;

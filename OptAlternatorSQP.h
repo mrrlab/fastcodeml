@@ -46,7 +46,11 @@ public:
 		  			,double aThreshold
 		  			,int aMaxIterations
 		  			,int aNumTimes)
-		:mModel(aModel)
+		:mSearchSpace(SPACE_FULL)
+		,mNumTimes(aNumTimes)
+		,mN(0)
+		,mStep(0)
+		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
 		,mLowerBound(aLowerBound)
@@ -56,10 +60,6 @@ public:
 		,mStopIfBigger(aStopIfBigger)
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
-		,mNumTimes(aNumTimes)
-		,mN(0)
-		,mStep(0)
-		,mSearchSpace(SPACE_FULL)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()

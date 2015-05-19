@@ -199,10 +199,11 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 	double f;
 	memcpy(&mXEvaluator[0], x, size_vect);
 	size_t i;
+	size_t nt = static_cast<size_t>(mNumTimes);
 	double *delta = &mWorkSpaceVect[0];
 	
 	// branch lengths
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<nt; ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + x[i] );
 		if( x[i] + eh > mUpperBound[i] )
@@ -211,7 +212,7 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 		delta[i] = mXEvaluator[i] - x[i];
 	}
 	
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<nt; ++i)
 	{
 		f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 		aGrad[i] = (f-f0)/delta[i];
@@ -219,7 +220,7 @@ void OptAlternatorSQP::computeGradient(const double *x, double f0, double *aGrad
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x, size_vect);
-	for(; i<mN; ++i)
+	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + fabs(x[i]) );
 		if( x[i] + eh > mUpperBound[i] )

@@ -164,7 +164,7 @@ double OptArc::evaluateFunctionForArcSearch(const double* x, double alpha)
 {
 	// compute rho(mV, alpha)
 	double *rho = mWorkSpaceVect;
-	for (size_t j(0); j<mNs; ++j)
+	for(int j=0; j<mNs; ++j)
 		rho[j] = alpha / (1.0 + alpha*(mV[j]-mLambdaMin));
 	
 	// introduce perturbation if the gradient and search direction are too similar
@@ -230,7 +230,7 @@ void OptArc::computeGradient(const double *x, double f0, double *aGrad)
 	const double *x_ = x;
 	
 	// branch lengths
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + x_[i] );
 		if( x_[i] + eh > mUpperBound[i] )
@@ -239,7 +239,7 @@ void OptArc::computeGradient(const double *x, double f0, double *aGrad)
 		delta[i] = mXEvaluator[i] - x_[i];
 	}
 
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		if(mActiveSet[i] <= 1)
 		{
@@ -251,7 +251,7 @@ void OptArc::computeGradient(const double *x, double f0, double *aGrad)
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x_, size_vect);
-	for(; i<mN; ++i)
+	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] <= 1)
 		{
@@ -362,7 +362,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	double a_min = a;
 	double phi_min = phi_0;
 	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < maxIterBack)
+	while(phi > phi_0 + phi_0_prime*a*c1 && iter < static_cast<size_t>(maxIterBack))
 	{
 		++iter;
 		a_prev = a;
@@ -388,7 +388,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	if (phi_a_prime < 0.0 && fabs(a - *aalpha) > 1e-8)
 	{
 		double a0 = a_prev;
-		while(phi <= phi_prev && iter < maxIterBack)
+		while(phi <= phi_prev && iter < static_cast<size_t>(maxIterBack))
 		{
 			++iter;
 			
@@ -406,7 +406,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	else
 	{
 		sigma_bas = 0.7;
-		while(phi <= phi_prev && iter < maxIterUp)
+		while(phi <= phi_prev && iter < static_cast<size_t>(maxIterUp))
 		{
 			++iter;
 			

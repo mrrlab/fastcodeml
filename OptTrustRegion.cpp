@@ -423,7 +423,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 #endif // SCALE_OPT_TRUST_REGION_VARIABLES
 	
 	// branch lengths
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + x_[i] );
 		if( x_[i] + 1e8*eh > mUpperBoundUnscaled[i] )
@@ -432,7 +432,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 		delta[i] = mXEvaluator[i] - x_[i];
 	}
 
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		if(mActiveSet[i] < 2)
 		{
@@ -444,7 +444,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x_, size_vect);
-	for(; i<mN; ++i)
+	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] < 2)
 		{

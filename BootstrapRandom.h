@@ -63,6 +63,15 @@ public:
 				   ,int aNumTimes
 				   ,unsigned int aSeed) 
 		:rng(aSeed)
+		,gamma_dist_T(0.5031126, 0.1844347)
+		,exp_dist_v0(9.441686)
+		//,exp_dist_v0(11.13923)
+		,gamma_dist_v1(0.8764469, 0.126567)
+		,beta_dist_w0(1.638631, 21.841174)
+		,gamma_dist_k(7.547445, 0.5789037)
+		//,gamma_dist_w2(0.209741, 274.537247)
+		,gamma_dist_w2(0.209741, 0.5)
+		,mN(0)
 		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
@@ -73,15 +82,6 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
-		,gamma_dist_T(0.5031126, 0.1844347)
-		,exp_dist_v0(9.441686)
-		//,exp_dist_v0(11.13923)
-		,gamma_dist_v1(0.8764469, 0.126567)
-		,beta_dist_w0(1.638631, 21.841174)
-		,gamma_dist_k(7.547445, 0.5789037)
-		//,gamma_dist_w2(0.209741, 274.537247)
-		,gamma_dist_w2(0.209741, 0.5)
-		,mN(0)
 		{}
 	
 	/// Compute the maximum of computeLikelihood() over several tries

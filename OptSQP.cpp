@@ -291,7 +291,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 #endif // SCALE_OPT_VARIABLES
 	
 	// branch lengths
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		eh = sqrt_eps * ( 1.0 + x_[i] );
 		if( x_[i] + eh > mUpperBoundUnscaled[i] )
@@ -300,7 +300,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 		delta[i] = mXEvaluator[i] - x_[i];
 	}
 
-	for(i=0; i<mNumTimes; ++i)
+	for(i=0; i<static_cast<size_t>(mNumTimes); ++i)
 	{
 		if (mActiveSet[i] == 0)
 		{
@@ -312,7 +312,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	
 	// other variables
 	memcpy(&mXEvaluator[0], x_, size_vect);
-	for(; i<mN; ++i)
+	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] == 0)
 		{

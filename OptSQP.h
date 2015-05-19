@@ -55,7 +55,9 @@ public:
 		  ,double aThreshold
 		  ,int aMaxIterations
 		  ,int aNumTimes) 
-		:mModel(aModel)
+		:mN(0)
+		,mStep(0)
+		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
 		,mLowerBoundUnscaled(aLowerBound)
@@ -68,8 +70,6 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
-		,mN(0)
-		,mStep(0)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()

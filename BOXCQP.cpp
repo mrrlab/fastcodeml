@@ -1,12 +1,11 @@
 
-#include "BOXCQP.h"
-
 #include "blas.h"
 #include "lapack.h"
 #include <math.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include "BOXCQP.h"
 
 // ----------------------------------------------------------------------
 //	Class members definition: BOXCQP
