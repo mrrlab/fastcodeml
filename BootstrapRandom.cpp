@@ -181,7 +181,7 @@ void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTr
 	*f = evaluateLikelihood(x);
 	double *rand_x = &mSpace[0];
     
-	for(int step = 0; step < numTries; ++step)
+	for(unsigned int step = 0; step < numTries; ++step)
 	{	
 		// generate the random variables
 		for(int i=0; i<mN; ++i) rand_x[i] = generateRandom(i);
@@ -208,7 +208,7 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 	double *rand_x = &mSpace[0];
 	memcpy(rand_x, x, size_vect);
 	
-	int numTriesPerVar = static_cast<size_t>(ceil(log(static_cast<double>(mN))));
+	unsigned int numTriesPerVar = static_cast<unsigned int>(ceil(log(static_cast<double>(mN))));
 	
 	// look in each direction the "best" variable
 	for(int i=0; i<mN; ++i)
