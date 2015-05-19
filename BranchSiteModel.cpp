@@ -387,7 +387,7 @@ void BranchSiteModel::initVariables(void)
         
 
 	#ifdef OLD_INITIALIZATION
-        mVar[mNumTimes+2] = 0.2  + 0.6 * randFrom0to1();				// w0
+        mVar[index_vars_other+2] = 0.2  + 0.6 * randFrom0to1();				// w0
         mVar[index_vars_other+3] = 0.5  +       randFrom0to1();			// k
     #else    
         boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);
@@ -420,21 +420,17 @@ void BranchSiteModel::initVariables(void)
     // Don't clamp the results if they came from H1
     if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
     {
-        unsigned int nv = mNumVariables;
+        for(i=0; i < index_vars_other; ++i)
+        {
+            if(mVar[i] < mLowerBound[i]+1e-6)      mVar[i] = mLowerBound[i] + 1e-6;
+            else if(mVar[i] > mUpperBound[i]-1e-6) mVar[i] = mUpperBound[i] - 1e-6;
+        }
+        unsigned int nv = index_vars_other+mNumVariables;
         for(i=index_vars_other; i < nv; ++i)
         {
-            for(i=0; i < mNumTimes; ++i)
-            {
-                if(mVar[i] < mLowerBound[i]+1e-6)      mVar[i] = mLowerBound[i] + 1e-6;
-                else if(mVar[i] > mUpperBound[i]-1e-6) mVar[i] = mUpperBound[i] - 1e-6;
-            }
-            unsigned int nv = mNumTimes+mNumVariables;
-            for(i=mNumTimes; i < nv; ++i)
-            {
-                double range = mUpperBound[i]-mLowerBound[i];
-                if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
-                else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
-            }
+            double range = mUpperBound[i]-mLowerBound[i];
+            if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;
+            else if(mVar[i] > mUpperBound[i]-0.05*range) mVar[i] = mUpperBound[i] - range * 0.05;
         }
     }
 #endif // OLD_INITIALIZATION
