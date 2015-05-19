@@ -132,9 +132,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 	scaleVariables(x);
 #endif // SCALE_OPT_TRUST_REGION_VARIABLES
 	
-	double f_prev;
 	*f = evaluateFunction(x, mTrace);
-	f_prev = *f;
 	
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
@@ -300,10 +298,8 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		if (improvement_ratio > threshold_acceptance_ratio)
 		{
 			// save previous solution
-			f_prev = *f;
 			memcpy(mGradPrev, mGradient, size_vect);
 			memcpy(mXPrev, x, size_vect);
-			
 
 			// update solution
 			memcpy(x, x_candidate, size_vect);
@@ -616,7 +612,6 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 	// contains the variables indices which block the progression of the alg., i.e. which reach the local bounds.
 	// setJ[i] is 0 if the variable is not blocking, n if it blocks at step n
 	std::vector<int> setJ(mN, 0);	
-	int step_GCP = 1;
 	
 	dcopy_(&mN, &D0, &I0, cauchy_point_from_x, &I1);
 	
@@ -631,10 +626,10 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 	f_double_prime = ddot_(&mN, Bd, &I1, d, &I1);
 	
 	std::cout << "\tDEBUG : f_prime = " << f_prime << ", f_double_prime = " << f_double_prime << std::endl;
-	
-	
+
 	if (f_prime < 0)
 	{
+		int step_GCP = 1;
 		bool GCP_found = false;
 		while (!GCP_found)
 		{

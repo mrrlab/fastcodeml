@@ -125,7 +125,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	scaleVariables(x);
 #endif // SCALE_OPT_VARIABLES
 	
-	double df = 0.0;
+	//double df = 0.0;
 	*f = evaluateFunction(x, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -201,7 +201,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		}
 		
 		// check convergence
-		df = f_prev - *f;
+		double df = f_prev - *f;
 		convergenceReached =   fabs(df) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
@@ -649,7 +649,6 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 	
 	phi = phi_prev = phi_0;
 	
-	double sigma;
 	int iter = 0;
 	
 	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
@@ -686,7 +685,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
-		sigma = randFrom0to1();
+		double sigma = randFrom0to1();
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
