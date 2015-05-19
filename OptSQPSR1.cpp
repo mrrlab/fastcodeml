@@ -452,7 +452,7 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	double c1 (2e-4);
 	double phi_0_prime = 0.5*ddot_(&mN, mP, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
-	double a_prev = *aalpha;
+	double a_prev = 0.0;
 	double phi_a_prime;
 	double a = *aalpha;
 	
@@ -460,7 +460,6 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
 	phi_prev = phi_0;
-	a_prev = 0.;
 	phi = evaluateFunctionForLineSearch(x, a);
 	
 	double sigma, sigma_bas;
@@ -498,7 +497,7 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
 	
 	iter = 0;
-	if (phi_a_prime < 0.0 && a != *aalpha)
+	if (phi_a_prime < 0.0 && fabs(a - *aalpha) > 1e-8)
 	{
 		double a0 = a_prev;
 		while(phi < phi_prev && iter < maxIterBack)

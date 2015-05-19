@@ -23,7 +23,9 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 		break;
 		
 	case EVOLUTION_STRATEGY:
-		int numGenerations = (mN>60) ? 8 : 4;
+		//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
+		int numGenerations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
+		numGenerations = numGenerations > 0 ? numGenerations : 0;
 		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], numGenerations);
 		break;
 	};
@@ -178,18 +180,11 @@ void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTr
 	
 	*f = evaluateLikelihood(x);
 	double *rand_x = &mSpace[0];
-	
-	//bool optimize_w2 = (mN-mNumTimes) == 5;
     
-    // local variables
-    size_t step;
-    
-	for(step = 0; step < numTries; ++step)
+	for(int step = 0; step < numTries; ++step)
 	{	
 		// generate the random variables
-		
 		for(int i=0; i<mN; ++i) rand_x[i] = generateRandom(i);
-		  	
         
         // verify if it is a better choice
         double rand_f = evaluateLikelihood(rand_x);
@@ -213,7 +208,7 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 	double *rand_x = &mSpace[0];
 	memcpy(rand_x, x, size_vect);
 	
-	size_t numTriesPerVar = static_cast<size_t>(ceil(log(static_cast<double>(mN))));
+	int numTriesPerVar = static_cast<size_t>(ceil(log(static_cast<double>(mN))));
 	
 	// look in each direction the "best" variable
 	for(int i=0; i<mN; ++i)
@@ -240,6 +235,9 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 #ifdef BOOTSTRAP_ES
 void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNumGenerations)
 {
+	if (maxNumGenerations == 0)
+		return;
+		
 	// initialize the state of each individual randomly according to the distribution of the variables
 	int best_individual = 0;
 	
@@ -287,14 +285,22 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 			std::cout << "Starting generation " << generation << std::endl;
 			
 		// --children generation from distinct parents / dominant
-		
 		for (int i=0; i<lambda; ++i)
 		{
-			selected[i<<1] = i<<2; //static_cast<int>( randFrom0to1()*(mPopSize-1) );	
-			if (randFrom0to1() < 0.9)
-				selected[(i<<1)+1] = best_individual;
+			// selected[i<<1] = static_cast<int>( randFrom0to1()*static_cast<double>(mPopSize-1) ); // i<<2; //
+			
+			if (randFrom0to1() < 0.5)
+				selected[i<<1] = i<<2;
 			else
-				selected[(i<<1)+1] = (i<<2) + 1;
+				selected[i<<1] = best_individual;
+				
+			if (selected[i<<1] != best_individual)
+			{
+				if (randFrom0to1() < 0.9)
+					selected[(i<<1)+1] = best_individual;
+				else
+					selected[(i<<1)+1] = (i<<2) + 1;
+			}
 		}
 		
 		for (int childid(0); childid<lambda; ++childid)
@@ -302,8 +308,8 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 			const int parid1 = selected[childid<<1];
 			const int parid2 = selected[(childid<<1)+1];
 			
-			double proportion_parent_1 = (mPopFitness[parid1] - fmax);
-			double proportion_parent_2 = (mPopFitness[parid2] - fmax);
+			double proportion_parent_1 = mPopFitness[parid2] - fmax;
+			double proportion_parent_2 = mPopFitness[parid1] - fmax;
 			double tot = proportion_parent_1 + proportion_parent_2;
 			proportion_parent_1 /= tot;
 			proportion_parent_2 /= tot;

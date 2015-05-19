@@ -330,7 +330,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	}
 #ifdef SCALE_OPT_VARIABLES
 	#pragma omp parallel for
-	for (size_t j(0); j<mN; ++j)
+	for (int j(0); j<mN; ++j)
 	{
 		double slb = mLowerBound[j];
 		double sub = mUpperBound[j];
@@ -467,45 +467,13 @@ void OptSQP::BFGSupdate(void)
 	dscal_(&mN_sq, &inv_factor, mHessian, &I1);
 	dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-
-#if 0
-	// compute the minimum eigenValue in order to verify the positive definiteness of the matrix.
-	char job = 'N';
-	char range = 'I';
-	char uplo = 'U';
-	double *B = mWorkSpaceMat;
-	memcpy(B, mHessian, mN*size_vect);
-	
-	double *vl_not_used = NULL, *vu_not_used = NULL;
-	int M;
-	double *eigenValues = mWorkSpaceVect;
-	int *isupz_not_used = NULL;
-	
-	int lwork = 26*mN;
-	std::vector<double> work(lwork);
-	int liwork = 10*mN;
-	std::vector<int> iwork(liwork);
-	int info;
-	
-	dsyevr_(&job, &range, &uplo, &mN, B, &mN, vl_not_used, vu_not_used, &I1, &I1, &mAbsoluteError, &M, eigenValues, mP, &mN
-		   ,isupz_not_used, &work[0], &lwork, &iwork[0], &liwork, &info);
-	
-	// modify the matrix accordingly if needed
-	double min_eigen_value = eigenValues[0];
-	if (min_eigen_value < 1e-6)
-	{
-		double diagonal_ = max2(-min_eigen_value*1.01, 1e-2);
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Not positive definite matrix ("<<min_eigen_value<<"), adding " << diagonal_ << "...\n"; 
-		daxpy_(&mN, &D1, &diagonal_, &I0, mHessian, &diag_stride);
-	}
-#endif
 }
 
 
 // ----------------------------------------------------------------------
 void OptSQP::activeSetUpdate(const double *x, const double tolerance)
 {
+	// number of iterations where we skip the gradient computation (component i)
 	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
 	const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
@@ -514,7 +482,7 @@ void OptSQP::activeSetUpdate(const double *x, const double tolerance)
 	{
 		if (mActiveSet[i] > 0)
 		{
-			// reduce counters for active sets
+			// reduce counters
 			--mActiveSet[i];
 		}
 		else
@@ -582,7 +550,6 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 		++iter;
 		a_prev = a;
 		phi_prev = phi;
-		//sigma = 0.3+0.3*randFrom0to1();
 		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
 		a *= sigma;
 		phi = evaluateFunctionForLineSearch(x, a);
@@ -715,11 +682,14 @@ double OptSQP::zoom(double alo, double ahi, const double *x, const double& phi_0
 	double a, phi_a_prime;
 	double philo = aphi_lo;
 	a = 0.5*(alo+ahi);
-	while( fabs(ahi-alo) > 0.01 )
+	const double tolerance = 0.4 / static_cast<double>(mN);
+	double phi = phi_0;
+	
+	while( fabs(ahi-alo) > tolerance )
 	{
 		double tmp = 0.5;
 		a = tmp*alo + (1.-tmp)*ahi;
-		double phi = evaluateFunctionForLineSearch(x, a);
+		phi = evaluateFunctionForLineSearch(x, a);
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
 			std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
 		 
@@ -744,6 +714,18 @@ double OptSQP::zoom(double alo, double ahi, const double *x, const double& phi_0
 		}
 	}
 	
+	// make sure to have a small enough step (only if near 0)
+	if (a <= tolerance && phi > phi_0)
+	{
+		int step_decrease = 0;
+		int max_step_decrease = 10;
+		while (step_decrease++ < max_step_decrease)
+		{
+			a *= 0.2;
+			phi = evaluateFunctionForLineSearch(x, a);
+			if (phi < phi_0) step_decrease = max_step_decrease+1;
+		}
+	}
 	return a;
 }
 #endif // STRONG_WOLFE_LINE_SEARCH
