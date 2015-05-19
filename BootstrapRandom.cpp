@@ -20,12 +20,10 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	case RANDOM_TRIES_SEPARATE_VARS:
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN);
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
-		//bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
 		break;
 		
 	case EVOLUTION_STRATEGY:
-		//int numGenerations = static_cast<int> (log(static_cast<double>(mN))*1.5);
-		int numGenerations = 5;
+		int numGenerations = (mN>60) ? 8 : 4;
 		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], numGenerations);
 		break;
 	};
@@ -64,9 +62,9 @@ void BootstrapRandom::alocateMemory(void)
 	// - 15 for small problems
 	// - 70 for medium to large problems
 	// - linear in between 
-	if(mN < 10)
+	if (mN < 10)
 		mPopSize = 15;
-	else if(mN < 50)
+	else if (mN < 50)
 		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
 	else
 		mPopSize = 70;
@@ -288,12 +286,8 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		if ( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 			std::cout << "Starting generation " << generation << std::endl;
 			
-		// --children generation from random parents
+		// --children generation from distinct parents / dominant
 		
-		/*
-		for(int i=0; i<lambda<<1; ++i)
-			selected[i] = int( randFrom0to1()*(mPopSize-1) );			
-		*/
 		for (int i=0; i<lambda; ++i)
 		{
 			selected[i<<1] = i<<2; //static_cast<int>( randFrom0to1()*(mPopSize-1) );	
@@ -305,18 +299,21 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		
 		for (int childid(0); childid<lambda; ++childid)
 		{
-			const double proportion_parent_1 = randFrom0to1();
-			const double proportion_parent_2 = 1.0 - proportion_parent_1;
+			const int parid1 = selected[childid<<1];
+			const int parid2 = selected[(childid<<1)+1];
 			
-			int parid = selected[childid<<1];
+			double proportion_parent_1 = (mPopFitness[parid1] - fmax);
+			double proportion_parent_2 = (mPopFitness[parid2] - fmax);
+			double tot = proportion_parent_1 + proportion_parent_2;
+			proportion_parent_1 /= tot;
+			proportion_parent_2 /= tot;
+			
 			double* child = &children[childid*mN];
-			double* parent = &mPopPos[parid*mN];
+			double* parent = &mPopPos[parid1*mN];
 			memcpy(child, parent, size_vect);
 			dscal_(&mN, &proportion_parent_1, child, &I1);
 			
-			parid = selected[(childid<<1) + 1];
-		
-			parent = &mPopPos[parid*mN];
+			parent = &mPopPos[parid2*mN];
 			daxpy_(&mN, &proportion_parent_2, parent, &I1, child, &I1);
 		}
 		
@@ -325,7 +322,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		for (int i(0); i<lambda*mN; ++i)
 		{	
 			// apply a "little" mutation
-			const double prop = 0.8 + 0.15*randFrom0to1();
+			const double prop = 0.9 + 0.1*randFrom0to1();
 			children[i] = prop*children[i] + (1.0-prop)*generateRandom(i%mN);
 		}
 		

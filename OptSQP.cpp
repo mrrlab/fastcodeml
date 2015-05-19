@@ -2,6 +2,7 @@
 #include "OptSQP.h"
 #include "blas.h"
 #include <cfloat>
+#include <iomanip>
 
 
 // ----------------------------------------------------------------------
@@ -206,6 +207,20 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		convergenceReached =   fabs(df) < mAbsoluteError
 							|| mStep >= mMaxIterations;
 		
+#if 0
+		// gradient free components
+		memcpy(mWorkSpaceVect, mGradient, size_vect);
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			if (  (fabs(x[i]-mLowerBound[i])<1e-4 && mGradient[i] > 0.0)
+				||(fabs(x[i]-mUpperBound[i])<1e-4 && mGradient[i] < 0.0))
+			{
+				mWorkSpaceVect[i] = 0.0;
+			}
+		}
+		std::cout << "|free gradient| = " << std::scientific << std::setprecision(12) << dnrm2_(&mN, mWorkSpaceVect, &I1) << std::endl;
+#endif
 		
 		if (!convergenceReached)
 		{
