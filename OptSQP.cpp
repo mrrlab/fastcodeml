@@ -13,7 +13,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 	mN = static_cast<int>(aVars.size());
 	mH1Optimization = (mN == mNumTimes+5);
 	
-	alocateMemory();
+	allocateMemory();
 	
 #ifdef SCALE_OPT_VARIABLES
 	// set the scaling
@@ -49,7 +49,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptSQP::alocateMemory(void)
+void OptSQP::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	
@@ -171,13 +171,12 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
 		 
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
 			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
-		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
-		
+		}
+
 		double alpha = 1.0;
-		
 		
 		// line search
 		lineSearch(&alpha, x, f);
@@ -193,10 +192,8 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		}
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Step length found:" << alpha << std::endl;
-				
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
+			std::cout << "Step length found:" << alpha << std::endl;
 			std::cout << "New Solution:";
 			mModel->printVar(mXEvaluator, *f);
 		}
@@ -713,7 +710,7 @@ void OptSQP::lineSearch(double *aalpha, double *x, double *f)
 
 
 // ----------------------------------------------------------------------
-double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
+double OptSQP::zoom(double alo, double ahi, const double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
 {
 	double a, phi_a_prime;
 	double philo = aphi_lo;
@@ -724,7 +721,7 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 		a = tmp*alo + (1.-tmp)*ahi;
 		double phi = evaluateFunctionForLineSearch(x, a);
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
+			std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
 		 
 		if (phi > phi_0 + a*c1*phi_0_prime || phi > philo)
 		{

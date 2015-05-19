@@ -102,16 +102,16 @@ private:
 	///
 	/// @return the function value
 	///
-	double evaluateLikelihood(double *x);
+	double evaluateLikelihood(const double *x);
 	double evaluateLikelihood(const std::vector<double> &x);
 
 
 private:
 	
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the needed space to store the current best variables and the workspace
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 	
 	
 	/// generateRandom

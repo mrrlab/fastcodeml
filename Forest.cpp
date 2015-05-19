@@ -454,7 +454,7 @@ void Forest::setTimesFromLengths(std::vector<double>& aTimes, const ForestNode* 
 }
 
 
-void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode)
+void Forest::setLengthsFromTimes(const std::vector<double>& aTimes, const ForestNode* aNode)
 {
 
 	// Get all forest connections

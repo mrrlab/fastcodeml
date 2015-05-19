@@ -60,7 +60,7 @@ public:
 			ma(aLowerBound),
 			mb(aUpperBound)
 	{
-		alocateMemory();
+		allocateMemory();
 	}
 	
 	
@@ -79,10 +79,10 @@ public:
 	
 private:
 	
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the space for work
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 	
 	/// updateSets
 	/// update the vector representing the sets

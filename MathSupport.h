@@ -194,9 +194,9 @@ inline void swap_content(double *x1, double *x2, int const& N)
 /// @param[in] N size of the vectors
 /// @param[in] alpha coefficient 
 ///
-/// @return The euclidian norm |x1-alpha*x2|
+/// @return The euclidean norm |x1-alpha*x2|
 ///
-inline double distance(double *x1, double *x2, double *workspace, int const& N, double alpha=-1.)
+inline double distance(const double *x1, const double *x2, double *workspace, int const& N, double alpha=-1.)
 {	
 	const int n(N);
 	memcpy(workspace, x1, n*sizeof(double));

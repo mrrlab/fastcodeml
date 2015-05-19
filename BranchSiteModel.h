@@ -172,7 +172,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
+	double computeLikelihood(const double* aVar, int aVarLen, bool aTrace)
 	{
 		std::vector<double> x(aVar, aVar+aVarLen);
 		return computeLikelihood(x, aTrace);
@@ -320,7 +320,7 @@ private:
 	/// @param[in] aopt The optimizer to use, already containing all the parameters
 	/// @param[in,out] amaxl The value of the maximum likelihood
 	///
-	void optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
+	//void optimizeUsingNLopt(const std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
 
 public:
 	/// Initialize the times from the input phylogenetic tree.
@@ -353,6 +353,16 @@ private:
 	///
 	BranchSiteModel& operator=(const BranchSiteModel& /*aObj*/);
 
+	/// Disabled copy constructor
+	///
+	/// @fn BranchSiteModel(const BranchSiteModel& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModel(const BranchSiteModel& /*aObj*/);
+
 
 protected:
 	Forest&						mForest;			///< The forest to be used
@@ -377,8 +387,8 @@ protected:
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
 	bool						mNoParallel;		///< True if no preparation for multithreading should be done
-    bool                       mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
-    std::vector<double>		mBranches;          ///< Variable with the branch lengths
+    bool						mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
+    std::vector<double>			mBranches;          ///< Variable with the branch lengths
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
@@ -458,6 +468,16 @@ private:
 	/// @return The object receiving the assignment
 	///
 	BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& /*aObj*/);
+
+	/// Disabled copy constructor
+	///
+	/// @fn BranchSiteModelNullHyp(const BranchSiteModelNullHyp& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModelNullHyp(const BranchSiteModelNullHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///
@@ -546,6 +566,16 @@ private:
 	/// @return The object receiving the assignment
 	///
 	BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& /*aObj*/);
+
+	/// Disabled copy constructor.
+	///
+	/// @fn BranchSiteModelAltHyp(const BranchSiteModelAltHyp& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	BranchSiteModelAltHyp(const BranchSiteModelAltHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///

@@ -141,6 +141,16 @@ private:
 	///
 	Ming2& operator=(const Ming2& /*aObj*/);
 
+	/// Disabled copy constructor
+	///
+	/// @fn Ming2(const Ming2& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	Ming2(const Ming2& /*aObj*/);
+
 
 private:
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed

@@ -7,7 +7,7 @@ double OptAlternatorSQP::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
 	
-	alocateMemory();
+	allocateMemory();
 	
 	double maxl = 1e7;
 	AlternatorSQPminimizer(&maxl, &aVars[0]);
@@ -16,7 +16,7 @@ double OptAlternatorSQP::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptAlternatorSQP::alocateMemory(void)
+void OptAlternatorSQP::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	

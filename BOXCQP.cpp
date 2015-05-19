@@ -275,7 +275,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 
 
 // ----------------------------------------------------------------------
-void BOXCQP::alocateMemory(void)
+void BOXCQP::allocateMemory(void)
 {
 	mSets.resize(mN);
 #ifdef USE_SUBMATRIX_QP

@@ -11,7 +11,7 @@ double OptTrustRegion::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
 	
-	alocateMemory();
+	allocateMemory();
 	
 #ifdef SCALE_OPT_TRUST_REGION_VARIABLES
 	// set the scaling
@@ -46,7 +46,7 @@ double OptTrustRegion::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptTrustRegion::alocateMemory(void)
+void OptTrustRegion::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	

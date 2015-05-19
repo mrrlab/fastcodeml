@@ -243,7 +243,7 @@ void Newick::loadTreeFromString(const std::string& aTreeAsString)
 }
 
 
-void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
+void Newick::printTreeUnformatted(std::ostream& aOut, const TreeNode *aNode) const
 {
 	TreeNode *m;
 	unsigned int idx;
@@ -279,7 +279,7 @@ void Newick::printTreeUnformatted(std::ostream& aOut, TreeNode *aNode) const
 }
 
 
-int Newick::printTreeAnnotated(std::ostream& aOut, TreeNode *aNode, int aInternalBranch) const
+int Newick::printTreeAnnotated(std::ostream& aOut, const TreeNode *aNode, int aInternalBranch) const
 {
 	TreeNode *m;
 	unsigned int idx;

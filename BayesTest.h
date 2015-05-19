@@ -140,6 +140,16 @@ private:
 	///
 	BayesTest& operator=(const BayesTest&);
 
+	/// Disabled copy constructor.
+	///
+	/// @fn BayesTest(const BayesTest& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	BayesTest(const BayesTest&);
+
 private:
 	const static unsigned int BEB_N1D = 10;												///< Number of intervals for w0 and w2
 	const static unsigned int BEB_DIMS = 4;												///< Number of codon classes (0, 1, 2a, 2b)

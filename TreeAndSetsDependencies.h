@@ -103,6 +103,16 @@ private:
 	///
 	TreeAndSetsDependencies& operator=(const TreeAndSetsDependencies& /*aObj*/);
 
+	/// Disabled copy constructor.
+	///
+	/// @fn TreeAndSetsDependencies(const TreeAndSetsDependencies& aObj)
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	TreeAndSetsDependencies(const TreeAndSetsDependencies& /*aObj*/);
+
 private:
 	const Forest&				mForest;						///< The forest for which dependencies should be calculated
 	ListDependencies			mDependenciesClassesAndTrees;	///< The groups of dependencies between trees

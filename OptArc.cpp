@@ -14,7 +14,7 @@ double OptArc::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
 	
-	alocateMemory();
+	allocateMemory();
 	
 	double maxl = 1e7;
 	ArcMinimizer(&maxl, &aVars[0]);
@@ -23,7 +23,7 @@ double OptArc::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptArc::alocateMemory(void)
+void OptArc::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	

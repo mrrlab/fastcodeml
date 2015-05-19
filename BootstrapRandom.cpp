@@ -5,7 +5,7 @@
 double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
-	alocateMemory();
+	allocateMemory();
 	
 	double likelihoodValue = -1000000;
 	
@@ -32,7 +32,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 
 
 // --------------------------------------------------------------------
-double BootstrapRandom::evaluateLikelihood(double *x)
+double BootstrapRandom::evaluateLikelihood(const double *x)
 {
 	memcpy(&x_[0], x, size_vect);
 	return evaluateLikelihood(x_);
@@ -47,7 +47,7 @@ double BootstrapRandom::evaluateLikelihood(const std::vector<double> &x)
 
 
 // --------------------------------------------------------------------
-void BootstrapRandom::alocateMemory(void)
+void BootstrapRandom::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	

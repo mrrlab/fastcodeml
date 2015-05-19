@@ -83,10 +83,10 @@ public:
 
 private:
 
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the space for storage
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 	
 #ifdef SCALE_OPT_VARIABLES
 	/// scaleVariables
@@ -213,7 +213,7 @@ private:
 	///
 	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
 	///
-	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
+	double zoom(double alo, double ahi, const double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
 #endif //STRONG_WOLFE_LINE_SEARCH
 
 private:

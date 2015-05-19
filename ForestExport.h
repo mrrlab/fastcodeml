@@ -54,6 +54,15 @@ private:
 	///
 	ForestExport& operator=(const ForestExport& /*aObj*/);
 
+	/// Disabled copy constructor.
+	///
+	/// @fn ForestExport(const ForestExport& aObj);
+	///
+	/// @param[in] aObj The object to be copied
+	///
+	/// @return The object receiving the assignment
+	///
+	ForestExport(const ForestExport& /* aObj */);
 
 private:
 	const Forest& mForest;	///< The Forest to be exported

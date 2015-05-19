@@ -13,7 +13,7 @@ double OptSQPSR1::maximizeFunction(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
 	
-	alocateMemory();
+	allocateMemory();
 	
 #ifdef SCALE_OPT_VARIABLES_SR1
 	// set the scaling
@@ -48,7 +48,7 @@ double OptSQPSR1::maximizeFunction(std::vector<double>& aVars)
 
 
 // ----------------------------------------------------------------------
-void OptSQPSR1::alocateMemory(void)
+void OptSQPSR1::allocateMemory(void)
 {
 	size_vect = mN*sizeof(double);
 	
@@ -213,17 +213,12 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				x[i] = mUpperBound[i];
 		}
 		
-		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Step length found:" << alpha << std::endl;
-		
-				
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
+			std::cout << "Step length found:" << alpha << std::endl;
 			std::cout << "New Solution:";
 			mModel->printVar(mXEvaluator, *f);
 		}		
-		
 		
 		// check convergence
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
@@ -666,7 +661,7 @@ double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, c
 
 
 // ----------------------------------------------------------------------
-void OptSQPSR1::solveUndefinedQP(double *localLowerBound, double *localUpperBound)
+void OptSQPSR1::solveUndefinedQP(const double *localLowerBound, const double *localUpperBound)
 {
 	int mN_sq = mN*mN;
 	// create a working copy of the hessian

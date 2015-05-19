@@ -72,10 +72,10 @@ public:
 
 private:
 
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the space for storage
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 	
 #ifdef SCALE_OPT_TRUST_REGION_VARIABLES
 	/// scaleVariables

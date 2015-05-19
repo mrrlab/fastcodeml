@@ -72,7 +72,7 @@ public:
 	/// @param[in] aParamStr The parameters string
 	/// @param[in] aHypothesis The hypothesis (0 for H0 and 1 for H1) for which the log-likelihood has been computed
 	///
-    void saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis);
+    void saveParameters(size_t aFgBranch, const std::string& aParamStr, unsigned int aHypothesis);
 
 private:
 	const char*					mFilename;			///< The file to which the results should be written. If null, no printing appear

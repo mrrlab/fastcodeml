@@ -194,7 +194,7 @@ public:
 	/// @param[in] aTimes The array with all the tree times
 	/// @param[out] aNode The node from which to start (if zero starts from the root)
 	///
-	void setLengthsFromTimes(const std::vector<double>& aTimes, ForestNode* aNode=NULL);
+	void setLengthsFromTimes(const std::vector<double>& aTimes, const ForestNode* aNode=NULL);
 
 	/// Change the internal branch identifier for the foreground branch into the corresponding internal branch index.
 	///

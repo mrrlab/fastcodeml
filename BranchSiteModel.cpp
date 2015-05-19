@@ -1872,8 +1872,8 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 }
 
 
-
-void BranchSiteModel::optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, double& amaxl)
+#if 0
+void BranchSiteModel::optimizeUsingNLopt(const std::auto_ptr<nlopt::opt>& aopt, double& amaxl)
 {
 	try
 	{
@@ -1906,7 +1906,7 @@ void BranchSiteModel::optimize_using_nlopt(std::auto_ptr<nlopt::opt>& aopt, doub
 		throw FastCodeMLFatal(o);
 	}
 }
-
+#endif
 /// @page vars_page Layout of free variables
 /// The vector containing the independent variables has the following layout
 ///

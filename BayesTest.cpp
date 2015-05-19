@@ -296,11 +296,10 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 
 	fX = log(fX)+scale2;
 
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
-		                                           << "  Scales = " << scale1 << " " << scale2 << std::endl;
-
 	// Calculate posterior probabilities for sites. scale1 is scale factor
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
+		                                           << "  Scales = " << scale1 << " " << scale2 << "\n\n"
+												   << "Calculating f(w|X), posterior probs of site classes.\n";
 
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{

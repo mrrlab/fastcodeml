@@ -142,7 +142,7 @@ void WriteResults::savePositiveSelSites(size_t aFgBranch, const std::vector<unsi
 	mPositiveSelSites[aFgBranch] = std::make_pair(aPositiveSelSites, aPositiveSelSitesProb);
 }
 
-void WriteResults::saveParameters(size_t aFgBranch, std::string& aParamStr, unsigned int aHypothesis)
+void WriteResults::saveParameters(size_t aFgBranch, const std::string& aParamStr, unsigned int aHypothesis)
 {
 	// If no file set, then do nothing
 	if(!mFilename) return;

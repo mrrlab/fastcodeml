@@ -57,7 +57,7 @@ public:
 	///
 	/// @return The codon index or -1 in case of error or invalid codon at the given position.
 	///
-	long long getCodonIdx(std::string aSpecie, size_t aSite) const;
+	long long getCodonIdx(const std::string& aSpecie, size_t aSite) const;
 
 	/// Set the correct positions in the leave probability vector to 1/num_positions.
 	///

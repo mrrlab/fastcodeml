@@ -81,10 +81,10 @@ public:
 
 private:
 
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the space for storage
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 	
 #ifdef SCALE_OPT_VARIABLES_SR1
 	/// scaleVariables
@@ -203,7 +203,7 @@ private:
 	///   min 0.5 p.Bp + p.g 
 	/// l<=p<=u
 	/// approximately to obtain a search direction
-	void solveUndefinedQP(double *localLowerBound, double *localUpperBound);
+	void solveUndefinedQP(const double *localLowerBound, const double *localUpperBound);
 
 private:
 		

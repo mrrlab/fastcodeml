@@ -68,10 +68,10 @@ public:
 
 private:
 
-	/// alocateMemory
+	/// allocateMemory
 	/// alocate the space for storage
 	///
-	void alocateMemory(void);
+	void allocateMemory(void);
 
 
 	/// ArcMinimizer

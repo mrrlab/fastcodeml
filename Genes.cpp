@@ -34,7 +34,7 @@ bool Genes::validCodon(const char* aCodon, bool aRemoveAmbiguous) const
 }
 
 
-long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
+long long Genes::getCodonIdx(const std::string& aSpecie, size_t aSite) const
 {
 	// Find the specie
 	const unsigned int idx = mMapSpecieToDnaGene.find(aSpecie)->second;
