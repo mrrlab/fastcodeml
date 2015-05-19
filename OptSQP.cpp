@@ -718,11 +718,14 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 	double a, phi_a_prime;
 	double philo = aphi_lo;
 	a = 0.5*(alo+ahi);
-	while( fabs(ahi-alo) > 0.01 )
+	const double tolerance = 0.4 / static_cast<double>(mN);
+	double phi = phi_0;
+	
+	while( fabs(ahi-alo) > tolerance )
 	{
 		double tmp = 0.5;
 		a = tmp*alo + (1.-tmp)*ahi;
-		double phi = evaluateFunctionForLineSearch(x, a);
+		phi = evaluateFunctionForLineSearch(x, a);
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
 		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
 		 
@@ -747,6 +750,18 @@ double OptSQP::zoom(double alo, double ahi, double *x, const double& phi_0, cons
 		}
 	}
 	
+	// make sure to have a small enough step (only if near 0)
+	if (a <= tolerance && phi > phi_0)
+	{
+		int step_decrease = 0;
+		int max_step_decrease = 10;
+		while (step_decrease++ < max_step_decrease)
+		{
+			a *= 0.2;
+			phi = evaluateFunctionForLineSearch(x, a);
+			if (phi < phi_0) step_decrease = max_step_decrease+1;
+		}
+	}
 	return a;
 }
 #endif // STRONG_WOLFE_LINE_SEARCH
