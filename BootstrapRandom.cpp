@@ -20,12 +20,10 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	case RANDOM_TRIES_SEPARATE_VARS:
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], mN);
 		bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
-		//bootstrapEachDirectionRandomly(&likelihoodValue, &aVars[0], 0);
 		break;
 		
 	case EVOLUTION_STRATEGY:
-		//int numGenerations = static_cast<int> (log(static_cast<double>(mN))*1.5);
-		int numGenerations = 5;
+		int numGenerations = (mN>60) ? 8 : 4;
 		bootstrapEvolutionStrategy(&likelihoodValue, &aVars[0], numGenerations);
 		break;
 	};
@@ -64,9 +62,9 @@ void BootstrapRandom::alocateMemory(void)
 	// - 15 for small problems
 	// - 70 for medium to large problems
 	// - linear in between 
-	if(mN < 10)
+	if (mN < 10)
 		mPopSize = 15;
-	else if(mN < 50)
+	else if (mN < 50)
 		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
 	else
 		mPopSize = 70;
@@ -97,7 +95,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
 	if (i < mNumTimes)
 	{
 		while(randNumber >= high || randNumber <= low)
-        		randNumber = gamma_dist_T( rng );
+        	randNumber = gamma_dist_T( rng );
 	}
 	else
 	{
@@ -243,18 +241,17 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNumGenerations)
 {
 	// initialize the state of each individual randomly according to the distribution of the variables
-	int best_individual( 0 );
+	int best_individual = 0;
 	
 	double fmin, fmax;
 	fmin = fmax = -1e16;
-	//double ftot = 0.;
 	
-	for(size_t individual_id( 0 ); individual_id<mPopSize; ++individual_id)
+	for (int individual_id( 0 ); individual_id < mPopSize; ++individual_id)
 	{
 		double *individual_pos = &mPopPos[individual_id*mN];
 		
 		// generate the initial position of individuals
-		for(int i=0; i<mN; ++i)
+		for (int i(0); i<mN; ++i)
 			individual_pos[i] = generateRandom(i);
 			
 		// compute its likelihood
@@ -262,19 +259,17 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		mPopFitness[individual_id] = ftmp;
 		
 		// save the min/max
-		if( fmax<mPopFitness[individual_id] )
+		if ( fmax<mPopFitness[individual_id] )
 		{
 			fmax = ftmp;
 			best_individual = static_cast<int>(individual_id);
 		}
-		//ftot += ftmp;
 		fmin = (ftmp < fmin) ? ftmp : fmin;
-		
 	}
 	*f = fmax;
 	memcpy(x, &mPopPos[best_individual*mN], size_vect);
 	
-	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+	if ( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		std::cout << "Finished initialization of the population, evolving generations..." << std::endl;
 	
 	
@@ -286,67 +281,71 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 	
 	
 	// loop evolving the generations	
-	size_t generation;
-	for(generation=0; generation<maxNumGenerations; ++generation)
+	for (int generation=0; generation<maxNumGenerations; ++generation)
 	{	
-		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		if ( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 			std::cout << "Starting generation " << generation << std::endl;
 			
-		// --children generation from random parents
+		// --children generation from distinct parents / dominant
 		
-		/*
-		for(int i=0; i<lambda<<1; ++i)
-			selected[i] = int( randFrom0to1()*(mPopSize-1) );			
-		*/
-		for(int i=0; i<lambda; ++i)
+		for (int i=0; i<lambda; ++i)
 		{
-			selected[i<<1] = int( randFrom0to1()*(mPopSize-1) );	
-			selected[(i<<1)+1] = best_individual;
+			selected[i<<1] = i<<2; //static_cast<int>( randFrom0to1()*(mPopSize-1) );	
+			if (randFrom0to1() < 0.9)
+				selected[(i<<1)+1] = best_individual;
+			else
+				selected[(i<<1)+1] = i<<2 + 1;
 		}
 		
-		const double half = 0.5;
-		for(size_t childid(0); childid<lambda; ++childid)
+		for (int childid(0); childid<lambda; ++childid)
 		{
-			int parid = selected[childid<<1];
-			double* child = &children[childid*mN];
-			double* parent = &mPopPos[parid*mN];
-			memcpy(child, parent, size_vect);
-			dscal_(&mN, &half, child, &I1);
+			const int parid1 = selected[childid<<1];
+			const int parid2 = selected[(childid<<1)+1];
 			
-			parid = selected[(childid<<1) + 1];
-		
-			parent = &mPopPos[parid*mN];
-			daxpy_(&mN, &half, parent, &I1, child, &I1);
+			double proportion_parent_1 = (mPopFitness[parid1] - fmax);
+			double proportion_parent_2 = (mPopFitness[parid2] - fmax);
+			double tot = proportion_parent_1 + proportion_parent_2;
+			proportion_parent_1 /= tot;
+			proportion_parent_2 /= tot;
+			
+			double* child = &children[childid*mN];
+			double* parent = &mPopPos[parid1*mN];
+			memcpy(child, parent, size_vect);
+			dscal_(&mN, &proportion_parent_1, child, &I1);
+			
+			parent = &mPopPos[parid2*mN];
+			daxpy_(&mN, &proportion_parent_2, parent, &I1, child, &I1);
 		}
 		
 		// --mutations
 		
-		for(int i=0; i<lambda*mN; ++i)
+		for (int i(0); i<lambda*mN; ++i)
 		{	
 			// apply a "little" mutation
-			double prop = 0.8 + 0.15*randFrom0to1();
-			children[i] = prop*children[i] + (1.-prop)*generateRandom(i%mN);
+			const double prop = 0.9 + 0.1*randFrom0to1();
+			children[i] = prop*children[i] + (1.0-prop)*generateRandom(i%mN);
 		}
 		
 		// --selection
 		
-		for(size_t childid(0); childid<lambda; ++childid)
+		for (int childid(0); childid<lambda; ++childid)
 		{
 			double *childPos = &children[childid*mN];
 			double childFitness = evaluateLikelihood(childPos);
 			
-			for(size_t selectTry(0); selectTry<mN; ++selectTry)
+			const int selection_shift = static_cast<const int> (randFrom0to1()*static_cast<double>(mPopSize-1));
+			for (int selectTry(0); selectTry<mN; ++selectTry)
 			{
-				//int randId = int( randFrom0to1()*(mPopSize-1) );
-				if(childFitness > mPopFitness[selectTry])
+				const int selected_oponent = selectTry + selection_shift;
+				if (childFitness > mPopFitness[selected_oponent])
 				{
-					memcpy(&mPopPos[selectTry*mN], childPos, size_vect);
-					mPopFitness[selectTry] = childFitness;
+					memcpy(&mPopPos[selected_oponent*mN], childPos, size_vect);
+					mPopFitness[selected_oponent] = childFitness;
 					
-					if(fmax < childFitness)
+					if (fmax < childFitness)
 					{
 						fmax = childFitness;
-						best_individual = static_cast<int>(selectTry);
+						best_individual = static_cast<int>(selected_oponent);
 					}
 					break;
 				}
