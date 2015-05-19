@@ -331,7 +331,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	dgemv_(&trans, &mN, &mNs, &D1, mQ, &mN, QTg, &I1, &D0, QQTg, &I1);
 	double phi_0_prime = -ddot_(&mN, QQTg, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
-	double a_prev = *aalpha;
+	double a_prev = 0.0;
 	double phi_a_prime;
 	double a = *aalpha;
 	
@@ -339,7 +339,6 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
 	phi_prev = phi_0;
-	a_prev = 0.;
 	phi = evaluateFunctionForArcSearch(x, a);
 	
 	std::cout << "\tDEBUG: phi(" << a << ") = " << phi << std::endl;
@@ -386,7 +385,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	phi_a_prime = (phi - evaluateFunctionForArcSearch(x, a+eh))/eh;
 	
 	iter = 0;
-	if (phi_a_prime < 0.0 && a != *aalpha)
+	if (phi_a_prime < 0.0 && fabs(a - *aalpha) > 1e-8)
 	{
 		double a0 = a_prev;
 		while(phi <= phi_prev && iter < maxIterBack)

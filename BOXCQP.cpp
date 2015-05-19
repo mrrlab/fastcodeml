@@ -3,6 +3,7 @@
 
 #include "blas.h"
 #include "lapack.h"
+#include <math.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -311,12 +312,12 @@ void BOXCQP::updateSets(double *ax)
 	
 	for(int i=0; i<mN; ++i)
 	{
-		if ( (ax[i] < ma[i])   ||   (ax[i] == ma[i] && mLambda[i] >= 0.0) )
+		if ( (ax[i] < ma[i])   ||   ( fabs(ax[i] - ma[i]) < 1e-8 && mLambda[i] >= 0.0) )
 		{
 			mSets[i] = LSET;
 			mListLset.push_back(i);
 		}
-		else if ( (ax[i] > mb[i])   ||   (ax[i] == mb[i] && mMu[i] >= 0.0) )
+		else if ( (ax[i] > mb[i])   ||   ( fabs(ax[i] - mb[i]) < 1e-8  && mMu[i] >= 0.0) )
 		{
 			mSets[i] = USET;
 			mListUset.push_back(i);
@@ -331,9 +332,9 @@ void BOXCQP::updateSets(double *ax)
 	#pragma omp parallel for
 	for(int i=0; i<mN; ++i)
 	{
-		if ( (ax[i] < ma[i])   ||   (ax[i] == ma[i] && mLambda[i] >= 0.0) )
+		if ( (ax[i] < ma[i])   ||   ( fabs(ax[i] - ma[i]) < 1e-8 && mLambda[i] >= 0.0) )
 			mSets[i] = LSET;
-		else if ( (ax[i] > mb[i])   ||   (ax[i] == mb[i] && mMu[i] >= 0.0) )
+		else if ( (ax[i] > mb[i])   ||   ( fabs(ax[i] - mb[i]) < 1e-8 && mMu[i] >= 0.0) )
 			mSets[i] = USET;
 		else
 			mSets[i] = SSET;

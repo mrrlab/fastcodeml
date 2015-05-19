@@ -326,7 +326,7 @@ void OptAlternatorSQP::lineSearch(double *aalpha, double *x, double *f)
 	double c1 (1e-1);
 	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
-	double a_prev = *aalpha;
+	double a_prev = 0.0;
 	double phi_a_prime;
 	double a = *aalpha;
 	
@@ -334,7 +334,6 @@ void OptAlternatorSQP::lineSearch(double *aalpha, double *x, double *f)
 		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
 	
 	phi_prev = phi_0;
-	a_prev = 0.;
 	phi = evaluateFunctionForLineSearch(x, a);
 	
 	double sigma = 0.3;
