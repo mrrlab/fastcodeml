@@ -294,7 +294,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 			if (randFrom0to1() < 0.9)
 				selected[(i<<1)+1] = best_individual;
 			else
-				selected[(i<<1)+1] = i<<2 + 1;
+				selected[(i<<1)+1] = (i<<2) + 1;
 		}
 		
 		for (int childid(0); childid<lambda; ++childid)
