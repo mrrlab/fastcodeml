@@ -521,19 +521,19 @@ void dgemv_(const char *trans,
 ///           in  the  calling  (sub)  program.   LDC  must  be  at  least
 ///           max( 1, m ).
 ///
-void dgemm_(const char *transA
-	,const char *transB
-	,const int *M
-	,const int *N
-	,const int *K
-	,const double *ALPHA
-	,const double *A
-	,const int *LDA
-	,const double *B
-	,const int *LDB
-	,const double *BETA
-	,double *C
-	,const int *LDC);
+void dgemm_(const char *TRANSA
+			,const char *TRANSB
+			,const int *M
+			,const int *N
+			,const int *K
+			,const double *ALPHA
+			,const double *A
+			,const int *LDA
+			,const double *B
+			,const int *LDB
+			,const double *BETA
+			,double *C
+			,const int *LDC);
 
 
 #ifdef __cplusplus

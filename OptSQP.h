@@ -84,7 +84,7 @@ public:
 private:
 
 	/// allocateMemory
-	/// alocate the space for storage
+	/// allocate the space for storage
 	///
 	void allocateMemory(void);
 	
@@ -221,7 +221,7 @@ private:
 	bool 						mH1Optimization;	///< true if performing the optimization for H1 hypothesis	
 	
 	int 						mN;					///< Number of unknown parameters
-	size_t						size_vect;			///< Size in memory of a mN vector
+	size_t						mSizeVect;			///< Size in memory of a mN vector
 	
 	std::vector<double>			mSpace;				///< Work and storage space
 	std::vector<double> 		mXEvaluator;		///< Workspace for function evaluations

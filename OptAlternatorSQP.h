@@ -83,18 +83,10 @@ private:
 		SPACE_EXTRA_ONLY		///< only parameters {v0, v1, w0, k, w2}
 	};
 	
-	/// getSpaceProperties
-	/// gives the indices of variables of current space (bounds)
-	///
-	/// @param[out]	idFirstVar	The index of first variable of the space
-	/// @param[out]	idLastVar	The index of last variable of the space
-	///
-	//void getSpaceProperties(int& idFirstVar, int& idLastVar) const;
-
 private:
 
 	/// allocateMemory
-	/// alocate the space for storage
+	/// allocate the space for storage
 	///
 	void allocateMemory(void);
 	
@@ -169,7 +161,7 @@ private:
 	
 	int							mNumTimes;			///< Number of branches in the optimizer
 	int 						mN;					///< Number of unknown parameters
-	size_t						size_vect;			///< Size in memory of a mN vector
+	size_t						mSizeVect;			///< Size in memory of a mN vector
 	
 	std::vector<double>			mSpace;				///< Work and storage space
 	std::vector<double> 		mXEvaluator;		///< Workspace for function evaluations

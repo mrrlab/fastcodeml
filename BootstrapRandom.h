@@ -62,15 +62,15 @@ public:
 				   ,int aMaxIterations
 				   ,int aNumTimes
 				   ,unsigned int aSeed) 
-		:rng(aSeed)
-		,gamma_dist_T(0.5031126, 0.1844347)
-		,exp_dist_v0(9.441686)
-		//,exp_dist_v0(11.13923)
-		,gamma_dist_v1(0.8764469, 0.126567)
-		,beta_dist_w0(1.638631, 21.841174)
-		,gamma_dist_k(7.547445, 0.5789037)
-		//,gamma_dist_w2(0.209741, 274.537247)
-		,gamma_dist_w2(0.209741, 0.5)
+		:mUnifRandNumGenerator(aSeed)
+		,mGammaDistT(0.5031126, 0.1844347)
+		,mExpDistV0(9.441686)
+		//,mExpDistV0(11.13923)
+		,mGammaDistV1(0.8764469, 0.126567)
+		,mBetaDistW0(1.638631, 21.841174)
+		,mGammaDistK(7.547445, 0.5789037)
+		//,mGammaDistW2(0.209741, 274.537247)
+		,mGammaDistW2(0.209741, 0.5)
 		,mN(0)
 		,mModel(aModel)
 		,mTrace(aTrace)
@@ -109,7 +109,7 @@ private:
 private:
 	
 	/// allocateMemory
-	/// alocate the needed space to store the current best variables and the workspace
+	/// allocate the needed space to store the current best variables and the workspace
 	///
 	void allocateMemory(void);
 	
@@ -178,22 +178,22 @@ private:
 	
 private:
 	
-	RNGType 										rng;			///< Uniform andom number generator
+	RNGType 										mUnifRandNumGenerator;	///< Uniform random number generator
 	
-	boost::random::gamma_distribution<double> 		gamma_dist_T;	///< distribution of the branchLengths(mixture)
-    boost::random::exponential_distribution<double> exp_dist_v0;	///< distribution of 1 - v0
-    boost::random::gamma_distribution<double> 		gamma_dist_v1;	///< distribution of 1 - v1
-	boost::random::beta_distribution<double> 		beta_dist_w0;	///< distribution of w0
-    boost::random::gamma_distribution<double> 		gamma_dist_k;	///< distribution of kappa
-    boost::random::gamma_distribution<double> 		gamma_dist_w2;	///< distribution of w2 - 1
+	boost::random::gamma_distribution<double> 		mGammaDistT;	///< distribution of the branchLengths(mixture)
+    boost::random::exponential_distribution<double> mExpDistV0;	///< distribution of 1 - v0
+    boost::random::gamma_distribution<double> 		mGammaDistV1;	///< distribution of 1 - v1
+	boost::random::beta_distribution<double> 		mBetaDistW0;	///< distribution of w0
+    boost::random::gamma_distribution<double> 		mGammaDistK;	///< distribution of kappa
+    boost::random::gamma_distribution<double> 		mGammaDistW2;	///< distribution of w2 - 1
 	
 	
 private:
 		
 	int							mN;					///< Number of unknown parameters
-	size_t						size_vect;			///< Size in memory of a mN vector
+	size_t						mSizeVect;			///< Size in memory of a mN vector
 	
-	std::vector<double>			x_;					///< Copy of the variables used to evaluate the function
+	std::vector<double>			mVarsCopy;			///< Copy of the variables used to evaluate the function
 	std::vector<double>			mSpace;				///< work space
 
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed

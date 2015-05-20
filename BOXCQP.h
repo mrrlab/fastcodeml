@@ -44,7 +44,6 @@ public:
 			mRHS(NULL),
 			mLHS(NULL),
 			mB(NULL),
-			md(NULL),
 			mLambda(NULL),
 			mMu(NULL),
 			mSets(),
@@ -53,12 +52,12 @@ public:
 			mListUset(),
 			mListSset(),
 #else
-			mx_known(NULL),
-			mMu_known(NULL),
-			mLambda_known(NULL),
+			mXKnown(NULL),
+			mMuKnown(NULL),
+			mLambdaKnown(NULL),
 #endif //USE_SUBMATRIX_QP
-			ma(aLowerBound),
-			mb(aUpperBound)
+			mLowerBounds(aLowerBound),
+			mUpperBounds(aUpperBound)
 	{
 		allocateMemory();
 	}
@@ -67,29 +66,29 @@ public:
 	/// solveQP
 	/// solve the quadratic program using the BOXCQP algorithm
 	///
-	/// @param[in]  B the matrix B
-	/// @param[in]  d the d vector
-	/// @param[in]	LDA the leading dimension of matrix B
-	/// @param[out] x the solution vector
-	/// @param[out] aSolutionOnBorder true if the solution is on the bounds, false otherwise
-	/// @param[in,out]	 unconstrained_direction	Solution for the unconstrained problem if not NULL.
+	/// @param[in]		aB the matrix B
+	/// @param[in]		aD the d vector
+	/// @param[in]		aLDB the leading dimension of matrix B
+	/// @param[out]		aX the solution vector
+	/// @param[out]		aSolutionOnBorder true if the solution is on the bounds, false otherwise
+	/// @param[in,out]	aUnconstrainedDirection	Solution for the unconstrained problem if not NULL.
 	///
-	void solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder, double *unconstrained_direction = NULL);
+	void solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection = NULL);
 	
 	
 private:
 	
 	/// allocateMemory
-	/// alocate the space for work
+	/// allocate the space for work
 	///
 	void allocateMemory(void);
 	
 	/// updateSets
 	/// update the vector representing the sets
 	///
-	/// @param[in] ax The current solution vector
+	/// @param[in] aX The current solution vector
 	///
-	void updateSets(double *ax);
+	void updateSets(double *aX);
 	
 private:
 	
@@ -98,37 +97,36 @@ private:
 	///
 	enum ActiveSet
 	{
-		LSET,	//< set {i: xi < ai , or xi = a1 and lambda_i >= 0}	
-		USET,	//< set {i: xi > bi , or xi = b1 and mu_i >= 0}
-		SSET	//< set {i: ai < xi < bi , or xi = a1 and lambdai < 0 , or xi = b1 and mu_i < 0}
+		LSET,	///< set {i: xi < ai , or xi = a1 and lambda_i >= 0}	
+		USET,	///< set {i: xi > bi , or xi = b1 and mu_i >= 0}
+		SSET	///< set {i: ai < xi < bi , or xi = a1 and lambdai < 0 , or xi = b1 and mu_i < 0}
 	};
 
 private:
 
-	int 					mN;				//< size of the problem
+	int 					mN;				///< size of the problem
 	
-	std::vector<double>		mSpace;			//< workspace
-	double*					mRHS;			//< right hand side vector used for the linear system 
-	double*					mLHS;			//< left hand side matrix used for the linear system
+	std::vector<double>		mSpace;			///< workspace
+	double*					mRHS;			///< right hand side vector used for the linear system 
+	double*					mLHS;			///< left hand side matrix used for the linear system
 	
-	double*					mB;				//< B matrix
-	double*					md;				//< d vector
-	double*					mLambda;		//< Lagrange variables, lower constraints
-	double*					mMu;			//< Lagrange variables, upper constraints
+	double*					mB;				///< B matrix
+	double*					mLambda;		///< Lagrange variables, lower constraints
+	double*					mMu;			///< Lagrange variables, upper constraints
 	
-	std::vector<ActiveSet>	mSets;			//< sets in which each variable belongs
+	std::vector<ActiveSet>	mSets;			///< sets in which each variable belongs
 #ifdef USE_SUBMATRIX_QP
-	std::vector<int>		mListLset;		//< list containing the L set
-	std::vector<int>		mListUset;		//< list containing the U set
-	std::vector<int>		mListSset;		//< list containing the S set
+	std::vector<int>		mListLset;		///< list containing the L set
+	std::vector<int>		mListUset;		///< list containing the U set
+	std::vector<int>		mListSset;		///< list containing the S set
 #else
-	double*					mx_known;		//<	helper for solving linear system
-	double*					mMu_known;		//<	helper for solving linear system
-	double*					mLambda_known;	//<	helper for solving linear system
+	double*					mXKnown;		///< helper for solving linear system
+	double*					mMuKnown;		///< helper for solving linear system
+	double*					mLambdaKnown;	///< helper for solving linear system
 #endif //USE_SUBMATRIX_QP
 
-	double*					ma;				//< lower bounds (constraints)
-	double*					mb;				//< upper bounds (constraints)
+	double*					mLowerBounds;	///< lower bounds (constraints)
+	double*					mUpperBounds;	///< upper bounds (constraints)
 };
 
 #endif // BOXCQP_H

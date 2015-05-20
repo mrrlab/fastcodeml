@@ -25,7 +25,7 @@ double OptArc::maximizeFunction(std::vector<double>& aVars)
 // ----------------------------------------------------------------------
 void OptArc::allocateMemory(void)
 {
-	size_vect = mN*sizeof(double);
+	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + 7*mN);	
@@ -78,8 +78,8 @@ void OptArc::ArcMinimizer(double *f, double *x)
 	{
 		// save current parameters
 		double f_prev = *f;
-		memcpy(mGradPrev, mGradient, size_vect);
-		memcpy(mXPrev, x, size_vect);
+		memcpy(mGradPrev, mGradient, mSizeVect);
+		memcpy(mXPrev, x, mSizeVect);
 		
 		// prepare the arc search
 		computeSubspaceArcSearch(x);
@@ -128,10 +128,10 @@ void OptArc::ArcMinimizer(double *f, double *x)
 			
 			computeGradient(x, *f, mGradient);
 				
-			memcpy(mSk, x, size_vect);
+			memcpy(mSk, x, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
-			memcpy(mYk, mGradient, size_vect);
+			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -150,7 +150,7 @@ void OptArc::ArcMinimizer(double *f, double *x)
 // ----------------------------------------------------------------------
 double OptArc::evaluateFunction(const double *x, bool aTrace)
 {
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
@@ -170,7 +170,7 @@ double OptArc::evaluateFunctionForArcSearch(const double* x, double alpha)
 	// introduce perturbation if the gradient and search direction are too similar
 	double *g_perturbed = mWorkSpaceMat;
 	double *Bp = g_perturbed+mN;
-	memcpy(g_perturbed, mGradient, size_vect);
+	memcpy(g_perturbed, mGradient, mSizeVect);
 	
 	//dscal_(&mN, &minus_one, g_perturbed, &I1);
 	//projectedDirection(x, g_perturbed);
@@ -223,7 +223,7 @@ void OptArc::computeGradient(const double *x, double f0, double *aGrad)
 	volatile double eh;
 	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 	size_t i;
 	double *delta = mWorkSpaceVect;
 	
@@ -250,7 +250,7 @@ void OptArc::computeGradient(const double *x, double f0, double *aGrad)
 	}
 	
 	// other variables
-	memcpy(&mXEvaluator[0], x_, size_vect);
+	memcpy(&mXEvaluator[0], x_, mSizeVect);
 	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] <= 1)
@@ -424,7 +424,7 @@ void OptArc::arcSearch(double *aalpha, double *x, double *f)
 	
 	*aalpha = a;
 	*f = evaluateFunctionForArcSearch(x, a);
-	memcpy(x, &mXEvaluator[0], size_vect);
+	memcpy(x, &mXEvaluator[0], mSizeVect);
 }
 
 
@@ -437,7 +437,7 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 	char range = 'I';
 	char uplo = 'U';
 	double *B = mWorkSpaceMat;
-	memcpy(B, mHessian, mN*size_vect);
+	memcpy(B, mHessian, mN*mSizeVect);
 	
 	double *vl_not_used = NULL, *vu_not_used = NULL;
 	int M;
@@ -482,8 +482,8 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 	if (mLambdaMin > 0.0)
 	{
 		// take the direction mP = - B^-1 g projected
-		memcpy(B, mHessian, mN*size_vect);
-		memcpy(mP, mGradient, size_vect);
+		memcpy(B, mHessian, mN*mSizeVect);
+		memcpy(mP, mGradient, mSizeVect);
 		dgesv(&mN, &I1, B, &mN, &iwork[0], mP, &mN, &info);
 		if (info != 0)
 			std::cout << "ERROR : dgesv in OptArc::computeSubspaceArcSearch: info = " << info << std::endl;
@@ -503,9 +503,9 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 	
 	// form subspace S
 	double *S = mQ;
-	memcpy(S, mGradient, size_vect);
+	memcpy(S, mGradient, mSizeVect);
 	dscal_(&mN, &minus_one, S, &I1);
-	memcpy(S+mN, mP, size_vect);
+	memcpy(S+mN, mP, mSizeVect);
 	
 	// only consider free variables
 	//projectActiveSet(S);
@@ -582,7 +582,7 @@ void OptArc::findMaxStep(const double *x, double *amax)
 	double *g_perturbed = mWorkSpaceMat;
 	double *Bp = g_perturbed+mN;
 	
-	memcpy(g_perturbed, mGradient, size_vect);
+	memcpy(g_perturbed, mGradient, mSizeVect);
 	
 	//dscal_(&mN, &minus_one, g_perturbed, &I1);
 	//projectedDirection(x, g_perturbed);
@@ -694,7 +694,7 @@ void OptArc::updateActiveSet(const double *x)
 
 
 // ----------------------------------------------------------------------
-void OptArc::projectActiveSet(double *aVect)
+void OptArc::projectActiveSet(double *aVect) const
 {
 	#pragma omp parallel for
 	for (int i=0; i<mN; ++i)

@@ -48,7 +48,7 @@ double OptTrustRegion::maximizeFunction(std::vector<double>& aVars)
 // ----------------------------------------------------------------------
 void OptTrustRegion::allocateMemory(void)
 {
-	size_vect = mN*sizeof(double);
+	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*8);
@@ -182,7 +182,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		// ---- check convergence
 		
 		// compute the projected gradient
-		memcpy(mProjectedGradient, mGradient, size_vect);
+		memcpy(mProjectedGradient, mGradient, mSizeVect);
 		#pragma omp parallel for 
 		for (int i=0; i<mN; ++i)
 		{
@@ -248,7 +248,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		
 		// candidate solution
 		double *x_candidate = &x_candidate_[0];
-		memcpy(x_candidate, x, size_vect);
+		memcpy(x_candidate, x, mSizeVect);
 		daxpy_(&mN, &D1, mP, &I1, x_candidate, &I1);
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
@@ -298,11 +298,11 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 		if (improvement_ratio > threshold_acceptance_ratio)
 		{
 			// save previous solution
-			memcpy(mGradPrev, mGradient, size_vect);
-			memcpy(mXPrev, x, size_vect);
+			memcpy(mGradPrev, mGradient, mSizeVect);
+			memcpy(mXPrev, x, mSizeVect);
 
 			// update solution
-			memcpy(x, x_candidate, size_vect);
+			memcpy(x, x_candidate, mSizeVect);
 			*f = evaluateFunction(x, mTrace);
 			computeGradient(x, *f, mGradient);
 			
@@ -313,10 +313,10 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 			}	
 				
 			// update the hessian matrix
-			memcpy(mSk, x, size_vect);
+			memcpy(mSk, x, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
-			memcpy(mYk, mGradient, size_vect);
+			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -350,7 +350,7 @@ void OptTrustRegion::SQPminimizer(double *f, double *x)
 // ----------------------------------------------------------------------
 double OptTrustRegion::evaluateFunction(const double *x, bool aTrace)
 {
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 #ifdef SCALE_OPT_TRUST_REGION_VARIABLES
 	unscaleVariables(&mXEvaluator[0]);
 #endif // SCALE_OPT_TRUST_REGION_VARIABLES
@@ -367,7 +367,7 @@ double OptTrustRegion::evaluateFunction(const double *x, bool aTrace)
 double OptTrustRegion::computeRatio(double f0, double *dx, double f)
 {	
 	double *dx_proj = mWorkSpaceVect;
-	memcpy(dx_proj, dx, size_vect);
+	memcpy(dx_proj, dx, mSizeVect);
 	
 	#pragma omp parallel for
 	for (int i=0; i<mN; ++i)
@@ -408,14 +408,14 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 	volatile double eh;
 	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 	size_t i;
 	double *delta = mWorkSpaceVect;
 	
 	
 #ifdef SCALE_OPT_TRUST_REGION_VARIABLES
 	double *x_ = mWorkSpaceMat;
-	memcpy(x_, x, size_vect);
+	memcpy(x_, x, mSizeVect);
 	unscaleVariables(&mXEvaluator[0]);
 	unscaleVariables(x_);
 #else
@@ -443,7 +443,7 @@ void OptTrustRegion::computeGradient(const double *x, double f0, double *aGrad)
 	}
 	
 	// other variables
-	memcpy(&mXEvaluator[0], x_, size_vect);
+	memcpy(&mXEvaluator[0], x_, mSizeVect);
 	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] < 2)
@@ -488,7 +488,7 @@ void OptTrustRegion::hessianUpdate(void)
 	
 	// compute vector v = y-B*mSk
 	v = mWorkSpaceVect;
-	memcpy(v, mYk, size_vect);
+	memcpy(v, mYk, mSizeVect);
 	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mSk, &I1, &D1, v, &I1); 	
 	
 	
@@ -579,6 +579,7 @@ void find_t_GCP(const int N, const double *localLowerBound, const double *localU
 /// @param[in]		d				vector d
 /// @param[in]		t				parameter t
 /// @param[out]		aSetJ			The set J containing the "blocking variables"
+/// @param[in]		step_GCP		Step (TBD)
 ///
 void updateJSet(const int N, const double *localLowerBound, const double *localUpperBound, const double *p, const double *d, const double t, std::vector<int>& aSetJ, int step_GCP)
 {
@@ -615,11 +616,11 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 	
 	dcopy_(&mN, &D0, &I0, cauchy_point_from_x, &I1);
 	
-	memcpy(d, mProjectedGradient, size_vect);
-	//memcpy(d, mGradient, size_vect);
+	memcpy(d, mProjectedGradient, mSizeVect);
+	//memcpy(d, mGradient, mSizeVect);
 	//double scale_d = -sqrt(DBL_EPSILON)/dnrm2_(&mN, mGradient, &I1);
 	dscal_(&mN, &minus_one, d, &I1);	
-	memcpy(g, mGradient, size_vect);
+	memcpy(g, mGradient, mSizeVect);
 	
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
 	f_prime = ddot_(&mN, g, &I1, d, &I1);
@@ -655,7 +656,7 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 			else
 			{
 				// update line derivatives
-				memcpy(active_part_d, d, size_vect);
+				memcpy(active_part_d, d, mSizeVect);
 				#pragma omp parallel for
 				for (int i=0; i<mN; ++i)
 				{
@@ -710,10 +711,10 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 	
 	// set r <- -B * cauchy_from_x - g
 #if 0
-	memcpy(r, mGradient, size_vect);
+	memcpy(r, mGradient, mSizeVect);
 	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &minus_one, r, &I1);
 #else
-	memcpy(y, mP, size_vect);
+	memcpy(y, mP, mSizeVect);
 	#pragma omp parallel for
 	for(int i=0; i<mN; ++i)
 	{
@@ -722,7 +723,7 @@ void OptTrustRegion::modifiedConjugateGradient(const double *localLowerBound, co
 			y[i] = 0.0;
 		}
 	}
-	memcpy(r, mProjectedGradient, size_vect);
+	memcpy(r, mProjectedGradient, mSizeVect);
 	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, y, &I1, &minus_one, r, &I1);
 #endif
 	dcopy_(&mN, &D0, &I0, p, &I1);

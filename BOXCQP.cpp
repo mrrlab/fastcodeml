@@ -11,7 +11,7 @@
 //	Class members definition: BOXCQP
 // ----------------------------------------------------------------------
 
-void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x, bool *aSolutionOnBorder, double *unconstrained_direction)
+void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection)
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
@@ -24,21 +24,21 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	dcopy_(&mN, &D0, &I0, mMu, &I1);
 
 	// solution of the unconstrained problem
-	memcpy(x, d, mN*sizeof(double));
-	dscal_(&mN, &minus_one, x, &I1);
+	memcpy(aX, aD, mN*sizeof(double));
+	dscal_(&mN, &minus_one, aX, &I1);
 	
 	#pragma omp parallel for
 	for(int i=0; i<mN; ++i)
-		memcpy(&mLHS[i*mN], &B[i**LDA], mN*sizeof(double));
+		memcpy(&mLHS[i*mN], &aB[i**aLDB], mN*sizeof(double));
 	
-	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], x, &mN, &INFO);
+	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], aX, &mN, &INFO);
 	
 	if (INFO != 0)
 		std::cout << "Error: couldn't solve the initial linear system in BOXCQP. INFO: " << INFO << std::endl;
 	
-	if (unconstrained_direction != NULL)
+	if (aUnconstrainedDirection != NULL)
 	{
-		memcpy(unconstrained_direction, x, mN*sizeof(double));
+		memcpy(aUnconstrainedDirection, aX, mN*sizeof(double));
 	}
 	
 	// verify if the solution is valide
@@ -46,7 +46,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	#pragma omp parallel for reduction(&&: convergenceReached)
 	for(int i=0; i<mN; ++i)
 	{
-		convergenceReached = convergenceReached && (ma[i] <= x[i] && x[i] <= mb[i] );
+		convergenceReached = convergenceReached && (mLowerBounds[i] <= aX[i] && aX[i] <= mUpperBounds[i] );
 	}
 	
 	// If the solution is already valid, it means it is within the bounds 
@@ -56,7 +56,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 	for(size_t step(0); !convergenceReached; ++step)
 	{
 		// --- update the sets
-		updateSets(x);
+		updateSets(aX);
 		
 #ifdef USE_SUBMATRIX_QP
 		
@@ -68,13 +68,13 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		for(it=mListLset.begin(); it!=mListLset.end(); ++it)
 		{
 			i = *it;
-			x[i]	= ma[i];
+			aX[i]	= mLowerBounds[i];
 			mMu[i]	= 0.0;
 		}
 		for(it=mListUset.begin(); it!=mListUset.end(); ++it)
 		{
 			i = *it;
-			x[i]		= mb[i];
+			aX[i]		= mUpperBounds[i];
 			mLambda[i]	= 0.0;
 		}
 		for(it=mListSset.begin(); it!=mListSset.end(); ++it)
@@ -96,21 +96,21 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 			for(jt=mListSset.begin(); jt!=mListSset.end(); ++jt)
 			{
 				j = *jt;
-				mLHS[k] = B[i**LDA+j];
+				mLHS[k] = aB[i**aLDB+j];
 				++k;
 			}
 			// RHS
 			// local variable
-			double rhs_tmp( - d[i] );
+			double rhs_tmp( - aD[i] );
 			for(jt=mListLset.begin(); jt!=mListLset.end(); ++jt)
 			{
 				j = *jt;
-				rhs_tmp -= B[i**LDA + j] * ma[j];
+				rhs_tmp -= aB[i**aLDB + j] * mLowerBounds[j];
 			}
 			for(jt=mListUset.begin(); jt!=mListUset.end(); ++jt)
 			{
 				j = *jt;
-				rhs_tmp -= B[i**LDA + j] * mb[j];
+				rhs_tmp -= aB[i**aLDB + j] * mUpperBounds[j];
 			}
 			mRHS[Nsub] = rhs_tmp;
 			++Nsub;
@@ -128,20 +128,20 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		for(it=mListSset.begin(); it!=mListSset.end(); ++it)
 		{
 			i = *it;
-			x[i] = mRHS[k];
+			aX[i] = mRHS[k];
 			++k;
 		}
 		// lambda
 		for(it=mListLset.begin(); it!=mListLset.end(); ++it)
 		{
 			i = *it;
-			mLambda[i] = ddot_(&mN, &B[i**LDA], &I1, x, &I1) + d[i];
+			mLambda[i] = ddot_(&mN, &aB[i**aLDB], &I1, aX, &I1) + aD[i];
 		}
 		// mu
 		for(it=mListUset.begin(); it!=mListUset.end(); ++it)
 		{
 			i = *it;
-			mMu[i] = -ddot_(&mN, &B[i**LDA], &I1, x, &I1) - d[i];
+			mMu[i] = -ddot_(&mN, &aB[i**aLDB], &I1, aX, &I1) - aD[i];
 		}
 		
 #else // NDEF USE_SUBMATRIX_QP
@@ -154,12 +154,12 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 			switch(mSets[i])
 			{
 				case LSET:
-					x[i] 		= ma[i];
+					aX[i] 		= mLowerBounds[i];
 					mMu[i] 		= 0.0;
 					break;
 				
 				case USET:
-					x[i] 		= mb[i];
+					aX[i] 		= mUpperBounds[i];
 					mLambda[i] 	= 0.0;
 					break;
 				
@@ -171,24 +171,24 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 		}
 		
 		// setup the known vectors; set their values to zero where we don't know it. 
-		memcpy(mLambda_known, 	mLambda, 	mN*sizeof(double));
-		memcpy(mMu_known, 		mMu, 		mN*sizeof(double));
-		memcpy(mx_known, 		x, 			mN*sizeof(double));
+		memcpy(mLambdaKnown, 	mLambda, 	mN*sizeof(double));
+		memcpy(mMuKnown, 		mMu, 		mN*sizeof(double));
+		memcpy(mXKnown, 		aX, 			mN*sizeof(double));
 		#pragma omp parallel for
 		for(int i=0; i<mN; ++i)
 		{
 			switch(mSets[i])
 			{
 				case LSET:
-					mLambda_known[i] = 0.0;
+					mLambdaKnown[i] = 0.0;
 					break;
 				
 				case USET:
-					mMu_known[i] = 0.0;
+					mMuKnown[i] = 0.0;
 					break;
 				
 				case SSET:
-					mx_known[i] = 0.0;
+					mXKnown[i] = 0.0;
 					break;
 			};
 		}
@@ -211,16 +211,16 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 					mLHS[i*(mN+1)] = 1.0;
 					break;
 				case SSET:
-					dcopy_(&mN, &B[i**LDA], &I1, &mLHS[i*mN], &I1);
+					dcopy_(&mN, &aB[i**aLDB], &I1, &mLHS[i*mN], &I1);
 					break;
 			};
 		}
 		
 		// setup the right hand side vector
-		memcpy(mRHS, d, mN*sizeof(double));
-		dgemv_(&trans, &mN, &mN, &D1, B, LDA, mx_known, &I1, &D1, mRHS, &I1);
-		daxpy_(&mN, &D1, mMu_known, &I1, mRHS, &I1);
-		daxpy_(&mN, &minus_one, mLambda_known, &I1, mRHS, &I1);
+		memcpy(mRHS, aD, mN*sizeof(double));
+		dgemv_(&trans, &mN, &mN, &D1, aB, aLDB, mXKnown, &I1, &D1, mRHS, &I1);
+		daxpy_(&mN, &D1, mMuKnown, &I1, mRHS, &I1);
+		daxpy_(&mN, &minus_one, mLambdaKnown, &I1, mRHS, &I1);
 		dscal_(&mN, &minus_one, mRHS, &I1);
 		
 		// solve linear system
@@ -243,7 +243,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 					break;
 				
 				case SSET:
-					x[i] = mRHS[i];
+					aX[i] = mRHS[i];
 					break;
 			};
 		}
@@ -265,7 +265,7 @@ void BOXCQP::solveQP(const double *B, const double *d, const int *LDA, double *x
 					iVariableCorrect = mMu[i] >= 0.0;
 					break;
 				case SSET:
-					iVariableCorrect = (x[i] >= ma[i]) && (x[i] <= mb[i]);
+					iVariableCorrect = (aX[i] >= mLowerBounds[i]) && (aX[i] <= mUpperBounds[i]);
 					break;
 			};
 			convergenceReached = convergenceReached && iVariableCorrect;
@@ -290,10 +290,10 @@ void BOXCQP::allocateMemory(void)
 	mLambda = &mSpace[0];
 	mMu 	= mLambda + mN;
 #ifndef USE_SUBMATRIX_QP
-	mx_known 		= mMu + mN;
-	mMu_known 		= mx_known + mN;
-	mLambda_known 	= mMu_known + mN;
-	mRHS	= mLambda_known + mN;
+	mXKnown 		= mMu + mN;
+	mMuKnown 		= mXKnown + mN;
+	mLambdaKnown 	= mMuKnown + mN;
+	mRHS			= mLambdaKnown + mN;
 #else
 	mRHS	= mMu + mN;
 #endif
@@ -302,7 +302,7 @@ void BOXCQP::allocateMemory(void)
 
 
 // ----------------------------------------------------------------------
-void BOXCQP::updateSets(double *ax)
+void BOXCQP::updateSets(double *aX)
 {
 #ifdef USE_SUBMATRIX_QP
 	mListLset.clear();
@@ -311,12 +311,12 @@ void BOXCQP::updateSets(double *ax)
 	
 	for(int i=0; i<mN; ++i)
 	{
-		if ( (ax[i] < ma[i])   ||   ( fabs(ax[i] - ma[i]) < 1e-8 && mLambda[i] >= 0.0) )
+		if ( (aX[i] < mLowerBounds[i])   ||   ( fabs(aX[i] - mLowerBounds[i]) < 1e-8 && mLambda[i] >= 0.0) )
 		{
 			mSets[i] = LSET;
 			mListLset.push_back(i);
 		}
-		else if ( (ax[i] > mb[i])   ||   ( fabs(ax[i] - mb[i]) < 1e-8  && mMu[i] >= 0.0) )
+		else if ( (aX[i] > mUpperBounds[i])   ||   ( fabs(aX[i] - mUpperBounds[i]) < 1e-8  && mMu[i] >= 0.0) )
 		{
 			mSets[i] = USET;
 			mListUset.push_back(i);
@@ -331,9 +331,9 @@ void BOXCQP::updateSets(double *ax)
 	#pragma omp parallel for
 	for(int i=0; i<mN; ++i)
 	{
-		if ( (ax[i] < ma[i])   ||   ( fabs(ax[i] - ma[i]) < 1e-8 && mLambda[i] >= 0.0) )
+		if ( (aX[i] < mLowerBounds[i])   ||   ( fabs(aX[i] - mLowerBounds[i]) < 1e-8 && mLambda[i] >= 0.0) )
 			mSets[i] = LSET;
-		else if ( (ax[i] > mb[i])   ||   ( fabs(ax[i] - mb[i]) < 1e-8 && mMu[i] >= 0.0) )
+		else if ( (aX[i] > mUpperBounds[i])   ||   ( fabs(aX[i] - mUpperBounds[i]) < 1e-8 && mMu[i] >= 0.0) )
 			mSets[i] = USET;
 		else
 			mSets[i] = SSET;

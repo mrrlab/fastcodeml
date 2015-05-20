@@ -69,7 +69,7 @@ public:
 private:
 
 	/// allocateMemory
-	/// alocate the space for storage
+	/// allocate the space for storage
 	///
 	void allocateMemory(void);
 
@@ -183,7 +183,7 @@ private:
 	///
 	/// @param[in, out] aVect the vector to project
 	///
-	void projectActiveSet(double *aVect);
+	void projectActiveSet(double *aVect) const;
 	
 	/// projectedDirection
 	/// computes the projected direction at point x
@@ -195,7 +195,7 @@ private:
 private:
 		
 	int 						mN;					///< Number of unknown parameters
-	size_t						size_vect;			///< Size in memory of a mN vector
+	size_t						mSizeVect;			///< Size in memory of a mN vector
 	
 	std::vector<double>			mSpace;				///< Work and storage space
 	std::vector<double>			mXEvaluator;		///< Workspace for function evaluations

@@ -51,7 +51,7 @@ double OptSQP::maximizeFunction(std::vector<double>& aVars)
 // ----------------------------------------------------------------------
 void OptSQP::allocateMemory(void)
 {
-	size_vect = mN*sizeof(double);
+	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*7);
@@ -152,15 +152,15 @@ void OptSQP::SQPminimizer(double *f, double *x)
 	for(mStep = 0; !convergenceReached; ++mStep)
 	{
 		// update local bounds
-		memcpy(&localLowerBound[0], &mLowerBound[0], size_vect);
-		memcpy(&localUpperBound[0], &mUpperBound[0], size_vect);
+		memcpy(&localLowerBound[0], &mLowerBound[0], mSizeVect);
+		memcpy(&localUpperBound[0], &mUpperBound[0], mSizeVect);
 		daxpy_(&mN, &minus_one, x, &I1, &localLowerBound[0], &I1);
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		
 		// save current parameters
 		double f_prev = *f;
-		memcpy(mGradPrev, mGradient, size_vect);
-		memcpy(mXPrev, x, size_vect);
+		memcpy(mGradPrev, mGradient, mSizeVect);
+		memcpy(mXPrev, x, mSizeVect);
 		
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -205,7 +205,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 		
 #if 0
 		// gradient free components
-		memcpy(mWorkSpaceVect, mGradient, size_vect);
+		memcpy(mWorkSpaceVect, mGradient, mSizeVect);
 		#pragma omp parallel for
 		for (int i(0); i<mN; ++i)
 		{
@@ -224,10 +224,10 @@ void OptSQP::SQPminimizer(double *f, double *x)
 			
 			computeGradient(x, *f, mGradient);
 				
-			memcpy(mSk, x, size_vect);
+			memcpy(mSk, x, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
-			memcpy(mYk, mGradient, size_vect);
+			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -249,7 +249,7 @@ void OptSQP::SQPminimizer(double *f, double *x)
 // ----------------------------------------------------------------------
 double OptSQP::evaluateFunction(const double *x, bool aTrace)
 {
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 #ifdef SCALE_OPT_VARIABLES
 	unscaleVariables(&mXEvaluator[0]);
 #endif // SCALE_OPT_VARIABLES
@@ -265,7 +265,7 @@ double OptSQP::evaluateFunction(const double *x, bool aTrace)
 // ----------------------------------------------------------------------
 double OptSQP::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
-	memcpy(mWorkSpaceVect, x, size_vect);
+	memcpy(mWorkSpaceVect, x, mSizeVect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
 	return evaluateFunction(mWorkSpaceVect, mTrace);
 }
@@ -277,13 +277,13 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	volatile double eh;
 	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 	size_t i;
 	double *delta = mWorkSpaceVect;
 	
 #ifdef SCALE_OPT_VARIABLES
 	double *x_ = mWorkSpaceMat;
-	memcpy(x_, x, size_vect);
+	memcpy(x_, x, mSizeVect);
 	unscaleVariables(&mXEvaluator[0]);
 	unscaleVariables(x_);
 #else
@@ -311,7 +311,7 @@ void OptSQP::computeGradient(const double *x, double f0, double *aGrad)
 	}
 	
 	// other variables
-	memcpy(&mXEvaluator[0], x_, size_vect);
+	memcpy(&mXEvaluator[0], x_, mSizeVect);
 	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] == 0)

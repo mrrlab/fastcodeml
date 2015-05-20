@@ -50,7 +50,7 @@ double OptSQPSR1::maximizeFunction(std::vector<double>& aVars)
 // ----------------------------------------------------------------------
 void OptSQPSR1::allocateMemory(void)
 {
-	size_vect = mN*sizeof(double);
+	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*8);
@@ -178,16 +178,16 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 	for(mStep = 0; !convergenceReached; ++mStep)
 	{
 		// update local bounds
-		memcpy(&localLowerBound[0], &mLowerBound[0], size_vect);
-		memcpy(&localUpperBound[0], &mUpperBound[0], size_vect);
+		memcpy(&localLowerBound[0], &mLowerBound[0], mSizeVect);
+		memcpy(&localUpperBound[0], &mUpperBound[0], mSizeVect);
 		daxpy_(&mN, &minus_one, x, &I1, &localLowerBound[0], &I1);
 		daxpy_(&mN, &minus_one, x, &I1, &localUpperBound[0], &I1);
 		
 		
 		// save current parameters
 		double f_prev = *f;
-		memcpy(mGradPrev, mGradient, size_vect);
-		memcpy(mXPrev, x, size_vect);
+		memcpy(mGradPrev, mGradient, mSizeVect);
+		memcpy(mXPrev, x, mSizeVect);
 		
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -230,10 +230,10 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			
 			computeGradient(x, *f, mGradient);
 				
-			memcpy(mSk, x, size_vect);
+			memcpy(mSk, x, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 		
-			memcpy(mYk, mGradient, size_vect);
+			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
 		
@@ -294,7 +294,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 // ----------------------------------------------------------------------
 double OptSQPSR1::evaluateFunction(const double *x, bool aTrace)
 {
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 #ifdef SCALE_OPT_VARIABLES_SR1
 	unscaleVariables(&mXEvaluator[0]);
 #endif // SCALE_OPT_VARIABLES_SR1
@@ -311,10 +311,10 @@ double OptSQPSR1::evaluateFunction(const double *x, bool aTrace)
 double OptSQPSR1::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
 #if 0
-	memcpy(mWorkSpaceVect, x, size_vect);
+	memcpy(mWorkSpaceVect, x, mSizeVect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
 #else
-	memcpy(mWorkSpaceVect, x, size_vect);
+	memcpy(mWorkSpaceVect, x, mSizeVect);
 	
 	double a_2 = alpha*0.5;
 	double a_sq_2 = square(alpha)*0.5;
@@ -331,14 +331,14 @@ void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 	volatile double eh;
 	double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
-	memcpy(&mXEvaluator[0], x, size_vect);
+	memcpy(&mXEvaluator[0], x, mSizeVect);
 	size_t i;
 	double *delta = mWorkSpaceVect;
 	
 	
 #ifdef SCALE_OPT_VARIABLES_SR1
 	double *x_ = mWorkSpaceMat;
-	memcpy(x_, x, size_vect);
+	memcpy(x_, x, mSizeVect);
 	unscaleVariables(&mXEvaluator[0]);
 	unscaleVariables(x_);
 #else
@@ -366,7 +366,7 @@ void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 	}
 	
 	// other variables
-	memcpy(&mXEvaluator[0], x_, size_vect);
+	memcpy(&mXEvaluator[0], x_, mSizeVect);
 	for(; i<static_cast<size_t>(mN); ++i)
 	{
 		if (mActiveSet[i] == 0)
@@ -665,7 +665,7 @@ void OptSQPSR1::solveUndefinedQP(const double *localLowerBound, const double *lo
 	int mN_sq = mN*mN;
 	// create a working copy of the hessian
 	double *eigenVectors = mWorkSpaceMat;
-	memcpy(eigenVectors, mHessian, mN*size_vect);
+	memcpy(eigenVectors, mHessian, mN*mSizeVect);
 	
 	// find the eigenvalues and eigenvectors of B
 	const char jobz = 'V';
@@ -710,10 +710,10 @@ void OptSQPSR1::solveUndefinedQP(const double *localLowerBound, const double *lo
 		// form the modified hessian matrix
 		double *lambda_p_S = &work[0];
 		double *convex_hessian = lambda_p_S + mN_sq;
-		memcpy(lambda_p_S, eigenVectors, mN*size_vect);
+		memcpy(lambda_p_S, eigenVectors, mN*mSizeVect);
 		
 		double *gradient = convex_hessian + mN_sq;
-		memcpy(gradient, mGradient, size_vect);
+		memcpy(gradient, mGradient, mSizeVect);
 		//dcopy_(&mN, &D0, &I0, gradient, &I1);
 		//dcopy_(&number_positive_eigenvalues, &mGradient[M+1], &I1, &gradient[M+1], &I1);
 

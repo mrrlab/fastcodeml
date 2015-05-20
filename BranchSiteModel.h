@@ -314,14 +314,6 @@ private:
 		INIT_TIMES_FROM_FILE=8	///< The times come from the tree file
 	};
 	
-	/// optimize calling the nlopt 'optimize function'
-	/// manages all the try/catch
-	///
-	/// @param[in] aopt The optimizer to use, already containing all the parameters
-	/// @param[in,out] amaxl The value of the maximum likelihood
-	///
-	//void optimizeUsingNLopt(const std::auto_ptr<nlopt::opt>& aopt, double& amaxl);
-
 public:
 	/// Initialize the times from the input phylogenetic tree.
 	///

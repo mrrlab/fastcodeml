@@ -36,8 +36,8 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 // --------------------------------------------------------------------
 double BootstrapRandom::evaluateLikelihood(const double *x)
 {
-	memcpy(&x_[0], x, size_vect);
-	return evaluateLikelihood(x_);
+	memcpy(&mVarsCopy[0], x, mSizeVect);
+	return evaluateLikelihood(mVarsCopy);
 }
 
 
@@ -51,9 +51,9 @@ double BootstrapRandom::evaluateLikelihood(const std::vector<double> &x)
 // --------------------------------------------------------------------
 void BootstrapRandom::allocateMemory(void)
 {
-	size_vect = mN*sizeof(double);
+	mSizeVect = mN*sizeof(double);
 	
-	x_.resize(mN);
+	mVarsCopy.resize(mN);
 	mSpace.resize(mN);
 	
 #ifdef BOOTSTRAP_ES
@@ -97,7 +97,7 @@ double BootstrapRandom::generateRandom(unsigned int i)
 	if (i < mNumTimes)
 	{
 		while(randNumber >= high || randNumber <= low)
-        	randNumber = gamma_dist_T( rng );
+        	randNumber = mGammaDistT( mUnifRandNumGenerator );
 	}
 	else
 	{
@@ -110,9 +110,9 @@ double BootstrapRandom::generateRandom(unsigned int i)
         	low = 0.0;
         	high = 1.0;
         	while(v0 >= high || v0 <= low)
-        		v0 = 1.0 - exp_dist_v0( rng );
+        		v0 = 1.0 - mExpDistV0( mUnifRandNumGenerator );
 			while(v1 >= high || v1 <= low)
-        		v1 = 1.0 - gamma_dist_v1( rng );
+        		v1 = 1.0 - mGammaDistV1( mUnifRandNumGenerator );
         	
         	// convert to original proportion variables
         	double a,b, w0, w1;
@@ -143,26 +143,26 @@ double BootstrapRandom::generateRandom(unsigned int i)
 #else
 		case 0: // v0
 			while(randNumber >= high || randNumber <= low)
-        		randNumber = 1.0 - exp_dist_v0( rng );
+        		randNumber = 1.0 - mExpDistV0( mUnifRandNumGenerator );
         	break;
         	
         case 1: // v1
 			while(randNumber >= high || randNumber <= low)
-        		randNumber = 1.0 - gamma_dist_v1( rng );
+        		randNumber = 1.0 - mGammaDistV1( mUnifRandNumGenerator );
         	break;
 #endif
         case 2: // w0
-			randNumber = beta_dist_w0( rng ); // always between 0 and 1
+			randNumber = mBetaDistW0( mUnifRandNumGenerator ); // always between 0 and 1
         	break;
         
         case 3: // kappa
 			while(randNumber >= high || randNumber <= low)
-        		randNumber = gamma_dist_k( rng );
+        		randNumber = mGammaDistK( mUnifRandNumGenerator );
         	break;
         	
         case 4: // w2
 			while(randNumber >= high || randNumber <= low)
-        		randNumber = 1.0 + gamma_dist_w2( rng );
+        		randNumber = 1.0 + mGammaDistW2( mUnifRandNumGenerator );
         	break;
         
         default:
@@ -192,7 +192,7 @@ void BootstrapRandom::bootstrapRandomly(double *f, double *x, unsigned int numTr
         if( rand_f > *f )
         {
         	*f = rand_f;
-        	memcpy(x, rand_x, size_vect);
+        	memcpy(x, rand_x, mSizeVect);
         }
 	}
 }
@@ -206,7 +206,7 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 	
 	double rand_f;
 	double *rand_x = &mSpace[0];
-	memcpy(rand_x, x, size_vect);
+	memcpy(rand_x, x, mSizeVect);
 	
 	unsigned int numTriesPerVar = static_cast<unsigned int>(ceil(log(static_cast<double>(mN))));
 	
@@ -216,8 +216,8 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *f, double *x, int n
 		for(unsigned int j=0; j<numTriesPerVar; ++j)
 		{
 			rand_x[i] = generateRandom(i);
-			memcpy(&x_[0], rand_x, size_vect);
-			rand_f = mModel->computeLikelihoodForGradient(x_, false, i);
+			memcpy(&mVarsCopy[0], rand_x, mSizeVect);
+			rand_f = mModel->computeLikelihoodForGradient(mVarsCopy, false, i);
 			
 			if( rand_f > *f )
 			{
@@ -265,7 +265,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		fmin = (ftmp < fmin) ? ftmp : fmin;
 	}
 	*f = fmax;
-	memcpy(x, &mPopPos[best_individual*mN], size_vect);
+	memcpy(x, &mPopPos[best_individual*mN], mSizeVect);
 	
 	if ( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		std::cout << "Finished initialization of the population, evolving generations..." << std::endl;
@@ -316,7 +316,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 			
 			double* child = &children[childid*mN];
 			double* parent = &mPopPos[parid1*mN];
-			memcpy(child, parent, size_vect);
+			memcpy(child, parent, mSizeVect);
 			dscal_(&mN, &proportion_parent_1, child, &I1);
 			
 			parent = &mPopPos[parid2*mN];
@@ -345,7 +345,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 				const int selected_oponent = selectTry + selection_shift;
 				if (childFitness > mPopFitness[selected_oponent])
 				{
-					memcpy(&mPopPos[selected_oponent*mN], childPos, size_vect);
+					memcpy(&mPopPos[selected_oponent*mN], childPos, mSizeVect);
 					mPopFitness[selected_oponent] = childFitness;
 					
 					if (fmax < childFitness)
@@ -364,7 +364,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *f, double *x, int maxNu
 		
 	// save the best result
 	*f = fmax;
-	memcpy(x, &mPopPos[best_individual*mN], size_vect);
+	memcpy(x, &mPopPos[best_individual*mN], mSizeVect);
 }
 #endif // BOOTSTRAP_ES
 
