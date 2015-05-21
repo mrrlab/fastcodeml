@@ -70,6 +70,16 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
+		,mSizeVect(0)
+		,mGradient(NULL)
+		,mHessian(NULL)
+		,mP(NULL)
+		,mSk(NULL)
+		,mYk(NULL)
+		,mXPrev(NULL)
+		,mGradPrev(NULL)
+		,mWorkSpaceVect(NULL)
+		,mWorkSpaceMat(NULL)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -92,52 +102,52 @@ private:
 	/// scaleVariables
 	/// scale the variables of the problem linearly so it is more adapted to the optimization method
 	///
-	/// @param[in,out] x The variables to be scaled
+	/// @param[in,out] aX The variables to be scaled
 	/// 
-	void scaleVariables(double *x);
+	void scaleVariables(double *aX);
 	
 	/// unscaleVariables
 	/// unscale the variables of the problem linearly to recover the "true" values of the variables
 	///
-	/// @param[in,out] x The variables to be unscaled
+	/// @param[in,out] aX The variables to be unscaled
 	/// 
-	void unscaleVariables(double *x);
+	void unscaleVariables(double *aX);
 #endif // SCALE_OPT_VARIABLES
 
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
 	///	uses quadratic programming to solve local constrained subproblems 
 	/// 
-	/// @param[out] f The minimized function value
-	/// @param[in,out] x The variables to be optimized
+	/// @param[out] aF The minimized function value
+	/// @param[in,out] aX The variables to be optimized
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void SQPminimizer(double *f, double *x);
+	void SQPminimizer(double *aF, double *aX);
 	
 	/// evaluateFunction
 	///	evaluates the function at point x
 	///
-	/// @param[in]	x the point at which one evaluates the function
+	/// @param[in]	aX the point at which one evaluates the function
 	/// @param[in]	aTrace The trace 
 	///
 	/// @return the function value
 	///
 	/// @exception nlopt::forced_stop To force halt the maximization because LRT is already not satisfied
 	///
-	double evaluateFunction(const double *x, bool aTrace);
+	double evaluateFunction(const double *aX, bool aTrace);
 	
 	/// evaluateFunctionForLineSearch
 	///	evaluates the function at point x + alpha*mP
 	///
-	/// @param[in]	x the point x
+	/// @param[in]	aX the point x
 	/// @param[in]	alpha the step length
 	///
 	/// @return the function value
 	///
 	/// @exception FastCodeMLEarlyStopLRT To force halt the maximization because LRT is already not satisfied
 	///
-	double evaluateFunctionForLineSearch(const double* x, double alpha);
+	double evaluateFunctionForLineSearch(const double* aX, double aAlpha);
 	
 	/// computeGradient
 	///	compute the gradient at point x using finite differences aproximation
@@ -146,7 +156,7 @@ private:
 	/// @param[in]	f0 The value at point x
 	/// @param[out]	aGrad The gradient 
 	///
-	void computeGradient(const double *x, double f0, double *aGrad);
+	void computeGradient(const double *aX, double aF0, double *aGrad);
 	
 	/// hessianInitialization
 	///
@@ -167,7 +177,7 @@ private:
 	/// @param[in] x The current variables
 	/// @param[in] tolerance The tolerance for a variable to be in the active set
 	///
-	void activeSetUpdate(const double *x, const double tolerance);
+	void activeSetUpdate(const double *aX, const double aTolerance);
 	
 	/// lineSearch
 	/// perform a line search in the mP direction
@@ -185,14 +195,14 @@ private:
 	///		  is the best solution so the gradient computaion is 
 	///		  valid!
 	///
-	/// @param[in,out] aalpha 	in: initial guess of step length
+	/// @param[in,out] aaApha 	in: initial guess of step length
 	///							out: step length
-	/// @param[in,out] x		in: the original position
+	/// @param[in,out] aX		in: the original position
 	///							out: if success, the new position
-	/// @param[in,out] f		in: the original function value
+	/// @param[in,out] aF		in: the original function value
 	///							out: if success, the new value
 	///
-	void lineSearch(double *aalpha, double *x, double *f);
+	void lineSearch(double *aAlpha, double *aX, double *aF);
 	
 	
 #ifdef STRONG_WOLFE_LINE_SEARCH
@@ -202,18 +212,18 @@ private:
 	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
 	/// chap3 pp.59-60 for more informations on the line search algorithm
 	///
-	/// @param[in] alo	The lower bound of the interval
-	/// @param[in] ahi	The upper bound of the interval
-	/// @param[in] x	The previous position
-	/// @param[in] phi_0		The value phi(0) = f(x + 0.mP)
-	/// @param[in] phi_0_prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
-	/// @param[in] phi_lo		The value of the function at point alo
+	/// @param[in] aAlo	The lower bound of the interval
+	/// @param[in] aAhi	The upper bound of the interval
+	/// @param[in] aX	The previous position
+	/// @param[in] aPhi0		The value phi(0) = f(x + 0.mP)
+	/// @param[in] aPhi0Prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
+	/// @param[in] aPhiLo		The value of the function at point alo
 	/// @param[in] c1	The first wolfe variable
 	/// @param[in] c2	The second wolfe variable
 	///
-	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
+	/// @return	The (approximate) optimal value of a in the interval [aAlo, aAhi]
 	///
-	double zoom(double alo, double ahi, const double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
+	double zoom(double aAlo, double aAhi, const double *aX, const double& aPhi0, const double& aPhi0Prime, const double& aPhiLo, const double& c1, const double& c2);
 #endif //STRONG_WOLFE_LINE_SEARCH
 
 private:
@@ -243,7 +253,6 @@ private:
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
-	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
 	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver
 
