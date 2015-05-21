@@ -24,7 +24,8 @@ enum BootstrapType
 {
 	ONLY_RANDOM_TRIES			= 1,	///< tries multiple initializations from distributions, take the best
 	RANDOM_TRIES_SEPARATE_VARS	= 2,	///< tries by changing variables one at the time and take the best
-	EVOLUTION_STRATEGY			= 3		///< use an evolution strategy (metaheuristics)
+	EVOLUTION_STRATEGY			= 3,	///< use an evolution strategy (metaheuristics)
+	PARTICLE_SWARM				= 4		///< use a particle swarm approach
 };
 
 
