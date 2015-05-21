@@ -8,27 +8,17 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	allocateMemory();
 	
 	double likelihood_value = -1000000;
-	
-	BootstrapType btype = EVOLUTION_STRATEGY;
-	//BootstrapType btype = RANDOM_TRIES_SEPARATE_VARS;
-	switch(btype)
-	{
-	case ONLY_RANDOM_TRIES:
-		bootstrapRandomly(&likelihood_value, &aVars[0], mN);
-		break;
-		
-	case RANDOM_TRIES_SEPARATE_VARS:
-		bootstrapEachDirectionRandomly(&likelihood_value, &aVars[0], mN);
-		bootstrapEachDirectionRandomly(&likelihood_value, &aVars[0], 0);
-		break;
-		
-	case EVOLUTION_STRATEGY:
-		//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
-		int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
-		num_generations = num_generations > 0 ? num_generations : 0;
-		bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);
-		break;
-	};
+#ifdef BOOTSTRAP_ES
+	//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
+	num_generations = num_generations > 0 ? num_generations : 0;
+	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
+#else
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 -4.0 );
+	num_generations = num_generations > 0 ? num_generations : 0;
+	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
+#endif // BOOTSTRAP_ES
+
 	return -likelihood_value;
 }
 
@@ -59,7 +49,6 @@ void BootstrapRandom::allocateMemory(void)
 #ifdef BOOTSTRAP_ES
 	
 	// choose a population size
-#if 1
 	// we take here a population of:
 	// - 15 for small problems
 	// - 70 for medium to large problems
@@ -69,18 +58,38 @@ void BootstrapRandom::allocateMemory(void)
 	else if (mN < 50)
 		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
 	else
-		mPopSize = 70;
-#else
-	// linear model: the population size is linearly dependant 
-	// on the number of variables
-	 mPopSize = 10 + static_cast<int>( 1.15*static_cast<double>(mN) );
-#endif	
+		mPopSize = 70;	
 	mGASpace.resize( mPopSize*(mN+1) );
 	
 	mPopFitness = &mGASpace[0];
 	mPopPos 	= mPopFitness+mPopSize;
 	
 #endif // BOOTSTRAP_ES
+
+#ifdef BOOTSTRAP_PSO
+	
+	// choose a population size
+	// we take here a population of:
+	// - 15 for small problems
+	// - 70 for medium to large problems
+	// - linear in between 
+	if (mN < 10)
+		mPopSize = 15;
+	else if (mN < 50)
+		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
+	else
+		mPopSize = 70;	
+		
+	mPSOSpace.resize( 4*mPopSize*mN + 3*mPopSize );
+	
+	mWorkSpace		= &mPSOSpace[0];
+	mPositions 		= mWorkSpace + mPopSize*mN;
+	mBestPositions	= mPositions + mPopSize*mN;
+	mFitnesses		= mBestPositions + mPopSize*mN;
+	mBestFitnesses	= mFitnesses + mN;
+	mVelocities		= mBestFitnesses + mN;
+	
+#endif // BOOTSTRAP_PSO
 }
 
 
@@ -367,6 +376,130 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	memcpy(aX, &mPopPos[best_individual*mN], mSizeVect);
 }
 #endif // BOOTSTRAP_ES
+
+
+// --------------------------------------------------------------------
+#ifdef BOOTSTRAP_PSO
+void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumGenerations)
+{
+	// don't proceed to bootstrap if aMaxNumGenerations is 0
+	if (aMaxNumGenerations == 0)
+		return;
+	
+	// initialize the population
+	for (int individual_id(0); individual_id<mPopSize; ++individual_id)
+	{
+		double *individual_pos = mPositions + individual_id*mN;
+		double *individual_best_pos = mBestPositions + individual_id*mN;
+		double *individual_velocity = mVelocities + individual_id*mN;
+		// generate the initial position of individuals
+		for (int i(0); i<mN; ++i)
+			individual_pos[i] = generateRandom(i);
+		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
+		// generate velocities
+		for (int i(0); i<mN; ++i)
+		{
+			individual_velocity[i] = -(randFrom0to1()-0.1);
+			int id_var = i-mNumTimes;
+			if (id_var == 0 || id_var == 1)
+			{
+				individual_velocity[i] = -individual_velocity[i];
+			}
+		}
+		// compute log-likelihood
+		double f = evaluateLikelihood(individual_pos);
+		mFitnesses[individual_id]		= f;
+		mBestFitnesses[individual_id]	= f;
+		// save the best
+		if (f >= *aF)
+		{
+			*aF = f;
+			memcpy(aX, individual_pos, mN*sizeof(double));
+		}
+	}
+	
+	// main loop
+	for (int generation_id(0); generation_id < aMaxNumGenerations; ++ generation_id)
+	{
+		const double dt = 1e-4;
+		const double inverse_dt = 1.0 / dt;
+		
+		// evolve the velocities
+		for (int individual_id(0); individual_id<mPopSize; ++individual_id)
+		{	
+			double *individual_pos = mPositions + individual_id*mN;
+			double *individual_best_pos = mBestPositions + individual_id*mN;
+			double *individual_velocity = mVelocities + individual_id*mN;
+			
+			const double inertia 		= 0.5;
+			const double trust_memory 	= 1.5 * randFrom0to1() * inverse_dt;
+			const double trust_best		= 1.5 * randFrom0to1() * inverse_dt;
+			
+			// inertia term
+			dscal_(&mN, &inertia, individual_velocity, &I1);
+			
+			// confidence in memory
+			memcpy(mWorkSpace, individual_best_pos, mN*sizeof(double));
+			daxpy_(&mN, &minus_one, individual_pos, &I1, mWorkSpace, &I1);
+			daxpy_(&mN, &trust_memory, mWorkSpace, &I1, individual_velocity, &I1);
+			
+			// confidence in the swarm
+			memcpy(mWorkSpace, aX, mN*sizeof(double));
+			daxpy_(&mN, &minus_one, individual_pos, &I1, mWorkSpace, &I1);
+			daxpy_(&mN, &trust_best, mWorkSpace, &I1, individual_velocity, &I1);
+		}
+		
+		// update positions
+		const int total_num_variables = mN*mPopSize;
+		daxpy_(&total_num_variables, &dt, mVelocities, &I1, mPositions, &I1);
+		#pragma omp parallel for
+		for (int id(0); id<mN*mPopSize; ++id)
+		{
+			int bound_id = id % mN;
+			double x = mPositions[id];
+			
+#define RESET_VELOCITIES_PSO
+#ifdef RESET_VELOCITIES_PSO
+			if ( x <= mLowerBound[bound_id] )
+			{
+				x = mLowerBound[bound_id];
+				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
+			}
+			if ( x >= mUpperBound[bound_id] )
+			{
+				x = mUpperBound[bound_id];
+				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
+			}
+#else
+			x = max2(x, mLowerBound[bound_id]);
+			x = min2(x, mUpperBound[bound_id]);
+#endif // RESET_VELOCITIES_PSO
+			mPositions[id] = x;
+		}
+		
+		// update fitness
+		for (int individual_id(0); individual_id<mPopSize; ++individual_id)
+		{
+			double *individual_pos = mPositions + individual_id*mN;
+			double f = evaluateLikelihood(individual_pos);
+			mFitnesses[individual_id] = f;
+			if (f >=  mBestFitnesses[individual_id])
+			{
+				mBestFitnesses[individual_id] = f;
+				memcpy(&mBestPositions[individual_id*mN], &individual_pos, mN*sizeof(double));
+				if (f >= *aF) 
+				{
+					*aF = f;
+					memcpy(aX, individual_pos, mN*sizeof(double));
+					std::cout << "New f PSO: " << f << " at step " << generation_id << std::endl;
+				}
+			}
+		}
+	}
+	
+}
+#endif // BOOTSTRAP_PSO
+
 
 
 

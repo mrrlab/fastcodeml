@@ -14,8 +14,12 @@ typedef boost::random::mt19937 RNGType;
 
 
 // uncomment this to use the evolution strategy algorithm bootstrap
-#define BOOTSTRAP_ES
+//#define BOOTSTRAP_ES
 
+#ifndef BOOTSTRAP_ES
+// uncomment this to use the PSO bootstrap
+#define BOOTSTRAP_PSO
+#endif //BOOTSTRAP_ES
 
 /// BootstrapType
 /// type of bootstrap to use
@@ -183,6 +187,31 @@ private:
 	double*						mPopFitness;		///< Values of the fitness function (likelihood) of each individual
 	
 #endif // BOOTSTRAP_ES
+#ifdef BOOTSTRAP_PSO
+
+	/// bootstrapParticlSwarm
+	///	use particle swarm optimization to  bootstrap the optimization, i.e. help to find a good starting point
+	/// 
+	/// @param[out] aF The function value at x(out)
+	/// @param[out] aX The variables to be optimized; only output, will be initialized in the routine
+	/// @param[in] aMaxNumGenerations maximum number of generations
+	///
+	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
+	///
+	void bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumGenerations);
+	
+	private:
+	
+	int						mPopSize;				///< Population size of the ES algorithm
+	std::vector<double> 	mPSOSpace;				///< workspace + space to store positions/velocities of the particles
+	double*					mWorkSpace;				///< work space
+	double*					mPositions;				///< Positions of the particles
+	double*					mFitnesses;				///< corresponding log-likelihood values
+	double*					mBestPositions;			///< best position of each particle
+	double*					mBestFitnesses;			///< corresponding log-likelihood values
+	double*					mVelocities;			///< velocity of each particle
+
+#endif // BOOTSTRAP_PSO
 	
 	
 private:
