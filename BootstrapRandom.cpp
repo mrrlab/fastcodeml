@@ -14,7 +14,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
 #else
-	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 -4.0 );
+	int num_generations = 5.0;
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
 #endif // BOOTSTRAP_ES
@@ -56,7 +56,7 @@ void BootstrapRandom::allocateMemory(void)
 	if (mN < 10)
 		mPopSize = 15;
 	else if (mN < 50)
-		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
+		mPopSize = static_cast<int>(20 + static_cast<float>(mN-10)*1.25);
 	else
 		mPopSize = 70;	
 	mGASpace.resize( mPopSize*(mN+1) );
@@ -76,14 +76,14 @@ void BootstrapRandom::allocateMemory(void)
 	if (mN < 10)
 		mPopSize = 15;
 	else if (mN < 50)
-		mPopSize = static_cast<int>(20 + float(mN-10)*1.25);
+		mPopSize = static_cast<int>(20 + static_cast<float>(mN-10)*1.25);
 	else
 		mPopSize = 70;	
 		
-	mPSOSpace.resize( 4*mPopSize*mN + 3*mPopSize );
+	mPSOSpace.resize( 3*mPopSize*mN + 3*mN );
 	
 	mWorkSpace		= &mPSOSpace[0];
-	mPositions 		= mWorkSpace + mPopSize*mN;
+	mPositions 		= mWorkSpace + mN;
 	mBestPositions	= mPositions + mPopSize*mN;
 	mFitnesses		= mBestPositions + mPopSize*mN;
 	mBestFitnesses	= mFitnesses + mN;
@@ -386,9 +386,14 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	if (aMaxNumGenerations == 0)
 		return;
 	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+	std::cout << "\tInitialize the swarm..." << std::endl;
+	
 	// initialize the population
 	for (int individual_id(0); individual_id<mPopSize; ++individual_id)
 	{
+		std::cout << "\t id = " << individual_id << "/" << mPopSize << std::endl;
+		
 		double *individual_pos = mPositions + individual_id*mN;
 		double *individual_best_pos = mBestPositions + individual_id*mN;
 		double *individual_velocity = mVelocities + individual_id*mN;
@@ -396,6 +401,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		for (int i(0); i<mN; ++i)
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
+		std::cout << "\tInit v:" << std::endl;
 		// generate velocities
 		for (int i(0); i<mN; ++i)
 		{
@@ -406,6 +412,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 				individual_velocity[i] = -individual_velocity[i];
 			}
 		}
+		std::cout << "\tInit f:" << std::endl;
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
 		mFitnesses[individual_id]		= f;
@@ -418,10 +425,15 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		}
 	}
 	
+	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+	std::cout << "\tEvolving swarm:" << std::endl;
+	
 	// main loop
 	for (int generation_id(0); generation_id < aMaxNumGenerations; ++ generation_id)
 	{
-		const double dt = 1e-4;
+		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "\t\t Generation " << generation_id << std::endl;
+		const double dt = 1e-3;
 		const double inverse_dt = 1.0 / dt;
 		
 		// evolve the velocities
@@ -491,7 +503,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 				{
 					*aF = f;
 					memcpy(aX, individual_pos, mN*sizeof(double));
-					std::cout << "New f PSO: " << f << " at step " << generation_id << std::endl;
+					std::cout << "\t\tNew f PSO: " << f << " at step " << generation_id << std::endl;
 				}
 			}
 		}
