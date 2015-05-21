@@ -14,23 +14,12 @@ typedef boost::random::mt19937 RNGType;
 
 
 // uncomment this to use the evolution strategy algorithm bootstrap
-#define BOOTSTRAP_ES
+//#define BOOTSTRAP_ES
 
 #ifndef BOOTSTRAP_ES
 // uncomment this to use the PSO bootstrap
 #define BOOTSTRAP_PSO
 #endif //BOOTSTRAP_ES
-
-/// BootstrapType
-/// type of bootstrap to use
-///
-enum BootstrapType
-{
-	ONLY_RANDOM_TRIES			= 1,	///< tries multiple initializations from distributions, take the best
-	RANDOM_TRIES_SEPARATE_VARS	= 2,	///< tries by changing variables one at the time and take the best
-	EVOLUTION_STRATEGY			= 3,	///< use an evolution strategy (metaheuristics)
-	PARTICLE_SWARM				= 4		///< use a particle swarm approach
-};
 
 
 /// BootstrapRandom class.

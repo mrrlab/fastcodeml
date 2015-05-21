@@ -14,7 +14,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
 #else
-	int num_generations = 5.0;
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
 #endif // BOOTSTRAP_ES
@@ -291,7 +291,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	for (int generation=0; generation<aMaxNumGenerations; ++generation)
 	{	
 		if ( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-			std::cout << "Starting generation " << generation << std::endl;
+			std::cout << "\tStarting generation " << generation << std::endl;
 			
 		// --children generation from distinct parents / dominant
 		for (int i=0; i<lambda; ++i)
@@ -366,6 +366,8 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 				}
 			}
 		}
+		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "\t\tBest individual: f = " << fmax << std::endl;
 	}
 	
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
@@ -402,12 +404,9 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		// generate velocities
 		for (int i(0); i<mN; ++i)
 		{
-			individual_velocity[i] = -(randFrom0to1()-0.1);
 			int id_var = i-mNumTimes;
-			if (id_var == 0 || id_var == 1)
-			{
-				individual_velocity[i] = -individual_velocity[i];
-			}
+			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
+			individual_velocity[i] = -0.0001*(randFrom0to1()-shift);
 		}
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
@@ -428,6 +427,8 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	for (int generation_id(0); generation_id < aMaxNumGenerations; ++ generation_id)
 	{
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+		std::cout << "\t\tGeneration " << generation_id << std::endl;
+		
 		const double dt = 1e-3;
 		const double inverse_dt = 1.0 / dt;
 		
@@ -438,7 +439,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			double *individual_best_pos = mBestPositions + individual_id*mN;
 			double *individual_velocity = mVelocities + individual_id*mN;
 			
-			const double inertia 		= 0.5;
+			const double inertia 		= 0.45 + 0.1/(1.0+static_cast<double>(generation_id));
 			const double trust_memory 	= 1.5 * randFrom0to1() * inverse_dt;
 			const double trust_best		= 1.5 * randFrom0to1() * inverse_dt;
 			
@@ -471,11 +472,13 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			{
 				x = mLowerBound[bound_id];
 				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
+				std::cout << "Touched a lower bound." << std::endl;
 			}
 			if ( x >= mUpperBound[bound_id] )
 			{
 				x = mUpperBound[bound_id];
 				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
+				std::cout << "Touched an upper bound." << std::endl;
 			}
 #else
 			x = max2(x, mLowerBound[bound_id]);
