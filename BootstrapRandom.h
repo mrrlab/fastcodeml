@@ -98,12 +98,20 @@ private:
 	/// evaluateLikelihood
 	/// evaluate the likelihood value of the model at point x
 	///
-	/// @param[in] x the point at which we evaluate the function
+	/// @param[in] aX the point at which we evaluate the function
 	///
 	/// @return the function value
 	///
-	double evaluateLikelihood(const double *x);
-	double evaluateLikelihood(const std::vector<double> &x);
+	double evaluateLikelihood(const double *aX);
+	
+	/// evaluateLikelihood
+	/// evaluate the likelihood value of the model at point x (std::vector version)
+	///
+	/// @param[in] aX the point at which we evaluate the function
+	///
+	/// @return the function value
+	///
+	double evaluateLikelihood(const std::vector<double> &aX);
 
 
 private:
@@ -118,37 +126,37 @@ private:
 	/// generates a random number according to the distribution of the ith variable
 	/// distributions are based on data computed previously
 	///
-	/// @param[in] i the index of the variable to generate
+	/// @param[in] aIndexVariable the index of the variable to generate
 	///
 	/// @return the random value
 	///
-	double generateRandom(unsigned int i);
+	double generateRandom(unsigned int aIndexVariable);
 	
 	
 	/// bootstrapRandomly
 	/// performs a bootstrap algorithm using the distribution of the variables x 
 	/// pick up random points in the space according the distributions of variables
 	/// 
-	/// @param[out] f The function value at x(out)
-	/// @param[in,out] x The variables to be optimized
-	/// @param[in] numTries The number of tests we perform
+	/// @param[out] aF The function value at x(out)
+	/// @param[in,out] aX The variables to be optimized
+	/// @param[in] aNumTries The number of tests we perform
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void bootstrapRandomly(double *f, double *x, unsigned int numTries);	
+	void bootstrapRandomly(double *aF, double *aX, unsigned int aNumTries);	
 	
 	
 	/// bootstrapEachDirectionRandomly
 	/// performs a bootstrap algorithm using the distribution of the variables x 
 	/// pick up random points in each direction according the distributions of variable
 	/// 
-	/// @param[out] f The function value at x(out)
-	/// @param[in,out] x The variables to be optimized
-	/// @param[in] numGlobal The number of numTries in bootstrapRandomly called at the beginning
+	/// @param[out] aF The function value at x(out)
+	/// @param[in,out] aX The variables to be optimized
+	/// @param[in] aNumGlobal The number of numTries in bootstrapRandomly called at the beginning
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void bootstrapEachDirectionRandomly(double *f, double *x, int numGlobal);	
+	void bootstrapEachDirectionRandomly(double *aF, double *aX, int aNumGlobal);	
 	
 	
 	
@@ -158,13 +166,13 @@ private:
 	/// bootstrapEvolutionStrategy
 	///	use evolution strategy to bootstrap the optimization, i.e. help to find a good starting point
 	/// 
-	/// @param[out] f The function value at x(out)
-	/// @param[out] x The variables to be optimized; only output, will be initialized in the routine
-	/// @param[in] maxNumGenerations maximum number of generations
+	/// @param[out] aF The function value at x(out)
+	/// @param[out] aX The variables to be optimized; only output, will be initialized in the routine
+	/// @param[in] aMaxNumGenerations maximum number of generations
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void bootstrapEvolutionStrategy(double *f, double *x, int maxNumGenerations);
+	void bootstrapEvolutionStrategy(double *aF, double *aX, int aMaxNumGenerations);
 	
 private:
 	
