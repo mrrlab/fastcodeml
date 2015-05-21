@@ -392,8 +392,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	// initialize the population
 	for (int individual_id(0); individual_id<mPopSize; ++individual_id)
 	{
-		std::cout << "\t id = " << individual_id << "/" << mPopSize << std::endl;
-		
 		double *individual_pos = mPositions + individual_id*mN;
 		double *individual_best_pos = mBestPositions + individual_id*mN;
 		double *individual_velocity = mVelocities + individual_id*mN;
@@ -401,7 +399,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		for (int i(0); i<mN; ++i)
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
-		std::cout << "\tInit v:" << std::endl;
 		// generate velocities
 		for (int i(0); i<mN; ++i)
 		{
@@ -412,7 +409,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 				individual_velocity[i] = -individual_velocity[i];
 			}
 		}
-		std::cout << "\tInit f:" << std::endl;
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
 		mFitnesses[individual_id]		= f;
@@ -426,13 +422,12 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	}
 	
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-	std::cout << "\tEvolving swarm:" << std::endl;
+	std::cout << "\tEvolving swarm..." << std::endl;
 	
 	// main loop
 	for (int generation_id(0); generation_id < aMaxNumGenerations; ++ generation_id)
 	{
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-		std::cout << "\t\t Generation " << generation_id << std::endl;
 		const double dt = 1e-3;
 		const double inverse_dt = 1.0 / dt;
 		
