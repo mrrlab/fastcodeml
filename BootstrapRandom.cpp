@@ -76,9 +76,9 @@ void BootstrapRandom::allocateMemory(void)
 	if (mN < 10)
 		mPopSize = 15;
 	else if (mN < 50)
-		mPopSize = static_cast<int>(20 + static_cast<float>(mN-10)*1.25);
+		mPopSize = static_cast<int>(20 + static_cast<float>(mN-10)*0.75);
 	else
-		mPopSize = 70;	
+		mPopSize = 60;	
 		
 	mPSOSpace.resize( 3*mPopSize*mN + 3*mN );
 	
@@ -439,7 +439,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			double *individual_best_pos = mBestPositions + individual_id*mN;
 			double *individual_velocity = mVelocities + individual_id*mN;
 			
-			const double inertia 		= 0.4 + 0.3/(1.0+static_cast<double>(generation_id));//1.4 * pow(0.9, 1.0+static_cast<double>(generation_id)); //
+			const double inertia 		= 0.2 + 0.7/(1.0+static_cast<double>(generation_id));//1.4 * pow(0.9, 1.0+static_cast<double>(generation_id)); //
 			const double trust_memory 	= 1.5 * sqrt(randFrom0to1()) * inverse_dt;
 			const double trust_best		= 2.5 * sqrt(randFrom0to1()) * inverse_dt;
 			

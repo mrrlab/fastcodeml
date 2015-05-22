@@ -14,7 +14,7 @@ typedef boost::random::mt19937 RNGType;
 
 
 // uncomment this to use the evolution strategy algorithm bootstrap
-//#define BOOTSTRAP_ES
+#define BOOTSTRAP_ES
 
 #ifndef BOOTSTRAP_ES
 // uncomment this to use the PSO bootstrap
