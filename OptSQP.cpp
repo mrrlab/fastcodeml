@@ -131,7 +131,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 	{
-		std::cout << "Solution after Bootstrap:";
+		std::cout << "Initial point for SQP:";
 		mModel->printVar(mXEvaluator, *aF);
 	}
 	

@@ -14,7 +14,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
 #else
-	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 15.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
 #endif // BOOTSTRAP_ES
@@ -139,7 +139,7 @@ double BootstrapRandom::generateRandom(unsigned int aIndexVar)
         		randNumber = log(w0);
         		std::cout << "v0:"<<randNumber << std::endl;
         	}
-        	else						// v1
+        	else								// v1
         	{
         		randNumber = log(w1);
         		std::cout << "v1:"<<randNumber << std::endl;
@@ -406,7 +406,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		{
 			int id_var = i-mNumTimes;
 			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
-			individual_velocity[i] = -0.0001*(randFrom0to1()-shift);
+			individual_velocity[i] = -1e-3*(randFrom0to1()-shift);
 		}
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
@@ -428,8 +428,8 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	{
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		std::cout << "\t\tGeneration " << generation_id << std::endl;
-		
-		const double dt = 1e-3;
+
+		const double dt = 1.0;
 		const double inverse_dt = 1.0 / dt;
 		
 		// evolve the velocities
@@ -439,9 +439,9 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			double *individual_best_pos = mBestPositions + individual_id*mN;
 			double *individual_velocity = mVelocities + individual_id*mN;
 			
-			const double inertia 		= 0.45 + 0.1/(1.0+static_cast<double>(generation_id));
-			const double trust_memory 	= 1.5 * randFrom0to1() * inverse_dt;
-			const double trust_best		= 1.5 * randFrom0to1() * inverse_dt;
+			const double inertia 		= 0.4 + 0.3/(1.0+static_cast<double>(generation_id));//1.4 * pow(0.9, 1.0+static_cast<double>(generation_id)); //
+			const double trust_memory 	= 1.5 * sqrt(randFrom0to1()) * inverse_dt;
+			const double trust_best		= 2.5 * sqrt(randFrom0to1()) * inverse_dt;
 			
 			// inertia term
 			dscal_(&mN, &inertia, individual_velocity, &I1);
@@ -458,33 +458,57 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		}
 		
 		// update positions
-		const int total_num_variables = mN*mPopSize;
+		int total_num_variables = mN*mPopSize;
 		daxpy_(&total_num_variables, &dt, mVelocities, &I1, mPositions, &I1);
-		#pragma omp parallel for
-		for (int id(0); id<mN*mPopSize; ++id)
+		
+		// treat particles outside the bounds
+		//#pragma omp parallel for
+		for (int id(0); id<mPopSize; ++id)
 		{
-			int bound_id = id % mN;
-			double x = mPositions[id];
-			
-#define RESET_VELOCITIES_PSO
-#ifdef RESET_VELOCITIES_PSO
-			if ( x <= mLowerBound[bound_id] )
+			int pos_id = mN*id;
+			//bool reset_velocity = false;
+			for (int bound_id(0); bound_id<mN; ++bound_id)
 			{
-				x = mLowerBound[bound_id];
-				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
-				std::cout << "Touched a lower bound." << std::endl;
-			}
-			if ( x >= mUpperBound[bound_id] )
-			{
-				x = mUpperBound[bound_id];
-				dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
-				std::cout << "Touched an upper bound." << std::endl;
-			}
+				double x = mPositions[pos_id];
+#if 0				
+				if (reset_velocity)
+				{
+					x = max2(x, mLowerBound[bound_id]);
+					x = min2(x, mUpperBound[bound_id]);
+				}
+				else
+				{
+					if ( x <= mLowerBound[bound_id] )
+					{
+						x = mLowerBound[bound_id];
+						dcopy_(&mN, &D0, &I0, &mVelocities[id*mN], &I1);
+						reset_velocity = true;
+						//std::cout << "Touched a lower bound." << std::endl;
+					}
+					if ( x >= mUpperBound[bound_id] )
+					{
+						x = mUpperBound[bound_id];
+						dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
+						reset_velocity = true;
+						//std::cout << "Touched an upper bound." << std::endl;
+					}
+				}
 #else
-			x = max2(x, mLowerBound[bound_id]);
-			x = min2(x, mUpperBound[bound_id]);
-#endif // RESET_VELOCITIES_PSO
-			mPositions[id] = x;
+				double v = mVelocities[pos_id];
+				if ( x <= mLowerBound[bound_id] )
+				{
+					x = mLowerBound[bound_id];
+					v = (v > 0.0) ? v : 0.0;
+				}
+				if ( x >= mUpperBound[bound_id] )
+				{
+					x = mUpperBound[bound_id];
+					v = (v > 0.0) ? 0.0 : v;
+				}
+				mVelocities[pos_id] = v;
+#endif
+				mPositions[pos_id++] = x;
+			}
 		}
 		
 		// update fitness
@@ -496,7 +520,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			if (f >=  mBestFitnesses[individual_id])
 			{
 				mBestFitnesses[individual_id] = f;
-				memcpy(&mBestPositions[individual_id*mN], &individual_pos, mN*sizeof(double));
+				memcpy(&mBestPositions[individual_id*mN], individual_pos, mN*sizeof(double));
 				if (f >= *aF) 
 				{
 					*aF = f;
