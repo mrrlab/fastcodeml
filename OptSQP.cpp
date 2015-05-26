@@ -182,14 +182,28 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 				mP[i] = min2(mP[i], localUpperBound[i]);
 			}
 		}
+		
+		// try to extend the limits to the boundaries (-> global line search)
+		double alpha = 1e16;
+		for (int i(0); i<mN; ++i)
+		{
+			double l = localLowerBound[i];
+			double u = localUpperBound[i];
+			double p = mP[i];
+			if (p < -1e-8)
+				alpha = min2(alpha, l/p);
+			else if (p > 1e-8)
+				alpha = min2(alpha, u/p);
+		}
+		 
 		 
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
 			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
-			std::cout << "Line Search..." << std::endl;
+			std::cout << "Line Search with a_max = " << alpha << "..." << std::endl;
 		}
 
-		double alpha = 1.0;
+		
 		
 		// line search
 		lineSearch(&alpha, aX, aF);
@@ -489,7 +503,7 @@ void OptSQP::BFGSupdate(void)
 		// make the diagonal more important in order to avoid non positive definite matrix, 
 		// due to roundoff errors; this also speeds up the computation
 		int diag_stride = mN+1;
-		double factor = 1.0 + 1e-1*(1.0-1.0/static_cast<double>(mN));
+		double factor = 1.0 + ((mN>30) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
 		double inv_factor = 1.0/factor;
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
