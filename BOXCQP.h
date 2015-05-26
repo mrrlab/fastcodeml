@@ -24,7 +24,7 @@
 
 // uncomment this to solve reduced linear systems, at the cost of copying the 
 // values sequentially
-#define USE_SUBMATRIX_QP
+//#define USE_SUBMATRIX_QP
 
 class BOXCQP
 {
@@ -64,7 +64,7 @@ public:
 	
 	
 	/// solveQP
-	/// solve the quadratic program using the BOXCQP algorithm
+	/// solve positive definite quadratic program using the BOXCQP algorithm. Returns true if converged.
 	///
 	/// @param[in]		aB the matrix B
 	/// @param[in]		aD the d vector
@@ -73,7 +73,7 @@ public:
 	/// @param[out]		aSolutionOnBorder true if the solution is on the bounds, false otherwise
 	/// @param[in,out]	aUnconstrainedDirection	Solution for the unconstrained problem if not NULL.
 	///
-	void solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection = NULL);
+	bool solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection = NULL);
 	
 	
 private:

@@ -1,6 +1,7 @@
 
 #include "OptSQP.h"
 #include "blas.h"
+#include "lapack.h"
 #include <cfloat>
 #include <iomanip>
 
@@ -168,7 +169,19 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// solve quadratic program to get the search direction		
 		bool QPsolutionOnBorder;
-		mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder);
+		bool QP_converged = mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder, mWorkSpaceVect);
+		
+		if (!QP_converged) // take the projected gradient direction
+		{
+			memcpy(mP, mGradient, mSizeVect);
+			dscal_(&mN, &minus_one, mP, &I1);
+			#pragma omp parallel for
+			for (int i(0); i<mN; ++i)
+			{
+				mP[i] = max2(mP[i], localLowerBound[i]);
+				mP[i] = min2(mP[i], localUpperBound[i]);
+			}
+		}
 		 
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
@@ -215,7 +228,14 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 				mWorkSpaceVect[i] = 0.0;
 			}
 		}
-		std::cout << "|free gradient| = " << std::scientific << std::setprecision(12) << dnrm2_(&mN, mWorkSpaceVect, &I1) << std::endl;
+		double free_gradient_norm = dnrm2_(&mN, mWorkSpaceVect, &I1);
+		std::cout << "|free gradient| = " << std::scientific << std::setprecision(12) << free_gradient_norm << std::endl;
+		if (convergenceReached && free_gradient_norm > 1e-1)
+		{
+			std::cout << "Not converged, reinitialize the hessian." << std::endl;
+			hessianInitialization();
+			convergenceReached = false;
+		}
 #endif
 		
 		if (!convergenceReached)
@@ -237,7 +257,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			BFGSupdate();
 		
 			// update the active set
-			activeSetUpdate(aX, 1e-4);
+			activeSetUpdate(aX, 1e-16);
 		}
 	}
 #ifdef SCALE_OPT_VARIABLES
@@ -388,7 +408,7 @@ void OptSQP::hessianInitialization(void)
 void OptSQP::BFGSupdate(void)
 {
 	// local variables
-	double ys, sBs, theta, sigma, theta_tmp;
+	double ys, sBs;
 	double *Bs, *BssB, *yy;
 	char trans = 'N';
 	
@@ -401,72 +421,129 @@ void OptSQP::BFGSupdate(void)
 	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
 	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 	
-
+	bool reset_hessian = false;
 #if 1	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
-	sigma = 0.2; // empirical value
-	
-	if (ys < sigma * sBs)
+	double sigma = 0.2; // empirical value found by Powell
+	double rho = ys / sBs;
+	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		std::cout << "ys = " << ys << std::endl;
+	if (rho < sigma)
 	{
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
-		
-		theta = sBs - ys;
-		
-		if (fabs(theta) > 1e-8)
+		if (rho < 0.0)
 		{
-			do
-			{
-				theta_tmp = (1.0 - sigma) * sBs / theta;
-				sigma = 0.9*sigma;
-			} while(theta_tmp >= 1.0);
-			
-			theta = theta_tmp;
-			theta_tmp = 1.0 - theta;
-			
-			dscal_(&mN, &theta, mYk, &I1);
-			daxpy_(&mN, &theta_tmp, Bs, &I1, mYk, &I1);
+			reset_hessian = true;
+		}
+		else
+		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
+		
+			double powell_factor = (1.0-sigma) / (1.0 - rho);
+			dscal_(&mN, &powell_factor, mYk, &I1);
+			powell_factor = 1.0 - powell_factor;
+			daxpy_(&mN, &powell_factor, Bs, &I1, mYk, &I1);
+		
 			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "ys = " << ys << " after Powell modification." << std::endl;
 		}
 	}
 #endif
 
-	// compute Matrix B*mSk * mSk^T*B
-	BssB = mWorkSpaceMat;
-	#pragma omp parallel for
-	for (int i=0; i<mN; ++i)
+	if (reset_hessian)
 	{
-		double prefactor = - Bs[i] / sBs;
-		dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
-		dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
+		hessianInitialization();
 	}
-	
-	// add the BssB / sBs contribution
-	daxpy_(&n_sq, &D1, BssB, &I1, mHessian, &I1);
-	
-	// compute matrix y**T * y
-	yy = mWorkSpaceMat;
-	#pragma omp parallel for
-	for (int i=0; i<mN; ++i)
+	else
 	{
-		double prefactor = mYk[i] / ys;
-		dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
-		dscal_(&mN, &prefactor, &yy[i*mN], &I1);
-	}
+		// compute Matrix B*mSk * mSk^T*B
+		BssB = mWorkSpaceMat;
+		#pragma omp parallel for
+		for (int i=0; i<mN; ++i)
+		{
+			double prefactor = - Bs[i] / sBs;
+			dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
+			dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
+		}
 	
-	// add the yy / ys contribution
-	daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
+		// add the BssB / sBs contribution
+		daxpy_(&n_sq, &D1, BssB, &I1, mHessian, &I1);
 	
-#if 1
-	// make the diagonal more important in order to avoid non positive definite matrix, 
-	// due to roundoff errors
-	int diag_stride = mN+1;
-	double factor = 1.1;
-	double inv_factor = 1.0/factor;
-	dscal_(&n_sq, &inv_factor, mHessian, &I1);
-	dscal_(&mN, &factor, mHessian, &diag_stride);
+		// compute matrix y**T * y
+		yy = mWorkSpaceMat;
+		#pragma omp parallel for
+		for (int i=0; i<mN; ++i)
+		{
+			double prefactor = mYk[i] / ys;
+			dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
+			dscal_(&mN, &prefactor, &yy[i*mN], &I1);
+		}
+	
+		// add the yy / ys contribution
+		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
+	
+#if 0
+		// make the diagonal more important in order to avoid non positive definite matrix, 
+		// due to roundoff errors
+		int diag_stride = mN+1;
+		double factor = 1.1;
+		double inv_factor = 1.0/factor;
+		dscal_(&n_sq, &inv_factor, mHessian, &I1);
+		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
+#if 1
+	
+		double *H = mWorkSpaceMat;
+		memcpy(H, mHessian, mN*mSizeVect);
+	
+		double vl = -1e16;
+		double vu = 0.1;
+	
+		double accuracy = 1e-8;
+		int number_eigen_values;
+		double *eigen_values = mWorkSpaceVect;
+	
+		std::vector<double> eigen_vectors(mN*mN);
+		std::vector<int>	isuppz(2*mN);
+		std::vector<double> work(1);
+		std::vector<int> iwork(1);
+		int lwork = -1;
+		int liwork = -1;
+		int info;
+		int i1__not_used__, i2__not_used__;
+		std::cout << "Workspace_querry:" << std::endl;
+		dsyevr_("V", "V", "U"
+			,&mN, H ,&mN
+			,&vl, &vu
+			,&i1__not_used__, &i2__not_used__
+			,&accuracy, &number_eigen_values, eigen_values, &eigen_vectors[0], &mN
+		    ,&isuppz[0], &work[0], &lwork, &iwork[0], &liwork, &info);
+		lwork = static_cast<int>(work[0]);
+		liwork = iwork[0];
+		work.resize(lwork);
+		iwork.resize(liwork);
+	
+		std::cout << "EigenValue solver:" << std::endl;
+		dsyevr_("V", "V", "U"
+			,&mN, H ,&mN
+			,&vl, &vu
+			,&i1__not_used__, &i2__not_used__
+			,&accuracy, &number_eigen_values, eigen_values, &eigen_vectors[0], &mN
+		    ,&isuppz[0], &work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		std::cout << "Negative Eigen Values: " << std::endl;
+		for (int i(0); i<number_eigen_values; ++i)
+		{
+			std::cout << std::setprecision(14) << eigen_values[i] << " ";
+		}
+		std::cout << std::endl;
+    
+		//double diag_to_add = (eigen_values[0] > 1e-2) ? 0.1 : 0.1 + eigen_values[0];
+		//daxpy_(&mN, &diag_to_add, &D1, &I0, mHessian, &I1);
+#endif
+	}
 }
 
 
@@ -538,8 +615,8 @@ void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 	// The time of line search should be small compared to the 
 	// gradient computation
 	
-	max_iter_back = max_iter_up = static_cast<int> (ceil( 3.*log(mN+10.) ));
-	sigma_bas 	= pow(1e-3, 1./static_cast<double>(max_iter_back));
+	max_iter_back = max_iter_up = 20; // static_cast<int> (ceil( 3.*log(mN+10.) ));
+	sigma_bas 	= pow(1e-5, 1./static_cast<double>(max_iter_back));
 	
 	
 	// begin by a backtrace

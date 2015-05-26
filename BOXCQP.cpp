@@ -1,17 +1,17 @@
 
 #include "blas.h"
 #include "lapack.h"
-#include <math.h>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <cmath>
 #include "BOXCQP.h"
 
 // ----------------------------------------------------------------------
 //	Class members definition: BOXCQP
 // ----------------------------------------------------------------------
 
-void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection)
+bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection)
 {
 	std::vector<int> IPIV(mN);
 	int INFO;
@@ -53,7 +53,8 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	*aSolutionOnBorder = convergenceReached;
 	
 	// main loop
-	for(size_t step(0); !convergenceReached; ++step)
+	size_t max_step = 10*mN;
+	for(size_t step(0); !convergenceReached && step < max_step; ++step)
 	{
 		// --- update the sets
 		updateSets(aX);
@@ -218,7 +219,7 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		
 		// setup the right hand side vector
 		memcpy(mRHS, aD, mN*sizeof(double));
-		dgemv_(&trans, &mN, &mN, &D1, aB, aLDB, mXKnown, &I1, &D1, mRHS, &I1);
+		dgemv_("N", &mN, &mN, &D1, aB, aLDB, mXKnown, &I1, &D1, mRHS, &I1);
 		daxpy_(&mN, &D1, mMuKnown, &I1, mRHS, &I1);
 		daxpy_(&mN, &minus_one, mLambdaKnown, &I1, mRHS, &I1);
 		dscal_(&mN, &minus_one, mRHS, &I1);
@@ -271,6 +272,26 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 			convergenceReached = convergenceReached && iVariableCorrect;
 		}	
 	}
+	
+	if (!convergenceReached)
+	{
+		std::cout << "\t\tBOXCQP: convergence not reached." << std::endl;
+	}
+	else
+	{
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			double x = aX[i];
+			double l = mLowerBounds[i];
+			double u = mUpperBounds[i];
+			x = (x < l) ? l:x;
+			x = (x > u) ? u:x;
+			aX[i] = x;
+		}
+	}
+	
+	return convergenceReached;
 }
 
 
