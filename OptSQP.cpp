@@ -485,17 +485,16 @@ void OptSQP::BFGSupdate(void)
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
 	
-#if 0
+#if 1
 		// make the diagonal more important in order to avoid non positive definite matrix, 
-		// due to roundoff errors
+		// due to roundoff errors; this also speeds up the computation
 		int diag_stride = mN+1;
-		double factor = 1.1;
+		double factor = 1.0 + 1e-1*(1.0-1.0/static_cast<double>(mN));
 		double inv_factor = 1.0/factor;
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
 #if 0
-	
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
@@ -567,10 +566,11 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 		{
 #ifdef SCALE_OPT_VARIABLES
 			const double active_set_tol = aTolerance * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3; //aTolerance;
 #else
 			const double active_set_tol = aTolerance;
-#endif // SCALE_OPT_VARIABLES
 			const double y_tolerance = 1e-3; //aTolerance;
+#endif // SCALE_OPT_VARIABLES
 			if (fabs(mYk[i]) < y_tolerance)
 			{			
 				// update active set so we can reduce the gradient computation				
