@@ -246,7 +246,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 				
 			memcpy(mSk, aX, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
-		
+			
 			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
 		
@@ -257,7 +257,8 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			BFGSupdate();
 		
 			// update the active set
-			activeSetUpdate(aX, 1e-16);
+			double tolerance_active_set = 1e-4;
+			activeSetUpdate(aX, tolerance_active_set);
 		}
 	}
 #ifdef SCALE_OPT_VARIABLES
@@ -493,7 +494,7 @@ void OptSQP::BFGSupdate(void)
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-#if 1
+#if 0
 	
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
@@ -569,18 +570,22 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 #else
 			const double active_set_tol = aTolerance;
 #endif // SCALE_OPT_VARIABLES
-			// update active set so we can reduce the gradient computation				
-			if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
-			{
-				mActiveSet[i] = max_count_lower;
-				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tVariable " << i << " in the (lower) active set.\n";
-			}
-			else if (aX[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
-			{
-				mActiveSet[i] = max_count_upper;
-				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+			const double y_tolerance = 1e-3; //aTolerance;
+			if (fabs(mYk[i]) < y_tolerance)
+			{			
+				// update active set so we can reduce the gradient computation				
+				if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
+				{
+					mActiveSet[i] = max_count_lower;
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (lower) active set.\n";
+				}
+				else if (aX[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+				{
+					mActiveSet[i] = max_count_upper;
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+				}
 			}
 		}
 	}
@@ -615,7 +620,7 @@ void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 	// The time of line search should be small compared to the 
 	// gradient computation
 	
-	max_iter_back = max_iter_up = 20; // static_cast<int> (ceil( 3.*log(mN+10.) ));
+	max_iter_back = max_iter_up = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	sigma_bas 	= pow(1e-5, 1./static_cast<double>(max_iter_back));
 	
 	
