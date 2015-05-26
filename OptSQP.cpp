@@ -583,7 +583,7 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3; //aTolerance;
 #else
 			const double active_set_tol = aTolerance;
-			const double y_tolerance = 1e-3; //aTolerance;
+			const double y_tolerance = 1e-3*static_cast<double>(mN)/8.0; //aTolerance;
 #endif // SCALE_OPT_VARIABLES
 			if (fabs(mYk[i]) < y_tolerance)
 			{			

@@ -239,7 +239,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
 	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
 	if(aNumVariables >= 5)
 	{
-		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2 // TODO: check if possible to reduce from 999 to 199
+		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2
 	}
 }
 
