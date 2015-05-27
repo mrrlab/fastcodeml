@@ -557,6 +557,36 @@ void OptSQP::BFGSupdate(void)
 		//double diag_to_add = (eigen_values[0] > 1e-2) ? 0.1 : 0.1 + eigen_values[0];
 		//daxpy_(&mN, &diag_to_add, &D1, &I0, mHessian, &I1);
 #endif
+#if 0 // measure the condition number of the BFGS hessian approximation
+		double *H = mWorkSpaceMat;
+		memcpy(H, mHessian, mN*mSizeVect);
+	
+		double accuracy = 1e-8;
+		int number_eigen_values;
+		double *eigen_values = mWorkSpaceVect;
+	
+		std::vector<double> work(1);
+		std::vector<int> iwork(1);
+		int lwork = -1;
+		int liwork = -1;
+		int info;
+		
+		std::cout << "Workspace_querry:" << std::endl;
+		
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		lwork = static_cast<int>(work[0]);
+		liwork = iwork[0];
+		work.resize(lwork);
+		iwork.resize(liwork);
+	
+		std::cout << "EigenValue solver:" << std::endl;
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		std::cout << "Condition number = " << eigen_values[mN-1] / eigen_values[0] << std::endl;
+#endif
 	}
 }
 
@@ -580,7 +610,7 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 		{
 #ifdef SCALE_OPT_VARIABLES
 			const double active_set_tol = aTolerance * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
-			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3; //aTolerance;
+			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3*static_cast<double>(mN)/8.0; //aTolerance;
 #else
 			const double active_set_tol = aTolerance;
 			const double y_tolerance = 1e-3*static_cast<double>(mN)/8.0; //aTolerance;

@@ -17,6 +17,18 @@ double Ming2::minimizeFunction(std::vector<double>& aVars)
 	int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0], &mUpperBound[0], &space[0], &ispace[0], mRelativeError, np);
 	if(sts < 0 && mVerbose > 0) std::cout << "Check ming2 convergence" << std::endl;
 	std::cout.sync_with_stdio(sy);
+	
+	// put the variables back in their range
+	for (int i(0); i<np; ++i)
+	{
+		double x = aVars[i];
+		double l = mLowerBound[i];
+		double u = mUpperBound[i];
+		x = (x<l) ? l : x;
+		x = (x>u) ? u : x;
+		aVars[i] = x;
+	}
+	lnL = -mModel->computeLikelihood(&aVars[0], np, mTraceFun);
 
 	return -lnL;
 }
