@@ -173,6 +173,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		if (!QP_converged) // take the projected gradient direction
 		{
+			hessianInitialization();
 			memcpy(mP, mGradient, mSizeVect);
 			dscal_(&mN, &minus_one, mP, &I1);
 			#pragma omp parallel for
@@ -182,7 +183,8 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 				mP[i] = min2(mP[i], localUpperBound[i]);
 			}
 		}
-		
+	
+#if 1
 		// try to extend the limits to the boundaries (-> global line search)
 		double alpha = 1e16;
 		for (int i(0); i<mN; ++i)
@@ -195,8 +197,9 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			else if (p > 1e-8)
 				alpha = min2(alpha, u/p);
 		}
-		 
-		 
+#else		
+		double alpha = 1.0;
+#endif		 
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
 			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
@@ -227,7 +230,8 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		double df = f_prev - *aF;
-		convergenceReached =   fabs(df) < mAbsoluteError
+		//double diff_x_norm = dnrm2_(&mN, mSk, &I1);
+		convergenceReached =  fabs(df) < mAbsoluteError //&& diff_x_norm < mAbsoluteError)
 							|| mStep >= mMaxIterations;
 		
 #if 0

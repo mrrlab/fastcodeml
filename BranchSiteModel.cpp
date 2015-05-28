@@ -1622,8 +1622,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		try
 		{
 			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
-			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
-
+			//Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
+			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations);
+			
 			// Do the maximization
 			double maxl = optim.minimizeFunction(mVar);
 

@@ -53,7 +53,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	*aSolutionOnBorder = convergenceReached;
 	
 	// main loop
-	size_t max_step = 100+mN*mN;
+	size_t max_step = (mN < 100) ? 100+mN*mN : mN*10;
 	for(size_t step(0); !convergenceReached && step < max_step; ++step)
 	{
 		// --- update the sets
