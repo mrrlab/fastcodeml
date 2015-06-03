@@ -561,7 +561,7 @@ void OptSQP::BFGSupdate(void)
 		//double diag_to_add = (eigen_values[0] > 1e-2) ? 0.1 : 0.1 + eigen_values[0];
 		//daxpy_(&mN, &diag_to_add, &D1, &I0, mHessian, &I1);
 #endif
-#if 0 // measure the condition number of the BFGS hessian approximation
+#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
