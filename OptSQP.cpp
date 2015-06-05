@@ -230,8 +230,8 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		double df = f_prev - *aF;
-		//double diff_x_norm = dnrm2_(&mN, mSk, &I1);
-		convergenceReached =  fabs(df) < mAbsoluteError //&& diff_x_norm < mAbsoluteError)
+		double diff_x_norm = dnrm2_(&mN, mSk, &I1);
+		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < static_cast<double>(mN)*mAbsoluteError)
 							|| mStep >= mMaxIterations;
 		
 #if 0
@@ -338,7 +338,6 @@ void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 		mXEvaluator[i] += eh;
 		delta[i] = mXEvaluator[i] - x[i];
 	}
-
 	for (i=0; i<mNumTimes; ++i)
 	{
 		if (mActiveSet[i] == 0)
@@ -362,7 +361,6 @@ void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 			eh = mXEvaluator[i] - x[i];
 
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
-
 			aGrad[i] = (f-aF0)/eh;
 			mXEvaluator[i] = x[i];
 		}
