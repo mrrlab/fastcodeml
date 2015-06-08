@@ -230,10 +230,14 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		double df = f_prev - *aF;
+#if 0	// "safe" and accurate stopping criterion
 		double diff_x_norm = dnrm2_(&mN, mSk, &I1);
-		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < static_cast<double>(mN)*mAbsoluteError)
+		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < sqrt(static_cast<double>(mN))*mAbsoluteError)
 							|| mStep >= mMaxIterations;
-		
+#else	// less accurate but sufficient
+		convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
+#endif
+
 #if 0
 		// gradient free components
 		memcpy(mWorkSpaceVect, mGradient, mSizeVect);
@@ -597,7 +601,7 @@ void OptSQP::BFGSupdate(void)
 void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 {
 	// number of iterations where we skip the gradient computation (component i)
-	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
+	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;//(mN>30 ? 1:0);
 	const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
 	#pragma omp parallel for
@@ -631,6 +635,12 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 					mActiveSet[i] = max_count_upper;
 					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 					std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+				}
+				else if (fabs(mSk[i]) < active_set_tol && fabs(mGradient[i]) < active_set_tol)
+				{
+					mActiveSet[i] = max_count_upper;
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " not moving: put it in the active set.\n";
 				}
 			}
 		}
