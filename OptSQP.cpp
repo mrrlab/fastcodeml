@@ -509,7 +509,7 @@ void OptSQP::BFGSupdate(void)
 		// make the diagonal more important in order to avoid non positive definite matrix, 
 		// due to roundoff errors; this also speeds up the computation
 		int diag_stride = mN+1;
-		double factor = 1.0 + ((mN>30) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
+		double factor = 1.0 + ((mN>10) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
 		double inv_factor = 1.0/factor;
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
