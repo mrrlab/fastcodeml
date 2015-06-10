@@ -6,7 +6,12 @@
 #ifdef _MSC_VER
 #define dgesv_	DGESV
 #define dgeqrf_ DGEQRF
-#define	dorgqr_	DORGQR
+#define dorgqr_	DORGQR
+
+#define dgels_ DGELS
+#define dsysv_ DSYSV
+#define dspsv_ DSPSV
+
 #endif
 
 
@@ -460,7 +465,7 @@ extern "C" void dorgqr_(const int *m
 ///              		 has been completed, but the block diagonal matrix D is
 ///             		  exactly singular, so the solution could not be computed.
 ///
-extern "C" void dsysv(const char *UPLO
+extern "C" void dsysv_(const char *UPLO
 					 ,const int *N
 					 ,const int *NRHS
 					 ,double *A
@@ -534,7 +539,7 @@ extern "C" void dsysv(const char *UPLO
 ///              		 has been completed, but the block diagonal matrix D is
 ///             		  exactly singular, so the solution could not be computed.
 ///
-extern "C" void dspsv(const char *UPLO
+extern "C" void dspsv_(const char *UPLO
 					 ,const int *N
 					 ,const int *NRHS
 					 ,double *AP
@@ -543,7 +548,6 @@ extern "C" void dspsv(const char *UPLO
 					 ,const int *LDB
 					 ,int *INFO);
 					 
-
 /// DGELS solves overdetermined or underdetermined real linear systems
 /// involving an M-by-N matrix	A, or its transpose, using a QR or LQ
 /// factorization of A. It is assumed that A has full rank.
@@ -653,7 +657,7 @@ extern "C" void dspsv(const char *UPLO
 /// computed.
 /// 
 
-extern "C" void dgels(const char *TRANS 
+extern "C" void dgels_(const char *TRANS 
 					 ,const int *M
 					 ,const int *N
 					 ,const int *NRHS
