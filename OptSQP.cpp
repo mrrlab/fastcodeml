@@ -177,7 +177,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			memcpy(mP, mGradient, mSizeVect);
 			dscal_(&mN, &minus_one, mP, &I1);
 			#pragma omp parallel for
-			for (int i(0); i<mN; ++i)
+			for (int i=0; i<mN; ++i)
 			{
 				mP[i] = max2(mP[i], localLowerBound[i]);
 				mP[i] = min2(mP[i], localUpperBound[i]);
@@ -187,7 +187,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 #if 1
 		// try to extend the limits to the boundaries (-> global line search)
 		double alpha = 1e16;
-		for (int i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double l = localLowerBound[i];
 			double u = localUpperBound[i];

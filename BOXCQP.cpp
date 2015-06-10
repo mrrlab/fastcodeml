@@ -280,7 +280,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	else
 	{
 		#pragma omp parallel for
-		for (int i(0); i<mN; ++i)
+		for (int i=0; i<mN; ++i)
 		{
 			double x = aX[i];
 			double l = mLowerBounds[i];
