@@ -141,7 +141,7 @@ private:
 	///	evaluates the function at point x + alpha*mP
 	///
 	/// @param[in]	aX the point x
-	/// @param[in]	alpha the step length
+	/// @param[in]	aAlpha the step length
 	///
 	/// @return the function value
 	///
@@ -152,8 +152,8 @@ private:
 	/// computeGradient
 	///	compute the gradient at point x using finite differences aproximation
 	///
-	/// @param[in]	x the point at which one evaluates the gradient
-	/// @param[in]	f0 The value at point x
+	/// @param[in]	aX the point at which one evaluates the gradient
+	/// @param[in]	aF0 The value at point x
 	/// @param[out]	aGrad The gradient 
 	///
 	void computeGradient(const double *aX, double aF0, double *aGrad);
@@ -174,8 +174,8 @@ private:
 	/// updates the activeSet and sets counters so the gradient is not always calculated 
 	/// when it is not needed 
 	///
-	/// @param[in] x The current variables
-	/// @param[in] tolerance The tolerance for a variable to be in the active set
+	/// @param[in] aX The current variables
+	/// @param[in] aTolerance The tolerance for a variable to be in the active set
 	///
 	void activeSetUpdate(const double *aX, const double aTolerance);
 	
@@ -195,7 +195,7 @@ private:
 	///		  is the best solution so the gradient computaion is 
 	///		  valid!
 	///
-	/// @param[in,out] aaApha 	in: initial guess of step length
+	/// @param[in,out] aAlpha 	in: initial guess of step length
 	///							out: step length
 	/// @param[in,out] aX		in: the original position
 	///							out: if success, the new position

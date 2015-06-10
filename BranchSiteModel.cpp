@@ -239,7 +239,7 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables, bool aFi
 	mLowerBound.push_back(0.0001);					mUpperBound.push_back(20.0);			// k
 	if(aNumVariables >= 5)
 	{
-		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2 // TODO: check if possible to reduce from 999 to 199
+		mLowerBound.push_back(1.0);					mUpperBound.push_back(999.0);			// w2
 	}
 }
 
@@ -1622,8 +1622,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		try
 		{
 			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
-			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
-
+			//Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
+			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations);
+			
 			// Do the maximization
 			double maxl = optim.minimizeFunction(mVar);
 
