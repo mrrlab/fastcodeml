@@ -484,7 +484,7 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 		// take the direction mP = - B^-1 g projected
 		memcpy(B, mHessian, mN*mSizeVect);
 		memcpy(mP, mGradient, mSizeVect);
-		dgesv(&mN, &I1, B, &mN, &iwork[0], mP, &mN, &info);
+		dgesv_(&mN, &I1, B, &mN, &iwork[0], mP, &mN, &info);
 		if (info != 0)
 			std::cout << "ERROR : dgesv in OptArc::computeSubspaceArcSearch: info = " << info << std::endl;
 		dscal_(&mN, &minus_one, mP, &I1);
@@ -517,20 +517,20 @@ void OptArc::computeSubspaceArcSearch(const double *x)
 	std::vector<double> tau(mNs);
 	// workspace querry
 	lwork = -1;
-	dgeqrf(&mN, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
+	dgeqrf_(&mN, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
 	lwork = static_cast<int>(work[0]);
 	work.resize(lwork);
-	dgeqrf(&mN, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
+	dgeqrf_(&mN, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
 	if (info != 0)
 		std::cout << "ERROR : dgeqrf in OptArc::computeSubspaceArcSearch: info = " << info << std::endl;
 	assert(info == 0);
 	
 	// workspace querry
 	lwork = -1;
-	dorgqr(&mN, &mNs, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
+	dorgqr_(&mN, &mNs, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
 	lwork = static_cast<int>(work[0]);
 	work.resize(lwork);
-	dorgqr(&mN, &mNs, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
+	dorgqr_(&mN, &mNs, &mNs, S, &mN, &tau[0], &work[0], &lwork, &info);
 	if (info != 0)
 		std::cout << "ERROR : dorgqr in OptArc::computeSubspaceArcSearch: info = " << info << std::endl;
 	assert(info == 0);

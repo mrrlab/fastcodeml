@@ -31,7 +31,7 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	for(int i=0; i<mN; ++i)
 		memcpy(&mLHS[i*mN], &aB[i**aLDB], mN*sizeof(double));
 	
-	dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], aX, &mN, &INFO);
+	dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], aX, &mN, &INFO);
 	
 	if (INFO != 0)
 		std::cout << "Error: couldn't solve the initial linear system in BOXCQP. INFO: " << INFO << std::endl;
@@ -118,7 +118,7 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		
 		// solve linear subsystem
 		
-		dgesv(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &INFO);
+		dgesv_(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &INFO);
 		if (INFO != 0)
 		std::cout << "Error: couldn't solve the linear system in BOXCQP. INFO: " << INFO << std::endl;
 		
@@ -224,7 +224,7 @@ void BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		dscal_(&mN, &minus_one, mRHS, &I1);
 		
 		// solve linear system
-		dgesv(&mN, &I1, mLHS, &mN, &IPIV[0], mRHS, &mN, &INFO);
+		dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], mRHS, &mN, &INFO);
 		if (INFO != 0)
 		std::cout << "Error: couldn't solve the linear system in BOXCQP. INFO: " << INFO << std::endl;
 		

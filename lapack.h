@@ -2,6 +2,14 @@
 #ifndef LAPACK_H
 #define LAPACK_H
 
+// These mappings are for ACML 5.0.1 64 bits
+#ifdef _MSC_VER
+#define dgesv_	DGESV
+#define dgeqrf_ DGEQRF
+#define	dorgqr_	DORGQR
+#endif
+
+
 ///  DSYEVR computes selected eigenvalues and, optionally, eigenvectors
 ///  of a real symmetric matrix A.  Eigenvalues and eigenvectors can be
 ///  selected by specifying either a range of values or a range of
@@ -254,7 +262,7 @@ extern "C" void dsyevd_(const char *jobz,
                         
                         
 
-/// The pdgeqrf routine forms the QR factorization of a general m-by-n distributed matrix 
+/// The dgeqrf routine forms the QR factorization of a general m-by-n distributed matrix 
 /// sub(A)= A(ia:ia+m-1,ja:ja+n-1) as A=Q*R
 ///
 /// @param[in] m  INTEGER. The number of rows in the matrix A (m ≥ 0).
@@ -300,7 +308,7 @@ extern "C" void dsyevd_(const char *jobz,
 ///					then info = - (i* 100+j), if the i-th argument is a scalar and had an illegal value, 
 ///					then info = -i.
 ///
-extern "C" void dgeqrf(const int *m
+extern "C" void dgeqrf_(const int *m
 					  ,const int *n
 					  ,double *A
 					  ,const int *ldA
@@ -311,7 +319,7 @@ extern "C" void dgeqrf(const int *m
 
 
 
-/// The pdorgqr routine generates the whole or part of m-by-n real distributed matrix Q denoting 
+/// The dorgqr routine generates the whole or part of m-by-n real distributed matrix Q denoting 
 /// A(ia:ia+m-1, ja:ja+n-1) with orthonormal columns, which is defined as the first n columns of 
 /// a product of k elementary reflectors of order m Q= H(1)*H(2)*...*H(k) as returned by pdgeqrf.
 ///
@@ -357,7 +365,7 @@ extern "C" void dgeqrf(const int *m
 ///					then info = - (i* 100+j), if the i-th argument is a scalar and had an illegal value, 
 ///					then info = -i.
 ///
-extern "C" void dorgqr(const int *m
+extern "C" void dorgqr_(const int *m
 					  ,const int *n
 					  ,const int *k
 					  ,double *A
@@ -707,7 +715,7 @@ extern "C" void dgels(const char *TRANS
 ///              		 has been completed, but the block diagonal matrix D is
 ///             		  exactly singular, so the solution could not be computed.
 ///
-extern "C" void dgesv(const int *N
+extern "C" void dgesv_(const int *N
 					 ,const int *NRHS
 					 ,double *A
 					 ,const int *LDA
