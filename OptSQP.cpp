@@ -803,7 +803,8 @@ void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
-	
+	// TODO:
+	// Consider the case when the second Wolfe condition is not satisfied
 	
 	*aF = evaluateFunctionForLineSearch(aX, a);
 	*aAlpha = a;
