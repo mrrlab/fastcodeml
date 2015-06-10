@@ -47,13 +47,13 @@ IF(WIN32)
 	SET(BOOST_LIBRARYDIR    "C:/Program Files/boost_1_57_0/lib64-msvc-10.0"  CACHE "Boost lib path" PATH)
 ENDIF(WIN32)
 	
-set(Boost_ADDITIONAL_VERSIONS "1.55" "1.55.0" "1.56" "1.56.0" "1.57" "1.57.0")
+set(Boost_ADDITIONAL_VERSIONS "1.56" "1.56.0" "1.57" "1.57.0")
 find_package(Boost 1.55 COMPONENTS random)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     link_directories(${Boost_LIBRARY_DIRS})
 else(Boost_FOUND)
-    message(SEND_ERROR "Boost (version >= 1.55) required")
+    message(SEND_ERROR "Boost (version >= 1.56) required")
 endif(Boost_FOUND) 
 
 
