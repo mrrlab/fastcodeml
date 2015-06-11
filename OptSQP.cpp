@@ -449,7 +449,10 @@ void OptSQP::BFGSupdate(void)
 	double sigma = 0.2; // empirical value found by Powell
 	double rho = ys / sBs;
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "ys = " << ys << std::endl;
+	{
+		std::cout << "ys = " << std::scientific << ys << std::endl;
+		std::cout << std::fixed;
+	}
 	if (rho < sigma)
 	{
 		if (rho < 0.0)
@@ -468,13 +471,18 @@ void OptSQP::BFGSupdate(void)
 		
 			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "ys = " << ys << " after Powell modification." << std::endl;
+			{
+				std::cout << "ys = " << std::scientific  << " after Powell modification." << std::endl;
+				std::cout << std::fixed;
+			}
 		}
 	}
 #endif
 
 	if (reset_hessian)
 	{
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "\tReset the hessian matrix approximation." << std::endl;
 		hessianInitialization();
 	}
 	else
@@ -504,19 +512,9 @@ void OptSQP::BFGSupdate(void)
 	
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
-	
-#if 1
-		// make the diagonal more important in order to avoid non positive definite matrix, 
-		// due to roundoff errors; 
-		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
-		int diag_stride = mN+1;
-		double factor = 1.0 + ((mN>10) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
-		double inv_factor = 1.0/factor;
-		dscal_(&n_sq, &inv_factor, mHessian, &I1);
-		dscal_(&mN, &factor, mHessian, &diag_stride);
-#endif
 
-#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
+//#define MEASURE_COND_NUMBER_INFORMATION
+#ifdef MEASURE_COND_NUMBER_INFORMATION // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
@@ -543,8 +541,47 @@ void OptSQP::BFGSupdate(void)
 		std::cout << "EigenValue solver:" << std::endl;
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		double con_num_before = eigen_values[mN-1] / eigen_values[0];
+		std::cout << "Condition number before = " << con_num_before << std::endl;
+#endif
+
+#if 1
+		// make the diagonal more important in order to avoid non positive definite matrix, 
+		// due to roundoff errors; 
+		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
+		int diag_stride = mN+1;
+		double factor = 1.0 + ((mN>10) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
+		double inv_factor = 1.0/factor;
+		dscal_(&n_sq, &inv_factor, mHessian, &I1);
+		dscal_(&mN, &factor, mHessian, &diag_stride);
+#endif
+
+#ifdef MEASURE_COND_NUMBER_INFORMATION // measure the condition number of the BFGS hessian approximation (experimental purpose)
+		H = mWorkSpaceMat;
+		memcpy(H, mHessian, mN*mSizeVect);
+	
+		accuracy = 1e-8;
+		number_eigen_values;
+		eigen_values = mWorkSpaceVect;
+	
+		lwork = -1;
+		liwork = -1;
 		
-		std::cout << "Condition number = " << eigen_values[mN-1] / eigen_values[0] << std::endl;
+		std::cout << "Workspace_querry:" << std::endl;
+		
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		lwork = static_cast<int>(work[0]);
+		liwork = iwork[0];
+		work.resize(lwork);
+		iwork.resize(liwork);
+	
+		std::cout << "EigenValue solver:" << std::endl;
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		double con_num_after = eigen_values[mN-1] / eigen_values[0];
+		std::cout << "Condition number after = " << con_num_after << ", ratio = " << con_num_before/con_num_after << std::endl;
 #endif
 	}
 }
