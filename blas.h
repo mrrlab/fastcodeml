@@ -16,6 +16,7 @@
 #define dsyevd_ _dsyevd_
 #define dsyrk_  _dsyrk_
 #define dnrm2_  _dnrm2_
+#define idamax_	_idamax_
 #define daxpy_  _daxpy_
 #define dgemm_	_dgemm_
 #else
@@ -28,6 +29,7 @@
 #define dsyevd_ DSYEVD
 #define dsyrk_  DSYRK
 #define dnrm2_  DNRM2
+#define idamax_	IDAMAX
 #define daxpy_  DAXPY
 #define dgemv_	DGEMV
 #define dgemm_	DGEMM
@@ -38,6 +40,7 @@
 #define dsyevr_ dsyevr
 #define ddot_  ddot
 #define dnrm2_ dnrm2
+#define idamax_	idamax
 #define dcopy_ dcopy
 #define dscal_ dscal
 #define dsyrk_ dsyrk
@@ -320,6 +323,18 @@ double ddot_(const int *n,
 double dnrm2_(const int *n,
 				const double *dx,
 				const int *incx);
+
+/// IDAMAX finds the index of element having max. absolute value.
+///
+/// @param[in]		n	Number of elements in the operand vector
+/// @param[in]		x	Array of dimension (n-1) * |incx| + 1. Array x contains the operand vector.
+/// @param[in]		incx  Increment between elements of x.
+///
+/// @return	resulting index of element having max. absolute value
+///
+int idamax_(const int *n,
+			const double *x,
+			const int *incx);
 
 
 /// Scales a double precision vector.

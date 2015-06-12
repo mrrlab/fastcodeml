@@ -230,34 +230,12 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		double df = f_prev - *aF;
-#if 0	// "safe" and accurate stopping criterion
-		double diff_x_norm = dnrm2_(&mN, mSk, &I1);
-		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < sqrt(static_cast<double>(mN))*mAbsoluteError)
+#if SQP_STOP_PARAMETERS_ACCURACY // accurate stopping criterion in terms of parameters, can be a west of iterations at the end
+		double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
+		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError)
 							|| mStep >= mMaxIterations;
-#else	// less accurate but sufficient
+#else	// less accurate but usually sufficient
 		convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
-#endif
-
-#if 0
-		// gradient free components
-		memcpy(mWorkSpaceVect, mGradient, mSizeVect);
-		#pragma omp parallel for
-		for (int i(0); i<mN; ++i)
-		{
-			if (  (fabs(aX[i]-mLowerBound[i])<1e-4 && mGradient[i] > 0.0)
-				||(fabs(aX[i]-mUpperBound[i])<1e-4 && mGradient[i] < 0.0))
-			{
-				mWorkSpaceVect[i] = 0.0;
-			}
-		}
-		double free_gradient_norm = dnrm2_(&mN, mWorkSpaceVect, &I1);
-		std::cout << "|free gradient| = " << std::scientific << std::setprecision(12) << free_gradient_norm << std::endl;
-		if (convergenceReached && free_gradient_norm > 1e-1)
-		{
-			std::cout << "Not converged, reinitialize the hessian." << std::endl;
-			hessianInitialization();
-			convergenceReached = false;
-		}
 #endif
 		
 		if (!convergenceReached)
@@ -513,8 +491,8 @@ void OptSQP::BFGSupdate(void)
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
 
-//#define MEASURE_COND_NUMBER_INFORMATION
-#ifdef MEASURE_COND_NUMBER_INFORMATION // measure the condition number of the BFGS hessian approximation (experimental purpose)
+
+#if 1	// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
@@ -528,8 +506,7 @@ void OptSQP::BFGSupdate(void)
 		int liwork = -1;
 		int info;
 		
-		std::cout << "Workspace_querry:" << std::endl;
-		
+		// workspace querry
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
 		
@@ -538,25 +515,43 @@ void OptSQP::BFGSupdate(void)
 		work.resize(lwork);
 		iwork.resize(liwork);
 	
-		std::cout << "EigenValue solver:" << std::endl;
+		// compute the eigenvalues
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		double con_num_before = eigen_values[mN-1] / eigen_values[0];
-		std::cout << "Condition number before = " << con_num_before << std::endl;
-#endif
+		
+		const double eigenvalue_min = eigen_values[0];
+		const double condition_number = eigen_values[mN-1] / eigenvalue_min;
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "Condition number before = " << condition_number << std::endl;
+			std::cout << "eigen values before: min = " << eigenvalue_min << ", max = " << eigen_values[mN-1] << std::endl;
+		}
 
-#if 1
+		// make the diagonal more important in order to avoid non positive definite matrix, 
+		// due to roundoff errors; 
+		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
+		if (condition_number > 1e3 || eigenvalue_min < 1e-3)
+		{
+			const int diag_stride = mN+1;
+			const double off_diagonal_scaling = 1.1;
+			const double inv_off_diagonal_scaling = 1.0 / off_diagonal_scaling;
+			dscal_(&n_sq, &inv_off_diagonal_scaling, mHessian, &I1);
+			dscal_(&mN, &off_diagonal_scaling, mHessian, &diag_stride);
+		}
+#endif
+#if 0
 		// make the diagonal more important in order to avoid non positive definite matrix, 
 		// due to roundoff errors; 
 		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
 		int diag_stride = mN+1;
-		double factor = 1.0 + ((mN>10) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
+		double factor = 1.0 + ((mN>10) ? 0.1:0.0);
 		double inv_factor = 1.0/factor;
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
 
-#ifdef MEASURE_COND_NUMBER_INFORMATION // measure the condition number of the BFGS hessian approximation (experimental purpose)
+#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
@@ -581,7 +576,8 @@ void OptSQP::BFGSupdate(void)
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
 		double con_num_after = eigen_values[mN-1] / eigen_values[0];
-		std::cout << "Condition number after = " << con_num_after << ", ratio = " << con_num_before/con_num_after << std::endl;
+		std::cout << "Condition number after = " << con_num_after << ", ratio = " << condition_number/con_num_after << std::endl;
+		std::cout << "eigen values after: min = " << eigen_values[0] << ", max = " << eigen_values[mN-1] << std::endl;
 #endif
 	}
 }

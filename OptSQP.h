@@ -16,6 +16,9 @@
 // comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
 //#define NON_IDENTITY_HESSIAN
 
+// uncomment this to use a stopping criterion also implying the parameters
+//#define SQP_STOP_PARAMETERS_ACCURACY
+
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
