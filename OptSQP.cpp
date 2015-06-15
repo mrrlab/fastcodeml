@@ -549,7 +549,7 @@ void OptSQP::BFGSupdate(void)
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-#if 1 // measure the condition number of the BFGS hessian approximation (experimental purpose)
+#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
