@@ -549,7 +549,7 @@ void OptSQP::BFGSupdate(void)
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
+#if 1 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
@@ -584,7 +584,7 @@ void OptSQP::BFGSupdate(void)
 
 
 // ----------------------------------------------------------------------
-void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
+void OptSQP::activeSetUpdate(double *aX, const double aTolerance)
 {
 	// number of iterations where we skip the gradient computation (component i)
 	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;//(mN>30 ? 1:0);
@@ -597,6 +597,7 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 		{
 			// reduce counters
 			--mActiveSet[i];
+			mSk[i] = 0.0;
 		}
 		else
 		{
@@ -612,18 +613,31 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 				// update active set so we can reduce the gradient computation				
 				if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 				{
+					// put the variable in the active set
 					mActiveSet[i] = max_count_lower;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mLowerBound[i];
+					
 					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 					std::cout << "\tVariable " << i << " in the (lower) active set.\n";
 				}
 				else if (aX[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
 				{
+					// put the variable in the active set
 					mActiveSet[i] = max_count_upper;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mUpperBound[i];
+					
 					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 					std::cout << "\tVariable " << i << " in the (upper) active set.\n";
 				}
 				else if (fabs(mSk[i]) < active_set_tol && fabs(mGradient[i]) < active_set_tol)
 				{
+					// put the variable in the active set
 					mActiveSet[i] = max_count_upper;
 					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 					std::cout << "\tVariable " << i << " not moving: put it in the active set.\n";
