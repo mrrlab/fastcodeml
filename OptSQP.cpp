@@ -496,7 +496,6 @@ void OptSQP::BFGSupdate(void)
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
-		double accuracy = 1e-8;
 		int number_eigen_values;
 		double *eigen_values = mWorkSpaceVect;
 	
@@ -550,12 +549,10 @@ void OptSQP::BFGSupdate(void)
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-
 #if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
-		accuracy = 1e-8;
 		number_eigen_values;
 		eigen_values = mWorkSpaceVect;
 	
@@ -576,8 +573,11 @@ void OptSQP::BFGSupdate(void)
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
 		double con_num_after = eigen_values[mN-1] / eigen_values[0];
-		std::cout << "Condition number after = " << con_num_after << ", ratio = " << condition_number/con_num_after << std::endl;
-		std::cout << "eigen values after: min = " << eigen_values[0] << ", max = " << eigen_values[mN-1] << std::endl;
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "Condition number after = " << con_num_after << " ratio = " << condition_number/con_num_after << std::endl;
+			std::cout << "eigen values after: min = " << eigen_values[0] << ", max = " << eigen_values[mN-1] << std::endl;
+		}
 #endif
 	}
 }
