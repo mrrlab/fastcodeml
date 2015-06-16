@@ -1,5 +1,6 @@
 #include "BootstrapRandom.h"
 #include "MathSupport.h"
+#include <iomanip>
 
 // --------------------------------------------------------------------
 double BootstrapRandom::bootstrap(std::vector<double>& aVars)
@@ -11,9 +12,9 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	else
 		mIndexBegin = 0;
 	if ((mInitStatus & BranchSiteModel::INIT_PARAMS) == BranchSiteModel::INIT_PARAMS) // if parameters (not times) initialized from command line
-		mIndexEnd = mN;
-	else
 		mIndexEnd = mNumTimes;
+	else
+		mIndexEnd = mN;
 	
 	if (mIndexBegin == mIndexEnd) // nothing to change, don't perform the bootstrap
 		return -evaluateLikelihood(aVars);
@@ -25,7 +26,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
-	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
+	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);
 #else
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 15.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
@@ -269,7 +270,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	for (int individual_id(0); individual_id < mPopSize; ++individual_id)
 	{
 		double *individual_pos = &mPopPos[individual_id*mN];
-		memcpy(individual_pos, aX, mN*sizeof(double));
+		memcpy(individual_pos, aX, mSizeVect);
 		
 		// generate the initial position of individuals
 		for (int i(mIndexBegin); i<mIndexEnd; ++i)
@@ -283,7 +284,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		if ( fmax<mPopFitness[individual_id] )
 		{
 			fmax = ftmp;
-			best_individual = static_cast<int>(individual_id);
+			best_individual = individual_id;
 		}
 		fmin = (ftmp < fmin) ? ftmp : fmin;
 	}
@@ -347,6 +348,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		}
 		
 		// --mutations
+#if 1
 		// allow mutations on every variable, even if it has been initialized from the files/command line
 		for (int i(0); i<lambda*mN; ++i)
 		{	
@@ -354,7 +356,18 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 			const double prop = 0.9 + 0.1*randFrom0to1();
 			children[i] = prop*children[i] + (1.0-prop)*generateRandom(i%mN);
 		}
-		
+#else
+		// do not allow mutations on variable if it has been initialized from the files/command line
+		for (int i(0); i<lambda; ++i)
+		{	
+			for (int j(mIndexBegin); j<mIndexEnd; ++j)
+			{
+				// apply a "little" mutation
+				const double prop = 0.9 + 0.1*randFrom0to1();
+				children[i*mN+j] = prop*children[i*mN+j] + (1.0-prop)*generateRandom(j);
+			}
+		}
+#endif
 		// --selection
 		
 		for (int childid(0); childid<lambda; ++childid)

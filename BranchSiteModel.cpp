@@ -254,6 +254,7 @@ void BranchSiteModel::initFromTree(void)
 
 	// Ask for initialization completion
 	mInitStatus |= INIT_TIMES|INIT_TIMES_FROM_FILE;
+	mInitFromData |= INIT_TIMES_FROM_FILE;
 }
 
 
@@ -284,6 +285,7 @@ void BranchSiteModel::initFromParams(void)
 
 	// The parameters have been initializated
 	mInitStatus |= INIT_PARAMS;
+	mInitFromData |= INIT_TIMES_FROM_FILE;
 }
 
 void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen)
@@ -335,7 +337,7 @@ void BranchSiteModel::initVariables(void)
 	{
         for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
 #else
-    if(true)
+    if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
     {
         boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
         for(i=0; i < mNumTimes; ++i)
@@ -1609,9 +1611,9 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
 	
 #ifdef BOOTSTRAP
-	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed, mInitStatus);
+	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed, mInitFromData);
 	double maxL_after_bootstrap = bootstrapper.bootstrap(mVar);
-	
+	mInitFromData = INIT_NONE;
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		std::cout << "value after bootstrap: " << maxL_after_bootstrap  << std::endl;
 #endif

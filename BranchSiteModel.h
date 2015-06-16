@@ -7,11 +7,11 @@
 //#define FTOL_REL_ERROR
 
 // uncomment this to use the old randomized initialization of parameters
-// otherwise use initialization based on distribution of the parameters
-//#define OLD_INITIALIZATION
+// otherwise use initialization based on distribution of 
+#define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
-#define BOOTSTRAP
+//#define BOOTSTRAP
 
 #include <vector>
 #include <cfloat>
@@ -89,6 +89,7 @@ protected:
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
 		  mInitStatus(INIT_NONE),
+		  mInitFromData(INIT_NONE),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
 		  mNumVariables(aNumVariables),
 		  mExtraDebug(aExtraDebug),
@@ -372,6 +373,7 @@ protected:
 	bool						mTrace;				///< Enable maximization tracing
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
 	unsigned int				mInitStatus;		///< Which variables have been initialized
+	unsigned int				mInitFromData;		///< Which variables have been initialized by data
 	unsigned int				mNumTimes;			///< Number of branch lengths values
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing
