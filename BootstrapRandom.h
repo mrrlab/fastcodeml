@@ -45,6 +45,7 @@ public:
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	/// @param[in] aNumTimes			Number of branch lengths to optimize. Set 0 if fixed branch lenghts.
 	/// @param[in] aSeed				seed for the random generation
+	/// @param[in] aInitStatus			initialization status (what has been initialized and how) (see InitVarStatus enum type in BranchSiteModel.h)
 	///
 	BootstrapRandom(BranchSiteModel* aModel
 				   ,bool aTrace
@@ -55,7 +56,8 @@ public:
 				   ,double aThreshold
 				   ,int aMaxIterations
 				   ,int aNumTimes
-				   ,unsigned int aSeed) 
+				   ,unsigned int aSeed
+				   ,unsigned int aInitStatus) 
 		:mUnifRandNumGenerator(aSeed)
 		,mGammaDistT(0.5031126, 0.1844347)
 		,mExpDistV0(9.441686)
@@ -76,6 +78,7 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
+		,mInitStatus(aInitStatus)
 		{}
 	
 	/// Compute the maximum of computeLikelihood() over several tries
@@ -234,6 +237,10 @@ private:
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	unsigned int				mNumTimes;			///< Number of branches in the optimizer
+	
+	unsigned int				mInitStatus;		///< Which variables have been initialized and how
+	unsigned int				mIndexBegin;		///< index of the first variable to bootstrap
+	unsigned int				mIndexEnd;			///< index of the last variable to bootstrap
 };
 
 #endif // BOOTSTRAP_RANDOM_H

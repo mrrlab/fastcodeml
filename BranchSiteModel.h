@@ -302,6 +302,7 @@ private:
 		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};
 
+public:
 	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.
 	///
 	enum InitVarStatus

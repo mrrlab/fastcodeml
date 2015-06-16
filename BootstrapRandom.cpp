@@ -5,6 +5,19 @@
 double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
+	
+	if ((mInitStatus & BranchSiteModel::INIT_TIMES_FROM_FILE) == BranchSiteModel::INIT_TIMES_FROM_FILE) // if times initialized from file
+		mIndexBegin = mNumTimes;
+	else
+		mIndexBegin = 0;
+	if ((mInitStatus & BranchSiteModel::INIT_PARAMS) == BranchSiteModel::INIT_PARAMS) // if parameters (not times) initialized from command line
+		mIndexEnd = mN;
+	else
+		mIndexEnd = mNumTimes;
+	
+	if (mIndexBegin == mIndexEnd) // nothing to change, don't perform the bootstrap
+		return -evaluateLikelihood(aVars);
+	
 	allocateMemory();
 	
 	double likelihood_value = -1000000;
@@ -253,12 +266,13 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	double fmin, fmax;
 	fmin = fmax = -1e16;
 	
-	for (int individual_id( 0 ); individual_id < mPopSize; ++individual_id)
+	for (int individual_id(0); individual_id < mPopSize; ++individual_id)
 	{
 		double *individual_pos = &mPopPos[individual_id*mN];
+		memcpy(individual_pos, aX, mN*sizeof(double));
 		
 		// generate the initial position of individuals
-		for (int i(0); i<mN; ++i)
+		for (int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
 			
 		// compute its likelihood
@@ -333,7 +347,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		}
 		
 		// --mutations
-		
+		// allow mutations on every variable, even if it has been initialized from the files/command line
 		for (int i(0); i<lambda*mN; ++i)
 		{	
 			// apply a "little" mutation
@@ -398,7 +412,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		double *individual_best_pos = mBestPositions + individual_id*mN;
 		double *individual_velocity = mVelocities + individual_id*mN;
 		// generate the initial position of individuals
-		for (int i(0); i<mN; ++i)
+		for (int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
 		// generate velocities
