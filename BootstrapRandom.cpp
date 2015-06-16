@@ -348,7 +348,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		}
 		
 		// --mutations
-#if 1
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		// allow mutations on every variable, even if it has been initialized from the files/command line
 		for (int i(0); i<lambda*mN; ++i)
 		{	
@@ -429,7 +429,11 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
 		// generate velocities
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		for (int i(0); i<mN; ++i)
+#else
+		for (int i(mIndexBegin); i<mIndexEnd; ++i)
+#endif
 		{
 			int id_var = i-mNumTimes;
 			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
@@ -482,6 +486,11 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			memcpy(mWorkSpace, aX, mN*sizeof(double));
 			daxpy_(&mN, &minus_one, individual_pos, &I1, mWorkSpace, &I1);
 			daxpy_(&mN, &trust_best, mWorkSpace, &I1, individual_velocity, &I1);
+			
+#ifndef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+			for (int i(0); i<mIndexBegin; ++i) {individual_velocity[i] = 0.0;}
+			for (int i(mIndexEnd); i<mN; ++i)  {individual_velocity[i] = 0.0;}
+#endif
 		}
 		
 		// update positions

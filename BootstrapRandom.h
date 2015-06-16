@@ -21,6 +21,8 @@ typedef boost::random::mt19937 RNGType;
 #define BOOTSTRAP_PSO
 #endif //BOOTSTRAP_ES
 
+// uncomment this to allow the variables given by tree file/ command argument to change
+#define BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 
 /// BootstrapRandom class.
 /// bootstrap the optimization using the distributions of the variables
