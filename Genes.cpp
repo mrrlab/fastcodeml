@@ -81,10 +81,18 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 	else
 	{
 #ifdef USE_CPV_SCALING
+#ifndef USE_AGGREGATION
 		double prob = 1./static_cast<double>(cnt);
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
 
 		aLeaveProbVect[N] = static_cast<double>(cnt); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+#else // USE_AGGREGATION
+		double prob = 1./static_cast<double>(cnt+1);
+		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
+		aLeaveProbVect[N+1] = prob; // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+
+		aLeaveProbVect[N] = static_cast<double>(cnt+1); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+#endif
 #else
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[i] = 1.; // Set to 1./cnt to have the CPV initialized to all 1/cnt instead of 1
 #endif
@@ -365,13 +373,20 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 			//mObservedCodons[j]
 			const std::vector<int>& pos = getPositions(&p[3*position_on_gene]);
 
-			s.insert(s.end(), pos.begin(), pos.end());
+			// only count unambigous positions
+			if (pos.size() == 1) {
+				s.insert(s.end(), pos.begin(), pos.end());
+			}
+
 
 		}
 		std::sort(s.begin(), s.end());
 		std::vector<int>::iterator last = std::unique(s.begin(), s.end());
 		s.erase(last, s.end());
 		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
+
+		if (s.size() >= 61)
+			throw FastCodeMLFatal("Positions with full codon spectra. It's not working for now");
 
 		aObservedCodons.push_back(s);
 	}
