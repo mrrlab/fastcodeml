@@ -8,10 +8,10 @@
 
 // uncomment this to use the old randomized initialization of parameters
 // otherwise use initialization based on distribution of 
-#define OLD_INITIALIZATION
+//#define OLD_INITIALIZATION
 
 // uncomment this to use the bootstrap before optimizing
-//#define BOOTSTRAP
+#define BOOTSTRAP
 
 #include <vector>
 #include <cfloat>

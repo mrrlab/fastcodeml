@@ -23,13 +23,20 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	
 	double likelihood_value = -1000000;
 #ifdef BOOTSTRAP_ES
-	//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
+	if (mIndexEnd - mIndexBegin < 6)
+	{
+		num_generations = (mN > 30) ? 1:0;
+	}
 	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);
 #else
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 15.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
+	if (mIndexEnd - mIndexBegin < 6)
+	{
+		num_generations = (mN > 30) ? 1:0;
+	}
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
 #endif // BOOTSTRAP_ES
 
@@ -436,8 +443,11 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 #endif
 		{
 			int id_var = i-mNumTimes;
+			/*
 			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
 			individual_velocity[i] = -1e-3*(randFrom0to1()-shift);
+			*/
+			individual_velocity[i] = generateRandom(i) - individual_pos[i];
 		}
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
