@@ -59,11 +59,18 @@ inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
 }
 
 #ifdef USE_AGGREGATION
+// first argument is always codon frequency
 inline double dotn(const double* RESTRICT aV1, const double* RESTRICT aV2, const std::vector<int> &aObservedCodons)
 {
+	//TODO add LAPACK ddot
 	double tot = 0.;
 	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) tot += aV1[*it]*aV2[*it];
-	tot += aV1[N + 1]*aV2[N + 1];
+	// if this is not freq vector, we except unobserved state at N+1
+	float ufreq=1;
+	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) 
+		ufreq -= aV1[*it];
+	tot += ufreq * aV2[N+1];
+
 	return tot;
 }
 #endif
