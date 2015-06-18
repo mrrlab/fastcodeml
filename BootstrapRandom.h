@@ -14,7 +14,7 @@ typedef boost::random::mt19937 RNGType;
 
 
 // uncomment this to use the evolution strategy algorithm bootstrap
-//#define BOOTSTRAP_ES
+#define BOOTSTRAP_ES
 
 #ifndef BOOTSTRAP_ES
 // uncomment this to use the PSO bootstrap
@@ -81,6 +81,22 @@ public:
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
 		,mInitStatus(aInitStatus)
+		,mIndexBegin(0)
+		,mIndexEnd(0)
+#ifdef BOOTSTRAP_ES
+		,mPopSize(0)
+		,mPopPos(NULL)
+		,mPopFitness(NULL)
+#endif //BOOTSTRAP_ES
+#ifdef BOOTSTRAP_PSO
+		,mPopSize(0)
+		,mWorkSpace(NULL)
+		,mPositions(NULL)
+		,mFitnesses(NULL)
+		,mBestPositions(NULL)
+		,mBestFitnesses(NULL)
+		,mVelocities(NULL)
+#endif // BOOTSTRAP_PSO
 		{}
 	
 	/// Compute the maximum of computeLikelihood() over several tries

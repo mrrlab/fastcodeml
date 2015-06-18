@@ -9,7 +9,7 @@
 
 // uncomment to use strong wolfe conditions as a stopping criterion for the line search
 // comment it to use only the first Wolfe condition
-//#define STRONG_WOLFE_LINE_SEARCH_SR1
+#define STRONG_WOLFE_LINE_SEARCH_SR1
 
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES_SR1
@@ -197,13 +197,15 @@ private:
 	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
 #endif // STRONG_WOLFE_LINE_SEARCH_SR1
 
-	/// solveUndefinedQP
+	/// computeSearchDirection
 	///
-	/// solve the Quadratic Program (QP) 
-	///   min 0.5 p.Bp + p.g 
-	/// l<=p<=u
-	/// approximately to obtain a search direction
-	void solveUndefinedQP(const double *localLowerBound, const double *localUpperBound);
+	/// compute a search direction (descent direction) before line search
+	///
+	/// @param[in] aX				The current solution
+	/// @param[in] aLocalLowerBound	The lower bound for the search direction
+	/// @param[in] aLocalUpperBound	The upper bound for the search direction
+	///
+	void computeSearchDirection(const double *aX);
 
 private:
 		
@@ -215,9 +217,9 @@ private:
 	
 	double*						mGradient;			///< Gradient of the function. mN components
 	double*						mHessian;			///< hessian approximation using SR1 update; mN*mN components
+	double*						mInverseHessian;	///< inverse hessian approximation using SR1 update; mN*mN components
 	
 	double*						mP;					///< search direction (convex part)
-	double*						mD;					///< search direction (non convex part)
 	
 	double*						mSk;				///< position change, i.e. mSk = xk - xk-1
 	double*						mYk;				///< gradient change, i.e. mYk = dfk - dfk-1

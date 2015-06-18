@@ -31,7 +31,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	}
 	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);
 #else
-	int num_generations = static_cast<int> ( static_cast<double>(mN) / 15.0 );
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
 	if (mIndexEnd - mIndexBegin < 6)
 	{
@@ -280,9 +280,18 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		memcpy(individual_pos, aX, mSizeVect);
 		
 		// generate the initial position of individuals
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
+		const double prop_file_init = 0.8;
+		for (int i(0); i<mIndexBegin; ++i)
+			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
+#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		for (int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
-			
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
+		for (int i(mIndexEnd); i<mN; ++i)
+			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
+#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+
 		// compute its likelihood
 		double ftmp = evaluateLikelihood(individual_pos);
 		mPopFitness[individual_id] = ftmp;
@@ -331,6 +340,10 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 					selected[(i<<1)+1] = best_individual;
 				else
 					selected[(i<<1)+1] = (i<<2) + 1;
+			}
+			else
+			{
+				selected[(i<<1)+1] = (i<<2) + 1;
 			}
 		}
 		
@@ -516,30 +529,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			for (int bound_id(0); bound_id<mN; ++bound_id)
 			{
 				double x = mPositions[pos_id];
-#if 0				
-				if (reset_velocity)
-				{
-					x = max2(x, mLowerBound[bound_id]);
-					x = min2(x, mUpperBound[bound_id]);
-				}
-				else
-				{
-					if ( x <= mLowerBound[bound_id] )
-					{
-						x = mLowerBound[bound_id];
-						dcopy_(&mN, &D0, &I0, &mVelocities[id*mN], &I1);
-						reset_velocity = true;
-						//std::cout << "Touched a lower bound." << std::endl;
-					}
-					if ( x >= mUpperBound[bound_id] )
-					{
-						x = mUpperBound[bound_id];
-						dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
-						reset_velocity = true;
-						//std::cout << "Touched an upper bound." << std::endl;
-					}
-				}
-#else
+
 				double v = mVelocities[pos_id];
 				if ( x <= mLowerBound[bound_id] )
 				{
@@ -552,7 +542,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 					v = (v > 0.0) ? 0.0 : v;
 				}
 				mVelocities[pos_id] = v;
-#endif
 				mPositions[pos_id++] = x;
 			}
 		}

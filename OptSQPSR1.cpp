@@ -53,7 +53,7 @@ void OptSQPSR1::allocateMemory(void)
 	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
-	mSpace.resize(2*mN*mN + mN*8);
+	mSpace.resize(3*mN*mN + mN*8);
 	
 	
 	mWorkSpaceVect = &mSpace[0];
@@ -61,10 +61,10 @@ void OptSQPSR1::allocateMemory(void)
 	
 	mGradient = mWorkSpaceMat + mN*mN;
 	mP = mGradient + mN;
-	mD = mP + mN;
-	mHessian = mD + mN;
+	mHessian = mP + mN;
+	mInverseHessian = mHessian + mN*mN;
 	
-	mSk = mHessian + mN*mN;
+	mSk = mInverseHessian + mN*mN;
 	mYk = mSk + mN;
 	
 	mXPrev = mYk + mN;
@@ -154,6 +154,9 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
 	
+	dcopy_(&N_sq, &D0, &I0, mInverseHessian, &I1);
+	dcopy_(&mN, &D1, &I0, mInverseHessian, &diag_stride);
+	
 	
 #ifdef SCALE_OPT_VARIABLES_SR1
 	// change the space of the hessian approximation representation
@@ -169,6 +172,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		scale = scale*scale;
 		
 		mHessian[i*(mN+1)] *= scale;
+		mHessianInverse[i*(mN+1)] /= scale;
 	}		
 #endif // SCALE_OPT_VARIABLES_SR1
 
@@ -194,13 +198,24 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			std::cout << "Quadratic program solving..." << std::endl;
 		
 		// solve quadratic program to get the search direction		
-		solveUndefinedQP(&localLowerBound[0], &localUpperBound[0]);
+		computeSearchDirection(x);
 		
 		
 		// line search
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
-		double alpha = 1.0;
+		// extend the limits to the boundaries
+		double alpha = 1e16;
+		for (int i=0; i<mN; ++i)
+		{
+			double l = localLowerBound[i];
+			double u = localUpperBound[i];
+			double p = mP[i];
+			if (p < -1e-8)
+				alpha = min2(alpha, l/p);
+			else if (p > 1e-8)
+				alpha = min2(alpha, u/p);
+		}
 		lineSearch(&alpha, x, f);
 		
 		// avoid unsatisfied bounds due to roundoff errors 
@@ -241,16 +256,8 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				std::cout << "SR1 update..." << std::endl;
 			
 		
-			// update the B matrix
+			// update the Hessian informations
 			SR1update();
-
-		
-			std::cout << "Hessian diagonal at step " << mStep << ":\n";
-			for(int i=0; i<mN; ++i)
-			{
-				std::cout << mHessian[i*(mN+1)] << " ";
-			}
-			std::cout << std::endl;
 		
 			// update the active set
 			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
@@ -267,7 +274,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				}
 				else
 				{
-					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+					const double active_set_tol = -1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
 					// update active set so we can reduce the gradient computation				
 					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 					{
@@ -310,17 +317,9 @@ double OptSQPSR1::evaluateFunction(const double *x, bool aTrace)
 // ----------------------------------------------------------------------
 double OptSQPSR1::evaluateFunctionForLineSearch(const double* x, double alpha)
 {
-#if 0
 	memcpy(mWorkSpaceVect, x, mSizeVect);
 	daxpy_(&mN, &alpha, mP, &I1, mWorkSpaceVect, &I1);
-#else
-	memcpy(mWorkSpaceVect, x, mSizeVect);
-	
-	double a_2 = alpha*0.5;
-	double a_sq_2 = square(alpha)*0.5;
-	daxpy_(&mN, &a_2, mP, &I1, mWorkSpaceVect, &I1);
-	daxpy_(&mN, &a_sq_2, mD, &I1, mWorkSpaceVect, &I1);
-#endif
+
 	return evaluateFunction(mWorkSpaceVect, mTrace);
 }
 
@@ -400,31 +399,43 @@ void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 // ----------------------------------------------------------------------
 void OptSQPSR1::SR1update(void)
 {
-	// local variables
-	double *v, *Bs;
-	double vs;
-	double *vvT;
+	const int mN_sq = mN*mN;
+	const double eps1 = 1e-6;
+	const double eps2 = 1e-6;
 	char trans = 'N';
 	
-	int mN_sq = mN*mN;
-	
-	// compute vector B*mSk
-	Bs = mWorkSpaceVect;
+	// compute vector Bs
+	double *Bs = mWorkSpaceVect;
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
 	
-	// compute vector v = -y + Bs
-	v = Bs;
+	// compute vector v = y - Bs
+	double *v = Bs;
 	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
+	dscal_(&mN, &minus_one, v, &I1);
 	
-	vs = -ddot_(&mN, v, &I1, mSk, &I1);
+	const double vs = ddot_(&mN, v, &I1, mSk, &I1);
+	const double threshold_abs_vs = eps1 * dnrm2_(&mN, mSk, &I1) * dnrm2_(&mN, v, &I1);
 	
-	// only update if vs is big enough
-	if (fabs(vs) > 1e-8)
+	// compute vector Hy
+	double *Hy = mP; // unused space
+	dgemv_(&trans, &mN, &mN, &D1, mInverseHessian, &mN, mYk, &I1, &D0, Hy, &I1); 
+	
+	// compute vector w = s - Hy
+	double *w = Hy;
+	daxpy_(&mN, &minus_one, mSk, &I1, w, &I1);
+	dscal_(&mN, &minus_one, v, &I1);
+	
+	const double wy = ddot_(&mN, w, &I1, mYk, &I1);
+	const double threshold_abs_wy = eps2 * dnrm2_(&mN, mYk, &I1) * dnrm2_(&mN, w, &I1);
+	
+	// only update if well defined
+	if (fabs(vs) > threshold_abs_vs && fabs(wy) > threshold_abs_wy)
 	{
+		// --- Hessian update
 		double inverse_vs = 1.0/vs;
 	
 		// compute Matrix v.v^T / vs
-		vvT = mWorkSpaceMat;
+		double *vvT = mWorkSpaceMat;
 		#pragma omp parallel for
 		for(int i=0; i<mN; ++i)
 		{
@@ -432,14 +443,21 @@ void OptSQPSR1::SR1update(void)
 			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
 			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 		}
+		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+		
+		// --- Inverse Hessian update
+		double inverse_wy = 1.0/wy;
 	
-		// add the v.v^T / vs contribution if it is not too big compared to B_prev
-		
-		double Frob_prev = dnrm2_(&mN_sq, mHessian, &I1);
-		double Frob_modif = dnrm2_(&mN_sq, vvT, &I1);
-		
-		if (Frob_modif < 1e8 * (Frob_prev+1.0))
-			daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+		// compute Matrix w.w^T / wy
+		double *wwT = mWorkSpaceMat;
+		#pragma omp parallel for
+		for(int i=0; i<mN; ++i)
+		{
+			double prefactor = w[i] * inverse_wy;
+			dcopy_(&mN, w, &I1, &wwT[i*mN], &I1);
+			dscal_(&mN, &prefactor, &wwT[i*mN], &I1);
+		}
+		daxpy_(&mN_sq, &D1, wwT, &I1, mInverseHessian, &I1);
 	}
 }
 
@@ -450,7 +468,7 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 {
 	// constants for the Wolfe condition
 	double c1 (2e-4);
-	double phi_0_prime = 0.5*ddot_(&mN, mP, &I1, mGradient, &I1);
+	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
 	double phi_0 = *f, phi, phi_prev;
 	double a_prev = 0.0;
 	double phi_a_prime;
@@ -660,116 +678,148 @@ double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, c
 
 
 // ----------------------------------------------------------------------
-void OptSQPSR1::solveUndefinedQP(const double *localLowerBound, const double *localUpperBound)
+void OptSQPSR1::computeSearchDirection(const double *aX)
 {
 	int mN_sq = mN*mN;
-	// create a working copy of the hessian
-	double *eigenVectors = mWorkSpaceMat;
-	memcpy(eigenVectors, mHessian, mN*mSizeVect);
 	
-	// find the eigenvalues and eigenvectors of B
-	const char jobz = 'V';
-	const char uplo = 'U';
-	std::vector<double> eigenValues_(mN);
-	double *eigenValues = &eigenValues_[0];
+	const double tau = 2.0;
+	const double epsilon = 1e-6;
 	
-	const int lwork = 1 + 6*mN + 2*mN*mN;
-	std::vector<double> work(lwork);
+	// compute the active gradient (opposite direction)
+	double *active_gradient = mWorkSpaceVect;
+	memcpy(active_gradient, mGradient, mSizeVect);
 	
-	const int liwork = 3+5*mN;
-	std::vector<int> iwork(liwork);
-	
-	int info;
-	
-	dsyevd_(&jobz
-		   ,&uplo
-		   ,&mN
-		   ,eigenVectors
-		   ,&mN
-		   ,eigenValues
-		   ,&work[0]
-		   ,&lwork
-		   ,&iwork[0]
-		   ,&liwork
-		   ,&info);
-	
-	assert(info == 0);
-	
-	// find lower index M such that the M first eigenvalues are not strictly positive
-	// M=-1 means no eigenvalue is not strictly positive
-	int M = -1;
-	while (M < mN && eigenValues[M+1] <= 0.0) {++M;}
-	int number_positive_eigenvalues = mN - M - 1;
-	
-	std::cout << "\t\t" << M << " negative eigen values, " << number_positive_eigenvalues << " strictly positive." << std::endl;
-	
-	// -- solve the QP in convex part
-	
-	if (M < mN-1)
+	const double tol = 1e-4;
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
 	{
-		// form the modified hessian matrix
-		double *lambda_p_S = &work[0];
-		double *convex_hessian = lambda_p_S + mN_sq;
-		memcpy(lambda_p_S, eigenVectors, mN*mSizeVect);
+		double ag = -active_gradient[i];
+		double x = aX[i];
+		double l = mLowerBound[i];
+		double u = mUpperBound[i];
+		if (x-l < tol)
+			ag = min2(ag, 0.0);
+		else if(u-x < tol)
+			ag = max2(ag, 0.0);
+					
+		active_gradient[i] = ag;
+	}
+	
+	// compute quasi Newton direction
+	double *newton_direction = mWorkSpaceMat;
+	char trans = 'N';
+	dgemv_(&trans, &mN, &mN, &minus_one, mInverseHessian, &mN, active_gradient, &I1, &D0, newton_direction, &I1);
+	
+	// keep only the active part
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
+	{
+		double d = newton_direction[i];
+		double x = aX[i];
+		double l = mLowerBound[i];
+		double u = mUpperBound[i];
 		
-		double *gradient = convex_hessian + mN_sq;
-		memcpy(gradient, mGradient, mSizeVect);
-		//dcopy_(&mN, &D0, &I0, gradient, &I1);
-		//dcopy_(&number_positive_eigenvalues, &mGradient[M+1], &I1, &gradient[M+1], &I1);
-
-		//#pragma omp parallel for
-		for (int i(0); i<mN; ++i)
-		{
-			double prefactor = (i <= M) ? 0.0001 : eigenValues[i];
-			dscal_(&mN, &prefactor, &lambda_p_S[i*mN], &I1);
+		if (x-l < tol)
+			d = min2(d, 0.0);
+		else if(u-x < tol)
+			d = max2(d, 0.0);
 			
-			char trans = 'T';
-			dgemv_(&trans, &mN, &mN, &D1, eigenVectors, &mN, &lambda_p_S[i*mN], &I1, &D0, &convex_hessian[i*mN], &I1);
+		newton_direction[i] = d;
+	}
+	
+	// compute negative curvature direction in case of not p.d. matrix (suspected)
+	double y_s = ddot_(&mN, mSk, &I1, mYk, &I1);
+	double ag_nd = -ddot_(&mN, newton_direction, &I1, active_gradient, &I1);
+	double *negative_curv_direction = newton_direction+mN;
+	
+	if (ag_nd > 0.0 || y_s < 0.0)
+	{
+		// compute negative eigenvalue and negative curvature direction
+		char V('V'), I('I'), U('U');		
+		const int il = 1;
+		const int iu = 1;
+		const double abs_tol_eigenvalues = 1e-8;
+		int num_eigenvalues_found;
+		double *eigenvalues = negative_curv_direction+mN;
+		
+		std::vector<double> work(1);
+		std::vector<int> iwork(1);
+		int lwork, liwork, info;
+		
+		// workspace querry
+		dsyevr_(&V, &I, &U, &mN, mHessian, &mN, NULL, NULL, 
+        	&il, &iu, &abs_tol_eigenvalues, &num_eigenvalues_found,
+        	eigenvalues, negative_curv_direction, &mN, NULL,
+			&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		lwork = static_cast<int> (work[0]);
+		liwork = iwork[0];
+		
+		work.resize(lwork);
+		iwork.resize(liwork);
+		
+		// compute eigenvalue/eigenvector
+		dsyevr_(&V, &I, &U, &mN, mHessian, &mN, NULL, NULL, 
+        	&il, &iu, &abs_tol_eigenvalues, &num_eigenvalues_found,
+        	eigenvalues, negative_curv_direction, &mN, NULL,
+			&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		// select the good direction
+		if (ddot_(&mN, active_gradient, &I1, negative_curv_direction, &I1) < 0.0) // active_gradient is the opposite of the active gradient
+		{
+			dscal_(&mN, &minus_one, negative_curv_direction, &I1);
 		}
 		
-		// use BOXQP to solve the sub problem
-		bool solution_on_border;
-		mQPsolver->solveQP(convex_hessian, gradient, &mN, mP, &solution_on_border);
+		// keep only the active part
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			double d = negative_curv_direction[i];
+			double x = aX[i];
+			double l = mLowerBound[i];
+			double u = mUpperBound[i];
+			
+			if (x-l < tol)
+				d = min2(d, 0.0);
+			else if(u-x < tol)
+				d = max2(d, 0.0);
+				
+			negative_curv_direction[i] = d;
+		}
+		
+		// normalize it
+		double scale = 1.0 / dnrm2_(&mN, negative_curv_direction, &I1);
+		dscal_(&mN, &scale, negative_curv_direction, &I1);
+		
+		std::cout << "Negative curvature direction computed. Corresponding eigenvalue: " << eigenvalues[0] << std::endl;
 	}
 	else
 	{
-		dcopy_(&mN, &D0, &I0, mP, &I1);
-	}
-	
-	
-	dcopy_(&mN, &D0, &I0, mD, &I1);
-	// -- weighted sum of the the negative curvatures directions
-	if (M != -1)
-	{
-		double *negative_curv_direction = &work[0];
 		dcopy_(&mN, &D0, &I0, negative_curv_direction, &I1);
-		for (int i=0; i<=M; ++i)
-		{
-			// - |lambdai| * <g,Si>
-			const double proportion = - ddot_(&mN, mGradient, &I1, &eigenVectors[i*mN], &I1);
-			std::cout << "\tProportion for eigen value " << i << "(" << eigenValues[i] << ") : " << proportion << std::endl;
-			daxpy_(&mN, &proportion, &eigenVectors[i*mN], &I1, negative_curv_direction, &I1);
-		}
+	}
+	// choose direction
+	double *Bd = negative_curv_direction+mN;
+	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, negative_curv_direction, &I1, &D0, Bd, &I1); 
 	
-		// find largest a such that l <= a*mD <= u
-		double a = 1e16;
-		for (int i=0; i<mN; ++i)
+	double dBd = ddot_(&mN, Bd, &I1, negative_curv_direction, &I1);
+	double d_ag = -ddot_(&mN, active_gradient, &I1, negative_curv_direction, &I1);
+	double norm_s = dnrm2_(&mN, newton_direction, &I1);
+	
+	if (ag_nd < tau * norm_s * (d_ag + 0.5*dBd))
+	{
+		memcpy(mP, newton_direction, mSizeVect);
+	}
+	else
+	{
+		const double norm_ag = dnrm2_(&mN, active_gradient, &I1);
+		if (fabs(d_ag) < epsilon*norm_ag)
 		{
-			double di = negative_curv_direction[i];
-			double maxa;
-			if (di < 0.0)
-			{
-				maxa = localLowerBound[i] / di;
-			}
-			else
-			{
-				maxa = localUpperBound[i] / di;
-			}
-			a = min2(a, maxa);
+			memcpy(mP, active_gradient, mSizeVect);
 		}
-		std::cout << "\tNegative space: alpha found = " << a << std::endl;
-		// update mD
-		daxpy_(&mN, &a, negative_curv_direction, &I1, mD, &I1);
+		else
+		{
+			memcpy(mP, negative_curv_direction, mSizeVect);
+		}
 	}
 }
 
