@@ -217,7 +217,6 @@ private:
 	
 	double*						mGradient;			///< Gradient of the function. mN components
 	double*						mHessian;			///< hessian approximation using SR1 update; mN*mN components
-	double*						mInverseHessian;	///< inverse hessian approximation using SR1 update; mN*mN components
 	
 	double*						mP;					///< search direction (convex part)
 	
@@ -233,10 +232,7 @@ private:
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
-	int							mNumCallZoom;		///< step of the zoom iteration in line search
 	
-	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver for undefined matrix
-
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
