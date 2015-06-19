@@ -503,7 +503,6 @@ void OptTrustRegion::hessianUpdate(void)
 	for(int i=0; i<mN; ++i)
 	{
 		double prefactor = v[i] * inverse_vs;
-		//std::cout << "i=" << i << ", prefactor=" << prefactor << ", v[i]="<< v[i] << ", y[i] = " << mYk[i] << ", s[i]=" << mSk[i] << std::endl;
 		dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
 		dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 	}
@@ -616,10 +615,23 @@ void OptTrustRegion::generalCauchyPoint(const double *localLowerBound, const dou
 	
 	dcopy_(&mN, &D0, &I0, cauchy_point_from_x, &I1);
 	
-	memcpy(d, mProjectedGradient, mSizeVect);
-	//memcpy(d, mGradient, mSizeVect);
-	//double scale_d = -sqrt(DBL_EPSILON)/dnrm2_(&mN, mGradient, &I1);
-	dscal_(&mN, &minus_one, d, &I1);	
+	//memcpy(d, mProjectedGradient, mSizeVect);
+	memcpy(d, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, d, &I1);
+	const double tol = 1e-4;
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
+	{
+		double l = localLowerBound[i];
+		double u = localUpperBound[i];
+		if ( (l > - tol && d[i] < 0.0) || (u < tol && d[i] > 0.0))
+		{
+			d[i] = 0.0;
+		}
+	}
+	double scale_d = 1.0 / dnrm2_(&mN, d, &I1);
+	dscal_(&mN, &scale_d, d, &I1);
+	
 	memcpy(g, mGradient, mSizeVect);
 	
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
