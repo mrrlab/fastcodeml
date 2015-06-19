@@ -195,7 +195,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Quadratic program solving..." << std::endl;
+			std::cout << "Computing new search direction..." << std::endl;
 		
 		// solve quadratic program to get the search direction		
 		computeSearchDirection(x);
@@ -259,6 +259,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			// update the Hessian informations
 			SR1update();
 		
+#if 0
 			// update the active set
 			//const int max_count_lower = (mN > 30 ? static_cast<const int>(log(static_cast<double>(mN))) : 1);
 			const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + (mN>30 ? 1:0);
@@ -274,7 +275,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				}
 				else
 				{
-					const double active_set_tol = -1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+					const double active_set_tol = 1e-4 * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
 					// update active set so we can reduce the gradient computation				
 					if (x[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 					{
@@ -290,6 +291,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 					}
 				}
 			}
+#endif
 		}
 	}
 #ifdef SCALE_OPT_VARIABLES_SR1
@@ -459,6 +461,10 @@ void OptSQPSR1::SR1update(void)
 		}
 		daxpy_(&mN_sq, &D1, wwT, &I1, mInverseHessian, &I1);
 	}
+	else
+	{
+		std::cout << "\tSkipping SR1 update" << std::cout;
+	}
 }
 
 
@@ -560,8 +566,6 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	*f = phi;
 	*aalpha = a;
 	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
-	a = a*a*0.5;
-	daxpy_(&mN, &a, mD, &I1, x, &I1);
 }
 
 #else
@@ -678,6 +682,139 @@ double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, c
 
 
 // ----------------------------------------------------------------------
+// TODO: use mQPsolver
+
+void OptSQPSR1::computeSearchDirection(const double *aX)
+{
+	int mN_sq = mN*mN;
+	const double tolerance_min_eigenvalue = -1e-3;
+	const double tolerance_QP = 1e-2;
+	bool use_projected_gradient (false);
+	
+	// compute the projected gradient
+	double *projected_gradient = mWorkSpaceVect;
+	memcpy(projected_gradient, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, projected_gradient, &I1);
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
+	{
+		double p = projected_gradient[i];
+		double l = mLowerBound[i] - aX[i];
+		double u = mUpperBound[i] - aX[i];
+		p = min2(max2(p, l), u);
+		projected_gradient[i] = p;
+	}
+	
+	// compute minimum eigenvalue and corresponding direction
+	char V('V'), I('I'), U('U');		
+	const int il = 1;
+	const int iu = 1;
+	const double abs_tol_eigenvalues = 1e-8;
+	int num_eigenvalues_found;
+	double *min_eigenvalue_direction = mWorkSpaceMat;
+	double *eigenvalues = min_eigenvalue_direction + mN;
+	
+	std::vector<double> work(1);
+	std::vector<int> iwork(1);
+	int lwork, liwork, info;
+	
+	// workspace querry
+	lwork = -1; liwork = -1;
+	dsyevr_(&V, &I, &U, &mN, mHessian, &mN, NULL, NULL, 
+       	&il, &iu, &abs_tol_eigenvalues, &num_eigenvalues_found,
+       	eigenvalues, min_eigenvalue_direction, &mN, NULL,
+		&work[0], &lwork, &iwork[0], &liwork, &info);
+	
+	lwork = static_cast<int> (work[0]);
+	liwork = iwork[0];
+	work.resize(lwork);
+	iwork.resize(liwork);
+	
+	// compute eigenvalue/eigenvector
+	dsyevr_(&V, &I, &U, &mN, mHessian, &mN, NULL, NULL, 
+       	&il, &iu, &abs_tol_eigenvalues, &num_eigenvalues_found,
+       	eigenvalues, min_eigenvalue_direction, &mN, NULL,
+		&work[0], &lwork, &iwork[0], &liwork, &info);
+	
+	
+	double lambda_min = eigenvalues[0];
+	std::cout << "\tLambda_min = " << lambda_min << std::endl;
+	
+	if (lambda_min > tolerance_min_eigenvalue)
+	{
+		double *hessian_matrix;
+		if (lambda_min < tolerance_QP)
+		{
+			const double diagonal = tolerance_QP - lambda_min + 1.0;
+			const int diagonal_stride = mN+1;
+			hessian_matrix = mWorkSpaceMat;
+			memcpy(hessian_matrix, mHessian, mN_sq*sizeof(double));
+			daxpy_(&mN, &D1, &diagonal, &I0, hessian_matrix, &diagonal_stride);
+		}
+		else
+		{
+			hessian_matrix = mHessian;
+		}
+		// consider the matrix to be positive definite
+		// solve Quadratic Program
+		bool QP_solution_on_border;
+		bool QP_converged = mQPsolver->solveQP(hessian_matrix, mGradient, &mN, mP, &QP_solution_on_border, NULL);
+		if (!QP_converged)
+		{
+			use_projected_gradient = true;
+		}
+		else
+		{
+			std::cout << "\tQP direction chosen." << std::endl;
+		}
+	}
+	else
+	{
+		// choose the negative curvature direction
+		memcpy(mP, min_eigenvalue_direction, mSizeVect);
+		// scale it
+		double scale = max2(dnrm2_(&mN, mSk, &I1), 1e-1);		
+		if (ddot_(&mN, mP, &I1, mGradient, &I1) > 0.0)
+		{
+			scale = -scale;
+		}
+		dscal_(&mN, &scale, mP, &I1);
+		
+		// take its projection
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			double p = mP[i];
+			double l = mLowerBound[i] - aX[i];
+			double u = mUpperBound[i] - aX[i];
+			p = min2(max2(p, l), u);
+			mP[i] = p;
+		}
+		
+		scale = dnrm2_(&mN, mP, &I1);
+		
+		double NC_g = ddot_(&mN, mP, &I1, mGradient, &I1);
+		double grad_norm = dnrm2_(&mN, mGradient, &I1);
+		std::cout << "\t angle: " << NC_g/grad_norm/scale << std::endl;
+		if (NC_g/grad_norm/scale > -1e-1) 
+		{
+			use_projected_gradient = true;
+		}
+		else
+		{
+			std::cout << "\tProjected negative curvature direction chosen." << std::endl;
+		}
+	}
+	
+	if (use_projected_gradient)
+	{
+		memcpy(mP, projected_gradient, mSizeVect);
+		std::cout << "\tProjected gradient chosen." << std::endl;
+	}
+}
+
+
+#if 0 // backup: alg. http://research.sabanciuniv.edu/15897/1/sr1nc.pdf
 void OptSQPSR1::computeSearchDirection(const double *aX)
 {
 	int mN_sq = mN*mN;
@@ -698,9 +835,9 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		double l = mLowerBound[i];
 		double u = mUpperBound[i];
 		if (x-l < tol)
-			ag = min2(ag, 0.0);
-		else if(u-x < tol)
 			ag = max2(ag, 0.0);
+		else if(u-x < tol)
+			ag = min2(ag, 0.0);
 					
 		active_gradient[i] = ag;
 	}
@@ -708,7 +845,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	// compute quasi Newton direction
 	double *newton_direction = mWorkSpaceMat;
 	char trans = 'N';
-	dgemv_(&trans, &mN, &mN, &minus_one, mInverseHessian, &mN, active_gradient, &I1, &D0, newton_direction, &I1);
+	dgemv_(&trans, &mN, &mN, &minus_one, mInverseHessian, &mN, mGradient, &I1, &D0, newton_direction, &I1);
 	
 	// keep only the active part
 	#pragma omp parallel for
@@ -720,19 +857,19 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		double u = mUpperBound[i];
 		
 		if (x-l < tol)
-			d = min2(d, 0.0);
-		else if(u-x < tol)
 			d = max2(d, 0.0);
+		else if(u-x < tol)
+			d = min2(d, 0.0);
 			
 		newton_direction[i] = d;
 	}
 	
 	// compute negative curvature direction in case of not p.d. matrix (suspected)
 	double y_s = ddot_(&mN, mSk, &I1, mYk, &I1);
-	double ag_nd = -ddot_(&mN, newton_direction, &I1, active_gradient, &I1);
+	double g_nd = ddot_(&mN, newton_direction, &I1, mGradient, &I1);
 	double *negative_curv_direction = newton_direction+mN;
 	
-	if (ag_nd > 0.0 || y_s < 0.0)
+	if (g_nd > 0.0 || y_s < 0.0)
 	{
 		// compute negative eigenvalue and negative curvature direction
 		char V('V'), I('I'), U('U');		
@@ -747,6 +884,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		int lwork, liwork, info;
 		
 		// workspace querry
+		lwork = -1; liwork = -1;
 		dsyevr_(&V, &I, &U, &mN, mHessian, &mN, NULL, NULL, 
         	&il, &iu, &abs_tol_eigenvalues, &num_eigenvalues_found,
         	eigenvalues, negative_curv_direction, &mN, NULL,
@@ -764,11 +902,6 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
         	eigenvalues, negative_curv_direction, &mN, NULL,
 			&work[0], &lwork, &iwork[0], &liwork, &info);
 		
-		// select the good direction
-		if (ddot_(&mN, active_gradient, &I1, negative_curv_direction, &I1) < 0.0) // active_gradient is the opposite of the active gradient
-		{
-			dscal_(&mN, &minus_one, negative_curv_direction, &I1);
-		}
 		
 		// keep only the active part
 		#pragma omp parallel for
@@ -780,18 +913,24 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 			double u = mUpperBound[i];
 			
 			if (x-l < tol)
-				d = min2(d, 0.0);
-			else if(u-x < tol)
 				d = max2(d, 0.0);
+			else if(u-x < tol)
+				d = min2(d, 0.0);
 				
 			negative_curv_direction[i] = d;
+		}
+		
+		// select the good sign
+		if (ddot_(&mN, mGradient, &I1, negative_curv_direction, &I1) > 0.0)
+		{
+			dscal_(&mN, &minus_one, negative_curv_direction, &I1);
 		}
 		
 		// normalize it
 		double scale = 1.0 / dnrm2_(&mN, negative_curv_direction, &I1);
 		dscal_(&mN, &scale, negative_curv_direction, &I1);
 		
-		std::cout << "Negative curvature direction computed. Corresponding eigenvalue: " << eigenvalues[0] << std::endl;
+		std::cout << "\tNegative curvature direction computed. Corresponding eigenvalue: " << eigenvalues[0] << std::endl;
 	}
 	else
 	{
@@ -802,25 +941,30 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, negative_curv_direction, &I1, &D0, Bd, &I1); 
 	
 	double dBd = ddot_(&mN, Bd, &I1, negative_curv_direction, &I1);
-	double d_ag = -ddot_(&mN, active_gradient, &I1, negative_curv_direction, &I1);
-	double norm_s = dnrm2_(&mN, newton_direction, &I1);
+	double d_g = ddot_(&mN, mGradient, &I1, negative_curv_direction, &I1);
+	double norm_nd = dnrm2_(&mN, newton_direction, &I1);
 	
-	if (ag_nd < tau * norm_s * (d_ag + 0.5*dBd))
+	std::cout << "\tg_nd = " << g_nd << std::endl;
+	
+	if (g_nd < tau * norm_nd * (d_g + 0.5*dBd))
 	{
 		memcpy(mP, newton_direction, mSizeVect);
+		std::cout << "\tNewton direction chosen" << std::endl;
 	}
 	else
 	{
 		const double norm_ag = dnrm2_(&mN, active_gradient, &I1);
-		if (fabs(d_ag) < epsilon*norm_ag)
+		if (fabs(d_g) < epsilon*norm_ag)
 		{
 			memcpy(mP, active_gradient, mSizeVect);
+			std::cout << "\tGradient direction chosen" << std::endl;
 		}
 		else
 		{
 			memcpy(mP, negative_curv_direction, mSizeVect);
+			std::cout << "\tNegative direction chosen" << std::endl;
 		}
 	}
 }
-
+#endif
 
