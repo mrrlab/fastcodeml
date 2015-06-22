@@ -198,7 +198,8 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		// line search
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 			std::cout << "Line Search..." << std::endl;
-		// extend the limits to the boundaries
+		
+		// try to extend the limits to the boundaries (-> global line search)
 		double alpha = 1e16;
 		for (int i=0; i<mN; ++i)
 		{
@@ -210,6 +211,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			else if (p > 1e-8)
 				alpha = min2(alpha, u/p);
 		}
+		
 		lineSearch(&alpha, x, f);
 		
 		// avoid unsatisfied bounds due to roundoff errors 
@@ -361,18 +363,14 @@ void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 // ----------------------------------------------------------------------
 void OptSQPSR1::SR1update(void)
 {
-	const int mN_sq = mN*mN;
+	//const int mN_sq = mN*mN;
 	const double eps1 = 1e-6;
 	char trans = 'N';
 	
-	// compute vector Bs
-	double *Bs = mWorkSpaceVect;
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
-	
 	// compute vector v = y - Bs
-	double *v = Bs;
-	daxpy_(&mN, &minus_one, mYk, &I1, v, &I1);
-	dscal_(&mN, &minus_one, v, &I1);
+	double *v = mWorkSpaceVect;
+	memcpy(v, mYk, mSizeVect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mSk, &I1, &D1, v, &I1); 	
 	
 	const double vs = ddot_(&mN, v, &I1, mSk, &I1);
 	const double threshold_abs_vs = eps1 * dnrm2_(&mN, mSk, &I1) * dnrm2_(&mN, v, &I1);
@@ -381,7 +379,7 @@ void OptSQPSR1::SR1update(void)
 	if (fabs(vs) > threshold_abs_vs)
 	{
 		// --- Hessian update
-		double inverse_vs = 1.0/vs;
+		const double inverse_vs = 1.0/vs;
 	
 		// compute Matrix v.v^T / vs
 		double *vvT = mWorkSpaceMat;
@@ -389,10 +387,11 @@ void OptSQPSR1::SR1update(void)
 		for(int i=0; i<mN; ++i)
 		{
 			double prefactor = v[i] * inverse_vs;
-			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
-			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
+			daxpy_(&mN, &prefactor, v, &I1, &mHessian[i*mN], &I1);
+			//dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
+			//dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 		}
-		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+		//daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
 	}
 	else
 	{
@@ -638,7 +637,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	memcpy(g, mGradient, mSizeVect);
 	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, x, &I1, &D1, g, &I1);
 	// projected gradient in the limit of a small gradient
-	const double tol_active_set = 1e-4;
+	const double tol_active_set = 1e-8;
 	memcpy(d, mGradient, mSizeVect);
 	dscal_(&mN, &minus_one, d, &I1);
 	#pragma omp parallel for
@@ -648,86 +647,84 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		const double x_ = x[i];
 		const double l_ = mLowerBound[i];
 		const double u_ = mUpperBound[i];
-		d_ = (x_-l_ < tol_active_set) ? max2(d_, 0.0) : d_;
-		d_ = (u_-x_ < tol_active_set) ? min2(d_, 0.0) : d_;
+		d_ = (((x_-l_) < tol_active_set) ? max2(d_, 0.0) : d_);
+		d_ = (((u_-x_) < tol_active_set) ? min2(d_, 0.0) : d_);
 		d[i] = d_;
 	}
+	double scale_d = static_cast<double>(mN) / dnrm2_(&mN, d, &I1);
+	dscal_(&mN, &scale_d, d, &I1);
 	// Bd
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
 	double f_prime = ddot_(&mN, mGradient, &I1, d, &I1);
 	double f_double_prime = ddot_(&mN, d, &I1, Bd, &I1);
 	
-	if (f_prime < 0.0)
+	bool GCP_found = (f_prime >= 0.0);
+	while (!GCP_found)
 	{
-		bool GCP_found = false;
-		while(!GCP_found)
+		// find the next break point
+		double delta_t = 1e16;
+		const double tol_d = 1e-16;
+		for (int i(0); i<mN; ++i)
 		{
-			// find the next break point
-			double delta_t = 1e16;
-			const double tol_d = 1e-6;
-			for (int i(0); i<mN; ++i)
+			const double l_ = mLowerBound[i]-x[i];
+			const double u_ = mUpperBound[i]-x[i];
+			const double d_ = d[i];
+			if (d_ < -tol_d)
+				delta_t = min2(delta_t, l_/d_);			
+			else if (d_ > tol_d)
+				delta_t = min2(delta_t, u_/d_);
+		}
+		std::cout << std::scientific << "\tDelta_t = " << delta_t << std::fixed << std::endl;
+		// find the set J
+		for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
+		J.clear();
+		for (int i(0); i<mN; ++i)
+		{
+			const double x_next = x[i] + delta_t*d[i];
+			if (   (fabs(x_next - mLowerBound[i]) < tol_active_set
+				 || fabs(x_next - mUpperBound[i]) < tol_active_set)
+				&& active_set_cauchy[i] != 1 )
 			{
-				const double l_ = mLowerBound[i]-x[i];
-				const double u_ = mUpperBound[i]-x[i];
-				const double d_ = d[i];
-				if (d_ < -tol_d)
-					delta_t = min2(delta_t, l_/d_);			
-				else if (d_ > tol_d)
-					delta_t = min2(delta_t, u_/d_);
-			}
-			// find the set J
-			for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
-			J.clear();
-			for (int i(0); i<mN; ++i)
-			{
-				const double x_next = x[i] + delta_t*d[i];
-				if (   fabs(x_next - mLowerBound[i]) < tol_active_set
-					|| fabs(x_next - mUpperBound[i]) < tol_active_set )
-				{
-					if (active_set_cauchy[i] != 1)
-					{
-						J.push_back(i);
-					}
-				}
-			}
-			// verify if the GCP is in this interval
-			double neg_ratio_f = -f_prime/f_double_prime;
-			if (f_double_prime > 0.0 && 0.0 < neg_ratio_f && neg_ratio_f < delta_t)
-			{
-				daxpy_(&mN, &neg_ratio_f, d, &I1, x, &I1);
-				GCP_found = true;
-			}
-			else
-			{
-				// update line derivatives
-				dcopy_(&mN, &D0, &I0, b, &I1);
-				for (int i(0); i<J.size(); ++i)
-				{
-					int line = J[i];
-					daxpy_(&mN, &d[line], &mHessian[line*mN], &I1, b, &I1);
-				}
-				daxpy_(&mN, &delta_t, d, &I1, x, &I1);
-				f_prime += delta_t*f_double_prime;
-				f_prime -= ddot_(&mN, b, &I1, x, &I1);
-			
-				f_double_prime -= 2.0 * ddot_(&mN, b, &I1, d, &I1);
-				for (int i(0); i<J.size(); ++i)
-				{
-					int line = J[i];
-					f_prime -= d[line]*g[line];
-					f_double_prime += d[line]*b[line];
-					d[line] = 0.0;
-				}
-				if (f_prime >= 0.0)
-					GCP_found = true;
+				J.push_back(i);
 			}
 		}
+		
+		// verify if the GCP is in this interval
+		double neg_ratio_f = -f_prime/f_double_prime;
+		if ( (f_double_prime > 0.0) && (0.0 < neg_ratio_f) && (neg_ratio_f < delta_t))
+		{
+			daxpy_(&mN, &neg_ratio_f, d, &I1, x, &I1);
+			GCP_found = true;
+		}
+		else
+		{
+			// update line derivatives
+			dcopy_(&mN, &D0, &I0, b, &I1);
+			for (int i(0); i<J.size(); ++i)
+			{
+				int line = J[i];
+				daxpy_(&mN, &d[line], &mHessian[line*mN], &I1, b, &I1);
+			}
+			daxpy_(&mN, &delta_t, d, &I1, x, &I1);
+			f_prime += delta_t*f_double_prime;
+			f_prime -= ddot_(&mN, b, &I1, x, &I1);
+		
+			f_double_prime -= 2.0 * ddot_(&mN, b, &I1, d, &I1);
+			for (int i(0); i<J.size(); ++i)
+			{
+				int line = J[i];
+				f_prime -= d[line]*g[line];
+				f_double_prime += d[line]*b[line];
+				d[line] = 0.0;
+			}
+			GCP_found = (f_prime >= 0.0);
+		}
 	}
-	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
-	J.clear();
+	
+	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;} J.clear();
 	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);} // J is now the active set
 	
-	std::cout << "\tCauchy point calculated, refining the solution with a conjugate gradient method..." << std::endl;
+	std::cout << "\tCauchy point calculated, refining the search direction with a conjugate gradient method..." << std::endl;
 	
 	// --- refine the solution with a conjugate gradient algorithm
 	
@@ -736,11 +733,12 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	double *p = r + mN;
 	double *y = p + mN;
 	
-	// compute residual
+	// compute residual r = -gradient - B*dx
 	memcpy(dx, x, mSizeVect);
 	daxpy_(&mN, &minus_one, aX, &I1, dx, &I1);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, dx, &I1, &D1, r, &I1);
-	daxpy_(&mN, &minus_one, mGradient, &I1, r, &I1);
+	//for (int i(0); i<J.size(); ++i) {dx[J[i]] = 0.0;}
+	memcpy(r, mGradient, mSizeVect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, dx, &I1, &minus_one, r, &I1);
 	for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
 	
 	// set p = 0
@@ -752,7 +750,9 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	double rho_2 = ddot_(&mN, r, &I1, r, &I1);
 	
 	bool CG_converged = false;
-	while (!CG_converged)
+	int number_tries (0);
+	const int max_number_tries (15);
+	while (!CG_converged && (number_tries++ < max_number_tries))
 	{
 		std::cout << "\t CG: rho_2 = " << rho_2 << std::endl;
 		if (rho_2 < eta_sq)
@@ -763,27 +763,33 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		double beta = rho_2 / rho_1;
 		dscal_(&mN, &beta, p, &I1);
 		daxpy_(&mN, &D1, r, &I1, p, &I1);
-	
-		// compute y = Bp (restricted to the active set
+		for (int i(0); i<J.size(); ++i) {p[J[i]] = 0.0;}
+		
+		// compute y = Bp (restricted to the active set)
 		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D1, y, &I1);
 		for (int i(0); i<J.size(); ++i) {y[J[i]] = 0.0;}
 	
 		// compute alpha1, largest positive real s.t. l < x+alpha1*p < u
 		double alpha_1 = 1e16;
-		const double tol_p = 1e-4;
+		const double tol_p = 1e-8;
 		for (int i(0); i<mN; ++i)
 		{
 			if (active_set_cauchy[i] == 1)
-				continue;
-			
-			double l_ = mLowerBound[i] - x[i];
-			double u_ = mUpperBound[i] - x[i];
-			double p_ = p[i];
-			if (p_ < -tol_p)
-				alpha_1 = min2(alpha_1, l_/p_);			
-			else if (p_ > tol_p)
-				alpha_1 = min2(alpha_1, u_/p_);
+			{
+				p[i] = 0.0;
+			}
+			else
+			{
+				double l_ = mLowerBound[i] - x[i];
+				double u_ = mUpperBound[i] - x[i];
+				double p_ = p[i];
+				if (p_ < -tol_p)
+					alpha_1 = min2(alpha_1, l_/p_);			
+				else if (p_ > tol_p)
+					alpha_1 = min2(alpha_1, u_/p_);
+			}
 		}
+		std::cout << "\t CG: alpha_1 = " << std::scientific << alpha_1 << std::fixed << std::endl;
 		
 		const double py = ddot_(&mN, p, &I1, y, &I1);
 		if (py < 0.0)
@@ -804,7 +810,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 				daxpy_(&mN, &alpha_2, p, &I1, x, &I1);
 				alpha_2 = -alpha_2;
 				daxpy_(&mN, &alpha_2, y, &I1, r, &I1);
-				
+				for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
 				rho_1 = rho_2;
 				rho_2 = ddot_(&mN, r, &I1, r, &I1);
 			}
@@ -812,6 +818,6 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	}
 	
 	memcpy(mP, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, x, &I1);
+	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
 }
 
