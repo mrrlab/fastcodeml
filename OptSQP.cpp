@@ -539,17 +539,8 @@ void OptSQP::BFGSupdate(void)
 			dscal_(&mN, &off_diagonal_scaling, mHessian, &diag_stride);
 		}
 #endif
-#if 0
-		// make the diagonal more important in order to avoid non positive definite matrix, 
-		// due to roundoff errors; 
-		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
-		int diag_stride = mN+1;
-		double factor = 1.0 + ((mN>10) ? 0.1:0.0);
-		double inv_factor = 1.0/factor;
-		dscal_(&n_sq, &inv_factor, mHessian, &I1);
-		dscal_(&mN, &factor, mHessian, &diag_stride);
-#endif
-#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
+
+#if 1 // measure the condition number of the BFGS hessian approximation (experimental purpose)
 		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
