@@ -324,6 +324,7 @@ void BranchSiteModel::initVariables(void)
 #ifndef OLD_INITIALIZATION
 	// uniform random generator used to generate random numbers according to distributions
 	RNGType rng(mSeed);
+
 	// working variable for local accesses
 	double low, high; // bounds
 	double randGen;   // random variable generated
@@ -334,8 +335,8 @@ void BranchSiteModel::initVariables(void)
 	if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
 	{
         for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
+    }
 #else
-    if(true)
     {
         boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
         for(i=0; i < mNumTimes; ++i)
@@ -347,9 +348,10 @@ void BranchSiteModel::initVariables(void)
         		randGen = gamma_dist_T( rng );
         	mVar[i] = randGen;											// T
         }
-#endif // OLD_INITIALIZATION
     }
-     // Initialize w0, k, v1, v2 (if not already initialized)
+#endif // OLD_INITIALIZATION
+
+    // Initialize w0, k, v1, v2 (if not already initialized)
     if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
     {
         RNGType rng(mSeed);

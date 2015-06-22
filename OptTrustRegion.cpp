@@ -364,7 +364,7 @@ double OptTrustRegion::evaluateFunction(const double *x, bool aTrace)
 
 
 // ----------------------------------------------------------------------
-double OptTrustRegion::computeRatio(double f0, double *dx, double f)
+double OptTrustRegion::computeRatio(double f0, const double *dx, double f)
 {	
 	double *dx_proj = mWorkSpaceVect;
 	memcpy(dx_proj, dx, mSizeVect);

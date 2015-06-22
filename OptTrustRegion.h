@@ -125,7 +125,7 @@ private:
 	///
 	/// @return the improvement ratio
 	///
-	double computeRatio(double f0, double *dx, double f);
+	double computeRatio(double f0, const double *dx, double f);
 	
 	/// computeGradient
 	///	compute the gradient at point x using finite differences aproximation

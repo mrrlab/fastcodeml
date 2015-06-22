@@ -496,7 +496,6 @@ void OptSQP::BFGSupdate(void)
 		double *H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
-		int number_eigen_values;
 		double *eigen_values = mWorkSpaceVect;
 	
 		std::vector<double> work(1);
