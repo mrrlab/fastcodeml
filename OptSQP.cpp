@@ -230,34 +230,12 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		double df = f_prev - *aF;
-#if 0	// "safe" and accurate stopping criterion
-		double diff_x_norm = dnrm2_(&mN, mSk, &I1);
-		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < sqrt(static_cast<double>(mN))*mAbsoluteError)
+#if SQP_STOP_PARAMETERS_ACCURACY // accurate stopping criterion in terms of parameters, can be a west of iterations at the end
+		double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
+		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError)
 							|| mStep >= mMaxIterations;
-#else	// less accurate but sufficient
+#else	// less accurate but usually sufficient
 		convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
-#endif
-
-#if 0
-		// gradient free components
-		memcpy(mWorkSpaceVect, mGradient, mSizeVect);
-		#pragma omp parallel for
-		for (int i(0); i<mN; ++i)
-		{
-			if (  (fabs(aX[i]-mLowerBound[i])<1e-4 && mGradient[i] > 0.0)
-				||(fabs(aX[i]-mUpperBound[i])<1e-4 && mGradient[i] < 0.0))
-			{
-				mWorkSpaceVect[i] = 0.0;
-			}
-		}
-		double free_gradient_norm = dnrm2_(&mN, mWorkSpaceVect, &I1);
-		std::cout << "|free gradient| = " << std::scientific << std::setprecision(12) << free_gradient_norm << std::endl;
-		if (convergenceReached && free_gradient_norm > 1e-1)
-		{
-			std::cout << "Not converged, reinitialize the hessian." << std::endl;
-			hessianInitialization();
-			convergenceReached = false;
-		}
 #endif
 		
 		if (!convergenceReached)
@@ -449,7 +427,10 @@ void OptSQP::BFGSupdate(void)
 	double sigma = 0.2; // empirical value found by Powell
 	double rho = ys / sBs;
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "ys = " << ys << std::endl;
+	{
+		std::cout << "ys = " << std::scientific << ys << std::endl;
+		std::cout << std::fixed;
+	}
 	if (rho < sigma)
 	{
 		if (rho < 0.0)
@@ -468,13 +449,18 @@ void OptSQP::BFGSupdate(void)
 		
 			ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "ys = " << ys << " after Powell modification." << std::endl;
+			{
+				std::cout << "ys = " << std::scientific  << " after Powell modification." << std::endl;
+				std::cout << std::fixed;
+			}
 		}
 	}
 #endif
 
 	if (reset_hessian)
 	{
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "\tReset the hessian matrix approximation." << std::endl;
 		hessianInitialization();
 	}
 	else
@@ -504,78 +490,74 @@ void OptSQP::BFGSupdate(void)
 	
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
+
+
+#if 1	// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
+		double *H = mWorkSpaceMat;
+		memcpy(H, mHessian, mN*mSizeVect);
 	
-#if 1
+		int number_eigen_values;
+		double *eigen_values = mWorkSpaceVect;
+	
+		std::vector<double> work(1);
+		std::vector<int> iwork(1);
+		int lwork = -1;
+		int liwork = -1;
+		int info;
+		
+		// workspace querry
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		lwork = static_cast<int>(work[0]);
+		liwork = iwork[0];
+		work.resize(lwork);
+		iwork.resize(liwork);
+	
+		// compute the eigenvalues
+		dsyevd_("N", "U", &mN, H, &mN, eigen_values
+               ,&work[0], &lwork, &iwork[0], &liwork, &info);
+		
+		const double eigenvalue_min = eigen_values[0];
+		const double condition_number = eigen_values[mN-1] / eigenvalue_min;
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "Condition number before = " << condition_number << std::endl;
+			std::cout << "eigen values before: min = " << eigenvalue_min << ", max = " << eigen_values[mN-1] << std::endl;
+		}
+
 		// make the diagonal more important in order to avoid non positive definite matrix, 
-		// due to roundoff errors; this also speeds up the computation
+		// due to roundoff errors; 
+		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
+		if (condition_number > 1e3 || eigenvalue_min < 1e-3)
+		{
+			const int diag_stride = mN+1;
+			const double off_diagonal_scaling = 1.1;
+			const double inv_off_diagonal_scaling = 1.0 / off_diagonal_scaling;
+			dscal_(&n_sq, &inv_off_diagonal_scaling, mHessian, &I1);
+			dscal_(&mN, &off_diagonal_scaling, mHessian, &diag_stride);
+		}
+#endif
+#if 0
+		// make the diagonal more important in order to avoid non positive definite matrix, 
+		// due to roundoff errors; 
+		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
 		int diag_stride = mN+1;
-		double factor = 1.0 + ((mN>10) ? 0.1:0.0); //1e-1*(1.0-1.0/static_cast<double>(mN));
+		double factor = 1.0 + ((mN>10) ? 0.1:0.0);
 		double inv_factor = 1.0/factor;
 		dscal_(&n_sq, &inv_factor, mHessian, &I1);
 		dscal_(&mN, &factor, mHessian, &diag_stride);
 #endif
-#if 0
-		double *H = mWorkSpaceMat;
-		memcpy(H, mHessian, mN*mSizeVect);
-	
-		double vl = -1e16;
-		double vu = 0.1;
-	
-		double accuracy = 1e-8;
-		int number_eigen_values;
-		double *eigen_values = mWorkSpaceVect;
-	
-		std::vector<double> eigen_vectors(mN*mN);
-		std::vector<int>	isuppz(2*mN);
-		std::vector<double> work(1);
-		std::vector<int> iwork(1);
-		int lwork = -1;
-		int liwork = -1;
-		int info;
-		int i1__not_used__, i2__not_used__;
-		std::cout << "Workspace_querry:" << std::endl;
-		dsyevr_("V", "V", "U"
-			,&mN, H ,&mN
-			,&vl, &vu
-			,&i1__not_used__, &i2__not_used__
-			,&accuracy, &number_eigen_values, eigen_values, &eigen_vectors[0], &mN
-		    ,&isuppz[0], &work[0], &lwork, &iwork[0], &liwork, &info);
-		lwork = static_cast<int>(work[0]);
-		liwork = iwork[0];
-		work.resize(lwork);
-		iwork.resize(liwork);
-	
-		std::cout << "EigenValue solver:" << std::endl;
-		dsyevr_("V", "V", "U"
-			,&mN, H ,&mN
-			,&vl, &vu
-			,&i1__not_used__, &i2__not_used__
-			,&accuracy, &number_eigen_values, eigen_values, &eigen_vectors[0], &mN
-		    ,&isuppz[0], &work[0], &lwork, &iwork[0], &liwork, &info);
-		
-		std::cout << "Negative Eigen Values: " << std::endl;
-		for (int i(0); i<number_eigen_values; ++i)
-		{
-			std::cout << std::setprecision(14) << eigen_values[i] << " ";
-		}
-		std::cout << std::endl;
-    
-		//double diag_to_add = (eigen_values[0] > 1e-2) ? 0.1 : 0.1 + eigen_values[0];
-		//daxpy_(&mN, &diag_to_add, &D1, &I0, mHessian, &I1);
-#endif
 #if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
-		double *H = mWorkSpaceMat;
+		H = mWorkSpaceMat;
 		memcpy(H, mHessian, mN*mSizeVect);
 	
-		double accuracy = 1e-8;
-		int number_eigen_values;
-		double *eigen_values = mWorkSpaceVect;
+		number_eigen_values;
+		eigen_values = mWorkSpaceVect;
 	
-		std::vector<double> work(1);
-		std::vector<int> iwork(1);
-		int lwork = -1;
-		int liwork = -1;
-		int info;
+		lwork = -1;
+		liwork = -1;
 		
 		std::cout << "Workspace_querry:" << std::endl;
 		
@@ -590,8 +572,12 @@ void OptSQP::BFGSupdate(void)
 		std::cout << "EigenValue solver:" << std::endl;
 		dsyevd_("N", "U", &mN, H, &mN, eigen_values
                ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		
-		std::cout << "Condition number = " << eigen_values[mN-1] / eigen_values[0] << std::endl;
+		double con_num_after = eigen_values[mN-1] / eigen_values[0];
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "Condition number after = " << con_num_after << " ratio = " << condition_number/con_num_after << std::endl;
+			std::cout << "eigen values after: min = " << eigen_values[0] << ", max = " << eigen_values[mN-1] << std::endl;
+		}
 #endif
 	}
 }
@@ -647,103 +633,6 @@ void OptSQP::activeSetUpdate(const double *aX, const double aTolerance)
 	}
 }
 
-#ifndef STRONG_WOLFE_LINE_SEARCH
-// ----------------------------------------------------------------------
-void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
-{
-	// constants for the Wolfe condition
-	double c1 (2e-1);
-	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	double phi_0 = *aF, phi, phi_prev;
-	double a_prev = 0.;
-	double phi_a_prime;
-	double a = *aAlpha;
-	
-	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
-	
-	phi_prev = phi_0;
-	phi = evaluateFunctionForLineSearch(aX, a);
-	
-	double sigma, sigma_bas;
-	int max_iter_back, max_iter_up;
-	
-	// we take a step dependant on the problem size:
-	// if the problem is large, we are able to spend more time 
-	// to find a better solution.
-	// otherwise, we consider that the solution is sufficiently 
-	// good and continue. 
-	// The time of line search should be small compared to the 
-	// gradient computation
-	
-	max_iter_back = max_iter_up = static_cast<int> (ceil( 3.*log(mN+10.) ));
-	sigma_bas 	= pow(1e-5, 1./static_cast<double>(max_iter_back));
-	
-	
-	// begin by a backtrace
-	int iter = 0;
-	while (phi > phi_0 + phi_0_prime*a*c1 && iter < max_iter_back)
-	{
-		++iter;
-		a_prev = a;
-		phi_prev = phi;
-		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		a *= sigma;
-		phi = evaluateFunctionForLineSearch(aX, a);
-	}
-	
-	// compute the derivative
-	double eh = sqrt(DBL_EPSILON);
-	if ( a+eh >= 1.0 ) {eh = -eh;}
-	phi_a_prime = (phi - evaluateFunctionForLineSearch(aX, a+eh))/eh;
-	
-	iter = 0;
-	if (phi_a_prime < 0.0 && a != *aAlpha)
-	{
-		double a0 = a_prev;
-		while (phi < phi_prev && iter < max_iter_back)
-		{
-			++iter;
-			
-			a_prev = a;
-			phi_prev = phi;
-			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
-			a = a + sigma*(a0-a);
-			phi = evaluateFunctionForLineSearch(aX, a);
-		}
-		if (phi_prev < phi)
-		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(aX, a);
-		}
-	}
-	else
-	{
-		sigma_bas = 0.7;
-		while (phi < phi_prev && iter < max_iter_up)
-		{
-			++iter;
-			
-			a_prev = a;
-			phi_prev = phi;
-			sigma = sigma_bas * (0.7 + 0.6*randFrom0to1());
-			a *= sigma;
-			phi = evaluateFunctionForLineSearch(aX, a);
-		}
-		if (phi_prev < phi)
-		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(aX, a);
-		}
-	}
-	
-	
-	*aF = phi;
-	*aAlpha = a;
-	daxpy_(&mN, aAlpha, mP, &I1, aX, &I1);
-}
-
-#else
 // ----------------------------------------------------------------------
 void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 {
@@ -864,6 +753,6 @@ double OptSQP::zoom(double aAlo, double aAhi, const double *aX, const double& aP
 	}
 	return a;
 }
-#endif // STRONG_WOLFE_LINE_SEARCH
+
 
 

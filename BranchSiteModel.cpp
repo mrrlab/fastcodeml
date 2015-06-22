@@ -1652,48 +1652,31 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	{
 		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		double maxl = optim.maximizeFunction(mVar);
-		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
 		return maxl;
 	}
 	else if(mOptAlgo == OPTIM_SR1)
 	{
 		OptSQPSR1 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		double maxl = optim.maximizeFunction(mVar);
-		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
 		return maxl;
 	}
 	else if(mOptAlgo == OPTIM_TRUST_REGION)
 	{
 		OptTrustRegion optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		double maxl = optim.maximizeFunction(mVar);
-		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
 		return maxl;
 	}	
 	else if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
 	{
 		// Create the optimizer instance
 		OptAlternatorSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		
 		double maxl = optim.maximizeFunction(mVar);
-		
-		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
 		return maxl;
 	}
 	else if(mOptAlgo == OPTIM_ARC)
 	{
 		OptArc optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 		double maxl = optim.maximizeFunction(mVar);
-		std::cout << std::endl << "Function invocations:       " << mNumEvaluations << std::endl;
-		std::cout <<              "Final log-likelihood value: " << maxl << std::endl;
-		printVar(mVar);
 		return maxl;
 	}
 	

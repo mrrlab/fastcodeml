@@ -7,9 +7,6 @@
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
 
-// uncomment to use strong wolfe conditions as a stopping criterion for the line search
-// comment it to use only the first Wolfe condition
-#define STRONG_WOLFE_LINE_SEARCH
 
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES
@@ -18,6 +15,9 @@
 // found empirically.
 // comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
 //#define NON_IDENTITY_HESSIAN
+
+// uncomment this to use a stopping criterion also implying the parameters
+//#define SQP_STOP_PARAMETERS_ACCURACY
 
 
 /// OptSQP class.
@@ -204,8 +204,6 @@ private:
 	///
 	void lineSearch(double *aAlpha, double *aX, double *aF);
 	
-	
-#ifdef STRONG_WOLFE_LINE_SEARCH
 	/// zoom
 	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
 	///
@@ -224,7 +222,6 @@ private:
 	/// @return	The (approximate) optimal value of a in the interval [aAlo, aAhi]
 	///
 	double zoom(double aAlo, double aAhi, const double *aX, const double& aPhi0, const double& aPhi0Prime, const double& aPhiLo, const double& c1, const double& c2);
-#endif //STRONG_WOLFE_LINE_SEARCH
 
 private:
 	
