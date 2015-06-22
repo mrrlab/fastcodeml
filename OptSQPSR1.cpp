@@ -363,7 +363,7 @@ void OptSQPSR1::computeGradient(const double *x, double f0, double *aGrad)
 // ----------------------------------------------------------------------
 void OptSQPSR1::SR1update(void)
 {
-	//const int mN_sq = mN*mN;
+	const int mN_sq = mN*mN;
 	const double eps1 = 1e-6;
 	char trans = 'N';
 	
@@ -375,23 +375,34 @@ void OptSQPSR1::SR1update(void)
 	const double vs = ddot_(&mN, v, &I1, mSk, &I1);
 	const double threshold_abs_vs = eps1 * dnrm2_(&mN, mSk, &I1) * dnrm2_(&mN, v, &I1);
 	
-	// only update if well defined
+	// update if satisfies conditions
+	double *vvT = mWorkSpaceMat;
+	bool skip_update = false;
 	if (fabs(vs) > threshold_abs_vs)
 	{
 		// --- Hessian update
 		const double inverse_vs = 1.0/vs;
 	
 		// compute Matrix v.v^T / vs
-		double *vvT = mWorkSpaceMat;
 		#pragma omp parallel for
 		for(int i=0; i<mN; ++i)
 		{
 			double prefactor = v[i] * inverse_vs;
-			daxpy_(&mN, &prefactor, v, &I1, &mHessian[i*mN], &I1);
-			//dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
-			//dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
+			//daxpy_(&mN, &prefactor, v, &I1, &mHessian[i*mN], &I1);
+			dcopy_(&mN, v, &I1, &vvT[i*mN], &I1);
+			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 		}
-		//daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+		const double norm_update = dnrm2_(&mN_sq, vvT, &I1);
+		skip_update = (norm_update > 1e8);
+	}
+	else
+	{
+		skip_update = true;
+	}
+		
+	if (!skip_update)
+	{
+		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
 	}
 	else
 	{
@@ -440,7 +451,6 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 		++iter;
 		a_prev = a;
 		phi_prev = phi;
-		//sigma = 0.3+0.3*randFrom0to1();
 		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
 		a *= sigma;
 		phi = evaluateFunctionForLineSearch(x, a);
@@ -462,7 +472,6 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 			
 			a_prev = a;
 			phi_prev = phi;
-			//sigma = 0.3+0.4*randFrom0to1();
 			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
 			a = a + sigma*(a0-a);
 			phi = evaluateFunctionForLineSearch(x, a);
@@ -674,7 +683,6 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 			else if (d_ > tol_d)
 				delta_t = min2(delta_t, u_/d_);
 		}
-		std::cout << std::scientific << "\tDelta_t = " << delta_t << std::fixed << std::endl;
 		// find the set J
 		for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
 		J.clear();
@@ -721,10 +729,23 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 		}
 	}
 	
+	// store all the fixed variables in J
 	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;} J.clear();
-	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);} // J is now the active set
+	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);}
 	
-	std::cout << "\tCauchy point calculated, refining the search direction with a conjugate gradient method..." << std::endl;
+	
+	std::cout << "\tActive set = { ";
+	for (int i(0); i<J.size(); ++i) {std::cout << J[i] << " ";}
+	std::cout << "}" << std::endl;
+	
+#if 0
+	memcpy(mP, x, mSizeVect);
+	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
+	return;
+#endif
+	
+	if (mVerbose >= VERBOSE_MORE_DEBUG)
+		std::cout << "\tCauchy point calculated, refining the search direction with a conjugate gradient method..." << std::endl;
 	
 	// --- refine the solution with a conjugate gradient algorithm
 	
@@ -736,7 +757,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	// compute residual r = -gradient - B*dx
 	memcpy(dx, x, mSizeVect);
 	daxpy_(&mN, &minus_one, aX, &I1, dx, &I1);
-	//for (int i(0); i<J.size(); ++i) {dx[J[i]] = 0.0;}
+	for (int i(0); i<J.size(); ++i) {dx[J[i]] = 0.0;}
 	memcpy(r, mGradient, mSizeVect);
 	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, dx, &I1, &minus_one, r, &I1);
 	for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
@@ -744,75 +765,100 @@ void OptSQPSR1::computeSearchDirection(const double *aX)
 	// set p = 0
 	dcopy_(&mN, &D0, &I0, p, &I1);
 	
-	const double eta_sq = 1e-2;
+	// compute eta
+	double *projected_gradient = dx; // we do not use dx anymore
+	memcpy(projected_gradient, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, projected_gradient, &I1);
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
+	{
+		const double u_ = mLowerBound[i] - aX[i];
+		const double l_ = mUpperBound[i] - aX[i];
+		double pg_ = projected_gradient[i];
+		pg_ = min2(max2(pg_, u_), l_);
+		projected_gradient[i] = pg_;
+	}
+	const double pg_norm = dnrm2_(&mN, projected_gradient, &I1);
+	const double eta_sq = min2(1e-2, pg_norm)*square(pg_norm);
 	
+	// residual norm squared (prev and current)
 	double rho_1 = 1.0;
 	double rho_2 = ddot_(&mN, r, &I1, r, &I1);
 	
 	bool CG_converged = false;
-	int number_tries (0);
-	const int max_number_tries (15);
+	int number_tries = 0;
+	const int max_number_tries = 15;
 	while (!CG_converged && (number_tries++ < max_number_tries))
 	{
-		std::cout << "\t CG: rho_2 = " << rho_2 << std::endl;
-		if (rho_2 < eta_sq)
-		{
-			break;
-		}
-		
-		double beta = rho_2 / rho_1;
-		dscal_(&mN, &beta, p, &I1);
-		daxpy_(&mN, &D1, r, &I1, p, &I1);
-		for (int i(0); i<J.size(); ++i) {p[J[i]] = 0.0;}
-		
-		// compute y = Bp (restricted to the active set)
-		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D1, y, &I1);
-		for (int i(0); i<J.size(); ++i) {y[J[i]] = 0.0;}
-	
-		// compute alpha1, largest positive real s.t. l < x+alpha1*p < u
-		double alpha_1 = 1e16;
-		const double tol_p = 1e-8;
+		std::cout << "\t CG: rho_2 = " << rho_2 << ", r=";
 		for (int i(0); i<mN; ++i)
 		{
-			if (active_set_cauchy[i] == 1)
+			if (i%10 == 0)
 			{
-				p[i] = 0.0;
+				std::cout << "\t" << std::endl;
 			}
-			else
-			{
-				double l_ = mLowerBound[i] - x[i];
-				double u_ = mUpperBound[i] - x[i];
-				double p_ = p[i];
-				if (p_ < -tol_p)
-					alpha_1 = min2(alpha_1, l_/p_);			
-				else if (p_ > tol_p)
-					alpha_1 = min2(alpha_1, u_/p_);
-			}
+			std::cout << r[i] << " ";
 		}
-		std::cout << "\t CG: alpha_1 = " << std::scientific << alpha_1 << std::fixed << std::endl;
-		
-		const double py = ddot_(&mN, p, &I1, y, &I1);
-		if (py < 0.0)
+		std::cout << std::endl;
+			
+		if (rho_2 < eta_sq)
 		{
-			daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
 			CG_converged = true;
 		}
 		else
 		{
-			double alpha_2 = rho_2 / py;
-			if (alpha_2 > alpha_1)
+			double beta = rho_2 / rho_1;
+			dscal_(&mN, &beta, p, &I1);
+			daxpy_(&mN, &D1, r, &I1, p, &I1);
+			for (int i(0); i<J.size(); ++i) {p[J[i]] = 0.0;}
+		
+			// compute y = Bp (restricted to the active set)
+			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D1, y, &I1);
+			for (int i(0); i<J.size(); ++i) {y[J[i]] = 0.0;}
+	
+			// compute alpha1, largest positive real s.t. l < x+alpha1*p < u
+			double alpha_1 = 1e16;
+			const double tol_p = 1e-8;
+			for (int i(0); i<mN; ++i)
+			{
+				if (active_set_cauchy[i] != 1)
+				{
+					double l_ = mLowerBound[i] - x[i];
+					double u_ = mUpperBound[i] - x[i];
+					double p_ = p[i];
+					if (p_ < -tol_p)
+						alpha_1 = min2(alpha_1, l_/p_);			
+					else if (p_ > tol_p)
+						alpha_1 = min2(alpha_1, u_/p_);
+				}
+			}
+			std::cout << "\t CG: alpha_1 = " << std::scientific << alpha_1 << std::fixed << std::endl;
+		
+			const double py = ddot_(&mN, p, &I1, y, &I1);
+			std::cout << "\tpy = " << py << std::endl;
+			const double tol_py = 1e-4;
+			if (py < tol_py)
 			{
 				daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
 				CG_converged = true;
 			}
 			else
 			{
-				daxpy_(&mN, &alpha_2, p, &I1, x, &I1);
-				alpha_2 = -alpha_2;
-				daxpy_(&mN, &alpha_2, y, &I1, r, &I1);
-				for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
-				rho_1 = rho_2;
-				rho_2 = ddot_(&mN, r, &I1, r, &I1);
+				double alpha_2 = rho_2 / py;
+				if (alpha_2 > alpha_1)
+				{
+					daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
+					CG_converged = true;
+				}
+				else
+				{
+					daxpy_(&mN, &alpha_2, p, &I1, x, &I1);
+					alpha_2 = -alpha_2;
+					daxpy_(&mN, &alpha_2, y, &I1, r, &I1);
+					for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
+					rho_1 = rho_2;
+					rho_2 = ddot_(&mN, r, &I1, r, &I1);
+				}
 			}
 		}
 	}
