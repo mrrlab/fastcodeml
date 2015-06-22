@@ -6,12 +6,13 @@
 // comment it to use the absolute error stopping criterion
 //#define FTOL_REL_ERROR
 
-// uncomment this to use the old randomized initialization of parameters
-// otherwise use initialization based on distribution of the parameters
-//#define OLD_INITIALIZATION
-
-// uncomment this to use the bootstrap before optimizing
+// uncomment this to use initialization based on distribution of the parameters
 #define BOOTSTRAP
+
+// if bootstrap not enabled use the old randomized initialization of parameters
+#ifndef BOOTSTRAP
+#define OLD_INITIALIZATION
+#endif
 
 #include <vector>
 #include <cfloat>
