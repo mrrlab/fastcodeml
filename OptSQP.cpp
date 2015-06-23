@@ -493,44 +493,43 @@ void OptSQP::BFGSupdate(void)
 
 
 #if 1	// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
-		double *H = mWorkSpaceMat;
-		memcpy(H, mHessian, mN*mSizeVect);
-	
-		int number_eigen_values;
-		double *eigen_values = mWorkSpaceVect;
-	
-		std::vector<double> work(1);
-		std::vector<int> iwork(1);
-		int lwork = -1;
-		int liwork = -1;
+		
+		// estimate the condition number
+		double *hessian = mWorkSpaceMat;
+		memcpy(hessian, mHessian, mN*mSizeVect);
+		
+		// hessian 1-norm
+		double norm_hessian = 0.0;
+		for (int i(0); i<mN; ++i)
+		{
+			const double sum_current_column = dasum_(&mN, hessian+i*mN, &I1);
+			norm_hessian = max2(norm_hessian, sum_current_column); 
+		}
+		std::cout << "\tNorm 1 of the hessian = " << norm_hessian << std::endl;
+		
+		// LU decomposition of the hessian (needed for condition number estimate)
+		const char uplo = 'U';
 		int info;
+		dpotrf_(&uplo, &mN, hessian, &mN, &info);
+		if (info != 0)
+			std::cout << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
 		
-		// workspace querry
-		dsyevd_("N", "U", &mN, H, &mN, eigen_values
-               ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		
-		lwork = static_cast<int>(work[0]);
-		liwork = iwork[0];
-		work.resize(lwork);
-		iwork.resize(liwork);
-	
-		// compute the eigenvalues
-		dsyevd_("N", "U", &mN, H, &mN, eigen_values
-               ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		
-		const double eigenvalue_min = eigen_values[0];
-		const double condition_number = eigen_values[mN-1] / eigenvalue_min;
+		// compute condition number
+		std::vector<double> work(3*mN);
+		std::vector<int> iwork(mN);
+		double reciprocal_condition_number;
+		dpocon_(&uplo, &mN, hessian, &mN, &norm_hessian, &reciprocal_condition_number, &work[0], &iwork[0], &info);
+		if (info != 0)
+			std::cout << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
+		double condition_number = 1.0 / reciprocal_condition_number;
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		{
 			std::cout << "Condition number before = " << condition_number << std::endl;
-			std::cout << "eigen values before: min = " << eigenvalue_min << ", max = " << eigen_values[mN-1] << std::endl;
-		}
 
 		// make the diagonal more important in order to avoid non positive definite matrix, 
 		// due to roundoff errors; 
 		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
-		if (condition_number > 1e3 || eigenvalue_min < 1e-3)
+		if (condition_number > 1e3)
 		{
 			const double off_diagonal_scaling = 1.0 / (1.0+log(condition_number) - log(1e3));
 			for (int i(0); i<mN; ++i)
@@ -547,34 +546,30 @@ void OptSQP::BFGSupdate(void)
 #endif
 
 #if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
-		H = mWorkSpaceMat;
-		memcpy(H, mHessian, mN*mSizeVect);
-	
-		number_eigen_values;
-		eigen_values = mWorkSpaceVect;
-	
-		lwork = -1;
-		liwork = -1;
+		hessian = mWorkSpaceMat;
+		memcpy(hessian, mHessian, mN*mSizeVect);
 		
-		std::cout << "Workspace_querry:" << std::endl;
-		
-		dsyevd_("N", "U", &mN, H, &mN, eigen_values
-               ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		
-		lwork = static_cast<int>(work[0]);
-		liwork = iwork[0];
-		work.resize(lwork);
-		iwork.resize(liwork);
-	
-		std::cout << "EigenValue solver:" << std::endl;
-		dsyevd_("N", "U", &mN, H, &mN, eigen_values
-               ,&work[0], &lwork, &iwork[0], &liwork, &info);
-		double con_num_after = eigen_values[mN-1] / eigen_values[0];
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		// hessian 1-norm
+		norm_hessian = 0.0;
+		for (int i(0); i<mN; ++i)
 		{
-			std::cout << "Condition number after = " << con_num_after << " ratio = " << condition_number/con_num_after << std::endl;
-			std::cout << "eigen values after: min = " << eigen_values[0] << ", max = " << eigen_values[mN-1] << std::endl;
+			const double sum_current_column = dasum_(&mN, hessian+i*mN, &I1);
+			norm_hessian = max2(norm_hessian, sum_current_column); 
 		}
+		
+		// LU decomposition of the hessian (needed for condition number estimate)
+		dpotrf_(&uplo, &mN, hessian, &mN, &info);
+		if (info != 0)
+			std::cout << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
+		
+		// compute condition number
+		dpocon_(&uplo, &mN, hessian, &mN, &norm_hessian, &reciprocal_condition_number, &work[0], &iwork[0], &info);
+		if (info != 0)
+			std::cout << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
+		condition_number = 1.0 / reciprocal_condition_number;
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+			std::cout << "Condition number after = " << condition_number << std::endl;
 #endif
 	}
 }
