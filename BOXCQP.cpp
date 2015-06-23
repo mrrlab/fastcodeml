@@ -14,12 +14,14 @@
 bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double *aX, bool *aSolutionOnBorder, double *aUnconstrainedDirection)
 {
 	int info;
-	std::vector<int> IPIV(mN);
-		
+	#ifdef USE_SCALING_COND
 	const char fact = 'E';
 	const char uplo = 'U';
 	char equed;
 	double rcond, ferr, berr;
+	#else
+	std::vector<int> IPIV(mN);
+	#endif
 	
 	// initialize parameters
 	
@@ -45,7 +47,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	if (info != 0 && info != (mN+1))
 		std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 	else
-		std::cout << "\tcond = " << 1.0/rcond << ", ferr = " << ferr << ", berr = " << berr << std::endl;
+		std::cout << "\tequilibrated: " << equed << ", cond = " << 1.0/rcond << ", ferr = " << std::scientific << ferr << ", berr = " << berr << std::fixed << std::endl;
 	#else
 	dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], aX, &mN, &info);
 	#endif
@@ -144,9 +146,6 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		memcpy(mRHS, mSubSolution, Nsub*sizeof(double));
 		if (info != 0 && info != (Nsub+1))
 			std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
-		else
-			std::cout << "\tcond = " << 1.0/rcond << ", ferr = " << ferr << ", berr = " << berr << std::endl;
-		
 		#else
 		dgesv_(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &info);
 		if (info != 0)

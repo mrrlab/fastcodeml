@@ -532,24 +532,17 @@ void OptSQP::BFGSupdate(void)
 		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
 		if (condition_number > 1e3 || eigenvalue_min < 1e-3)
 		{
-			const int diag_stride = mN+1;
-			const double off_diagonal_scaling = 1.1;
-			const double inv_off_diagonal_scaling = 1.0 / off_diagonal_scaling;
-			#if 0
-			dscal_(&n_sq, &inv_off_diagonal_scaling, mHessian, &I1);
-			dscal_(&mN, &off_diagonal_scaling, mHessian, &diag_stride);
-			#else
+			const double off_diagonal_scaling = 1.0 / (1.0+log(condition_number) - log(1e3));
 			for (int i(0); i<mN; ++i)
 			{
 				for (int j(i+1); j<mN; ++j)
 				{
 					double Hij = mHessian[i*mN+j];
-					Hij *= inv_off_diagonal_scaling;
+					Hij *= off_diagonal_scaling;
 					mHessian[i*mN+j] = Hij;
 					mHessian[j*mN+i] = Hij;
 				}
 			}
-			#endif
 		}
 #endif
 
