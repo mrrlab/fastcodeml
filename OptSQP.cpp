@@ -531,7 +531,8 @@ void OptSQP::BFGSupdate(void)
 		// this also speeds up the computation as the condition number is reduced by a factor of 10^3 in some cases!
 		if (condition_number > 1e3)
 		{
-			const double off_diagonal_scaling = 1.0 / (1.0+log(condition_number) - log(1e3));
+			// values obtained from experiments
+			const double off_diagonal_scaling = min2(1./1.1, 15.35 / (log(condition_number) + 7.67));
 			for (int i(0); i<mN; ++i)
 			{
 				for (int j(i+1); j<mN; ++j)
