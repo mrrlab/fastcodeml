@@ -532,17 +532,12 @@ void OptSQP::BFGSupdate(void)
 		if (condition_number > 1e3)
 		{
 			// values obtained from experiments
-			const double off_diagonal_scaling = 1./1.1; //min2(1./1.1, 15.35 / (log(condition_number) + 7.67));
-			for (int i(0); i<mN; ++i)
-			{
-				for (int j(i+1); j<mN; ++j)
-				{
-					double Hij = mHessian[i*mN+j];
-					Hij *= off_diagonal_scaling;
-					mHessian[i*mN+j] = Hij;
-					mHessian[j*mN+i] = Hij;
-				}
-			}
+			const double off_diagonal_scaling = min2(1./1.1, 15.35 / (log(condition_number) + 7.67));
+			double *diagonal_backup = mWorkSpaceVect;
+			const int diagonal_stride = mN+1;
+			dcopy_(&mN, mHessian, &diagonal_stride, diagonal_backup, &I1);
+			dscal_(&n_sq, &off_diagonal_scaling, mHessian, &I1);
+			dcopy_(&mN, diagonal_backup, &I1, mHessian, &diagonal_stride);
 		}
 #endif
 
