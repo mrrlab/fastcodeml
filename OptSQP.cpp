@@ -532,7 +532,7 @@ void OptSQP::BFGSupdate(void)
 		if (condition_number > 1e3)
 		{
 			// values obtained from experiments
-			const double off_diagonal_scaling = min2(1./1.1, 15.35 / (log(condition_number) + 7.67));
+			const double off_diagonal_scaling = 1./1.1; //min2(1./1.1, 15.35 / (log(condition_number) + 7.67));
 			for (int i(0); i<mN; ++i)
 			{
 				for (int j(i+1); j<mN; ++j)
