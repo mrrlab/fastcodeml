@@ -54,21 +54,20 @@ void OptSQP::allocateMemory(void)
 {
 	mSizeVect = mN*sizeof(double);
 	
+	// allocate the double precision workspace
 	mXEvaluator.resize(mN);
 	mSpace.resize(2*mN*mN + mN*7);
 
-	mWorkSpaceVect = &mSpace[0];
-	mWorkSpaceMat = mWorkSpaceVect + mN;
-	
-	mGradient = mWorkSpaceMat + mN*mN;
-	mP = mGradient + mN;
-	mHessian = mP + mN;
-	
-	mSk = mHessian + mN*mN;
-	mYk = mSk + mN;
-	
-	mXPrev = mYk + mN;
-	mGradPrev = mXPrev + mN;
+	// assign working arrays to allocated space
+	mWorkSpaceVect	= &mSpace[0];
+	mWorkSpaceMat	= mWorkSpaceVect	+ mN;
+	mGradient		= mWorkSpaceMat		+ mN*mN;
+	mP				= mGradient			+ mN;
+	mHessian		= mP				+ mN;
+	mSk				= mHessian			+ mN*mN;
+	mYk				= mSk				+ mN;
+	mXPrev			= mYk				+ mN;
+	mGradPrev		= mXPrev			+ mN;
 	
 	// set active set counters to zero
 	mActiveSet.resize(mN, 0);
@@ -123,11 +122,10 @@ void OptSQP::unscaleVariables(double *aX)
 // ----------------------------------------------------------------------
 void OptSQP::SQPminimizer(double *aF, double *aX)
 {
-#ifdef SCALE_OPT_VARIABLES
+	#ifdef SCALE_OPT_VARIABLES
 	scaleVariables(aX);
-#endif // SCALE_OPT_VARIABLES
+	#endif
 	
-	//double df = 0.0;
 	*aF = evaluateFunction(aX, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -139,10 +137,10 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 	// compute current gradient
 	computeGradient(aX, *aF, mGradient);
 	
-	// initialize the hessian matrix
+	// initialize the hessian matrix to identity
 	hessianInitialization();
 	
-	// bounds for the QP subproblem
+	// local bounds for the QP subproblem
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
 	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
@@ -171,7 +169,8 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		bool QPsolutionOnBorder;
 		bool QP_converged = mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder, mWorkSpaceVect);
 		
-		if (!QP_converged) // take the projected gradient direction
+		// take the projected gradient direction in case of unsuccesfull QP solution
+		if (!QP_converged) 
 		{
 			hessianInitialization();
 			memcpy(mP, mGradient, mSizeVect);
@@ -184,8 +183,7 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			}
 		}
 	
-#if 1
-		// try to extend the limits to the boundaries (-> global line search)
+		// extend the upper limit of line search to the boundaries
 		double alpha = 1e16;
 		for (int i=0; i<mN; ++i)
 		{
@@ -197,18 +195,13 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 			else if (p > 1e-8)
 				alpha = min2(alpha, u/p);
 		}
-#else		
-		double alpha = 1.0;
-#endif		 
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
 			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
 			std::cout << "Line Search with a_max = " << alpha << "..." << std::endl;
 		}
-
 		
-		
-		// line search
+		// perform line search along mP
 		lineSearch(&alpha, aX, aF);
 		
 		// avoid unsatisfied bounds due to roundoff errors 
@@ -232,32 +225,33 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		double df = f_prev - *aF;
 #if SQP_STOP_PARAMETERS_ACCURACY // accurate stopping criterion in terms of parameters, can be a west of iterations at the end
 		double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
-		convergenceReached =  (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError)
-							|| mStep >= mMaxIterations;
+		convergenceReached = (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError);
+		convergenceReached = convergenceReached || mStep >= mMaxIterations;
 #else	// less accurate but usually sufficient
 		convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
 #endif
 		
+		// update variables before next iteration
 		if (!convergenceReached)
 		{
-			// update the system
-			
+			// update gradient			
 			computeGradient(aX, *aF, mGradient);
-				
+			
+			// compute s = x - x_prev
 			memcpy(mSk, aX, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
 			
+			// compute y = g - g_prev
 			memcpy(mYk, mGradient, mSizeVect);
 			daxpy_(&mN, &minus_one, mGradPrev, &I1, mYk, &I1);
-		
+			
+			// update the B matrix
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 				std::cout << "BFGS update..." << std::endl;
-		
-			// update the B matrix
 			BFGSupdate();
 		
 			// update the active set
-			double tolerance_active_set = 1e-4;
+			const double tolerance_active_set = 1e-4;
 			activeSetUpdate(aX, tolerance_active_set);
 		}
 	}
@@ -274,7 +268,7 @@ double OptSQP::evaluateFunction(const double *aX, bool aTrace)
 #ifdef SCALE_OPT_VARIABLES
 	unscaleVariables(&mXEvaluator[0]);
 #endif // SCALE_OPT_VARIABLES
-	double f = mModel->computeLikelihood(mXEvaluator, aTrace);
+	const double f = mModel->computeLikelihood(mXEvaluator, aTrace);
 	
 	// Stop optimization if value is greater or equal to threshold
 	if (mStopIfBigger && f >= mThreshold) throw FastCodeMLEarlyStopLRT();
@@ -296,7 +290,7 @@ double OptSQP::evaluateFunctionForLineSearch(const double* aX, double aAlpha)
 void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 {
 	volatile double eh;
-	double sqrt_eps = sqrt(DBL_EPSILON);
+	const double sqrt_eps = sqrt(DBL_EPSILON);
 	double f;
 	memcpy(&mXEvaluator[0], aX, mSizeVect);
 	int i;
@@ -322,15 +316,15 @@ void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 	}
 	for (i=0; i<mNumTimes; ++i)
 	{
+		// compute this component if we know it can change
 		if (mActiveSet[i] == 0)
 		{
 			f = -mModel->computeLikelihoodForGradient(mXEvaluator, false, i);
 			aGrad[i] = (f-aF0)/delta[i];
 		}
-		// otherwise we don't change it
 	}
 	
-	// other variables
+	// other parameters
 	memcpy(&mXEvaluator[0], x, mSizeVect);
 	for(; i<mN; ++i)
 	{
@@ -351,10 +345,10 @@ void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 	#pragma omp parallel for
 	for (int j(0); j<mN; ++j)
 	{
-		double slb = mLowerBound[j];
-		double sub = mUpperBound[j];
-		double lb = mLowerBoundUnscaled[j];
-		double ub = mUpperBoundUnscaled[j];
+		const double slb = mLowerBound[j];
+		const double sub = mUpperBound[j];
+		const double lb = mLowerBoundUnscaled[j];
+		const double ub = mUpperBoundUnscaled[j];
 		
 		aGrad[j] *= (ub-lb)/(sub-slb);
 	}
@@ -366,7 +360,7 @@ void OptSQP::computeGradient(const double *aX, double aF0, double *aGrad)
 void OptSQP::hessianInitialization(void)
 {
 	// initialize hessian matrix to identity
-	int n_sq( mN*mN ), diag_stride( mN+1 );
+	const int n_sq( mN*mN ), diag_stride( mN+1 );
 	dcopy_(&n_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
 	
@@ -409,9 +403,9 @@ void OptSQP::BFGSupdate(void)
 	// local variables
 	double ys, sBs;
 	double *Bs, *BssB, *yy;
-	char trans = 'N';
+	const char trans = 'N';
 	
-	int n_sq = mN*mN;
+	const int n_sq = mN*mN;
 	
 	// compute vector B*mSk
 	Bs = mWorkSpaceVect;
@@ -470,7 +464,7 @@ void OptSQP::BFGSupdate(void)
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
 		{
-			double prefactor = - Bs[i] / sBs;
+			const double prefactor = - Bs[i] / sBs;
 			dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
 			dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
 		}
@@ -483,7 +477,7 @@ void OptSQP::BFGSupdate(void)
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
 		{
-			double prefactor = mYk[i] / ys;
+			const double prefactor = mYk[i] / ys;
 			dcopy_(&mN, &mYk[0], &I1, &yy[i*mN], &I1);
 			dscal_(&mN, &prefactor, &yy[i*mN], &I1);
 		}
