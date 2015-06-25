@@ -192,7 +192,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			std::cout << "Computing new search direction..." << std::endl;
 		
 		// solve approximately the quadratic program to get the search direction		
-		computeSearchDirection(x);
+		computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
 		
 		
 		// line search
@@ -511,17 +511,16 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 
 #else
 // ----------------------------------------------------------------------
-void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
+void OptSQPSR1::lineSearch(double *aAlpha, double *aX, double *aF)
 {
 	// constants for the Wolfe condition
 	// note that there must be 0 < c1 < c2 < 1
 	const double c1 (2e-1), c2 (0.3);
-	const double amax = *aalpha;
+	const double amax = *aAlpha;
 	const double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	const double phi_0 = *f;
+	const double phi_0 = *aF;
 	double phi, phi_prev;
 	double a_prev = 0.0;
-	double phi_a_prime;
 	
 	double a = randFrom0to1();
 		
@@ -530,17 +529,15 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 	
 	phi = phi_prev = phi_0;
 	
-	double sigma, sigma_bas;
 	int iter = 0;
 	
-	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10) ));
-	sigma_bas = pow(1e-2, 1./static_cast<double>(max_iter));
+	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10.) ));
 	
-	while(iter < max_iter)
+	while (iter < max_iter)
 	{
 		++iter;
 		phi_prev = phi;
-		phi = evaluateFunctionForLineSearch(x, a);
+		phi = evaluateFunctionForLineSearch(aX, a);
 		
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
 		std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
@@ -548,14 +545,14 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 		if (phi > phi_0 + c1*a*phi_0_prime || ((phi > phi_prev) && (iter > 1)) )
 		{
 			// solution between a_prev and a
-			a = zoom(a_prev, a, x, phi_0, phi_0_prime, phi_prev, c1, c2);
+			a = zoom(a_prev, a, aX, phi_0, phi_0_prime, phi_prev, c1, c2);
 			break;
 		}
 		
 		// compute the derivative at point a
 		double eh = sqrt(DBL_EPSILON);
 		if ( a+eh >= 1.0 ) {eh = -eh;}
-		phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
+		double phi_a_prime = (evaluateFunctionForLineSearch(aX, a+eh) - phi)/eh;
 		
 		if (fabs(phi_a_prime) <= -c2*phi_0_prime)
 		{
@@ -565,58 +562,72 @@ void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
 		if (phi_a_prime >= 0.0)
 		{
 			// solution between a and a_prev
-			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
+			a = zoom(a, a_prev, aX, phi_0, phi_0_prime, phi, c1, c2);
 			break;
 		}
-		//sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		sigma = randFrom0to1();
-		//sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
+		double sigma = randFrom0to1();
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
+	// TODO:
+	// Consider the case when the second Wolfe condition is not satisfied
 	
-	
-	*f = evaluateFunctionForLineSearch(x,a);
-	*aalpha = a;
-	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
+	*aF = evaluateFunctionForLineSearch(aX, a);
+	*aAlpha = a;
+	daxpy_(&mN, aAlpha, mP, &I1, aX, &I1);
 }
 
 
 // ----------------------------------------------------------------------
-double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
+double OptSQPSR1::zoom(double aAlo, double aAhi, const double *aX, const double& aPhi0, const double& aPhi0Prime, const double& aAphiLo, const double& c1, const double& c2)
 {
-	double a, phi, phi_a_prime;
-	double philo = aphi_lo;
-	a = 0.5*(alo+ahi);
-	while( fabs(ahi-alo) > 0.01 )
+	double a, phi_a_prime;
+	double philo = aAphiLo;
+	a = 0.5*(aAlo+aAhi);
+	const double tolerance = 0.4 / static_cast<double>(mN);
+	double phi = aPhi0;
+	
+	while (fabs(aAhi-aAlo) > tolerance)
 	{
 		double tmp = 0.5;
-		a = tmp*alo + (1.-tmp)*ahi;
-		phi = evaluateFunctionForLineSearch(x, a);
+		a = tmp*aAlo + (1.-tmp)*aAhi;
+		phi = evaluateFunctionForLineSearch(aX, a);
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
+			std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << aAlo << " ahi: " << aAhi << " philo: " << philo  << std::endl;
 		 
-		if (phi > phi_0 + a*c1*phi_0_prime || phi > philo)
+		if (phi > aPhi0 + a*c1*aPhi0Prime || phi > philo)
 		{
-			ahi = a;
+			aAhi = a;
 		}	
 		else
 		{
 			double eh = sqrt(DBL_EPSILON);
 			if ( a+eh >= 1.0 ) {eh = -eh;}
-			phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
+			phi_a_prime = (evaluateFunctionForLineSearch(aX, a+eh) - phi)/eh;
 			
-			if (fabs(phi_a_prime) <= -c2*phi_0_prime)
+			if (fabs(phi_a_prime) <= -c2*aPhi0Prime)
 				return a;
 				
-			if (phi_a_prime*(ahi-alo) >= 0.0)
-				ahi = alo;
+			if (phi_a_prime*(aAhi-aAlo) >= 0.0)
+				aAhi = aAlo;
 				
-			alo = a;
+			aAlo = a;
 			philo = phi;
 		}
 	}
 	
+	// make sure to have a small enough step (only if near 0)
+	if (a <= tolerance && phi > aPhi0)
+	{
+		int step_decrease = 0;
+		const int max_step_decrease = 10;
+		while (step_decrease++ < max_step_decrease)
+		{
+			a *= 0.2;
+			phi = evaluateFunctionForLineSearch(aX, a);
+			if (phi < aPhi0) step_decrease = max_step_decrease+1;
+		}
+	}
 	return a;
 }
 #endif // STRONG_WOLFE_LINE_SEARCH_SR1
@@ -624,246 +635,141 @@ double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, c
 
 // ----------------------------------------------------------------------
 
-void OptSQPSR1::computeSearchDirection(const double *aX)
+void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
 {
-
-	char trans = 'N';
+	const int maximum_iterations_cg = mN*2;
+	const char trans = 'N';
 	
-	// --- compute the generalized Cauchy point (GCP)
+	const double epsilon = 0.1;
 	
-	double *x = mWorkSpaceVect;
-	double *g = mWorkSpaceMat;
-	double *d = g + mN;
-	double *Bd = d + mN;
-	double *b = Bd + mN;
-	
-	std::vector<int> active_set_cauchy(mN, 0);
-	std::vector<int> J; J.reserve(mN);
-	
-	// x vector
-	memcpy(x, aX, mSizeVect);
-	// g = gradient - Bx
-	memcpy(g, mGradient, mSizeVect);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, x, &I1, &D1, g, &I1);
-	// projected gradient in the limit of a small gradient
-	const double tol_active_set = 1e-8;
-	memcpy(d, mGradient, mSizeVect);
-	dscal_(&mN, &minus_one, d, &I1);
-	#pragma omp parallel for
-	for (int i(0); i<mN; ++i)
+	double Delta_sq;
+	const double Delta_sq_min = 0.5;
+	const double theta = 1e-8;
+	if (mStep == 0)
 	{
-		double d_ = d[i];
-		const double x_ = x[i];
-		const double l_ = mLowerBound[i];
-		const double u_ = mUpperBound[i];
-		d_ = (((x_-l_) < tol_active_set) ? max2(d_, 0.0) : d_);
-		d_ = (((u_-x_) < tol_active_set) ? min2(d_, 0.0) : d_);
-		d[i] = d_;
+		Delta_sq = 5.0;
 	}
-	double scale_d = static_cast<double>(mN) / dnrm2_(&mN, d, &I1);
-	dscal_(&mN, &scale_d, d, &I1);
-	// Bd
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
-	double f_prime = ddot_(&mN, mGradient, &I1, d, &I1);
-	double f_double_prime = ddot_(&mN, d, &I1, Bd, &I1);
-	
-	bool GCP_found = (f_prime >= 0.0);
-	while (!GCP_found)
+	else
 	{
-		// find the next break point
-		double delta_t = 1e16;
-		const double tol_d = 1e-16;
-		for (int i(0); i<mN; ++i)
-		{
-			const double l_ = mLowerBound[i]-x[i];
-			const double u_ = mUpperBound[i]-x[i];
-			const double d_ = d[i];
-			if (d_ < -tol_d)
-				delta_t = min2(delta_t, l_/d_);			
-			else if (d_ > tol_d)
-				delta_t = min2(delta_t, u_/d_);
-		}
-		// find the set J
-		for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
-		J.clear();
-		for (int i(0); i<mN; ++i)
-		{
-			const double x_next = x[i] + delta_t*d[i];
-			if (   (fabs(x_next - mLowerBound[i]) < tol_active_set
-				 || fabs(x_next - mUpperBound[i]) < tol_active_set)
-				&& active_set_cauchy[i] != 1 )
-			{
-				J.push_back(i);
-			}
-		}
-		
-		// verify if the GCP is in this interval
-		double neg_ratio_f = -f_prime/f_double_prime;
-		if ( (f_double_prime > 0.0) && (0.0 < neg_ratio_f) && (neg_ratio_f < delta_t))
-		{
-			daxpy_(&mN, &neg_ratio_f, d, &I1, x, &I1);
-			GCP_found = true;
-		}
-		else
-		{
-			// update line derivatives
-			dcopy_(&mN, &D0, &I0, b, &I1);
-			for (int i(0); i<J.size(); ++i)
-			{
-				int line = J[i];
-				daxpy_(&mN, &d[line], &mHessian[line*mN], &I1, b, &I1);
-			}
-			daxpy_(&mN, &delta_t, d, &I1, x, &I1);
-			f_prime += delta_t*f_double_prime;
-			f_prime -= ddot_(&mN, b, &I1, x, &I1);
-		
-			f_double_prime -= 2.0 * ddot_(&mN, b, &I1, d, &I1);
-			for (int i(0); i<J.size(); ++i)
-			{
-				int line = J[i];
-				f_prime -= d[line]*g[line];
-				f_double_prime += d[line]*b[line];
-				d[line] = 0.0;
-			}
-			GCP_found = (f_prime >= 0.0);
-		}
-	}
+		Delta_sq = max2(Delta_sq_min, 10.0*ddot_(&mN, mSk, &I1, mSk, &I1));
+	} 
 	
-	// store all the fixed variables in J
-	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;} J.clear();
-	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);}
+	double *p = mWorkSpaceVect;
+	double *r = mWorkSpaceMat;
+	double *w = r + mN;
+	double *next_iterate = w+mN;
+	double *projected_gradient = next_iterate+mN;
 	
-	
-	std::cout << "\tActive set = { ";
-	for (int i(0); i<J.size(); ++i) {std::cout << J[i] << " ";}
-	std::cout << "}" << std::endl;
-	
-#if 0
-	memcpy(mP, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
-	return;
-#endif
-	
-	if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "\tCauchy point calculated, refining the search direction with a conjugate gradient method..." << std::endl;
-	
-	// --- refine the solution with a conjugate gradient algorithm
-	
-	double *dx = mWorkSpaceMat;
-	double *r = dx + mN;
-	double *p = r + mN;
-	double *y = p + mN;
-	
-	// compute residual r = -gradient - B*dx
-	memcpy(dx, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, dx, &I1);
-	for (int i(0); i<J.size(); ++i) {dx[J[i]] = 0.0;}
-	memcpy(r, mGradient, mSizeVect);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, dx, &I1, &minus_one, r, &I1);
-	for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
-	
-	// set p = 0
-	dcopy_(&mN, &D0, &I0, p, &I1);
-	
-	// compute eta
-	double *projected_gradient = dx; // we do not use dx anymore
+	// compute the projected gradient direction
 	memcpy(projected_gradient, mGradient, mSizeVect);
 	dscal_(&mN, &minus_one, projected_gradient, &I1);
 	#pragma omp parallel for
 	for (int i(0); i<mN; ++i)
 	{
-		const double u_ = mLowerBound[i] - aX[i];
-		const double l_ = mUpperBound[i] - aX[i];
-		double pg_ = projected_gradient[i];
-		pg_ = min2(max2(pg_, u_), l_);
-		projected_gradient[i] = pg_;
+		double pg = projected_gradient[i];
+		pg = min2(pg, aLocalUpperBound[i]);
+		pg = max2(pg, aLocalLowerBound[i]);
+		projected_gradient[i] = pg;
 	}
-	const double pg_norm = dnrm2_(&mN, projected_gradient, &I1);
-	const double eta_sq = min2(1e-2, pg_norm)*square(pg_norm);
 	
-	// residual norm squared (prev and current)
-	double rho_1 = 1.0;
-	double rho_2 = ddot_(&mN, r, &I1, r, &I1);
+	const double threshold_residual = square(epsilon)*ddot_(&mN, projected_gradient, &I1, projected_gradient, &I1);
 	
-	bool CG_converged = false;
-	int number_tries = 0;
-	const int max_number_tries = 15;
-	while (!CG_converged && (number_tries++ < max_number_tries))
+	// start with a null starting point
+	dcopy_(&mN, &D0, &I0, mP, &I1);
+	
+	// residual
+	memcpy(r, projected_gradient, mSizeVect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &D1, r, &I1);
+	
+	double rho_prev = 1.0;
+	double rho = ddot_(&mN, r, &I1, r, &I1);
+	
+	bool cg_converged = false;
+	int step_cg = 0;
+	while (step_cg++ < maximum_iterations_cg && !cg_converged)
 	{
-		std::cout << "\t CG: rho_2 = " << rho_2 << ", r=";
-		for (int i(0); i<mN; ++i)
+		std::cout << "\trho = " << rho << std::endl;
+		// test stopping criteria
+		if (rho < threshold_residual)
 		{
-			if (i%10 == 0)
-			{
-				std::cout << "\t" << std::endl;
-			}
-			std::cout << r[i] << " ";
-		}
-		std::cout << std::endl;
-			
-		if (rho_2 < eta_sq)
-		{
-			CG_converged = true;
+			cg_converged = true;
+			std::cout << "\tCG convergence reached" << std::endl;
 		}
 		else
 		{
-			double beta = rho_2 / rho_1;
-			dscal_(&mN, &beta, p, &I1);
-			daxpy_(&mN, &D1, r, &I1, p, &I1);
-			for (int i(0); i<J.size(); ++i) {p[J[i]] = 0.0;}
-		
-			// compute y = Bp (restricted to the active set)
-			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D1, y, &I1);
-			for (int i(0); i<J.size(); ++i) {y[J[i]] = 0.0;}
-	
-			// compute alpha1, largest positive real s.t. l < x+alpha1*p < u
-			double alpha_1 = 1e16;
-			const double tol_p = 1e-8;
-			for (int i(0); i<mN; ++i)
+			// compute conjugate gradient direction
+			if (step_cg == 1)
 			{
-				if (active_set_cauchy[i] != 1)
-				{
-					double l_ = mLowerBound[i] - x[i];
-					double u_ = mUpperBound[i] - x[i];
-					double p_ = p[i];
-					if (p_ < -tol_p)
-						alpha_1 = min2(alpha_1, l_/p_);			
-					else if (p_ > tol_p)
-						alpha_1 = min2(alpha_1, u_/p_);
-				}
-			}
-			std::cout << "\t CG: alpha_1 = " << std::scientific << alpha_1 << std::fixed << std::endl;
-		
-			const double py = ddot_(&mN, p, &I1, y, &I1);
-			std::cout << "\tpy = " << py << std::endl;
-			const double tol_py = 1e-4;
-			if (py < tol_py)
-			{
-				daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
-				CG_converged = true;
-			}
+				memcpy(p, r, mSizeVect);
+				//dscal_(&mN, &minus_one, p, &I1);
+			} 
 			else
 			{
-				double alpha_2 = rho_2 / py;
-				if (alpha_2 > alpha_1)
+				const double beta = rho/rho_prev;
+				dscal_(&mN, &beta, p, &I1);
+				//daxpy_(&mN, &minus_one, r, &I1, p, &I1);
+				daxpy_(&mN, &D1, r, &I1, p, &I1);
+			}
+			// compute max allowed step
+			const double pp = ddot_(&mN, p, &I1, p, &I1);
+			const double dp = ddot_(&mN, mP, &I1, p, &I1);
+			const double dd = ddot_(&mN, mP, &I1, mP, &I1);
+			const double xi = sqrt(square(dp) - pp*dd + pp*Delta_sq);
+			double alpha = (xi-dp) / pp;
+			const double tol_p = 1e-12;
+			for (int i(0); i<mN; ++i)
+			{
+				const double l = aLocalLowerBound[i] - mP[i];
+				const double u = aLocalUpperBound[i] - mP[i];
+				const double p_ = p[i];
+				if (p_ < -tol_p)
+					alpha = min2(alpha, l/p_);
+				else if (p_ > tol_p)
+					alpha = min2(alpha, u/p_);
+			}
+			const double alpha_max = alpha;
+			// compute curvature informations
+			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, w, &I1);
+			const double gamma = ddot_(&mN, p, &I1, w, &I1);
+			// consider the bounds and negative curvatures
+			if (gamma > 0)
+			{
+				alpha = min2(alpha, rho/gamma);
+			}
+			else if (step_cg > 1)
+			{
+				cg_converged = true;
+				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
+			}
+			if (!cg_converged)
+			{
+				// compute new iterate
+				memcpy(next_iterate, mP, mSizeVect);
+				daxpy_(&mN, &alpha, p, &I1, next_iterate, &I1);
+				const double gd = ddot_(&mN, mGradient, &I1, next_iterate, &I1);
+				const double threshold_gd = -theta*dnrm2_(&mN, mGradient, &I1) * dnrm2_(&mN, next_iterate, &I1);
+				if (gd > threshold_gd)
 				{
-					daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
-					CG_converged = true;
+					cg_converged = true;
+					std::cout << "\tCG convergence reached: next iterate not descent enough" << std::endl;
+				}
+				else if (alpha == alpha_max)
+				{
+					memcpy(mP, next_iterate, mSizeVect);
+					cg_converged = true;
+					std::cout << "\tCG convergence reached: reached border" << std::endl;
 				}
 				else
 				{
-					daxpy_(&mN, &alpha_2, p, &I1, x, &I1);
-					alpha_2 = -alpha_2;
-					daxpy_(&mN, &alpha_2, y, &I1, r, &I1);
-					for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
-					rho_1 = rho_2;
-					rho_2 = ddot_(&mN, r, &I1, r, &I1);
+					std::cout << "\talpha = " << alpha << ", gamma = " << gamma << std::endl;
+					memcpy(mP, next_iterate, mSizeVect);
+					alpha = -alpha;
+					daxpy_(&mN, &alpha, w, &I1, r, &I1);
+					rho_prev = rho;
+					rho = ddot_(&mN, r, &I1, r, &I1);
 				}
 			}
 		}
 	}
-	
-	memcpy(mP, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
 }
 

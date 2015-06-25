@@ -167,35 +167,33 @@ private:
 	///		  is the best solution so the gradient computaion is 
 	///		  valid!
 	///
-	/// @param[in,out] aalpha 	in: initial guess of step length
+	/// @param[in,out] aAlpha 	in: initial guess of step length
 	///							out: step length
-	/// @param[in,out] x		in: the original position
+	/// @param[in,out] aX		in: the original position
 	///							out: if success, the new position
-	/// @param[in,out] f		in: the original function value
+	/// @param[in,out] aF		in: the original function value
 	///							out: if success, the new value
 	///
-	void lineSearch(double *aalpha, double *x, double *f);
+	void lineSearch(double *aAlpha, double *aX, double *aF);
 	
-#ifdef STRONG_WOLFE_LINE_SEARCH_SR1
 	/// zoom
 	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
 	///
 	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
 	/// chap3 pp.59-60 for more informations on the line search algorithm
 	///
-	/// @param[in] alo	The lower bound of the interval
-	/// @param[in] ahi	The upper bound of the interval
-	/// @param[in] x	The previous position
-	/// @param[in] phi_0		The value phi(0) = f(x + 0.mP)
-	/// @param[in] phi_0_prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
-	/// @param[in] phi_lo		The value of the function at point alo
+	/// @param[in] aAlo	The lower bound of the interval
+	/// @param[in] aAhi	The upper bound of the interval
+	/// @param[in] aX	The previous position
+	/// @param[in] aPhi0		The value phi(0) = f(x + 0.mP)
+	/// @param[in] aPhi0Prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
+	/// @param[in] aPhiLo		The value of the function at point alo
 	/// @param[in] c1	The first wolfe variable
 	/// @param[in] c2	The second wolfe variable
 	///
-	/// @return	The (approximate) optimal value of a in the interval [alo, ahi]
+	/// @return	The (approximate) optimal value of a in the interval [aAlo, aAhi]
 	///
-	double zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& phi_lo, const double& c1, const double& c2);
-#endif // STRONG_WOLFE_LINE_SEARCH_SR1
+	double zoom(double aAlo, double aAhi, const double *aX, const double& aPhi0, const double& aPhi0Prime, const double& aPhiLo, const double& c1, const double& c2);
 
 	/// computeSearchDirection
 	///
@@ -205,7 +203,7 @@ private:
 	/// @param[in] aLocalLowerBound	The lower bound for the search direction
 	/// @param[in] aLocalUpperBound	The upper bound for the search direction
 	///
-	void computeSearchDirection(const double *aX);
+	void computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound);
 
 private:
 		
