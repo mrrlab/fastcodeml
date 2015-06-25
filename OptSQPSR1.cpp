@@ -393,7 +393,8 @@ void OptSQPSR1::SR1update(void)
 			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 		}
 		const double norm_update = dnrm2_(&mN_sq, vvT, &I1);
-		skip_update = (norm_update > 1e8);
+		const double norm_hessian = dnrm2_(&mN_sq, mHessian, &I1);
+		skip_update = (norm_update > 1e5*norm_hessian);
 	}
 	else
 	{
@@ -569,8 +570,6 @@ void OptSQPSR1::lineSearch(double *aAlpha, double *aX, double *aF)
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
-	// TODO:
-	// Consider the case when the second Wolfe condition is not satisfied
 	
 	*aF = evaluateFunctionForLineSearch(aX, a);
 	*aAlpha = a;
@@ -637,13 +636,13 @@ double OptSQPSR1::zoom(double aAlo, double aAhi, const double *aX, const double&
 
 void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
 {
-	const int maximum_iterations_cg = mN*2;
+	const int maximum_iterations_cg = mN+10;
 	const char trans = 'N';
 	
 	const double epsilon = 0.1;
 	
 	double Delta_sq;
-	const double Delta_sq_min = 0.5;
+	const double Delta_sq_min = 1e-3;
 	const double theta = 1e-8;
 	if (mStep == 0)
 	{
