@@ -229,8 +229,29 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		}		
 		
 		// check convergence
+
+#if 1		
+		double *projected_gradient = mWorkSpaceVect;
+		memcpy(projected_gradient, mGradient, mSizeVect);
+		dscal_(&mN, &minus_one, projected_gradient, &I1);
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			double p = projected_gradient[i];
+			p = max2(p, localLowerBound[i]);
+			p = min2(p, localUpperBound[i]);
+			projected_gradient[i] = p;
+		}
+		const int index_amax_pg = idamax_(&mN, projected_gradient, &I1);
+		const double norm_projected_gradient = fabs(projected_gradient[index_amax_pg]);
+		//std::cout << "|projected gradient| = " << norm_projected_gradient << std::endl;
+		
+		convergenceReached =   (fabs(f_prev - *f) < mAbsoluteError) && (norm_projected_gradient < mAbsoluteError)
+							|| mStep >= mMaxIterations;
+#else		
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
+#endif
 		
 		if (!convergenceReached)
 		{
@@ -253,7 +274,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			SR1update();
 		
 			// update the active set
-			// TODO
+			activeSetUpdate(x, 1e-4);
 		}
 	}
 #ifdef SCALE_OPT_VARIABLES_SR1
@@ -408,6 +429,71 @@ void OptSQPSR1::SR1update(void)
 	else
 	{
 		std::cout << "\tSkipping SR1 update" << std::cout;
+	}
+}
+
+// ----------------------------------------------------------------------
+
+void OptSQPSR1::activeSetUpdate(double *aX, const double aTolerance)
+{
+	// number of iterations where we skip the gradient computation (component i)
+	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;//(mN>30 ? 1:0);
+	const int max_count_upper = (mN > 30 ? 1 : 0);
+	 
+	#pragma omp parallel for
+	for (int i=0; i<mN; ++i)
+	{
+		if (mActiveSet[i] > 0)
+		{
+			// reduce counters
+			--mActiveSet[i];
+			mSk[i] = 0.0;
+		}
+		else
+		{
+#ifdef SCALE_OPT_VARIABLES
+			const double active_set_tol = aTolerance * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3*static_cast<double>(mN)/8.0; //aTolerance;
+#else
+			const double active_set_tol = aTolerance;
+			const double y_tolerance = 1e-3*static_cast<double>(mN)/8.0; //aTolerance;
+#endif // SCALE_OPT_VARIABLES
+			if (fabs(mYk[i]) < y_tolerance)
+			{			
+				// update active set so we can reduce the gradient computation				
+				if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_lower;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mLowerBound[i];
+					
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (lower) active set.\n";
+				}
+				else if (aX[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_upper;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mUpperBound[i];
+					
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+				}
+				else if (fabs(mSk[i]) < active_set_tol && fabs(mGradient[i]) < active_set_tol)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_upper;
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " not moving: put it in the active set.\n";
+				}
+			}
+		}
 	}
 }
 
@@ -636,14 +722,11 @@ double OptSQPSR1::zoom(double aAlo, double aAhi, const double *aX, const double&
 
 void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
 {
-	const int maximum_iterations_cg = mN+10;
-	const char trans = 'N';
+	char trans = 'N';
 	
-	const double epsilon = 0.1;
-	
+	// "trust region" radius
 	double Delta_sq;
-	const double Delta_sq_min = 1e-3;
-	const double theta = 1e-8;
+	const double Delta_sq_min = sqrt(mN)*1e-3;
 	if (mStep == 0)
 	{
 		Delta_sq = 5.0;
@@ -651,124 +734,275 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 	else
 	{
 		Delta_sq = max2(Delta_sq_min, 10.0*ddot_(&mN, mSk, &I1, mSk, &I1));
-	} 
+	}
 	
-	double *p = mWorkSpaceVect;
-	double *r = mWorkSpaceMat;
-	double *w = r + mN;
-	double *next_iterate = w+mN;
-	double *projected_gradient = next_iterate+mN;
+	// --- compute the generalized Cauchy point (GCP)
 	
-	// compute the projected gradient direction
-	memcpy(projected_gradient, mGradient, mSizeVect);
-	dscal_(&mN, &minus_one, projected_gradient, &I1);
+	double *x = mWorkSpaceVect;
+	double *g = mWorkSpaceMat;
+	double *d = g + mN;
+	double *Bd = d + mN;
+	double *b = Bd + mN;
+	
+	std::vector<int> active_set_cauchy(mN, 0);
+	std::vector<int> J; J.reserve(mN);
+	
+	// x vector
+	memcpy(x, aX, mSizeVect);
+	// g = gradient - Bx
+	memcpy(g, mGradient, mSizeVect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, x, &I1, &D1, g, &I1);
+	// projected gradient in the limit of a small gradient
+	const double tol_active_set = 1e-8;
+	memcpy(d, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, d, &I1);
 	#pragma omp parallel for
 	for (int i(0); i<mN; ++i)
 	{
-		double pg = projected_gradient[i];
-		pg = min2(pg, aLocalUpperBound[i]);
-		pg = max2(pg, aLocalLowerBound[i]);
-		projected_gradient[i] = pg;
+		double d_ = d[i];
+		const double x_ = x[i];
+		const double l_ = mLowerBound[i];
+		const double u_ = mUpperBound[i];
+		d_ = (((x_-l_) < tol_active_set) ? max2(d_, 0.0) : d_);
+		d_ = (((u_-x_) < tol_active_set) ? min2(d_, 0.0) : d_);
+		d[i] = d_;
 	}
+	double scale_d = static_cast<double>(mN) / dnrm2_(&mN, d, &I1);
+	dscal_(&mN, &scale_d, d, &I1);
+	// Bd
+	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+	double f_prime = ddot_(&mN, mGradient, &I1, d, &I1);
+	double f_double_prime = ddot_(&mN, d, &I1, Bd, &I1);
 	
-	const double threshold_residual = square(epsilon)*ddot_(&mN, projected_gradient, &I1, projected_gradient, &I1);
-	
-	// start with a null starting point
-	dcopy_(&mN, &D0, &I0, mP, &I1);
-	
-	// residual
-	memcpy(r, projected_gradient, mSizeVect);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &D1, r, &I1);
-	
-	double rho_prev = 1.0;
-	double rho = ddot_(&mN, r, &I1, r, &I1);
-	
-	bool cg_converged = false;
-	int step_cg = 0;
-	while (step_cg++ < maximum_iterations_cg && !cg_converged)
+	bool GCP_found = (f_prime >= 0.0);
+	const int max_cauchy_iter = mN+1;
+	int cauchy_iter = 0;
+	while (cauchy_iter++ < max_cauchy_iter && !GCP_found)
 	{
-		std::cout << "\trho = " << rho << std::endl;
-		// test stopping criteria
-		if (rho < threshold_residual)
+		// find the next break point
+		double delta_t = 1e16;
+		const double tol_d = 1e-16;
+		for (int i(0); i<mN; ++i)
 		{
-			cg_converged = true;
-			std::cout << "\tCG convergence reached" << std::endl;
+			const double l_ = mLowerBound[i]-x[i];
+			const double u_ = mUpperBound[i]-x[i];
+			const double d_ = d[i];
+			if (d_ < -tol_d)
+				delta_t = min2(delta_t, l_/d_);			
+			else if (d_ > tol_d)
+				delta_t = min2(delta_t, u_/d_);
+		}
+		// limit to the trust region
+		memcpy(mP, x, mSizeVect);
+		daxpy_(&mN, &minus_one, aX, &I1, mP, &I1); 
+		const double dd = ddot_(&mN, mP, &I1, mP, &I1);
+		std::cout << "|mP| = " << dd << std::endl;
+		const double dp = ddot_(&mN, mP, &I1, d, &I1);
+		const double pp = ddot_(&mN, d, &I1, d, &I1);
+		std::cout << "xi_sq = " << square(dp) - pp*dd + pp*Delta_sq << std::endl;
+		const double xi = sqrt(square(dp) - pp*dd + pp*Delta_sq);
+		delta_t = min2(delta_t, (xi-dp) / pp);
+		std::cout << "delta_t = " << delta_t << std::endl;
+		
+		// find the set J
+		for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
+		J.clear();
+		for (int i(0); i<mN; ++i)
+		{
+			const double x_next = x[i] + delta_t*d[i];
+			if (   (fabs(x_next - mLowerBound[i]) < tol_active_set
+				 || fabs(x_next - mUpperBound[i]) < tol_active_set)
+				&& active_set_cauchy[i] != 1 )
+			{
+				J.push_back(i);
+			}
+		}
+		
+		// verify if the GCP is in this interval
+		double neg_ratio_f = -f_prime/f_double_prime;
+		if ( (f_double_prime > 0.0) && (0.0 < neg_ratio_f) && (neg_ratio_f < delta_t))
+		{
+			daxpy_(&mN, &neg_ratio_f, d, &I1, x, &I1);
+			GCP_found = true;
 		}
 		else
 		{
-			// compute conjugate gradient direction
-			if (step_cg == 1)
+			// update line derivatives
+			dcopy_(&mN, &D0, &I0, b, &I1);
+			for (int i(0); i<J.size(); ++i)
 			{
-				memcpy(p, r, mSizeVect);
-				//dscal_(&mN, &minus_one, p, &I1);
-			} 
+				int line = J[i];
+				daxpy_(&mN, &d[line], &mHessian[line*mN], &I1, b, &I1);
+			}
+			daxpy_(&mN, &delta_t, d, &I1, x, &I1);
+			f_prime += delta_t*f_double_prime;
+			f_prime -= ddot_(&mN, b, &I1, x, &I1);
+		
+			f_double_prime -= 2.0 * ddot_(&mN, b, &I1, d, &I1);
+			for (int i(0); i<J.size(); ++i)
+			{
+				int line = J[i];
+				f_prime -= d[line]*g[line];
+				f_double_prime += d[line]*b[line];
+				d[line] = 0.0;
+			}
+			GCP_found = (f_prime >= 0.0);
+		}
+	}
+	
+	// store all the fixed variables in J
+	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;} J.clear();
+	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);}
+	
+#if 1
+	std::cout << "\tActive set = { ";
+	for (int i(0); i<J.size(); ++i) {std::cout << J[i] << " ";}
+	std::cout << "}" << std::endl;
+#endif	
+	
+	if (J.size() < mN)
+	{
+		const int maximum_iterations_cg = mN+10;
+	
+		const double epsilon = 0.1;
+		const double theta = 1e-8;
+		
+		double *p = mWorkSpaceVect;
+		double *r = mWorkSpaceMat;
+		double *w = r + mN;
+		double *next_iterate = w+mN;
+		double *projected_gradient = next_iterate+mN;
+	
+		// compute the projected gradient direction
+		memcpy(projected_gradient, mGradient, mSizeVect);
+		dscal_(&mN, &minus_one, projected_gradient, &I1);
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			if (active_set_cauchy[i] == 1)
+			{
+				projected_gradient[i] = 0.0;
+			}
 			else
 			{
-				const double beta = rho/rho_prev;
-				dscal_(&mN, &beta, p, &I1);
-				//daxpy_(&mN, &minus_one, r, &I1, p, &I1);
-				daxpy_(&mN, &D1, r, &I1, p, &I1);
+				double pg = projected_gradient[i];
+				pg = min2(pg, aLocalUpperBound[i]);
+				pg = max2(pg, aLocalLowerBound[i]);
+				projected_gradient[i] = pg;
 			}
-			// compute max allowed step
-			const double pp = ddot_(&mN, p, &I1, p, &I1);
-			const double dp = ddot_(&mN, mP, &I1, p, &I1);
-			const double dd = ddot_(&mN, mP, &I1, mP, &I1);
-			const double xi = sqrt(square(dp) - pp*dd + pp*Delta_sq);
-			double alpha = (xi-dp) / pp;
-			const double tol_p = 1e-12;
-			for (int i(0); i<mN; ++i)
-			{
-				const double l = aLocalLowerBound[i] - mP[i];
-				const double u = aLocalUpperBound[i] - mP[i];
-				const double p_ = p[i];
-				if (p_ < -tol_p)
-					alpha = min2(alpha, l/p_);
-				else if (p_ > tol_p)
-					alpha = min2(alpha, u/p_);
-			}
-			const double alpha_max = alpha;
-			// compute curvature informations
-			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, w, &I1);
-			const double gamma = ddot_(&mN, p, &I1, w, &I1);
-			// consider the bounds and negative curvatures
-			if (gamma > 0)
-			{
-				alpha = min2(alpha, rho/gamma);
-			}
-			else if (step_cg > 1)
+		}
+	
+		const double threshold_residual = square(epsilon)*ddot_(&mN, projected_gradient, &I1, projected_gradient, &I1);
+	
+		// start at Cauchy point
+		dcopy_(&mN, x, &I1, mP, &I1);
+		daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
+	
+		// residual
+		memcpy(r, projected_gradient, mSizeVect);
+		dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &D1, r, &I1);
+		for (int i(0); i<J.size(); ++i)	{r[J[i]] = 0.0;}
+	
+		double rho_prev = 1.0;
+		double rho = ddot_(&mN, r, &I1, r, &I1);
+	
+		bool cg_converged = false;
+		int step_cg = 0;
+		while (step_cg++ < maximum_iterations_cg && !cg_converged)
+		{
+			std::cout << "\trho = " << rho << std::endl;
+			// test stopping criteria
+			if (rho < threshold_residual)
 			{
 				cg_converged = true;
-				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
+				std::cout << "\tCG convergence reached" << std::endl;
 			}
-			if (!cg_converged)
+			else
 			{
-				// compute new iterate
-				memcpy(next_iterate, mP, mSizeVect);
-				daxpy_(&mN, &alpha, p, &I1, next_iterate, &I1);
-				const double gd = ddot_(&mN, mGradient, &I1, next_iterate, &I1);
-				const double threshold_gd = -theta*dnrm2_(&mN, mGradient, &I1) * dnrm2_(&mN, next_iterate, &I1);
-				if (gd > threshold_gd)
+				// compute conjugate gradient direction
+				if (step_cg == 1)
 				{
-					cg_converged = true;
-					std::cout << "\tCG convergence reached: next iterate not descent enough" << std::endl;
-				}
-				else if (alpha == alpha_max)
-				{
-					memcpy(mP, next_iterate, mSizeVect);
-					cg_converged = true;
-					std::cout << "\tCG convergence reached: reached border" << std::endl;
-				}
+					memcpy(p, r, mSizeVect);
+					//dscal_(&mN, &minus_one, p, &I1);
+				} 
 				else
 				{
-					std::cout << "\talpha = " << alpha << ", gamma = " << gamma << std::endl;
-					memcpy(mP, next_iterate, mSizeVect);
-					alpha = -alpha;
-					daxpy_(&mN, &alpha, w, &I1, r, &I1);
-					rho_prev = rho;
-					rho = ddot_(&mN, r, &I1, r, &I1);
+					const double beta = rho/rho_prev;
+					dscal_(&mN, &beta, p, &I1);
+					//daxpy_(&mN, &minus_one, r, &I1, p, &I1);
+					daxpy_(&mN, &D1, r, &I1, p, &I1);
+					for (int i(0); i<J.size(); ++i)	{p[J[i]] = 0.0;}
+				}
+				// compute max allowed step
+				const double pp = ddot_(&mN, p, &I1, p, &I1);
+				const double dp = ddot_(&mN, mP, &I1, p, &I1);
+				const double dd = ddot_(&mN, mP, &I1, mP, &I1);
+				const double xi = sqrt(square(dp) - pp*dd + pp*Delta_sq);
+				double alpha = (xi-dp) / pp;
+				const double tol_p = 1e-12;
+				for (int i(0); i<mN; ++i)
+				{
+					if (active_set_cauchy[i] == 0)
+					{
+						const double l = aLocalLowerBound[i] - mP[i];
+						const double u = aLocalUpperBound[i] - mP[i];
+						const double p_ = p[i];
+						if (p_ < -tol_p)
+							alpha = min2(alpha, l/p_);
+						else if (p_ > tol_p)
+							alpha = min2(alpha, u/p_);
+					}
+				}
+				const double alpha_max = alpha;
+				// compute curvature informations
+				dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, w, &I1);
+				for (int i(0); i<J.size(); ++i)	{w[J[i]] = 0.0;}
+				const double gamma = ddot_(&mN, p, &I1, w, &I1);
+				// consider the bounds and negative curvatures
+				if (gamma > 0)
+				{
+					alpha = min2(alpha, rho/gamma);
+				}
+				else if (step_cg > 1)
+				{
+					cg_converged = true;
+					std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
+				}
+				if (!cg_converged)
+				{
+					// compute new iterate
+					memcpy(next_iterate, mP, mSizeVect);
+					daxpy_(&mN, &alpha, p, &I1, next_iterate, &I1);
+					const double gd = ddot_(&mN, mGradient, &I1, next_iterate, &I1);
+					const double threshold_gd = -theta*dnrm2_(&mN, mGradient, &I1) * dnrm2_(&mN, next_iterate, &I1);
+					if (gd > threshold_gd)
+					{
+						cg_converged = true;
+						std::cout << "\tCG convergence reached: next iterate not descent enough" << std::endl;
+					}
+					else if (alpha == alpha_max)
+					{
+						memcpy(mP, next_iterate, mSizeVect);
+						cg_converged = true;
+						std::cout << "\tCG convergence reached: reached border" << std::endl;
+					}
+					else
+					{
+						std::cout << "\talpha = " << alpha << ", gamma = " << gamma << std::endl;
+						memcpy(mP, next_iterate, mSizeVect);
+						alpha = -alpha;
+						daxpy_(&mN, &alpha, w, &I1, r, &I1);
+						rho_prev = rho;
+						rho = ddot_(&mN, r, &I1, r, &I1);
+					}
 				}
 			}
 		}
+	}
+	else
+	{
+		dcopy_(&mN, x, &I1, mP, &I1);
+		daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
 	}
 }
 

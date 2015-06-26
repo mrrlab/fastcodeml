@@ -151,6 +151,15 @@ private:
 	///
 	void SR1update(void);
 	
+	/// activeSetUpdate
+	/// updates the activeSet and sets counters so the gradient is not always calculated 
+	/// when it is not needed 
+	///
+	/// @param[in,out] aX The current variables. will be clipped to the boundaries
+	/// @param[in] aTolerance The tolerance for a variable to be in the active set
+	///
+	void activeSetUpdate(double *aX, const double aTolerance);
+	
 	/// lineSearch
 	/// perform a line search in the mP direction
 	///
