@@ -7,10 +7,6 @@
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
 
-// uncomment to use strong wolfe conditions as a stopping criterion for the line search
-// comment it to use only the first Wolfe condition
-#define STRONG_WOLFE_LINE_SEARCH_SR1
-
 // uncomment to rescale the variables before the optimization process
 //#define SCALE_OPT_VARIABLES_SR1
 
@@ -160,49 +156,21 @@ private:
 	///
 	void activeSetUpdate(double *aX, const double aTolerance);
 	
-	/// lineSearch
-	/// perform a line search in the mP direction
+	/// updateFixedVariables
+	/// update the set of fixed variables based on the current position
 	///
-	/// two versions implemented:
-	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
-	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
-	/// wolfe condition.
+	/// @param[in] aX The current position
 	///
-	///	The other version is a backtrace followed by a little refinement, consisting
-	/// in a backtrace in the direction of derivative.
-	/// 
-	///
-	/// note: be careful, the last computation of the likelihood
-	///		  is the best solution so the gradient computaion is 
-	///		  valid!
-	///
-	/// @param[in,out] aAlpha 	in: initial guess of step length
-	///							out: step length
-	/// @param[in,out] aX		in: the original position
-	///							out: if success, the new position
-	/// @param[in,out] aF		in: the original function value
-	///							out: if success, the new value
-	///
-	void lineSearch(double *aAlpha, double *aX, double *aF);
+	void updateFixedVariables(const double *aX);
 	
-	/// zoom
-	/// used in the linesearch function to "zoom" in an interval [alo, ahi]
+	/// spectralProjectedGradientIteration
+	/// perform an iteration of the spectral projected gradient
+	/// This is used to escape from "bad" faces
 	///
-	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
-	/// chap3 pp.59-60 for more informations on the line search algorithm
+	/// @param[in,out] aX The position to update
+	/// @param[in,out] aF The corresponding function value
 	///
-	/// @param[in] aAlo	The lower bound of the interval
-	/// @param[in] aAhi	The upper bound of the interval
-	/// @param[in] aX	The previous position
-	/// @param[in] aPhi0		The value phi(0) = f(x + 0.mP)
-	/// @param[in] aPhi0Prime	The derivative of phi (with phi(a) = f(x+a.mP) at point a=0.
-	/// @param[in] aPhiLo		The value of the function at point alo
-	/// @param[in] c1	The first wolfe variable
-	/// @param[in] c2	The second wolfe variable
-	///
-	/// @return	The (approximate) optimal value of a in the interval [aAlo, aAhi]
-	///
-	double zoom(double aAlo, double aAhi, const double *aX, const double& aPhi0, const double& aPhi0Prime, const double& aPhiLo, const double& c1, const double& c2);
+	void spectralProjectedGradientIteration(double *aX, double *aF);
 
 	/// computeSearchDirection
 	///
@@ -213,6 +181,34 @@ private:
 	/// @param[in] aLocalUpperBound	The upper bound for the search direction
 	///
 	void computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound);
+	
+	/// lineSearch
+	/// perform a line search in the mP direction satisfying the Armijo condition
+	///
+	/// @param[in,out] aX The current position (is updated during the function)
+	/// @param[in,out] aF The current function value (is updated during the function)
+	///
+	void lineSearch(double *aX, double *aF);
+	
+	/// backtracking
+	/// perform a backtrace for line search algorithm
+	///
+	/// @param[in,out]	aX	Current position
+	/// @param[in,out]	aF	Current function value
+	/// @param[in]		aAlpha	line search position
+	/// @param[in]		aPhi0	function value at x
+	///	@param[in]		aPhi0_prime	line derivative at alpha=0 	
+	///
+	void backtrackingLineSearch(double *aX, double *aF, const double aAlpha, const double aPhi0, const double aPhi0_prime);
+	
+	/// extrapolatingLineSearch
+	/// perform an extrapolation for the line search algorithm
+	///
+	/// @param[in,out]	aX	Current position
+	/// @param[in,out]	aF	Current function value
+	/// @param[in]		aAlpha		The line position
+	/// @param[in]		aAlphaMax	The max line position
+	void extrapolatingLineSearch(double *aX, double *aF, const double aAlpha, const double aAlphaMax);
 
 private:
 		
@@ -223,6 +219,7 @@ private:
 	std::vector<double>			mXEvaluator;		///< Workspace for function evaluations
 	
 	double*						mGradient;			///< Gradient of the function. mN components
+	double*						mProjectedGradient;	///< current projected gradient
 	double*						mHessian;			///< hessian approximation using SR1 update; mN*mN components
 	
 	double*						mP;					///< search direction (convex part)
@@ -234,6 +231,7 @@ private:
 	double*						mGradPrev;			///< previous gradient
 	
 	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computaion
+	std::vector<int>			mFixedVariables;	///< set of fixed variables (on the boundaries)
 	
 	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
