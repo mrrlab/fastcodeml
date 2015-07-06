@@ -53,14 +53,15 @@ void OptSQPSR1::allocateMemory(void)
 	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
-	mSpace.resize(2*mN*mN + mN*8);
+	mSpace.resize(2*mN*mN + mN*9);
 	
 	
 	mWorkSpaceVect = &mSpace[0];
 	mWorkSpaceMat = mWorkSpaceVect + mN;
 	
 	mGradient = mWorkSpaceMat + mN*mN;
-	mP = mGradient + mN;
+	mProjectedGradient = mGradient + mN;
+	mP = mProjectedGradient + mN;
 	mHessian = mP + mN;
 	
 	mSk =  mHessian + mN*mN;
@@ -193,15 +194,20 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		}
 		const double norm_gi = dnrm2_(&mN, gi, &I1);
 		const double norm_pg = dnrm2_(&mN, mProjectedGradient, &I1);
-		const double mu = 0.5;
+		const double mu = 0.8;
 		
-		if (norm_gi > mu*norm_pg)
+		if (norm_gi < mu*norm_pg)
 		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "SPG iteration..." << std::endl;
 			// perform a spg iteration
 			spectralProjectedGradientIteration(x, f);
 		}
 		else
 		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Approximate quadratic program solving ..." << std::endl;
+				
 			// solve approximately the quadratic program to get the search direction		
 			computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
 			// line search
@@ -209,11 +215,12 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				std::cout << "Line Search..." << std::endl;
 		
 			lineSearch(x, f);
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			{
-				std::cout << "New Solution:";
-				mModel->printVar(mXEvaluator, *f);
-			}		
+		}
+		
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "New solution:";
+			mModel->printVar(mXEvaluator, *f);
 		}
 		
 		// avoid unsatisfied bounds due to roundoff errors 
@@ -557,7 +564,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 {
 	char trans = 'N';
 	
-	// set of fixed variables to avoid long loops
+	// set of fixed variables to avoid long loops of O(N)
 	std::vector<int> J; J.reserve(mN);
 	for (int i(0); i<mN; ++i)
 	{
@@ -569,7 +576,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 	
 	// "trust region" radius
 	double Delta_sq;
-	const double Delta_sq_min = sqrt(mN)*1e-3;
+	const double Delta_sq_min = sqrt(mN)*5e-1;
 	if (mStep == 0)
 	{
 		Delta_sq = 5.0;
@@ -665,6 +672,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 			}
 			else if (step_cg > 1)
 			{
+				memcpy(mP, mProjectedGradient, mSizeVect);
 				cg_converged = true;
 				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
 			}
@@ -704,12 +712,11 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 // ----------------------------------------------------------------------
 void OptSQPSR1::lineSearch(double *aX, double *aF)
 {
-	// 
+	// compute data required for line search
 	const double phi0 = *aF;
 	const double phi0_prime = ddot_(&mN, mGradient, &I1, mP, &I1);
 	
-	const double gamma = 1e-2;
-	const double beta = 0.3;
+	std::cout << "\tphi0_prime = " << phi0_prime << std::endl;
 	
 	double alpha_max = 1e16;
 	const double tol_division = 1e-12;
@@ -720,37 +727,40 @@ void OptSQPSR1::lineSearch(double *aX, double *aF)
 			const double l = mLowerBound[i] - aX[i];
 			const double u = mUpperBound[i] - aX[i];
 			double p = mP[i];
-			if (p<-tol_division)
+			if (p < -tol_division)
 				alpha_max = min2(alpha_max, l/p);
-			else if (p>-tol_division)
+			else if (p > tol_division)
 				alpha_max = min2(alpha_max, u/p);
 		}
 	}
 	double alpha = min2(1.0, alpha_max);
 	double phi; 
 	
-	if (alpha > 1.0) 	// x+mP is inside the domain
+	if (alpha_max > 1.0) 	// x+mP is inside the domain
 	{
 		phi = evaluateFunctionForLineSearch(aX, 1.0);
-		if (phi <= (phi0 + gamma*phi0_prime))
+		if (phi <= (phi0 + mGamma*phi0_prime))
 		{
 			// compute the line derivative at point alpha
 			double eh = sqrt(DBL_EPSILON);
 			double phi_a_prime = (evaluateFunctionForLineSearch(aX, 1.0+eh) - phi)/eh;
-			if (phi_a_prime >= beta*phi0_prime)
+			std::cout << "\tphia_prime = " << phi_a_prime << std::endl;
+			if (phi_a_prime >= mBeta*phi0_prime)
 			{
 				alpha = 1.0;
-				daxpy_(&mN, &D1, mP, &I1, aX, &I1);
+				daxpy_(&mN, &alpha, mP, &I1, aX, &I1);
 				*aF = phi;
 			}
 			else
 			{
+				std::cout << "\tExtrapolation..." << std::endl;
 				// extrapolation
 				extrapolatingLineSearch(aX, aF, alpha, alpha_max);
 			}
 		}
 		else
-		{
+		{	
+			std::cout << "\tBacktrace..." << std::endl;
 			// backtracking
 			backtrackingLineSearch(aX, aF, alpha, phi0, phi0_prime);
 		}
@@ -758,13 +768,16 @@ void OptSQPSR1::lineSearch(double *aX, double *aF)
 	else				// x+mP is outside the domain
 	{
 		phi = evaluateFunctionForLineSearch(aX, alpha_max);
+		std::cout << "\tphi_max = " << phi << std::endl;
 		if (phi < phi0)
 		{
+			std::cout << "\tExtrapolation..." << std::endl;
 			// extrapolation
 			extrapolatingLineSearch(aX, aF, alpha, alpha_max);
 		}
 		else
 		{
+			std::cout << "\tBacktrace..." << std::endl;
 			// backtracking
 			backtrackingLineSearch(aX, aF, alpha, phi0, phi0_prime);
 		}
@@ -776,11 +789,14 @@ void OptSQPSR1::lineSearch(double *aX, double *aF)
 void OptSQPSR1::backtrackingLineSearch(double *aX, double *aF, const double aAlpha, const double aPhi0, const double aPhi0_prime)
 {
 	double alpha = aAlpha;
-	const double s1 = 0.3, s2 = 0.9, gamma = 1e-2;
+	const double s1 = 0.3, s2 = 0.9;
 	
 	double phi = evaluateFunctionForLineSearch(aX, alpha);
-	while (phi > aPhi0 + gamma * aPhi0_prime)
+	int counter = 0;
+	const int max_iter_backtrace = 15;
+	while ( (counter++ < max_iter_backtrace) && (phi > aPhi0 + alpha * mGamma * aPhi0_prime) )
 	{
+		std::cout << "\t\talpha = " << alpha << std::endl;
 		alpha *= (s1 + randFrom0to1()*(s2-s1));
 		phi = evaluateFunctionForLineSearch(aX, alpha);
 	}
@@ -818,8 +834,8 @@ void OptSQPSR1::extrapolatingLineSearch(double *aX, double *aF, const double aAl
 			const double u = mUpperBound[i];
 			double p_a_ = p_a[i];
 			double p_a_trial_ = p_a_trial[i];
-			p_a_ = min2(max2(p_a_, u), l);
-			p_a_trial_ = min2(max2(p_a_trial_, u), l);
+			p_a_ = max2(min2(p_a_, u), l);
+			p_a_trial_ = max2(min2(p_a_trial_, u), l);
 			p_a[i] = p_a_;
 			p_a_trial[i] = p_a_trial_;
 		}
@@ -831,28 +847,21 @@ void OptSQPSR1::extrapolatingLineSearch(double *aX, double *aF, const double aAl
 	
 		if (alpha >= aAlphaMax && inf_norm_diff < mAbsoluteError)
 		{
-			daxpy_(&mN, &alpha, mP, &I1, aX, &I1);
-			#pragma omp parallel for
-			for (int i(0); i<mN; ++i)
-			{
-				const double l = mLowerBound[i];
-				const double u = mUpperBound[i];
-				double x = aX[i];
-				x = min2(max2(x, u), l);
-				aX[i] = x;
-			}
+			memcpy(aX, p_a, mSizeVect);
 			*aF = evaluateFunction(aX, mTrace); 
 			converged = true;
+			std::cout << "\t\tExtrapolating: Converged after reaching border" << std::endl;
 		}
 		else
 		{
 			double phi_a = evaluateFunction(p_a, mTrace); 
 			double phi_a_trial = evaluateFunction(p_a_trial, mTrace);
-			if (phi_a_trial > phi_a)
+			if (phi_a_trial >= phi_a)
 			{
 				memcpy(aX, p_a, mSizeVect);
 				*aF = phi_a;
 				converged = true;
+				std::cout << "\t\tExtrapolating: Converged after increasing step" << std::endl;
 			}
 			else
 			{

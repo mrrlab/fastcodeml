@@ -64,6 +64,8 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
+		,mBeta(0.3)
+		,mGamma(1e-2)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -237,6 +239,9 @@ private:
 	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
 	
 	int							mStep;				///< current step	
+	
+	const double 				mGamma;				///< line search parameter for sufficiently decrease solution
+	const double 				mBeta;				///< line search parameter new derivative in search direction
 	
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
