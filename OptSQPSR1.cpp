@@ -211,7 +211,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			// solve approximately the quadratic program to get the search direction		
 			DirectionState direction_state = computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
 			
-			if (direction_state == NEGATIVE_CURVATURE || direction_state == LOW_ANGLE)
+			if (direction_state == LOW_ANGLE)
 			{
 				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 					std::cout << "SPG iteration because of negative curvature..." << std::endl;
@@ -433,6 +433,15 @@ void OptSQPSR1::SR1update(void)
 	if (!skip_update)
 	{
 		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+#if 1
+		const double off_diagonal_scaling = 1./1.1;
+		double *diagonal_backup = mWorkSpaceVect;
+		const int diagonal_stride = mN+1;
+		const int n_sq = mN*mN;
+		dcopy_(&mN, mHessian, &diagonal_stride, diagonal_backup, &I1);
+		dscal_(&n_sq, &off_diagonal_scaling, mHessian, &I1);
+		dcopy_(&mN, diagonal_backup, &I1, mHessian, &diagonal_stride);
+#endif
 	}
 	else
 	{
@@ -573,7 +582,7 @@ void OptSQPSR1::spectralProjectedGradientIteration(double *aX, double *aF)
 OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
 {
 	char trans = 'N';
-	DirectionState direction_state;
+	DirectionState direction_state = MAX_ITERATIONS;
 	
 	// set of fixed variables to avoid long loops of O(N)
 	std::vector<int> J; J.reserve(mN);
@@ -597,6 +606,92 @@ OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, co
 		Delta_sq = max2(Delta_sq_min, 10.0*ddot_(&mN, mSk, &I1, mSk, &I1));
 	}
 	
+#if 0
+	double *d = mWorkSpaceVect;		// new descent direction
+	double *Bp = mWorkSpaceMat;		// B*mP
+	double *Bd = Bp+mN;				// B*d
+	double *gi = Bd+mN;				// restricted gradient
+	
+	std::vector<int> fixed_variables(mFixedVariables);
+	
+	// initial search direction is 0
+	dcopy_(&mN, &D0, &I0, mP, &I1);
+	memcpy(gi, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, gi, &I1);
+	
+	bool converged = false;
+	int iter = 0;
+	const int max_iter = mN*mN*mN;
+	while ( (iter++ < max_iter) && (!converged) )
+	{
+		for (int i(0); i<J.size(); ++i) {gi[J[i]] = 0.0;}
+	
+		// update Bp
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mP, &I1, &D0, Bp, &I1);
+		for (int i(0); i<J.size(); ++i) {Bp[J[i]] = 0.0;}
+	
+		// compute d = -Bp - g
+		memcpy(d, gi, mSizeVect);
+		daxpy_(&mN, &minus_one, Bp, &I1, d, &I1);
+		
+		// compute dBd
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+		
+		const double dBd = ddot_(&mN, d, &I1, Bd, &I1);
+		for (int i(0); i<J.size(); ++i) {Bd[J[i]] = 0.0;}
+		double alpha_unconstrained = 1e32;
+		if (dBd > 0) // positive curvature
+		{
+			// compute alpha (unconstrained)
+			alpha_unconstrained = ddot_(&mN, d, &I1, d, &I1) / dBd;
+		}
+		
+		// compute max allowed step
+		double alpha_max = 1e16;
+		const double tol_d = 1e-12;
+		for (int i(0); i<mN; ++i)
+		{
+			if (fixed_variables[i] == 0)
+			{
+				const double l = aLocalLowerBound[i] - mP[i];
+				const double u = aLocalUpperBound[i] - mP[i];
+				const double d_ = d[i];
+				if (d_ < -tol_d)
+					alpha_max = min2(alpha_max, l/d_);
+				else if (d_ > tol_d)
+					alpha_max = min2(alpha_max, u/d_);
+			}
+		}
+		
+		
+		// update the iteration
+		double alpha = min2(alpha_unconstrained, alpha_max);
+		daxpy_(&mN, &alpha, d, &I1, mP, &I1);
+		
+		// update the J/fixed variables set
+		for (int i(0); i<mN; ++i)
+		{
+			if (fixed_variables[i] == 0)
+			{
+				if ( fabs(mP[i] - aLocalLowerBound[i]) < 1e-6 || fabs(mP[i] - aLocalUpperBound[i]) < 1e-6 )
+				{
+					fixed_variables[i] = 1;
+					J.push_back(i);
+				}
+			}
+		}
+		
+		// check convergence
+		const double norm_d = dnrm2_(&mN, d, &I1);
+		//std::cout << "\tDEBUG: norm_d = " << norm_d << std::endl;
+		converged = (norm_d < 1e-4);
+		
+		if (converged)
+		{
+			direction_state = CONVERGED;
+		}
+	}	
+#else
 	const int maximum_iterations_cg = mN+10;
 	
 	const double epsilon = 0.1;
@@ -684,7 +779,8 @@ OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, co
 			}
 			else if (step_cg > 1)
 			{
-				memcpy(mP, mProjectedGradient, mSizeVect);
+				//memcpy(mP, mProjectedGradient, mSizeVect);
+				daxpy_(&mN, &alpha_max, p, &I1, mP, &I1);
 				cg_converged = true;
 				direction_state = NEGATIVE_CURVATURE;
 				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
@@ -721,6 +817,7 @@ OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, co
 			}
 		}
 	}
+#endif
 	return direction_state;
 }
 

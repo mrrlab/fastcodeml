@@ -175,6 +175,7 @@ private:
 		NEGATIVE_CURVATURE,	///< negative curvature found during the CG iteration
 		BORDER,				///< reached border during CG iteration
 		LOW_ANGLE,			///< angle too low between search direction and gradient
+		MAX_ITERATIONS,		///< maximum number of iterations reached
 		CONVERGED			///< converged to local (unconstrained) minimum on the hyperface
 	};
 	
