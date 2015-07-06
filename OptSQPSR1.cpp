@@ -209,12 +209,22 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 				std::cout << "Approximate quadratic program solving ..." << std::endl;
 				
 			// solve approximately the quadratic program to get the search direction		
-			computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
-			// line search
-			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "Line Search..." << std::endl;
+			DirectionState direction_state = computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
+			
+			if (direction_state == NEGATIVE_CURVATURE || direction_state == LOW_ANGLE)
+			{
+				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "SPG iteration because of negative curvature..." << std::endl;
+				spectralProjectedGradientIteration(x, f);
+			}
+			else
+			{
+				// line search
+				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "Line Search..." << std::endl;
 		
-			lineSearch(x, f);
+				lineSearch(x, f);
+			}
 		}
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -560,9 +570,10 @@ void OptSQPSR1::spectralProjectedGradientIteration(double *aX, double *aF)
 
 
 // ----------------------------------------------------------------------
-void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
+OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
 {
 	char trans = 'N';
+	DirectionState direction_state;
 	
 	// set of fixed variables to avoid long loops of O(N)
 	std::vector<int> J; J.reserve(mN);
@@ -589,7 +600,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 	const int maximum_iterations_cg = mN+10;
 	
 	const double epsilon = 0.1;
-	const double theta = 1e-8;
+	const double theta = 1e-16;
 		
 	double *p = mWorkSpaceVect;
 	double *r = mWorkSpaceMat;
@@ -623,6 +634,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 		{
 			cg_converged = true;
 			std::cout << "\tCG convergence reached" << std::endl;
+			direction_state = CONVERGED;
 		}
 		else
 		{
@@ -674,6 +686,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 			{
 				memcpy(mP, mProjectedGradient, mSizeVect);
 				cg_converged = true;
+				direction_state = NEGATIVE_CURVATURE;
 				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
 			}
 			if (!cg_converged)
@@ -687,12 +700,14 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 				{
 					cg_converged = true;
 					std::cout << "\tCG convergence reached: next iterate not descent enough" << std::endl;
+					direction_state = LOW_ANGLE;
 				}
 				else if (alpha == alpha_max)
 				{
 					memcpy(mP, next_iterate, mSizeVect);
 					cg_converged = true;
 					std::cout << "\tCG convergence reached: reached border" << std::endl;
+					direction_state = BORDER;
 				}
 				else
 				{
@@ -706,6 +721,7 @@ void OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLow
 			}
 		}
 	}
+	return direction_state;
 }
 
 
@@ -793,7 +809,7 @@ void OptSQPSR1::backtrackingLineSearch(double *aX, double *aF, const double aAlp
 	
 	double phi = evaluateFunctionForLineSearch(aX, alpha);
 	int counter = 0;
-	const int max_iter_backtrace = 15;
+	const int max_iter_backtrace = 20;
 	while ( (counter++ < max_iter_backtrace) && (phi > aPhi0 + alpha * mGamma * aPhi0_prime) )
 	{
 		std::cout << "\t\talpha = " << alpha << std::endl;

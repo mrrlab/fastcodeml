@@ -65,7 +65,7 @@ public:
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
 		,mBeta(0.3)
-		,mGamma(1e-2)
+		,mGamma(1e-1)
 		{}
 	
 	/// Compute the maximum of computeLikelihood()
@@ -165,6 +165,21 @@ private:
 	///
 	void updateFixedVariables(const double *aX);
 	
+private:
+	
+	/// DirectionState
+	/// state of the direction finding algorithm
+	///
+	enum DirectionState
+	{
+		NEGATIVE_CURVATURE,	///< negative curvature found during the CG iteration
+		BORDER,				///< reached border during CG iteration
+		LOW_ANGLE,			///< angle too low between search direction and gradient
+		CONVERGED			///< converged to local (unconstrained) minimum on the hyperface
+	};
+	
+private:
+	
 	/// spectralProjectedGradientIteration
 	/// perform an iteration of the spectral projected gradient
 	/// This is used to escape from "bad" faces
@@ -182,7 +197,9 @@ private:
 	/// @param[in] aLocalLowerBound	The lower bound for the search direction
 	/// @param[in] aLocalUpperBound	The upper bound for the search direction
 	///
-	void computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound);
+	/// @return	The state of the computed direction
+	///
+	DirectionState computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound);
 	
 	/// lineSearch
 	/// perform a line search in the mP direction satisfying the Armijo condition
