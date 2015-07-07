@@ -101,7 +101,7 @@ private:
 	
 private:
 	
-	/// activeSet
+	/// ActiveSet
 	/// defines the sets in which each variable is
 	///
 	enum ActiveSet

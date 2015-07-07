@@ -256,7 +256,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		// solve linear system
 		dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], mRHS, &mN, &info);
 		if (info != 0)
-		std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
+			std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 		
 		// update solutions
 		#pragma omp parallel for
