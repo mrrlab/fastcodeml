@@ -53,14 +53,15 @@ void OptSQPSR1::allocateMemory(void)
 	mSizeVect = mN*sizeof(double);
 	
 	mXEvaluator.resize(mN);
-	mSpace.resize(2*mN*mN + mN*8);
+	mSpace.resize(2*mN*mN + mN*9);
 	
 	
 	mWorkSpaceVect = &mSpace[0];
 	mWorkSpaceMat = mWorkSpaceVect + mN;
 	
 	mGradient = mWorkSpaceMat + mN*mN;
-	mP = mGradient + mN;
+	mProjectedGradient = mGradient + mN;
+	mP = mProjectedGradient + mN;
 	mHessian = mP + mN;
 	
 	mSk =  mHessian + mN*mN;
@@ -71,6 +72,7 @@ void OptSQPSR1::allocateMemory(void)
 	
 	// set active set counters to zero
 	mActiveSet.resize(mN, 0);
+	mFixedVariables.resize(mN, 0);
 }
 
 
@@ -127,11 +129,7 @@ void OptSQPSR1::unscaleVariables(double *x)
 
 // ----------------------------------------------------------------------
 void OptSQPSR1::SQPminimizer(double *f, double *x)
-{
-#ifdef SCALE_OPT_VARIABLES_SR1
-	scaleVariables(x);
-#endif // SCALE_OPT_VARIABLES_SR1
-	
+{	
 	*f = evaluateFunction(x, mTrace);
 	
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -143,6 +141,18 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 	// compute current gradient
 	computeGradient(x, *f, mGradient);
 	
+	// compute the projected gradient
+	memcpy(mProjectedGradient, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, mProjectedGradient, &I1);
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
+	{
+		double p = mProjectedGradient[i];
+		p = max2(p, mLowerBound[i]-x[i]);
+		p = min2(p, mUpperBound[i]-x[i]);
+		mProjectedGradient[i] = p;
+	}
+	
 	// bounds for the QP subproblem (l-x0 <= p <= u-x0)
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
@@ -152,26 +162,7 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 	dcopy_(&N_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
 	
-	
-#ifdef SCALE_OPT_VARIABLES_SR1
-	// change the space of the hessian approximation representation
-	#pragma omp parallel for
-	for(int i=0; i<mN; ++i)
-	{
-		double slb = mLowerBound[i];
-		double sub = mUpperBound[i];
-		double lb = mLowerBoundUnscaled[i];
-		double ub = mUpperBoundUnscaled[i];
-		
-		double scale = (ub-lb)/(sub-slb);
-		scale = scale*scale;
-		
-		mHessian[i*(mN+1)] *= scale;
-	}		
-#endif // SCALE_OPT_VARIABLES_SR1
-
-	
-	// main loop
+	// ------------------------------------------- main loop
 	bool convergenceReached = false;
 	for(mStep = 0; !convergenceReached; ++mStep)
 	{
@@ -187,32 +178,60 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 		memcpy(mGradPrev, mGradient, mSizeVect);
 		memcpy(mXPrev, x, mSizeVect);
 		
+		// find the fixed variables
+		updateFixedVariables(x);
 		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Computing new search direction..." << std::endl;
-		
-		// solve approximately the quadratic program to get the search direction		
-		computeSearchDirection(x);
-		
-		
-		// line search
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Line Search..." << std::endl;
-		
-		// try to extend the limits to the boundaries (-> global line search)
-		double alpha = 1e16;
-		for (int i=0; i<mN; ++i)
+		// decide if we use an SPG iteration or a CG iteration
+		double *gi = mWorkSpaceVect;
+		memcpy(gi, mProjectedGradient, mSizeVect);
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
 		{
-			double l = localLowerBound[i];
-			double u = localUpperBound[i];
-			double p = mP[i];
-			if (p < -1e-8)
-				alpha = min2(alpha, l/p);
-			else if (p > 1e-8)
-				alpha = min2(alpha, u/p);
+			if (mFixedVariables[i] == 1)
+			{
+				gi[i] = 0.0;
+			}
+		}
+		const double norm_gi = dnrm2_(&mN, gi, &I1);
+		const double norm_pg = dnrm2_(&mN, mProjectedGradient, &I1);
+		const double mu = 0.8;
+		
+		if (norm_gi < mu*norm_pg)
+		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "SPG iteration..." << std::endl;
+			// perform a spg iteration
+			spectralProjectedGradientIteration(x, f);
+		}
+		else
+		{
+			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+				std::cout << "Approximate quadratic program solving ..." << std::endl;
+				
+			// solve approximately the quadratic program to get the search direction		
+			DirectionState direction_state = computeSearchDirection(x, &localLowerBound[0], &localUpperBound[0]);
+			
+			if (direction_state == LOW_ANGLE)
+			{
+				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "SPG iteration because of negative curvature..." << std::endl;
+				spectralProjectedGradientIteration(x, f);
+			}
+			else
+			{
+				// line search
+				if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "Line Search..." << std::endl;
+		
+				lineSearch(x, f);
+			}
 		}
 		
-		lineSearch(&alpha, x, f);
+		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+		{
+			std::cout << "New solution:";
+			mModel->printVar(mXEvaluator, *f);
+		}
 		
 		// avoid unsatisfied bounds due to roundoff errors 
 		#pragma omp parallel for
@@ -221,22 +240,35 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			x[i] = min2(mUpperBound[i], max2(mLowerBound[i], x[i]));
 		}
 		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		{
-			std::cout << "Step length found:" << alpha << std::endl;
-			std::cout << "New Solution:";
-			mModel->printVar(mXEvaluator, *f);
-		}		
-		
 		// check convergence
+#if 1
+		const int index_amax_pg = idamax_(&mN, mProjectedGradient, &I1);
+		const double norm_projected_gradient = fabs(mProjectedGradient[index_amax_pg]);
+		//std::cout << "|projected gradient| = " << norm_projected_gradient << std::endl;
+		
+		convergenceReached =   (fabs(f_prev - *f) < mAbsoluteError) && (norm_projected_gradient < mAbsoluteError)
+							|| mStep >= mMaxIterations;
+#else		
 		convergenceReached =   fabs(f_prev - *f) < mAbsoluteError
 							|| mStep >= mMaxIterations;
+#endif
 		
 		if (!convergenceReached)
 		{
 			// update the system
 			
 			computeGradient(x, *f, mGradient);
+			
+			memcpy(mProjectedGradient, mGradient, mSizeVect);
+			dscal_(&mN, &minus_one, mProjectedGradient, &I1);
+			#pragma omp parallel for
+			for (int i(0); i<mN; ++i)
+			{
+				double p = mProjectedGradient[i];
+				p = max2(p, localLowerBound[i]);
+				p = min2(p, localUpperBound[i]);
+				mProjectedGradient[i] = p;
+			}
 				
 			memcpy(mSk, x, mSizeVect);
 			daxpy_(&mN, &minus_one, mXPrev, &I1, mSk, &I1);
@@ -253,12 +285,9 @@ void OptSQPSR1::SQPminimizer(double *f, double *x)
 			SR1update();
 		
 			// update the active set
-			// TODO
+			activeSetUpdate(x, 1e-4);
 		}
 	}
-#ifdef SCALE_OPT_VARIABLES_SR1
-	unscaleVariables(x);
-#endif // SCALE_OPT_VARIABLES_SR1
 }
 
 
@@ -393,7 +422,8 @@ void OptSQPSR1::SR1update(void)
 			dscal_(&mN, &prefactor, &vvT[i*mN], &I1);
 		}
 		const double norm_update = dnrm2_(&mN_sq, vvT, &I1);
-		skip_update = (norm_update > 1e8);
+		const double norm_hessian = dnrm2_(&mN_sq, mHessian, &I1);
+		skip_update = (norm_update > 1e5*norm_hessian);
 	}
 	else
 	{
@@ -403,6 +433,15 @@ void OptSQPSR1::SR1update(void)
 	if (!skip_update)
 	{
 		daxpy_(&mN_sq, &D1, vvT, &I1, mHessian, &I1);
+#if 1
+		const double off_diagonal_scaling = 1./1.1;
+		double *diagonal_backup = mWorkSpaceVect;
+		const int diagonal_stride = mN+1;
+		const int n_sq = mN*mN;
+		dcopy_(&mN, mHessian, &diagonal_stride, diagonal_backup, &I1);
+		dscal_(&n_sq, &off_diagonal_scaling, mHessian, &I1);
+		dcopy_(&mN, diagonal_backup, &I1, mHessian, &diagonal_stride);
+#endif
 	}
 	else
 	{
@@ -410,460 +449,542 @@ void OptSQPSR1::SR1update(void)
 	}
 }
 
-
-#ifndef STRONG_WOLFE_LINE_SEARCH_SR1
 // ----------------------------------------------------------------------
-void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
+
+void OptSQPSR1::activeSetUpdate(double *aX, const double aTolerance)
 {
-	// constants for the Wolfe condition
-	double c1 (2e-4);
-	double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	double phi_0 = *f, phi, phi_prev;
-	double a_prev = 0.0;
-	double phi_a_prime;
-	double a = *aalpha;
-	
-	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
-	
-	phi_prev = phi_0;
-	phi = evaluateFunctionForLineSearch(x, a);
-	
-	double sigma, sigma_bas;
-	int maxIterBack, maxIterUp;
-	
-	// we take a step dependant on the problem size:
-	// if the problem is large, we are able to spend more time 
-	// to find a better solution.
-	// otherwise, we consider that the solution is sufficiently 
-	// good and continue. 
-	// The time of line search should be small compared to the 
-	// gradient computation
-	
-	maxIterBack = maxIterUp = static_cast<int> (ceil( 3.*log(mN+10.) ));
-	sigma_bas 	= pow(1e-3, 1./static_cast<double>(maxIterBack));
-	
-	
-	// begin by a backtrace
-	size_t iter = 0;
-	while(phi > phi_0 + phi_0_prime*a*c1 && iter < static_cast<size_t>(maxIterBack))
+	// number of iterations where we skip the gradient computation (component i)
+	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;//(mN>30 ? 1:0);
+	const int max_count_upper = (mN > 30 ? 1 : 0);
+	 
+	#pragma omp parallel for
+	for (int i=0; i<mN; ++i)
 	{
-		++iter;
-		a_prev = a;
-		phi_prev = phi;
-		sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		a *= sigma;
-		phi = evaluateFunctionForLineSearch(x, a);
-		std::cout << "\tDEBUG: a = " << a << ", phi = " << phi << std::endl; 
+		if (mActiveSet[i] > 0)
+		{
+			// reduce counters
+			--mActiveSet[i];
+			mSk[i] = 0.0;
+		}
+		else
+		{
+#ifdef SCALE_OPT_VARIABLES
+			const double active_set_tol = aTolerance * (mUpperBound[i]-mLowerBound[i])/(mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i]);
+			const double y_tolerance = (mUpperBoundUnscaled[i]-mLowerBoundUnscaled[i])/(mUpperBound[i]-mLowerBound[i]) *1e-3*static_cast<double>(mN)/8.0; //aTolerance;
+#else
+			const double active_set_tol = aTolerance;
+			const double y_tolerance = 1e-3*static_cast<double>(mN)/8.0; //aTolerance;
+#endif // SCALE_OPT_VARIABLES
+			if (fabs(mYk[i]) < y_tolerance)
+			{			
+				// update active set so we can reduce the gradient computation				
+				if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_lower;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mLowerBound[i];
+					
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (lower) active set.\n";
+				}
+				else if (aX[i] >= mUpperBound[i] - active_set_tol && mGradient[i] <= 0.0)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_upper;
+					
+					// make it equal to the boundary so mSk[i] is null at next iteration
+					// this should avoid badly conditioned matrix updates
+					aX[i] = mUpperBound[i];
+					
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " in the (upper) active set.\n";
+				}
+				else if (fabs(mSk[i]) < active_set_tol && fabs(mGradient[i]) < active_set_tol)
+				{
+					// put the variable in the active set
+					mActiveSet[i] = max_count_upper;
+					if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
+					std::cout << "\tVariable " << i << " not moving: put it in the active set.\n";
+				}
+			}
+		}
 	}
-	
-	// compute the derivative
-	double eh = sqrt(DBL_EPSILON);
-	if ( a+eh >= 1.0 ) {eh = -eh;}
-	phi_a_prime = (phi - evaluateFunctionForLineSearch(x, a+eh))/eh;
-	
-	iter = 0;
-	if (phi_a_prime < 0.0 && fabs(a - *aalpha) > 1e-8)
+}
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::updateFixedVariables(const double *aX)
+{
+	const double tolerance_fixed_variable = 1e-6;
+	#pragma omp parallel for
+	for (int i(0); i<mN; ++i)
 	{
-		double a0 = a_prev;
-		while(phi < phi_prev && iter < static_cast<size_t>(maxIterBack))
+		const double x = aX[i];
+		if (  (x-mLowerBound[i] < tolerance_fixed_variable)
+		   || (mUpperBound[i]-x < tolerance_fixed_variable))
 		{
-			++iter;
-			
-			a_prev = a;
-			phi_prev = phi;
-			sigma = sigma_bas * (0.85 + 0.3*randFrom0to1());
-			a = a + sigma*(a0-a);
-			phi = evaluateFunctionForLineSearch(x, a);
+			mFixedVariables[i] = 1;
 		}
-		if (phi_prev < phi)
+		else
 		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(x, a);
+			mFixedVariables[i] = 0;
 		}
+	}
+}
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::spectralProjectedGradientIteration(double *aX, double *aF)
+{
+	// spectral gradient coefficient
+	double spg_coeff;
+	const double spg_coeff_min = 1e-4;
+	const double spg_coeff_max = 1e3;
+	
+	const double ys = ddot_(&mN, mSk, &I1, mYk, &I1);
+	if ( (mStep == 0) || (ys < 0.0) )
+	{
+		spg_coeff = 1.0;
 	}
 	else
 	{
-		sigma_bas = 0.7;
-		while(phi < phi_prev && iter < static_cast<size_t>(maxIterUp))
-		{
-			++iter;
-			
-			a_prev = a;
-			phi_prev = phi;
-			//sigma = 0.5+0.5*sqrt(randFrom0to1());
-			sigma = sigma_bas * (0.7 + 0.6*randFrom0to1());
-			a *= sigma;
-			phi = evaluateFunctionForLineSearch(x, a);
-		}
-		if (phi_prev < phi)
-		{
-			a = a_prev;
-			phi = evaluateFunctionForLineSearch(x, a);
-		}
+		spg_coeff = ys / ddot_(&mN, mSk, &I1, mSk, &I1);
+		spg_coeff = min2(spg_coeff_max, max2(spg_coeff_min, spg_coeff));
 	}
 	
-	
-	*f = phi;
-	*aalpha = a;
-	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
-}
-
-#else
-// ----------------------------------------------------------------------
-void OptSQPSR1::lineSearch(double *aalpha, double *x, double *f)
-{
-	// constants for the Wolfe condition
-	// note that there must be 0 < c1 < c2 < 1
-	const double c1 (2e-1), c2 (0.3);
-	const double amax = *aalpha;
-	const double phi_0_prime = ddot_(&mN, mP, &I1, mGradient, &I1);
-	const double phi_0 = *f;
-	double phi, phi_prev;
-	double a_prev = 0.0;
-	double phi_a_prime;
-	
-	double a = randFrom0to1();
-		
-	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-		std::cout << "phi_0_prime: " << phi_0_prime << std::endl; 
-	
-	phi = phi_prev = phi_0;
-	
-	double sigma, sigma_bas;
-	int iter = 0;
-	
-	const int max_iter = static_cast<int> (ceil( 3.*log(mN+10) ));
-	sigma_bas = pow(1e-2, 1./static_cast<double>(max_iter));
-	
-	while(iter < max_iter)
-	{
-		++iter;
-		phi_prev = phi;
-		phi = evaluateFunctionForLineSearch(x, a);
-		
-		if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
-		
-		if (phi > phi_0 + c1*a*phi_0_prime || ((phi > phi_prev) && (iter > 1)) )
-		{
-			// solution between a_prev and a
-			a = zoom(a_prev, a, x, phi_0, phi_0_prime, phi_prev, c1, c2);
-			break;
-		}
-		
-		// compute the derivative at point a
-		double eh = sqrt(DBL_EPSILON);
-		if ( a+eh >= 1.0 ) {eh = -eh;}
-		phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
-		
-		if (fabs(phi_a_prime) <= -c2*phi_0_prime)
-		{
-			// wolfe conditions are satisfied, stop searching
-			break;
-		}
-		if (phi_a_prime >= 0.0)
-		{
-			// solution between a and a_prev
-			a = zoom(a, a_prev, x, phi_0, phi_0_prime, phi, c1, c2);
-			break;
-		}
-		//sigma = sigma_bas * (0.9 + 0.2*randFrom0to1());
-		sigma = randFrom0to1();
-		//sigma = (sigma>0.5) ? square(sigma) : sqrt(sigma);
-		a_prev = a;
-		a = amax + sigma*(a-amax);
-	}
-	
-	
-	*f = evaluateFunctionForLineSearch(x,a);
-	*aalpha = a;
-	daxpy_(&mN, aalpha, mP, &I1, x, &I1);
-}
-
-
-// ----------------------------------------------------------------------
-double OptSQPSR1::zoom(double alo, double ahi, double *x, const double& phi_0, const double& phi_0_prime, const double& aphi_lo, const double& c1, const double& c2)
-{
-	double a, phi, phi_a_prime;
-	double philo = aphi_lo;
-	a = 0.5*(alo+ahi);
-	while( fabs(ahi-alo) > 0.01 )
-	{
-		double tmp = 0.5;
-		a = tmp*alo + (1.-tmp)*ahi;
-		phi = evaluateFunctionForLineSearch(x, a);
-		if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "DEBUG ZOOM: phi = " << phi << " for a = " << a << " alo: " << alo << " ahi: " << ahi << " philo: " << philo  << std::endl;
-		 
-		if (phi > phi_0 + a*c1*phi_0_prime || phi > philo)
-		{
-			ahi = a;
-		}	
-		else
-		{
-			double eh = sqrt(DBL_EPSILON);
-			if ( a+eh >= 1.0 ) {eh = -eh;}
-			phi_a_prime = (evaluateFunctionForLineSearch(x, a+eh) - phi)/eh;
-			
-			if (fabs(phi_a_prime) <= -c2*phi_0_prime)
-				return a;
-				
-			if (phi_a_prime*(ahi-alo) >= 0.0)
-				ahi = alo;
-				
-			alo = a;
-			philo = phi;
-		}
-	}
-	
-	return a;
-}
-#endif // STRONG_WOLFE_LINE_SEARCH_SR1
-
-
-// ----------------------------------------------------------------------
-
-void OptSQPSR1::computeSearchDirection(const double *aX)
-{
-
-	char trans = 'N';
-	
-	// --- compute the generalized Cauchy point (GCP)
-	
-	double *x = mWorkSpaceVect;
-	double *g = mWorkSpaceMat;
-	double *d = g + mN;
-	double *Bd = d + mN;
-	double *b = Bd + mN;
-	
-	std::vector<int> active_set_cauchy(mN, 0);
-	std::vector<int> J; J.reserve(mN);
-	
-	// x vector
-	memcpy(x, aX, mSizeVect);
-	// g = gradient - Bx
-	memcpy(g, mGradient, mSizeVect);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, x, &I1, &D1, g, &I1);
-	// projected gradient in the limit of a small gradient
-	const double tol_active_set = 1e-8;
-	memcpy(d, mGradient, mSizeVect);
-	dscal_(&mN, &minus_one, d, &I1);
+	// search direction
+	spg_coeff = -spg_coeff;
+	memcpy(mP, mGradient, mSizeVect);
+	dscal_(&mN, &spg_coeff, mP, &I1);
 	#pragma omp parallel for
 	for (int i(0); i<mN; ++i)
 	{
-		double d_ = d[i];
-		const double x_ = x[i];
-		const double l_ = mLowerBound[i];
-		const double u_ = mUpperBound[i];
-		d_ = (((x_-l_) < tol_active_set) ? max2(d_, 0.0) : d_);
-		d_ = (((u_-x_) < tol_active_set) ? min2(d_, 0.0) : d_);
-		d[i] = d_;
+		const double l = mLowerBound[i]-aX[i];
+		const double u = mUpperBound[i]-aX[i];
+		double d = mP[i];
+		d = min2(u, max2(l, d));
+		mP[i] = d;
 	}
-	double scale_d = static_cast<double>(mN) / dnrm2_(&mN, d, &I1);
-	dscal_(&mN, &scale_d, d, &I1);
-	// Bd
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
-	double f_prime = ddot_(&mN, mGradient, &I1, d, &I1);
-	double f_double_prime = ddot_(&mN, d, &I1, Bd, &I1);
 	
-	bool GCP_found = (f_prime >= 0.0);
-	while (!GCP_found)
+	// backtracking line search
+	const double phi0 = *aF;
+	const double phi0_prime = ddot_(&mN, mGradient, &I1, mP, &I1);
+	double alpha = 1.0;
+	backtrackingLineSearch(aX, aF, alpha, phi0, phi0_prime);
+}
+
+
+
+// ----------------------------------------------------------------------
+OptSQPSR1::DirectionState OptSQPSR1::computeSearchDirection(const double *aX, const double *aLocalLowerBound, const double *aLocalUpperBound)
+{
+	char trans = 'N';
+	DirectionState direction_state = MAX_ITERATIONS;
+	
+	// set of fixed variables to avoid long loops of O(N)
+	std::vector<int> J; J.reserve(mN);
+	for (int i(0); i<mN; ++i)
 	{
-		// find the next break point
-		double delta_t = 1e16;
-		const double tol_d = 1e-16;
-		for (int i(0); i<mN; ++i)
+		if (mFixedVariables[i] == 1)
 		{
-			const double l_ = mLowerBound[i]-x[i];
-			const double u_ = mUpperBound[i]-x[i];
-			const double d_ = d[i];
-			if (d_ < -tol_d)
-				delta_t = min2(delta_t, l_/d_);			
-			else if (d_ > tol_d)
-				delta_t = min2(delta_t, u_/d_);
-		}
-		// find the set J
-		for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;}
-		J.clear();
-		for (int i(0); i<mN; ++i)
-		{
-			const double x_next = x[i] + delta_t*d[i];
-			if (   (fabs(x_next - mLowerBound[i]) < tol_active_set
-				 || fabs(x_next - mUpperBound[i]) < tol_active_set)
-				&& active_set_cauchy[i] != 1 )
-			{
-				J.push_back(i);
-			}
-		}
-		
-		// verify if the GCP is in this interval
-		double neg_ratio_f = -f_prime/f_double_prime;
-		if ( (f_double_prime > 0.0) && (0.0 < neg_ratio_f) && (neg_ratio_f < delta_t))
-		{
-			daxpy_(&mN, &neg_ratio_f, d, &I1, x, &I1);
-			GCP_found = true;
-		}
-		else
-		{
-			// update line derivatives
-			dcopy_(&mN, &D0, &I0, b, &I1);
-			for (int i(0); i<J.size(); ++i)
-			{
-				int line = J[i];
-				daxpy_(&mN, &d[line], &mHessian[line*mN], &I1, b, &I1);
-			}
-			daxpy_(&mN, &delta_t, d, &I1, x, &I1);
-			f_prime += delta_t*f_double_prime;
-			f_prime -= ddot_(&mN, b, &I1, x, &I1);
-		
-			f_double_prime -= 2.0 * ddot_(&mN, b, &I1, d, &I1);
-			for (int i(0); i<J.size(); ++i)
-			{
-				int line = J[i];
-				f_prime -= d[line]*g[line];
-				f_double_prime += d[line]*b[line];
-				d[line] = 0.0;
-			}
-			GCP_found = (f_prime >= 0.0);
+			J.push_back(i);
 		}
 	}
 	
-	// store all the fixed variables in J
-	for (int i(0); i<J.size(); ++i){active_set_cauchy[J[i]] = 1;} J.clear();
-	for (int i(0); i<mN; ++i){if (active_set_cauchy[i] == 1) J.push_back(i);}
-	
-	
-	std::cout << "\tActive set = { ";
-	for (int i(0); i<J.size(); ++i) {std::cout << J[i] << " ";}
-	std::cout << "}" << std::endl;
+	// "trust region" radius
+	double Delta_sq;
+	const double Delta_sq_min = sqrt(mN)*5e-1;
+	if (mStep == 0)
+	{
+		Delta_sq = 5.0;
+	}
+	else
+	{
+		Delta_sq = max2(Delta_sq_min, 10.0*ddot_(&mN, mSk, &I1, mSk, &I1));
+	}
 	
 #if 0
-	memcpy(mP, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
-	return;
-#endif
+	double *d = mWorkSpaceVect;		// new descent direction
+	double *Bp = mWorkSpaceMat;		// B*mP
+	double *Bd = Bp+mN;				// B*d
+	double *gi = Bd+mN;				// restricted gradient
 	
-	if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "\tCauchy point calculated, refining the search direction with a conjugate gradient method..." << std::endl;
+	std::vector<int> fixed_variables(mFixedVariables);
 	
-	// --- refine the solution with a conjugate gradient algorithm
+	// initial search direction is 0
+	dcopy_(&mN, &D0, &I0, mP, &I1);
+	memcpy(gi, mGradient, mSizeVect);
+	dscal_(&mN, &minus_one, gi, &I1);
 	
-	double *dx = mWorkSpaceMat;
-	double *r = dx + mN;
-	double *p = r + mN;
-	double *y = p + mN;
-	
-	// compute residual r = -gradient - B*dx
-	memcpy(dx, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, dx, &I1);
-	for (int i(0); i<J.size(); ++i) {dx[J[i]] = 0.0;}
-	memcpy(r, mGradient, mSizeVect);
-	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, dx, &I1, &minus_one, r, &I1);
-	for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
-	
-	// set p = 0
-	dcopy_(&mN, &D0, &I0, p, &I1);
-	
-	// compute eta
-	double *projected_gradient = dx; // we do not use dx anymore
-	memcpy(projected_gradient, mGradient, mSizeVect);
-	dscal_(&mN, &minus_one, projected_gradient, &I1);
-	#pragma omp parallel for
-	for (int i(0); i<mN; ++i)
+	bool converged = false;
+	int iter = 0;
+	const int max_iter = mN*mN*mN;
+	while ( (iter++ < max_iter) && (!converged) )
 	{
-		const double u_ = mLowerBound[i] - aX[i];
-		const double l_ = mUpperBound[i] - aX[i];
-		double pg_ = projected_gradient[i];
-		pg_ = min2(max2(pg_, u_), l_);
-		projected_gradient[i] = pg_;
-	}
-	const double pg_norm = dnrm2_(&mN, projected_gradient, &I1);
-	const double eta_sq = min2(1e-2, pg_norm)*square(pg_norm);
+		for (int i(0); i<J.size(); ++i) {gi[J[i]] = 0.0;}
 	
-	// residual norm squared (prev and current)
-	double rho_1 = 1.0;
-	double rho_2 = ddot_(&mN, r, &I1, r, &I1);
+		// update Bp
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mP, &I1, &D0, Bp, &I1);
+		for (int i(0); i<J.size(); ++i) {Bp[J[i]] = 0.0;}
 	
-	bool CG_converged = false;
-	int number_tries = 0;
-	const int max_number_tries = 15;
-	while (!CG_converged && (number_tries++ < max_number_tries))
-	{
-		std::cout << "\t CG: rho_2 = " << rho_2 << ", r=";
+		// compute d = -Bp - g
+		memcpy(d, gi, mSizeVect);
+		daxpy_(&mN, &minus_one, Bp, &I1, d, &I1);
+		
+		// compute dBd
+		dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, d, &I1, &D0, Bd, &I1);
+		
+		const double dBd = ddot_(&mN, d, &I1, Bd, &I1);
+		for (int i(0); i<J.size(); ++i) {Bd[J[i]] = 0.0;}
+		double alpha_unconstrained = 1e32;
+		if (dBd > 0) // positive curvature
+		{
+			// compute alpha (unconstrained)
+			alpha_unconstrained = ddot_(&mN, d, &I1, d, &I1) / dBd;
+		}
+		
+		// compute max allowed step
+		double alpha_max = 1e16;
+		const double tol_d = 1e-12;
 		for (int i(0); i<mN; ++i)
 		{
-			if (i%10 == 0)
+			if (fixed_variables[i] == 0)
 			{
-				std::cout << "\t" << std::endl;
+				const double l = aLocalLowerBound[i] - mP[i];
+				const double u = aLocalUpperBound[i] - mP[i];
+				const double d_ = d[i];
+				if (d_ < -tol_d)
+					alpha_max = min2(alpha_max, l/d_);
+				else if (d_ > tol_d)
+					alpha_max = min2(alpha_max, u/d_);
 			}
-			std::cout << r[i] << " ";
 		}
-		std::cout << std::endl;
-			
-		if (rho_2 < eta_sq)
+		
+		
+		// update the iteration
+		double alpha = min2(alpha_unconstrained, alpha_max);
+		daxpy_(&mN, &alpha, d, &I1, mP, &I1);
+		
+		// update the J/fixed variables set
+		for (int i(0); i<mN; ++i)
 		{
-			CG_converged = true;
+			if (fixed_variables[i] == 0)
+			{
+				if ( fabs(mP[i] - aLocalLowerBound[i]) < 1e-6 || fabs(mP[i] - aLocalUpperBound[i]) < 1e-6 )
+				{
+					fixed_variables[i] = 1;
+					J.push_back(i);
+				}
+			}
+		}
+		
+		// check convergence
+		const double norm_d = dnrm2_(&mN, d, &I1);
+		//std::cout << "\tDEBUG: norm_d = " << norm_d << std::endl;
+		converged = (norm_d < 1e-4);
+		
+		if (converged)
+		{
+			direction_state = CONVERGED;
+		}
+	}	
+#else
+	const int maximum_iterations_cg = mN+10;
+	
+	const double epsilon = 0.1;
+	const double theta = 1e-16;
+		
+	double *p = mWorkSpaceVect;
+	double *r = mWorkSpaceMat;
+	double *w = r + mN;
+	double *next_iterate = w+mN;
+	double *gi = next_iterate+mN;	// restricted projected gradient
+	
+	memcpy(gi, mProjectedGradient, mSizeVect);
+	for (int i(0); i<J.size(); ++i) {gi[J[i]] = 0.0;}
+	
+	const double threshold_residual = square(epsilon)*ddot_(&mN, gi, &I1, gi, &I1);
+	
+	// start at point x
+	dcopy_(&mN, &D0, &I0, mP, &I1);
+	
+	// residual
+	memcpy(r, gi, mSizeVect);
+	dgemv_(&trans, &mN, &mN, &minus_one, mHessian, &mN, mP, &I1, &D1, r, &I1);
+	for (int i(0); i<J.size(); ++i)	{r[J[i]] = 0.0;}
+	
+	double rho_prev = 1.0;
+	double rho = ddot_(&mN, r, &I1, r, &I1);
+	
+	bool cg_converged = false;
+	int step_cg = 0;
+	while (step_cg++ < maximum_iterations_cg && !cg_converged)
+	{
+		std::cout << "\trho = " << rho << std::endl;
+		// test stopping criteria
+		if (rho < threshold_residual)
+		{
+			cg_converged = true;
+			std::cout << "\tCG convergence reached" << std::endl;
+			direction_state = CONVERGED;
 		}
 		else
 		{
-			double beta = rho_2 / rho_1;
-			dscal_(&mN, &beta, p, &I1);
-			daxpy_(&mN, &D1, r, &I1, p, &I1);
-			for (int i(0); i<J.size(); ++i) {p[J[i]] = 0.0;}
-		
-			// compute y = Bp (restricted to the active set)
-			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D1, y, &I1);
-			for (int i(0); i<J.size(); ++i) {y[J[i]] = 0.0;}
-	
-			// compute alpha1, largest positive real s.t. l < x+alpha1*p < u
-			double alpha_1 = 1e16;
-			const double tol_p = 1e-8;
-			for (int i(0); i<mN; ++i)
+			// compute conjugate gradient direction
+			if (step_cg == 1)
 			{
-				if (active_set_cauchy[i] != 1)
-				{
-					double l_ = mLowerBound[i] - x[i];
-					double u_ = mUpperBound[i] - x[i];
-					double p_ = p[i];
-					if (p_ < -tol_p)
-						alpha_1 = min2(alpha_1, l_/p_);			
-					else if (p_ > tol_p)
-						alpha_1 = min2(alpha_1, u_/p_);
-				}
-			}
-			std::cout << "\t CG: alpha_1 = " << std::scientific << alpha_1 << std::fixed << std::endl;
-		
-			const double py = ddot_(&mN, p, &I1, y, &I1);
-			std::cout << "\tpy = " << py << std::endl;
-			const double tol_py = 1e-4;
-			if (py < tol_py)
-			{
-				daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
-				CG_converged = true;
-			}
+				memcpy(p, r, mSizeVect);
+				//dscal_(&mN, &minus_one, p, &I1);
+			} 
 			else
 			{
-				double alpha_2 = rho_2 / py;
-				if (alpha_2 > alpha_1)
+			const double beta = rho/rho_prev;
+				dscal_(&mN, &beta, p, &I1);
+				//daxpy_(&mN, &minus_one, r, &I1, p, &I1);
+				daxpy_(&mN, &D1, r, &I1, p, &I1);
+				for (int i(0); i<J.size(); ++i)	{p[J[i]] = 0.0;}
+			}
+			// compute max allowed step
+			const double pp = ddot_(&mN, p, &I1, p, &I1);
+			const double dp = ddot_(&mN, mP, &I1, p, &I1);
+			const double dd = ddot_(&mN, mP, &I1, mP, &I1);
+			const double xi = sqrt(square(dp) - pp*dd + pp*Delta_sq);
+			double alpha = (xi-dp) / pp;
+			const double tol_p = 1e-12;
+			for (int i(0); i<mN; ++i)
+			{
+				if (mFixedVariables[i] == 0)
 				{
-					daxpy_(&mN, &alpha_1, p, &I1, x, &I1);
-					CG_converged = true;
+					const double l = aLocalLowerBound[i] - mP[i];
+					const double u = aLocalUpperBound[i] - mP[i];
+					const double p_ = p[i];
+					if (p_ < -tol_p)
+						alpha = min2(alpha, l/p_);
+					else if (p_ > tol_p)
+						alpha = min2(alpha, u/p_);
+				}
+			}
+			const double alpha_max = alpha;
+			// compute curvature informations
+			dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, p, &I1, &D0, w, &I1);
+			for (int i(0); i<J.size(); ++i)	{w[J[i]] = 0.0;}
+			const double gamma = ddot_(&mN, p, &I1, w, &I1);
+			// consider the bounds and negative curvatures
+			if (gamma > 0)
+			{
+				alpha = min2(alpha, rho/gamma);
+			}
+			else if (step_cg > 1)
+			{
+				//memcpy(mP, mProjectedGradient, mSizeVect);
+				daxpy_(&mN, &alpha_max, p, &I1, mP, &I1);
+				cg_converged = true;
+				direction_state = NEGATIVE_CURVATURE;
+				std::cout << "\tCG convergence reached: negative curvature found" << std::endl;
+			}
+			if (!cg_converged)
+			{
+				// compute new iterate
+				memcpy(next_iterate, mP, mSizeVect);
+				daxpy_(&mN, &alpha, p, &I1, next_iterate, &I1);
+				const double gd = ddot_(&mN, mGradient, &I1, next_iterate, &I1);
+				const double threshold_gd = -theta*dnrm2_(&mN, mGradient, &I1) * dnrm2_(&mN, next_iterate, &I1);
+				if (gd > threshold_gd)
+				{
+					cg_converged = true;
+					std::cout << "\tCG convergence reached: next iterate not descent enough" << std::endl;
+					direction_state = LOW_ANGLE;
+				}
+				else if (alpha == alpha_max)
+				{
+					memcpy(mP, next_iterate, mSizeVect);
+					cg_converged = true;
+					std::cout << "\tCG convergence reached: reached border" << std::endl;
+					direction_state = BORDER;
 				}
 				else
 				{
-					daxpy_(&mN, &alpha_2, p, &I1, x, &I1);
-					alpha_2 = -alpha_2;
-					daxpy_(&mN, &alpha_2, y, &I1, r, &I1);
-					for (int i(0); i<J.size(); ++i) {r[J[i]] = 0.0;}
-					rho_1 = rho_2;
-					rho_2 = ddot_(&mN, r, &I1, r, &I1);
+					std::cout << "\talpha = " << alpha << ", gamma = " << gamma << std::endl;
+					memcpy(mP, next_iterate, mSizeVect);
+					alpha = -alpha;
+					daxpy_(&mN, &alpha, w, &I1, r, &I1);
+					rho_prev = rho;
+					rho = ddot_(&mN, r, &I1, r, &I1);
 				}
 			}
 		}
 	}
-	
-	memcpy(mP, x, mSizeVect);
-	daxpy_(&mN, &minus_one, aX, &I1, mP, &I1);
+#endif
+	return direction_state;
 }
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::lineSearch(double *aX, double *aF)
+{
+	// compute data required for line search
+	const double phi0 = *aF;
+	const double phi0_prime = ddot_(&mN, mGradient, &I1, mP, &I1);
+	
+	std::cout << "\tphi0_prime = " << phi0_prime << std::endl;
+	
+	double alpha_max = 1e16;
+	const double tol_division = 1e-12;
+	for (int i(0); i<mN; ++i)
+	{
+		if (mFixedVariables[i] != 1)
+		{
+			const double l = mLowerBound[i] - aX[i];
+			const double u = mUpperBound[i] - aX[i];
+			double p = mP[i];
+			if (p < -tol_division)
+				alpha_max = min2(alpha_max, l/p);
+			else if (p > tol_division)
+				alpha_max = min2(alpha_max, u/p);
+		}
+	}
+	double alpha = min2(1.0, alpha_max);
+	double phi; 
+	
+	if (alpha_max > 1.0) 	// x+mP is inside the domain
+	{
+		phi = evaluateFunctionForLineSearch(aX, 1.0);
+		if (phi <= (phi0 + mGamma*phi0_prime))
+		{
+			// compute the line derivative at point alpha
+			double eh = sqrt(DBL_EPSILON);
+			double phi_a_prime = (evaluateFunctionForLineSearch(aX, 1.0+eh) - phi)/eh;
+			std::cout << "\tphia_prime = " << phi_a_prime << std::endl;
+			if (phi_a_prime >= mBeta*phi0_prime)
+			{
+				alpha = 1.0;
+				daxpy_(&mN, &alpha, mP, &I1, aX, &I1);
+				*aF = phi;
+			}
+			else
+			{
+				std::cout << "\tExtrapolation..." << std::endl;
+				// extrapolation
+				extrapolatingLineSearch(aX, aF, alpha, alpha_max);
+			}
+		}
+		else
+		{	
+			std::cout << "\tBacktrace..." << std::endl;
+			// backtracking
+			backtrackingLineSearch(aX, aF, alpha, phi0, phi0_prime);
+		}
+	}
+	else				// x+mP is outside the domain
+	{
+		phi = evaluateFunctionForLineSearch(aX, alpha_max);
+		std::cout << "\tphi_max = " << phi << std::endl;
+		if (phi < phi0)
+		{
+			std::cout << "\tExtrapolation..." << std::endl;
+			// extrapolation
+			extrapolatingLineSearch(aX, aF, alpha, alpha_max);
+		}
+		else
+		{
+			std::cout << "\tBacktrace..." << std::endl;
+			// backtracking
+			backtrackingLineSearch(aX, aF, alpha, phi0, phi0_prime);
+		}
+	}
+}
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::backtrackingLineSearch(double *aX, double *aF, const double aAlpha, const double aPhi0, const double aPhi0_prime)
+{
+	double alpha = aAlpha;
+	const double s1 = 0.3, s2 = 0.9;
+	
+	double phi = evaluateFunctionForLineSearch(aX, alpha);
+	int counter = 0;
+	const int max_iter_backtrace = 20;
+	while ( (counter++ < max_iter_backtrace) && (phi > aPhi0 + alpha * mGamma * aPhi0_prime) )
+	{
+		std::cout << "\t\talpha = " << alpha << std::endl;
+		alpha *= (s1 + randFrom0to1()*(s2-s1));
+		phi = evaluateFunctionForLineSearch(aX, alpha);
+	}
+	*aF = phi;
+	daxpy_(&mN, &alpha, mP, &I1, aX, &I1);
+}
+
+
+// ----------------------------------------------------------------------
+void OptSQPSR1::extrapolatingLineSearch(double *aX, double *aF, const double aAlpha, const double aAlphaMax)
+{
+	const double N = 2.0;
+	double alpha = aAlpha;
+	double alpha_trial;
+	
+	bool converged = false;
+	while (!converged)
+	{
+		if (alpha < aAlphaMax && N*alpha > aAlphaMax)
+			alpha_trial = aAlphaMax;
+		else
+			alpha_trial = N*alpha;
+	
+		double *p_a = mWorkSpaceMat;
+		double *p_a_trial = p_a + mN;
+	
+		memcpy(p_a, aX, mSizeVect);
+		memcpy(p_a_trial, aX, mSizeVect);
+		daxpy_(&mN, &alpha, mP, &I1, p_a, &I1);
+		daxpy_(&mN, &alpha_trial, mP, &I1, p_a_trial, &I1);
+		#pragma omp parallel for
+		for (int i(0); i<mN; ++i)
+		{
+			const double l = mLowerBound[i];
+			const double u = mUpperBound[i];
+			double p_a_ = p_a[i];
+			double p_a_trial_ = p_a_trial[i];
+			p_a_ = max2(min2(p_a_, u), l);
+			p_a_trial_ = max2(min2(p_a_trial_, u), l);
+			p_a[i] = p_a_;
+			p_a_trial[i] = p_a_trial_;
+		}
+		double *diff = p_a_trial+mN;
+		memcpy(diff, p_a_trial, mSizeVect);
+		daxpy_(&mN, &minus_one, p_a, &I1, diff, &I1);
+		int index_max = idamax_(&mN, diff, &I1);
+		const double inf_norm_diff = fabs(diff[index_max]);
+	
+		if (alpha >= aAlphaMax && inf_norm_diff < mAbsoluteError)
+		{
+			memcpy(aX, p_a, mSizeVect);
+			*aF = evaluateFunction(aX, mTrace); 
+			converged = true;
+			std::cout << "\t\tExtrapolating: Converged after reaching border" << std::endl;
+		}
+		else
+		{
+			double phi_a = evaluateFunction(p_a, mTrace); 
+			double phi_a_trial = evaluateFunction(p_a_trial, mTrace);
+			if (phi_a_trial >= phi_a)
+			{
+				memcpy(aX, p_a, mSizeVect);
+				*aF = phi_a;
+				converged = true;
+				std::cout << "\t\tExtrapolating: Converged after increasing step" << std::endl;
+			}
+			else
+			{
+				alpha = alpha_trial;
+			}
+		}
+	}
+}
+
+
+
+
 
