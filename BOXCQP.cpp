@@ -45,15 +45,15 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		   ,&mDWorkSpace[0], &mIWorkspace[0], &info);
 	memcpy(aX, mSubSolution, mN*sizeof(double));
 	if (info != 0 && info != (mN+1))
-		std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
-	else
-		std::cout << "\tequilibrated: " << equed << ", cond = " << 1.0/rcond << ", ferr = " << std::scientific << ferr << ", berr = " << berr << std::fixed << std::endl;
+		std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
+	//else
+	//	std::cout << "\tequilibrated: " << equed << ", cond = " << 1.0/rcond << ", ferr = " << std::scientific << ferr << ", berr = " << berr << std::fixed << std::endl;
 	#else
 	dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], aX, &mN, &info);
 	#endif
 	
 	if (info != 0)
-		std::cout << "Error: couldn't solve the initial linear system in BOXCQP. info: " << info << std::endl;
+		std::cerr << "Error: couldn't solve the initial linear system in BOXCQP. info: " << info << std::endl;
 	
 	if (aUnconstrainedDirection != NULL)
 	{
@@ -145,11 +145,11 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 			   ,&mDWorkSpace[0], &mIWorkspace[0], &info);
 		memcpy(mRHS, mSubSolution, Nsub*sizeof(double));
 		if (info != 0 && info != (Nsub+1))
-			std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
+			std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 		#else
 		dgesv_(&Nsub, &I1, mLHS, &Nsub, &IPIV[0], mRHS, &Nsub, &info);
 		if (info != 0)
-			std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
+			std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 		#endif
 		
 		// update parameters
@@ -256,7 +256,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		// solve linear system
 		dgesv_(&mN, &I1, mLHS, &mN, &IPIV[0], mRHS, &mN, &info);
 		if (info != 0)
-		std::cout << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
+		std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 		
 		// update solutions
 		#pragma omp parallel for
@@ -304,7 +304,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 	
 	if (!convergence_reached)
 	{
-		std::cout << "\t\tBOXCQP: convergence not reached." << std::endl;
+		std::cerr << "\t\tBOXCQP: convergence not reached." << std::endl;
 	}
 	else
 	{

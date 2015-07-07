@@ -405,8 +405,6 @@ void OptSQP::BFGSupdate(void)
 	double *Bs, *BssB, *yy;
 	const char trans = 'N';
 	
-	const int n_sq = mN*mN;
-	
 	// compute vector B*mSk
 	Bs = mWorkSpaceVect;
 	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
@@ -422,8 +420,7 @@ void OptSQP::BFGSupdate(void)
 	double rho = ys / sBs;
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 	{
-		std::cout << "ys = " << std::scientific << ys << std::endl;
-		std::cout << std::fixed;
+		std::cout << "ys = " << std::scientific << ys << std::fixed << std::endl;
 	}
 	if (rho < sigma)
 	{
@@ -468,7 +465,9 @@ void OptSQP::BFGSupdate(void)
 			dcopy_(&mN, &Bs[0], &I1, &BssB[i*mN], &I1);
 			dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
 		}
-	
+		
+		const int n_sq = mN*mN;
+		
 		// add the BssB / sBs contribution
 		daxpy_(&n_sq, &D1, BssB, &I1, mHessian, &I1);
 	
@@ -499,14 +498,13 @@ void OptSQP::BFGSupdate(void)
 			const double sum_current_column = dasum_(&mN, hessian+i*mN, &I1);
 			norm_hessian = max2(norm_hessian, sum_current_column); 
 		}
-		std::cout << "\tNorm 1 of the hessian = " << norm_hessian << std::endl;
 		
 		// LU decomposition of the hessian (needed for condition number estimate)
 		const char uplo = 'U';
 		int info;
 		dpotrf_(&uplo, &mN, hessian, &mN, &info);
 		if (info != 0)
-			std::cout << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
+			std::cerr << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
 		
 		// compute condition number
 		std::vector<double> work(3*mN);
@@ -514,7 +512,7 @@ void OptSQP::BFGSupdate(void)
 		double reciprocal_condition_number;
 		dpocon_(&uplo, &mN, hessian, &mN, &norm_hessian, &reciprocal_condition_number, &work[0], &iwork[0], &info);
 		if (info != 0)
-			std::cout << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
+			std::cerr << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
 		double condition_number = 1.0 / reciprocal_condition_number;
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -535,7 +533,7 @@ void OptSQP::BFGSupdate(void)
 		}
 #endif
 
-#if 0 // measure the condition number of the BFGS hessian approximation (experimental purpose)
+#if 0 // measure the condition number of the BFGS hessian approximation
 		hessian = mWorkSpaceMat;
 		memcpy(hessian, mHessian, mN*mSizeVect);
 		
@@ -550,12 +548,12 @@ void OptSQP::BFGSupdate(void)
 		// LU decomposition of the hessian (needed for condition number estimate)
 		dpotrf_(&uplo, &mN, hessian, &mN, &info);
 		if (info != 0)
-			std::cout << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
+			std::cerr << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
 		
 		// compute condition number
 		dpocon_(&uplo, &mN, hessian, &mN, &norm_hessian, &reciprocal_condition_number, &work[0], &iwork[0], &info);
 		if (info != 0)
-			std::cout << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
+			std::cerr << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
 		condition_number = 1.0 / reciprocal_condition_number;
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -659,7 +657,7 @@ void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 		phi = evaluateFunctionForLineSearch(aX, a);
 		
 		if (mVerbose >= VERBOSE_MORE_DEBUG)
-		std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
+			std::cout << "DEBUG LINE SEARCH: phi = " << phi << " for a = " << a << std::endl; 
 		
 		if (phi > phi_0 + c1*a*phi_0_prime || ((phi > phi_prev) && (iter > 1)) )
 		{
@@ -688,8 +686,6 @@ void OptSQP::lineSearch(double *aAlpha, double *aX, double *aF)
 		a_prev = a;
 		a = amax + sigma*(a-amax);
 	}
-	// TODO:
-	// Consider the case when the second Wolfe condition is not satisfied
 	
 	*aF = evaluateFunctionForLineSearch(aX, a);
 	*aAlpha = a;
