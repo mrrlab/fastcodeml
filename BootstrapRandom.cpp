@@ -22,14 +22,14 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 	allocateMemory();
 	
 	double likelihood_value = -1000000;
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
 	if (mIndexEnd - mIndexBegin < 6)
 	{
 		num_generations = (mN > 30) ? 1:0;
 	}
-	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);
+	bootstrapGeneticAlgorithm(&likelihood_value, &aVars[0], num_generations);
 #else
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
@@ -38,7 +38,7 @@ double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 		num_generations = (mN > 30) ? 1:0;
 	}
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 	return -likelihood_value;
 }
@@ -67,7 +67,7 @@ void BootstrapRandom::allocateMemory(void)
 	mVarsCopy.resize(mN);
 	mSpace.resize(mN);
 	
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 	
 	// choose a population size
 	// we take here a population of:
@@ -85,7 +85,7 @@ void BootstrapRandom::allocateMemory(void)
 	mPopFitness = &mGASpace[0];
 	mPopPos 	= mPopFitness+mPopSize;
 	
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 #ifdef BOOTSTRAP_PSO
 	
@@ -262,8 +262,8 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *aF, double *aX, int
 
 
 // --------------------------------------------------------------------
-#ifdef BOOTSTRAP_ES
-void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMaxNumGenerations)
+#ifdef BOOTSTRAP_GA
+void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMaxNumGenerations)
 {
 	if (aMaxNumGenerations == 0)
 		return;
@@ -424,7 +424,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	*aF = fmax;
 	memcpy(aX, &mPopPos[best_individual*mN], mSizeVect);
 }
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 
 // --------------------------------------------------------------------

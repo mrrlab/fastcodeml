@@ -13,13 +13,13 @@
 typedef boost::random::mt19937 RNGType;
 
 
-// uncomment this to use the evolution strategy algorithm bootstrap
-#define BOOTSTRAP_ES
+// uncomment this to use the genetic algorithm bootstrap
+#define BOOTSTRAP_GA
 
-#ifndef BOOTSTRAP_ES
+#ifndef BOOTSTRAP_GA
 // uncomment this to use the PSO bootstrap
 #define BOOTSTRAP_PSO
-#endif //BOOTSTRAP_ES
+#endif //BOOTSTRAP_GA
 
 // uncomment this to allow the variables given by tree file/ command argument to change
 #define BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
@@ -83,11 +83,11 @@ public:
 		,mInitStatus(aInitStatus)
 		,mIndexBegin(0)
 		,mIndexEnd(0)
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 		,mPopSize(0)
 		,mPopPos(NULL)
 		,mPopFitness(NULL)
-#endif //BOOTSTRAP_ES
+#endif //BOOTSTRAP_GA
 #ifdef BOOTSTRAP_PSO
 		,mPopSize(0)
 		,mWorkSpace(NULL)
@@ -176,10 +176,10 @@ private:
 	
 	
 	
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 
-	/// bootstrapEvolutionStrategy
-	///	use evolution strategy to bootstrap the optimization, i.e. help to find a good starting point
+	/// bootstrapGeneticAlgorithm
+	///	use genetic algorithm to bootstrap the optimization, i.e. help to find a good starting point
 	/// 
 	/// @param[out] aF The function value at x(out)
 	/// @param[out] aX The variables to be optimized; only output, will be initialized in the routine
@@ -187,7 +187,7 @@ private:
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void bootstrapEvolutionStrategy(double *aF, double *aX, int aMaxNumGenerations);
+	void bootstrapGeneticAlgorithm(double *aF, double *aX, int aMaxNumGenerations);
 	
 private:
 	
@@ -196,7 +196,7 @@ private:
 	double*						mPopPos;			///< array containing the mPopSize positions of the individuals of the population 
 	double*						mPopFitness;		///< Values of the fitness function (likelihood) of each individual
 	
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 #ifdef BOOTSTRAP_PSO
 
 	/// bootstrapParticlSwarm
