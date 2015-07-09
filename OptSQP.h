@@ -7,10 +7,6 @@
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
 
-
-// uncomment to rescale the variables before the optimization process
-//#define SCALE_OPT_VARIABLES
-
 // uncomment this to start with a diagonal matrix different than identity (takes less time for large problems).
 // found empirically.
 // comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
@@ -60,8 +56,6 @@ public:
 		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
-		,mLowerBoundUnscaled(aLowerBound)
-		,mUpperBoundUnscaled(aUpperBound)
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
 		,mAbsoluteError(aAbsoluteError)
@@ -97,22 +91,6 @@ private:
 	/// allocate the space for storage
 	///
 	void allocateMemory(void);
-	
-#ifdef SCALE_OPT_VARIABLES
-	/// scaleVariables
-	/// scale the variables of the problem linearly so it is more adapted to the optimization method
-	///
-	/// @param[in,out] aX The variables to be scaled
-	/// 
-	void scaleVariables(double *aX);
-	
-	/// unscaleVariables
-	/// unscale the variables of the problem linearly to recover the "true" values of the variables
-	///
-	/// @param[in,out] aX The variables to be unscaled
-	/// 
-	void unscaleVariables(double *aX);
-#endif // SCALE_OPT_VARIABLES
 
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
@@ -256,9 +234,6 @@ private:
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
-	
-	const std::vector<double>&	mLowerBoundUnscaled;	///< original lower bounds, before scaling	
-	const std::vector<double>&	mUpperBoundUnscaled;	///< original upper bounds, before scaling
 	
 	std::vector<double>			mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	std::vector<double>			mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
