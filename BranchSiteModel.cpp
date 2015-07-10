@@ -1611,11 +1611,12 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
 	
 #ifdef BOOTSTRAP
-	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed, mInitFromData);
-	double maxL_after_bootstrap = bootstrapper.bootstrap(mVar);
+	BootstrapRandom *bootstrapper = new BootstrapRandom(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed, mInitFromData);
+	double maxL_after_bootstrap = bootstrapper->bootstrap(mVar);
 	mInitFromData = INIT_NONE;
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
 		std::cout << "value after bootstrap: " << maxL_after_bootstrap  << std::endl;
+	delete bootstrapper;
 #endif
 
 	// Special case for the CodeML optimizer
