@@ -203,8 +203,6 @@ private:
 
 private:
 	
-	bool 						mH1Optimization;	///< true if performing the optimization for H1 hypothesis	
-	
 	int 						mN;					///< Number of unknown parameters
 	size_t						mSizeVect;			///< Size in memory of a mN vector
 	

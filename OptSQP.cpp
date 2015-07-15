@@ -11,14 +11,13 @@
 // ----------------------------------------------------------------------
 double OptSQP::maximizeFunction(std::vector<double>& aVars)
 {
+	// allocate workspace
 	mN = static_cast<int>(aVars.size());
-	mH1Optimization = (mN == mNumTimes+5);
-	
 	allocateMemory();
-	
-	double maxl = 1e7;
-	SQPminimizer(&maxl, &aVars[0]);
-	return -maxl;
+	// compute maximum log-likelihood
+	double minimum_opposite_likelihood = 1e7;
+	SQPminimizer(&minimum_opposite_likelihood, &aVars[0]);
+	return -minimum_opposite_likelihood;
 }
 
 
@@ -58,13 +57,13 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		mModel->printVar(mXEvaluator, *aF);
 	}
 	
-	// compute current gradient
+	// compute gradient at x0
 	computeGradient(aX, *aF, mGradient);
 	
 	// initialize the hessian matrix to identity
 	hessianInitialization();
 	
-	// local bounds for the QP subproblem
+	// allocate local bounds for the QP subproblem
 	std::vector<double> localLowerBound(mN);
 	std::vector<double> localUpperBound(mN);
 	mQPsolver.reset(new BOXCQP(mN, &localLowerBound[0], &localUpperBound[0]));	
@@ -85,15 +84,14 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		memcpy(mGradPrev, mGradient, mSizeVect);
 		memcpy(mXPrev, aX, mSizeVect);
 		
-		
+		// solve quadratic program to get the search direction	
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Quadratic program solving..." << std::endl;
-		
-		// solve quadratic program to get the search direction		
+			std::cout << "Solving quadratic program" << std::endl;
 		bool QPsolutionOnBorder;
-		bool QP_converged = mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder, mWorkSpaceVect);
+		bool QP_converged = mQPsolver->solveQP(mHessian, mGradient, &mN, mP, &QPsolutionOnBorder, NULL);
 		
 		// take the projected gradient direction in case of unsuccesfull QP solution
+		// unsuccesful QP probably due to bad hessian matrix (e.g. not positive definite) -> reinitialize it
 		if (!QP_converged) 
 		{
 			hessianInitialization();
@@ -121,7 +119,6 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		}
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 		{
-			std::cout << "<g,p> = " << ddot_(&mN, mGradient, &I1, mP, &I1) << std::endl;
 			std::cout << "Line Search with a_max = " << alpha << "..." << std::endl;
 		}
 		
@@ -132,10 +129,10 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
 		{
-			if (aX[i] < mLowerBound[i])
-				aX[i] = mLowerBound[i];
-			if (aX[i] > mUpperBound[i])
-				aX[i] = mUpperBound[i];
+			double x_ = aX[i];
+			x_ = min2(x_, mUpperBound[i]);
+			x_ = max2(x_, mLowerBound[i]);
+			aX[i] = x_;
 		}
 		
 		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
@@ -146,9 +143,9 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		}
 		
 		// check convergence
-		double df = f_prev - *aF;
+		const double df = f_prev - *aF;
 #if SQP_STOP_PARAMETERS_ACCURACY // accurate stopping criterion in terms of parameters, can be a west of iterations at the end
-		double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
+		const double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
 		convergenceReached = (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError);
 		convergenceReached = convergenceReached || mStep >= mMaxIterations;
 #else	// less accurate but usually sufficient
@@ -281,24 +278,22 @@ void OptSQP::hessianInitialization(void)
 // ----------------------------------------------------------------------
 void OptSQP::BFGSupdate(void)
 {
-	// local variables
-	double ys, sBs;
-	double *Bs, *BssB, *yy;
-	const char trans = 'N';
+	const char not_transposed = 'N';
+	const int n_sq = mN*mN;
 	
 	// compute vector B*mSk
-	Bs = mWorkSpaceVect;
-	dgemv_(&trans, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
+	double *Bs = mWorkSpaceVect;
+	dgemv_(&not_transposed, &mN, &mN, &D1, mHessian, &mN, mSk, &I1, &D0, Bs, &I1); 	
 	
-	sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
-	ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
+	const double sBs = ddot_(&mN, mSk, &I1, Bs,  &I1);
+	double ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 	
 	bool reset_hessian = false;
 #if 1	
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
-	double sigma = 0.2; // empirical value found by Powell
-	double rho = ys / sBs;
+	const double sigma = 0.2; // empirical value found by Powell
+	const double rho = ys / sBs;
 	if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
 	{
 		std::cout << "ys = " << std::scientific << ys << std::fixed << std::endl;
@@ -312,7 +307,7 @@ void OptSQP::BFGSupdate(void)
 		else
 		{
 			if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-				std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell SQP:" << std::endl;
+				std::cout << "BFGS update leading to a non positive-definite matrix, performing Powell-SQP update:" << std::endl;
 		
 			double powell_factor = (1.0-sigma) / (1.0 - rho);
 			dscal_(&mN, &powell_factor, mYk, &I1);
@@ -338,7 +333,7 @@ void OptSQP::BFGSupdate(void)
 	else
 	{
 		// compute Matrix B*mSk * mSk^T*B
-		BssB = mWorkSpaceMat;
+		double *BssB = mWorkSpaceMat;
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
 		{
@@ -347,13 +342,11 @@ void OptSQP::BFGSupdate(void)
 			dscal_(&mN, &prefactor, &BssB[i*mN], &I1);
 		}
 		
-		const int n_sq = mN*mN;
-		
 		// add the BssB / sBs contribution
 		daxpy_(&n_sq, &D1, BssB, &I1, mHessian, &I1);
 	
 		// compute matrix y**T * y
-		yy = mWorkSpaceMat;
+		double *yy = mWorkSpaceMat;
 		#pragma omp parallel for
 		for (int i=0; i<mN; ++i)
 		{
@@ -364,7 +357,6 @@ void OptSQP::BFGSupdate(void)
 	
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
-
 
 #if 1	// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
 		
