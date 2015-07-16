@@ -295,10 +295,6 @@ private:
 		OPTIM_LD_MING2			= 22,	///< The optimizer extracted from CodeML
 		
 		OPTIM_SQP				= 42,	///< sequential quadratic program
-		OPTIM_TRUST_REGION		= 43,	///< trust region with SR1 update
-		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
-		OPTIM_SR1				= 46,	///< SQP with SR1 update
-		OPTIM_ARC				= 47,	///< SR1 update with arc search
 
 		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};

@@ -20,11 +20,7 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
-#include "OptAlternatorSQP.h"
 #include "OptSQP.h"
-#include "OptSQPSR1.h"
-#include "OptArc.h"	
-#include "OptTrustRegion.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
 
@@ -1408,11 +1404,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
-	case OPTIM_ALTERNATOR_SQP:
 	case OPTIM_SQP:
-	case OPTIM_TRUST_REGION:
-	case OPTIM_SR1:
-	case OPTIM_ARC:
 		return;
 
 	default:
@@ -1619,11 +1611,13 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	delete bootstrapper;
 #endif
 
-	// Special case for the CodeML optimizer
-	if(mOptAlgo == OPTIM_LD_MING2)
+	// Special cases for the CodeML optimizer or SQP
+	std::string name_algorithm;
+	try
 	{
-		try
+		if(mOptAlgo == OPTIM_LD_MING2)
 		{
+			name_algorithm = "ming2";
 			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
 			//Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
 			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations);
@@ -1639,49 +1633,26 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			}
 			return maxl;
 		}
-		catch(FastCodeMLEarlyStopLRT&)
+		else if(mOptAlgo == OPTIM_SQP)
 		{
-			if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
-			return DBL_MAX;
-		}
-		catch(std::exception& e)
-		{
-			std::ostringstream o;
-			o << "Exception in Ming2 computation: " << e.what() << std::endl;
-			throw FastCodeMLFatal(o);
+			name_algorithm = "SQP";
+			OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+			double maxl = optim.maximizeFunction(mVar);
+			return maxl;
 		}
 	}
-	else if(mOptAlgo == OPTIM_SQP)
+	catch(FastCodeMLEarlyStopLRT&)
 	{
-		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+		return DBL_MAX;
 	}
-	else if(mOptAlgo == OPTIM_SR1)
+	catch(std::exception& e)
 	{
-		OptSQPSR1 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
+		std::ostringstream o;
+		o << "Exception in " << name_algorithm << " computation: " << e.what() << std::endl;
+		throw FastCodeMLFatal(o);
 	}
-	else if(mOptAlgo == OPTIM_TRUST_REGION)
-	{
-		OptTrustRegion optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}	
-	else if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
-	{
-		// Create the optimizer instance
-		OptAlternatorSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}
-	else if(mOptAlgo == OPTIM_ARC)
-	{
-		OptArc optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}
+	
 	
 	std::auto_ptr<nlopt::opt> opt;
 	
