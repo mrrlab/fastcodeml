@@ -259,19 +259,6 @@ void OptSQP::hessianInitialization(void)
 	const int n_sq( mN*mN ), diag_stride( mN+1 );
 	dcopy_(&n_sq, &D0, &I0, mHessian, &I1);
 	dcopy_(&mN, &D1, &I0, mHessian, &diag_stride);
-	
-#ifdef NON_IDENTITY_HESSIAN
-	int i_;
-	for (i_ = 0; i_<mNumTimes; ++i_)
-	{
-		mHessian[i_*diag_stride]  = 3.0;	// Htt
-	}
-	--i_;
-	++i_; mHessian[i_*diag_stride] = 1.0; // Hv0v0
-	++i_; mHessian[i_*diag_stride] = 2.0; // Hv1v1
-	++i_; mHessian[i_*diag_stride] = 1.0; // Hww
-	++i_; mHessian[i_*diag_stride] = 1.5; // Hkk
-#endif // NON_IDENTITY_HESSIAN
 }
 
 
@@ -289,7 +276,7 @@ void OptSQP::BFGSupdate(void)
 	double ys  = ddot_(&mN, mSk, &I1, mYk, &I1);
 	
 	bool reset_hessian = false;
-#if 1	
+
 	// Powell-SQP update:
 	// change y so the matrix is positive definite
 	const double sigma = 0.2; // empirical value found by Powell
@@ -322,7 +309,6 @@ void OptSQP::BFGSupdate(void)
 			}
 		}
 	}
-#endif
 
 	if (reset_hessian)
 	{
@@ -358,7 +344,7 @@ void OptSQP::BFGSupdate(void)
 		// add the yy / ys contribution
 		daxpy_(&n_sq, &D1, yy, &I1, mHessian, &I1);
 
-#if 1	// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
+		// measure the condition number of the BFGS hessian approximation and modify the hessian if badly conditioned
 		
 		// estimate the condition number
 		double *hessian = mWorkSpaceMat;
@@ -404,34 +390,6 @@ void OptSQP::BFGSupdate(void)
 			dscal_(&n_sq, &off_diagonal_scaling, mHessian, &I1);
 			dcopy_(&mN, diagonal_backup, &I1, mHessian, &diagonal_stride);
 		}
-#endif
-
-#if 0 // measure the condition number of the BFGS hessian approximation
-		hessian = mWorkSpaceMat;
-		memcpy(hessian, mHessian, mN*mSizeVect);
-		
-		// hessian 1-norm
-		norm_hessian = 0.0;
-		for (int i(0); i<mN; ++i)
-		{
-			const double sum_current_column = dasum_(&mN, hessian+i*mN, &I1);
-			norm_hessian = max2(norm_hessian, sum_current_column); 
-		}
-		
-		// LU decomposition of the hessian (needed for condition number estimate)
-		dpotrf_(&uplo, &mN, hessian, &mN, &info);
-		if (info != 0)
-			std::cerr << "\tError during the Choleski decomposition of hessian. INFO = " << info << std::endl;
-		
-		// compute condition number
-		dpocon_(&uplo, &mN, hessian, &mN, &norm_hessian, &reciprocal_condition_number, &work[0], &iwork[0], &info);
-		if (info != 0)
-			std::cerr << "\tError during the condition number estimation of hessian. INFO = " << info << std::endl;
-		condition_number = 1.0 / reciprocal_condition_number;
-		
-		if (mVerbose >= VERBOSE_MORE_INFO_OUTPUT)
-			std::cout << "Condition number after = " << condition_number << std::endl;
-#endif
 	}
 }
 
@@ -440,7 +398,7 @@ void OptSQP::BFGSupdate(void)
 void OptSQP::activeSetUpdate(double *aX, const double aTolerance)
 {
 	// number of iterations where we skip the gradient computation (component i)
-	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;//(mN>30 ? 1:0);
+	const int max_count_lower = static_cast<const int>(1.3*log (static_cast<double>(mN)/10.)) + 1;
 	const int max_count_upper = (mN > 30 ? 1 : 0);
 	 
 	#pragma omp parallel for
@@ -455,10 +413,10 @@ void OptSQP::activeSetUpdate(double *aX, const double aTolerance)
 		else
 		{
 			const double active_set_tol = aTolerance;
-			const double y_tolerance = 1e-3*static_cast<double>(mN)/8.0; //aTolerance;
+			const double y_tolerance = min2(1e-3*static_cast<double>(mN)/8.0, 1e-1);
 			
 			if (fabs(mYk[i]) < y_tolerance)
-			{			
+			{
 				// update active set so we can reduce the gradient computation				
 				if (aX[i] <= mLowerBound[i] + active_set_tol && mGradient[i] >= 0.0)
 				{

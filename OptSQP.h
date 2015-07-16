@@ -7,10 +7,6 @@
 #include "BranchSiteModel.h"
 #include "BOXCQP.h"
 
-// uncomment this to start with a diagonal matrix different than identity (takes less time for large problems).
-// found empirically.
-// comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
-//#define NON_IDENTITY_HESSIAN
 
 // uncomment this to use a stopping criterion also implying the parameters
 //#define SQP_STOP_PARAMETERS_ACCURACY
@@ -18,7 +14,7 @@
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
-/// see http://www.neos-guide.org/content/sequential-quadratic-programming
+/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf
 ///
 ///     @author Lucas Amoudruz - EPFL.
 ///     @date 2015-03-30 (initial version)
@@ -160,18 +156,9 @@ private:
 	/// lineSearch
 	/// perform a line search in the mP direction
 	///
-	/// two versions implemented:
 	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
 	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
 	/// wolfe condition.
-	///
-	///	The other version is a backtrace followed by a little refinement, consisting
-	/// in a backtrace in the direction of derivative.
-	/// 
-	///
-	/// note: be careful, the last computation of the likelihood
-	///		  is the best solution so the gradient computaion is 
-	///		  valid!
 	///
 	/// @param[in,out] aAlpha 	in: initial guess of step length
 	///							out: step length
