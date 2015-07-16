@@ -26,16 +26,17 @@ class OptSQP
 public:
 	/// Constructor
 	/// 
-	/// @param[in] aModel				The pointer to the hypothesis class that will be used
-	/// @param[in] aTrace				Trace or not the optimizer progress
-	/// @param[in] aVerbose				The verbose level
-	/// @param[in] aLowerBound			Lower limit of the variables to constrain the interval on which the optimum should be computed
-	/// @param[in] aUpperBound			Upper limit of the variables to constrain the interval on which the optimum should be computed
-	/// @param[in] aAbsoluteError		Absolute error to stop computation
-	/// @param[in] aStopIfBigger		If true stop computation as soon as value is over aThreshold
-	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
-	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
-	/// @param[in] aNumTimes			Number of branches
+	/// @param[in] aModel					The pointer to the hypothesis class that will be used
+	/// @param[in] aTrace					Trace or not the optimizer progress
+	/// @param[in] aVerbose					The verbose level
+	/// @param[in] aLowerBound				Lower limit of the variables to constrain the interval on which the optimum should be computed
+	/// @param[in] aUpperBound				Upper limit of the variables to constrain the interval on which the optimum should be computed
+	/// @param[in] aAbsoluteError			Absolute error to stop computation
+	/// @param[in] aHimmelblauTermination	Use Himmelblau stopping criterion
+	/// @param[in] aStopIfBigger			If true stop computation as soon as value is over aThreshold
+	/// @param[in] aThreshold				The threshold at which the maximization should be stopped
+	/// @param[in] aMaxIterations			Maximum number of iterations for the maximization
+	/// @param[in] aNumTimes				Number of branches
 	/// 
 	OptSQP(BranchSiteModel* aModel
 		  ,bool aTrace
@@ -43,6 +44,7 @@ public:
 		  ,const std::vector<double>& aLowerBound
 		  ,const std::vector<double>& aUpperBound
 		  ,double aAbsoluteError
+		  ,bool aHimmelblauTermination
 		  ,bool aStopIfBigger
 		  ,double aThreshold
 		  ,int aMaxIterations
@@ -55,6 +57,7 @@ public:
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
 		,mAbsoluteError(aAbsoluteError)
+		,mHimmelblauTermination(aHimmelblauTermination)
 		,mVerbose(aVerbose)
 		,mStopIfBigger(aStopIfBigger)
 		,mThreshold(-aThreshold)
@@ -190,45 +193,46 @@ private:
 
 private:
 	
-	int 						mN;					///< Number of unknown parameters
-	size_t						mSizeVect;			///< Size in memory of a mN vector
+	int 						mN;						///< Number of unknown parameters
+	size_t						mSizeVect;				///< Size in memory of a mN vector
 	
-	std::vector<double>			mSpace;				///< Work and storage space
-	std::vector<double> 		mXEvaluator;		///< Workspace for function evaluations
+	std::vector<double>			mSpace;					///< Work and storage space
+	std::vector<double> 		mXEvaluator;			///< Workspace for function evaluations
 	
-	double*						mGradient;			///< Gradient of the function. mN components
-	double*						mHessian;			///< positive definite hessian approximation using BFGS; mN*mN components
+	double*						mGradient;				///< Gradient of the function. mN components
+	double*						mHessian;				///< positive definite hessian approximation using BFGS; mN*mN components
 	
-	double*						mP;					///< search direction
+	double*						mP;						///< search direction
 
-	double*						mSk;				///< position change, i.e. mSk = xk+1 - xk
-	double*						mYk;				///< gradient change, i.e. mYk = gk+1 - gk
+	double*						mSk;					///< position change, i.e. mSk = xk+1 - xk
+	double*						mYk;					///< gradient change, i.e. mYk = gk+1 - gk
 
-	double*						mXPrev;				///< previous position
-	double*						mGradPrev;			///< previous gradient
+	double*						mXPrev;					///< previous position
+	double*						mGradPrev;				///< previous gradient
 	
-	std::vector<int>			mActiveSet;			///< active set used to reduce the gradient computaion
+	std::vector<int>			mActiveSet;				///< active set used to reduce the gradient computaion
 	
-	double*						mWorkSpaceVect;		///< workspace. size of a mN vector.
-	double*						mWorkSpaceMat;		///< workspace. size of a mN by mN matrix
+	double*						mWorkSpaceVect;			///< workspace. size of a mN vector.
+	double*						mWorkSpaceMat;			///< workspace. size of a mN by mN matrix
 	
-	int							mStep;				///< current step	
+	int							mStep;					///< current step	
 	
-	std::auto_ptr<BOXCQP>		mQPsolver;			///< box constrained quadratic program solver
+	std::auto_ptr<BOXCQP>		mQPsolver;				///< box constrained quadratic program solver
 
-	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
-	bool						mTrace;				///< If a trace has been selected
-	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
+	BranchSiteModel*			mModel;					///< The model for which the optimization should be computed
+	bool						mTrace;					///< If a trace has been selected
+	bool						mTraceFun;				///< If a trace has been selected for the inner function computeLikelihood()
 	
-	std::vector<double>			mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
-	std::vector<double>			mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
+	std::vector<double>			mLowerBound;			///< Lower limit of the variables to constrain the interval on which the optimum should be computed
+	std::vector<double>			mUpperBound;			///< Upper limit of the variables to constrain the interval on which the optimum should be computed
 	
-	double						mAbsoluteError;		///< The absolute error at which the computation stops
-	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
-	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
-	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
-	int							mMaxIterations;		///< Maximum number of iterations for the maximization
-	int							mNumTimes;			///< Number of branches in the optimizer
+	double						mAbsoluteError;			///< The absolute error at which the computation stops
+	bool						mHimmelblauTermination;	///< Use a Himmelblau stopping criterion instead of function reduction only
+	unsigned int				mVerbose;				///< The verbose flag from the BranchSiteModel class
+	bool						mStopIfBigger;			///< When true stop if lnL is bigger than mThreshold
+	double						mThreshold;				///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
+	int							mMaxIterations;			///< Maximum number of iterations for the maximization
+	int							mNumTimes;				///< Number of branches in the optimizer
 };
 
 #endif // OPTSQP_H

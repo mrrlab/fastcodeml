@@ -58,6 +58,7 @@ protected:
 	/// @param[in] aOptAlgo Maximization algorithm to be used
 	/// @param[in] aDeltaValueForGradient The variable increment to compute gradient
 	/// @param[in] aAbsoluteError Absolute error for convergence
+	/// @param[in] aHimmelblauTermination Termination criterion, Himmelblau if true
 	/// @param[in] aNoParallel If true no parallel execution support is setup
 	/// @param[in] aVerbose The verbosity level
 	/// @param[in] aExtraDebug Extra parameter for testing during development
@@ -74,6 +75,7 @@ protected:
 					unsigned int aOptAlgo,
 					double       aDeltaValueForGradient,
 					double       aAbsoluteError,
+					bool		 aHimmelblauTermination,
 					bool	     aNoParallel,
 					unsigned int aVerbose,
 					unsigned int aExtraDebug,
@@ -99,12 +101,11 @@ protected:
 		  mMaxIterations(aMaxIterations),
 		  mDependencies(aForest, aVerbose),
 		  mNoParallel(aNoParallel),
-//		  mSeed(aSeed),
-//		  mAbsoluteError(aAbsoluteError),
 		  mFixedBranchLength(aFixedBranchLength),
 		  mBranches(aNumBranches),
-                  mSeed(aSeed),
-                  mAbsoluteError(aAbsoluteError)
+          mSeed(aSeed),
+          mAbsoluteError(aAbsoluteError),
+          mHimmelblauTermination(aHimmelblauTermination)
 	{
 		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
 	}
@@ -356,35 +357,36 @@ private:
 
 
 protected:
-	Forest&						mForest;			///< The forest to be used
-	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
-	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
-	std::vector<double>			mUpperBound;		///< Upper limits for the variables to be optimized
-	double						mProportions[4];	///< The four proportions
-	double						mFgScale;			///< The computed foreground branch scale
-	double						mBgScale;			///< The computed background branches scale
-	double						mMaxLnL;			///< Maximum value of LnL found during optimization
-	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
-	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
-	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
-	bool						mTrace;				///< Enable maximization tracing
-	unsigned int				mOptAlgo;			///< Optimization algorithm to use
-	unsigned int				mInitStatus;		///< Which variables have been initialized
-	unsigned int				mInitFromData;		///< Which variables have been initialized by data
-	unsigned int				mNumTimes;			///< Number of branch lengths values
-	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
-	unsigned int				mExtraDebug;		///< Parameter for extra development testing
-	unsigned int				mVerbose;			///< Parameter for extra development testing
-	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
-	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
-	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
-	bool						mNoParallel;		///< True if no preparation for multithreading should be done
-    bool						mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
-    std::vector<double>			mBranches;          ///< Variable with the branch lengths
+	Forest&						mForest;				///< The forest to be used
+	std::vector<double>			mVar;					///< Variable to optimize (first the branch lengths then the remaining variables)
+	std::vector<double>			mLowerBound;			///< Lower limits for the variables to be optimized
+	std::vector<double>			mUpperBound;			///< Upper limits for the variables to be optimized
+	double						mProportions[4];		///< The four proportions
+	double						mFgScale;				///< The computed foreground branch scale
+	double						mBgScale;				///< The computed background branches scale
+	double						mMaxLnL;				///< Maximum value of LnL found during optimization
+	double						mDeltaForGradient;		///< Value used to change the variables to compute gradient
+	CacheAlignedDoubleVector	mLikelihoods;			///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
+	bool						mOnlyInitialStep;		///< Only the initial step is executed, no optimization
+	bool						mTrace;					///< Enable maximization tracing
+	unsigned int				mOptAlgo;				///< Optimization algorithm to use
+	unsigned int				mInitStatus;			///< Which variables have been initialized
+	unsigned int				mInitFromData;			///< Which variables have been initialized by data
+	unsigned int				mNumTimes;				///< Number of branch lengths values
+	unsigned int				mNumVariables;			///< The number of extra variables (4 for H0 and 5 for H1)
+	unsigned int				mExtraDebug;			///< Parameter for extra development testing
+	unsigned int				mVerbose;				///< Parameter for extra development testing
+	unsigned int				mNumEvaluations;		///< Counter of the likelihood function evaluations
+	unsigned int				mMaxIterations;			///< Maximum number of iterations for the maximization
+	TreeAndSetsDependencies		mDependencies;			///< The dependency list between trees to use in this run
+	bool						mNoParallel;			///< True if no preparation for multithreading should be done
+    bool						mFixedBranchLength; 	///< True if branch lengths are kept fixed (not optimised)
+    std::vector<double>			mBranches;          	///< Variable with the branch lengths
 
 private:
-	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
-	double						mAbsoluteError;		///< Absolute error to stop maximization
+	unsigned int				mSeed;					///< Random number generator seed to be used also by the optimizer
+	double						mAbsoluteError;			///< Absolute error to stop maximization
+	bool						mHimmelblauTermination;	///< Use a Himmelblau stopping criterion instead of function reduction only
 };
 
 
@@ -408,7 +410,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mHimmelblauTermination, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
@@ -509,7 +511,7 @@ public:
 		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
 						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mAbsoluteError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mAbsoluteError, aCmdLine.mHimmelblauTermination, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
 						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)

@@ -136,7 +136,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_INIT_PARAM,
 		OPT_INIT_DEFAULT,
 		OPT_EXTRA_DEBUG,
-		OPT_REL_ERROR,
+		OPT_ABS_ERROR,
+		OPT_HIMMELBAU_TERMINATION,
 		OPT_OUT_RESULTS,
 		OPT_CLEAN_DATA,
 		OPT_NO_PRE_STOP,
@@ -198,8 +199,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_INIT_DEFAULT,		"--init-default",		SO_NONE,	"" },
 		{ OPT_EXTRA_DEBUG,		"-x",					SO_REQ_SEP,	"Extra debug parameter (zero disables it)" },
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
-		{ OPT_REL_ERROR,		"-re",					SO_REQ_SEP,	"Absolute error where to stop maximization (default: 1e-3)" },
-		{ OPT_REL_ERROR,		"--absolute-error",		SO_REQ_SEP,	"" },
+		{ OPT_ABS_ERROR,		"-ae",					SO_REQ_SEP,	"Absolute error where to stop maximization (default: 1e-3)" },
+		{ OPT_ABS_ERROR,		"--absolute-error",		SO_REQ_SEP,	"" },
+		{ OPT_HIMMELBAU_TERMINATION,		"-ht",								SO_NONE,	"use Himmelbau termination for optimization (default: no)" },
+		{ OPT_HIMMELBAU_TERMINATION,		"--himmelbau-termination",			SO_NONE,	"" },
 		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },
 		{ OPT_CLEAN_DATA,		"-cl",					SO_NONE,	"Remove ambiguous or missing sites from the MSA (default: no)" },
@@ -350,9 +353,13 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mExtraDebug = static_cast<unsigned int>(atoi(args.OptionArg()));
 			break;
 
-		case OPT_REL_ERROR:
+		case OPT_ABS_ERROR:
 			mAbsoluteError = atof(args.OptionArg());
 			if(mAbsoluteError <= 0.0) throw FastCodeMLFatal("Invalid absolute error value");
+			break;
+		
+		case OPT_HIMMELBAU_TERMINATION:
+			mHimmelblauTermination = true;
 			break;
 
 		case OPT_OUT_RESULTS:

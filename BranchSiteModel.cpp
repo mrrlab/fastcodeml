@@ -1639,7 +1639,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 		else if(mOptAlgo == OPTIM_SQP)
 		{
 			name_algorithm = "SQP";
-			OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+			OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, mHimmelblauTermination, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
 			double maxl = optim.maximizeFunction(mVar);
 			return maxl;
 		}
@@ -1746,8 +1746,12 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	opt->set_upper_bounds(mUpperBound);
 #ifdef FTOL_REL_ERROR
     opt->set_ftol_rel(mAbsoluteError);
+    if (mHimmelblauTermination)
+    	opt->set_xtol_rel(mAbsoluteError);
 #else
     opt->set_ftol_abs(mAbsoluteError);
+    if (mHimmelblauTermination)
+    	opt->set_xtol_abs(mAbsoluteError);
 #endif // FTOL_REL_ERROR
 	nlopt::srand(static_cast<unsigned long>(mSeed));
 

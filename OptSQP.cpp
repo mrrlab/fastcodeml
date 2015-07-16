@@ -144,13 +144,17 @@ void OptSQP::SQPminimizer(double *aF, double *aX)
 		
 		// check convergence
 		const double df = f_prev - *aF;
-#if SQP_STOP_PARAMETERS_ACCURACY // accurate stopping criterion in terms of parameters, can be a west of iterations at the end
-		const double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
-		convergenceReached = (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError);
-		convergenceReached = convergenceReached || mStep >= mMaxIterations;
-#else	// less accurate but usually sufficient
-		convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
-#endif
+		
+		if (mHimmelblauTermination)
+		{
+			const double diff_x_norm = fabs(mSk[idamax_(&mN, mSk, &I1)]);
+			convergenceReached = (fabs(df) < mAbsoluteError && diff_x_norm < mAbsoluteError);
+			convergenceReached = convergenceReached || mStep >= mMaxIterations;
+		}
+		else
+		{
+			convergenceReached =  fabs(df) < mAbsoluteError	|| mStep >= mMaxIterations;
+		}
 		
 		// update variables before next iteration
 		if (!convergenceReached)
