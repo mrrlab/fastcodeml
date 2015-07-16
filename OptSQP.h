@@ -8,21 +8,13 @@
 #include "BOXCQP.h"
 
 
-// uncomment to rescale the variables before the optimization process
-//#define SCALE_OPT_VARIABLES
-
-// uncomment this to start with a diagonal matrix different than identity (takes less time for large problems).
-// found empirically.
-// comment this to keep the default identity initial hessian matrix (the accuracy is often better for small/medium problems)
-//#define NON_IDENTITY_HESSIAN
-
 // uncomment this to use a stopping criterion also implying the parameters
 //#define SQP_STOP_PARAMETERS_ACCURACY
 
 
 /// OptSQP class.
 /// sequential quadratic programming optimizer
-/// see http://www.neos-guide.org/content/sequential-quadratic-programming
+/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf
 ///
 ///     @author Lucas Amoudruz - EPFL.
 ///     @date 2015-03-30 (initial version)
@@ -60,8 +52,6 @@ public:
 		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
-		,mLowerBoundUnscaled(aLowerBound)
-		,mUpperBoundUnscaled(aUpperBound)
 		,mLowerBound(aLowerBound)
 		,mUpperBound(aUpperBound)
 		,mAbsoluteError(aAbsoluteError)
@@ -97,22 +87,6 @@ private:
 	/// allocate the space for storage
 	///
 	void allocateMemory(void);
-	
-#ifdef SCALE_OPT_VARIABLES
-	/// scaleVariables
-	/// scale the variables of the problem linearly so it is more adapted to the optimization method
-	///
-	/// @param[in,out] aX The variables to be scaled
-	/// 
-	void scaleVariables(double *aX);
-	
-	/// unscaleVariables
-	/// unscale the variables of the problem linearly to recover the "true" values of the variables
-	///
-	/// @param[in,out] aX The variables to be unscaled
-	/// 
-	void unscaleVariables(double *aX);
-#endif // SCALE_OPT_VARIABLES
 
 	/// SQPminimizer
 	/// performs a sequential quadratic approximation of the function to estimate its minimum
@@ -174,26 +148,17 @@ private:
 	/// updates the activeSet and sets counters so the gradient is not always calculated 
 	/// when it is not needed 
 	///
-	/// @param[in] aX The current variables
+	/// @param[in,out] aX The current variables. will be clipped to the boundaries
 	/// @param[in] aTolerance The tolerance for a variable to be in the active set
 	///
-	void activeSetUpdate(const double *aX, const double aTolerance);
+	void activeSetUpdate(double *aX, const double aTolerance);
 	
 	/// lineSearch
 	/// perform a line search in the mP direction
 	///
-	/// two versions implemented:
 	/// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf, 
 	/// chap3 pp.59-60 for more informations on the line search algorithm using strong
 	/// wolfe condition.
-	///
-	///	The other version is a backtrace followed by a little refinement, consisting
-	/// in a backtrace in the direction of derivative.
-	/// 
-	///
-	/// note: be careful, the last computation of the likelihood
-	///		  is the best solution so the gradient computaion is 
-	///		  valid!
 	///
 	/// @param[in,out] aAlpha 	in: initial guess of step length
 	///							out: step length
@@ -225,8 +190,6 @@ private:
 
 private:
 	
-	bool 						mH1Optimization;	///< true if performing the optimization for H1 hypothesis	
-	
 	int 						mN;					///< Number of unknown parameters
 	size_t						mSizeVect;			///< Size in memory of a mN vector
 	
@@ -256,9 +219,6 @@ private:
 	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
 	bool						mTrace;				///< If a trace has been selected
 	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
-	
-	const std::vector<double>&	mLowerBoundUnscaled;	///< original lower bounds, before scaling	
-	const std::vector<double>&	mUpperBoundUnscaled;	///< original upper bounds, before scaling
 	
 	std::vector<double>			mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
 	std::vector<double>			mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed

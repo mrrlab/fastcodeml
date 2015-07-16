@@ -16,6 +16,7 @@
 #define dsyevd_ _dsyevd_
 #define dsyrk_  _dsyrk_
 #define dnrm2_  _dnrm2_
+#define dasum_	_dasum_
 #define idamax_	_idamax_
 #define daxpy_  _daxpy_
 #define dgemm_	_dgemm_
@@ -29,6 +30,7 @@
 #define dsyevd_ DSYEVD
 #define dsyrk_  DSYRK
 #define dnrm2_  DNRM2
+#define dasum_	DASUM
 #define idamax_	IDAMAX
 #define daxpy_  DAXPY
 #define dgemv_	DGEMV
@@ -40,6 +42,7 @@
 #define dsyevr_ dsyevr
 #define ddot_  ddot
 #define dnrm2_ dnrm2
+#define dasum_	dasum
 #define idamax_	idamax
 #define dcopy_ dcopy
 #define dscal_ dscal
@@ -320,9 +323,23 @@ double ddot_(const int *n,
 /// 
 /// @return Resulting Euclidean norm.
 /// 
-double dnrm2_(const int *n,
-				const double *dx,
-				const int *incx);
+double dnrm2_(const int *n
+			 ,const double *dx
+			 ,const int *incx);
+
+
+/// DASUM takes the sum of the absolute values.
+///
+/// @param[in]		n  Number of elements in the operand vector.
+/// @param[in]      dx  Array of dimension (n-1) * |incx| + 1. contains the operand vector.
+/// @param[in]      incx  Increment between elements of dx.
+/// 
+/// @return Resulting sum of absolute values.
+/// 
+double dasum_(const int *n
+			 ,const double *dx
+			 ,const int *incx);
+
 
 /// IDAMAX finds the index of element having max. absolute value.
 ///

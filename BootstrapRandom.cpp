@@ -1,23 +1,44 @@
 #include "BootstrapRandom.h"
 #include "MathSupport.h"
+#include <iomanip>
 
 // --------------------------------------------------------------------
 double BootstrapRandom::bootstrap(std::vector<double>& aVars)
 {
 	mN = static_cast<int>(aVars.size());
+	
+	if ((mInitStatus & BranchSiteModel::INIT_TIMES_FROM_FILE) == BranchSiteModel::INIT_TIMES_FROM_FILE) // if times initialized from file
+		mIndexBegin = mNumTimes;
+	else
+		mIndexBegin = 0;
+	if ((mInitStatus & BranchSiteModel::INIT_PARAMS) == BranchSiteModel::INIT_PARAMS) // if parameters (not times) initialized from command line
+		mIndexEnd = mNumTimes;
+	else
+		mIndexEnd = mN;
+	
+	if (mIndexBegin == mIndexEnd) // nothing to change, don't perform the bootstrap
+		return -evaluateLikelihood(aVars);
+	
 	allocateMemory();
 	
 	double likelihood_value = -1000000;
-#ifdef BOOTSTRAP_ES
-	//int numGenerations = (mN < 20) ? 0 : ((mN>60) ? 100 : 3);
+#ifdef BOOTSTRAP_GA
 	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
-	bootstrapEvolutionStrategy(&likelihood_value, &aVars[0], num_generations);;
+	if (mIndexEnd - mIndexBegin < 6)
+	{
+		num_generations = (mN > 30) ? 1:0;
+	}
+	bootstrapGeneticAlgorithm(&likelihood_value, &aVars[0], num_generations);
 #else
-	int num_generations = static_cast<int> ( static_cast<double>(mN) / 15.0 );
+	int num_generations = static_cast<int> ( static_cast<double>(mN) / 7.0 - 4.0 );
 	num_generations = num_generations > 0 ? num_generations : 0;
+	if (mIndexEnd - mIndexBegin < 6)
+	{
+		num_generations = (mN > 30) ? 1:0;
+	}
 	bootstrapParticlSwarm(&likelihood_value, &aVars[0], num_generations);
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 	return -likelihood_value;
 }
@@ -46,7 +67,7 @@ void BootstrapRandom::allocateMemory(void)
 	mVarsCopy.resize(mN);
 	mSpace.resize(mN);
 	
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 	
 	// choose a population size
 	// we take here a population of:
@@ -64,7 +85,7 @@ void BootstrapRandom::allocateMemory(void)
 	mPopFitness = &mGASpace[0];
 	mPopPos 	= mPopFitness+mPopSize;
 	
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 #ifdef BOOTSTRAP_PSO
 	
@@ -241,8 +262,8 @@ void BootstrapRandom::bootstrapEachDirectionRandomly(double *aF, double *aX, int
 
 
 // --------------------------------------------------------------------
-#ifdef BOOTSTRAP_ES
-void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMaxNumGenerations)
+#ifdef BOOTSTRAP_GA
+void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMaxNumGenerations)
 {
 	if (aMaxNumGenerations == 0)
 		return;
@@ -253,14 +274,24 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	double fmin, fmax;
 	fmin = fmax = -1e16;
 	
-	for (int individual_id( 0 ); individual_id < mPopSize; ++individual_id)
+	for (int individual_id(0); individual_id < mPopSize; ++individual_id)
 	{
 		double *individual_pos = &mPopPos[individual_id*mN];
+		memcpy(individual_pos, aX, mSizeVect);
 		
 		// generate the initial position of individuals
-		for (int i(0); i<mN; ++i)
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
+		const double prop_file_init = 0.8;
+		for (unsigned int i(0); i<mIndexBegin; ++i)
+			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
+#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+		for (unsigned int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
-			
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
+		for (int i(mIndexEnd); i<mN; ++i)
+			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
+#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+
 		// compute its likelihood
 		double ftmp = evaluateLikelihood(individual_pos);
 		mPopFitness[individual_id] = ftmp;
@@ -269,7 +300,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		if ( fmax<mPopFitness[individual_id] )
 		{
 			fmax = ftmp;
-			best_individual = static_cast<int>(individual_id);
+			best_individual = individual_id;
 		}
 		fmin = (ftmp < fmin) ? ftmp : fmin;
 	}
@@ -310,6 +341,10 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 				else
 					selected[(i<<1)+1] = (i<<2) + 1;
 			}
+			else
+			{
+				selected[(i<<1)+1] = (i<<2) + 1;
+			}
 		}
 		
 		for (int childid(0); childid<lambda; ++childid)
@@ -333,14 +368,26 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 		}
 		
 		// --mutations
-		
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+		// allow mutations on every variable, even if it has been initialized from the files/command line
 		for (int i(0); i<lambda*mN; ++i)
 		{	
 			// apply a "little" mutation
 			const double prop = 0.9 + 0.1*randFrom0to1();
 			children[i] = prop*children[i] + (1.0-prop)*generateRandom(i%mN);
 		}
-		
+#else
+		// do not allow mutations on variable if it has been initialized from the files/command line
+		for (int i(0); i<lambda; ++i)
+		{	
+			for (int j(mIndexBegin); j<mIndexEnd; ++j)
+			{
+				// apply a "little" mutation
+				const double prop = 0.9 + 0.1*randFrom0to1();
+				children[i*mN+j] = prop*children[i*mN+j] + (1.0-prop)*generateRandom(j);
+			}
+		}
+#endif
 		// --selection
 		
 		for (int childid(0); childid<lambda; ++childid)
@@ -377,7 +424,7 @@ void BootstrapRandom::bootstrapEvolutionStrategy(double *aF, double *aX, int aMa
 	*aF = fmax;
 	memcpy(aX, &mPopPos[best_individual*mN], mSizeVect);
 }
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 
 
 // --------------------------------------------------------------------
@@ -398,15 +445,22 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		double *individual_best_pos = mBestPositions + individual_id*mN;
 		double *individual_velocity = mVelocities + individual_id*mN;
 		// generate the initial position of individuals
-		for (int i(0); i<mN; ++i)
+		for (int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
 		// generate velocities
+#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		for (int i(0); i<mN; ++i)
+#else
+		for (int i(mIndexBegin); i<mIndexEnd; ++i)
+#endif
 		{
 			int id_var = i-mNumTimes;
+			/*
 			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
 			individual_velocity[i] = -1e-3*(randFrom0to1()-shift);
+			*/
+			individual_velocity[i] = generateRandom(i) - individual_pos[i];
 		}
 		// compute log-likelihood
 		double f = evaluateLikelihood(individual_pos);
@@ -455,6 +509,11 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			memcpy(mWorkSpace, aX, mN*sizeof(double));
 			daxpy_(&mN, &minus_one, individual_pos, &I1, mWorkSpace, &I1);
 			daxpy_(&mN, &trust_best, mWorkSpace, &I1, individual_velocity, &I1);
+			
+#ifndef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
+			for (int i(0); i<mIndexBegin; ++i) {individual_velocity[i] = 0.0;}
+			for (int i(mIndexEnd); i<mN; ++i)  {individual_velocity[i] = 0.0;}
+#endif
 		}
 		
 		// update positions
@@ -470,30 +529,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			for (int bound_id(0); bound_id<mN; ++bound_id)
 			{
 				double x = mPositions[pos_id];
-#if 0				
-				if (reset_velocity)
-				{
-					x = max2(x, mLowerBound[bound_id]);
-					x = min2(x, mUpperBound[bound_id]);
-				}
-				else
-				{
-					if ( x <= mLowerBound[bound_id] )
-					{
-						x = mLowerBound[bound_id];
-						dcopy_(&mN, &D0, &I0, &mVelocities[id*mN], &I1);
-						reset_velocity = true;
-						//std::cout << "Touched a lower bound." << std::endl;
-					}
-					if ( x >= mUpperBound[bound_id] )
-					{
-						x = mUpperBound[bound_id];
-						dcopy_(&mN, &D0, &I0, &mVelocities[id/mN], &I1);
-						reset_velocity = true;
-						//std::cout << "Touched an upper bound." << std::endl;
-					}
-				}
-#else
+
 				double v = mVelocities[pos_id];
 				if ( x <= mLowerBound[bound_id] )
 				{
@@ -506,7 +542,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 					v = (v > 0.0) ? 0.0 : v;
 				}
 				mVelocities[pos_id] = v;
-#endif
 				mPositions[pos_id++] = x;
 			}
 		}

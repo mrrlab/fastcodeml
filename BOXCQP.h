@@ -24,7 +24,11 @@
 
 // uncomment this to solve reduced linear systems, at the cost of copying the 
 // values sequentially
-//#define USE_SUBMATRIX_QP
+#define USE_SUBMATRIX_QP
+
+#ifdef USE_SUBMATRIX_QP
+#define USE_SCALING_COND
+#endif
 
 class BOXCQP
 {
@@ -51,6 +55,11 @@ public:
 			mListLset(),
 			mListUset(),
 			mListSset(),
+			mDWorkSpace(),
+			mIWorkspace(),
+			mSubmatrixFact(NULL),
+			mDiagScaling(NULL),
+			mSubSolution(NULL),			
 #else
 			mXKnown(NULL),
 			mMuKnown(NULL),
@@ -92,7 +101,7 @@ private:
 	
 private:
 	
-	/// activeSet
+	/// ActiveSet
 	/// defines the sets in which each variable is
 	///
 	enum ActiveSet
@@ -119,6 +128,13 @@ private:
 	std::vector<int>		mListLset;		///< list containing the L set
 	std::vector<int>		mListUset;		///< list containing the U set
 	std::vector<int>		mListSset;		///< list containing the S set
+	
+	double*					mSubmatrixFact;	///< submatrix (mLHS) factorized
+	double*					mDiagScaling;	///< diagonal scaling for reducing the condition number of the submatrix
+	double*					mSubSolution;	///< solution of subsystems
+	
+	std::vector<double>		mDWorkSpace;	///< double workspace for lapack
+	std::vector<int>		mIWorkspace;	///< int workspace for lapack
 #else
 	double*					mXKnown;		///< helper for solving linear system
 	double*					mMuKnown;		///< helper for solving linear system

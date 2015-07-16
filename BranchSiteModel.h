@@ -6,7 +6,7 @@
 // comment it to use the absolute error stopping criterion
 //#define FTOL_REL_ERROR
 
-// uncomment this to use initialization based on distribution of the parameters
+// uncomment this to use the bootstrap before optimizing
 #define BOOTSTRAP
 
 // if bootstrap not enabled use the old randomized initialization of parameters
@@ -90,6 +90,7 @@ protected:
 		  mTrace(aTrace),
 		  mOptAlgo(aOptAlgo),
 		  mInitStatus(INIT_NONE),
+		  mInitFromData(INIT_NONE),
 		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
 		  mNumVariables(aNumVariables),
 		  mExtraDebug(aExtraDebug),
@@ -295,14 +296,11 @@ private:
 		OPTIM_LD_MING2			= 22,	///< The optimizer extracted from CodeML
 		
 		OPTIM_SQP				= 42,	///< sequential quadratic program
-		OPTIM_TRUST_REGION		= 43,	///< trust region with SR1 update
-		OPTIM_ALTERNATOR_SQP	= 45,	///< Alternator optimizer with sqp algorithm
-		OPTIM_SR1				= 46,	///< SQP with SR1 update
-		OPTIM_ARC				= 47,	///< SR1 update with arc search
 
 		OPTIM_MLSL_LDS			= 99	///< A global optimizer
 	};
 
+public:
 	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.
 	///
 	enum InitVarStatus
@@ -372,6 +370,7 @@ protected:
 	bool						mTrace;				///< Enable maximization tracing
 	unsigned int				mOptAlgo;			///< Optimization algorithm to use
 	unsigned int				mInitStatus;		///< Which variables have been initialized
+	unsigned int				mInitFromData;		///< Which variables have been initialized by data
 	unsigned int				mNumTimes;			///< Number of branch lengths values
 	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
 	unsigned int				mExtraDebug;		///< Parameter for extra development testing

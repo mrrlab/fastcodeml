@@ -13,14 +13,16 @@
 typedef boost::random::mt19937 RNGType;
 
 
-// uncomment this to use the evolution strategy algorithm bootstrap
-#define BOOTSTRAP_ES
+// uncomment this to use the genetic algorithm bootstrap
+#define BOOTSTRAP_GA
 
-#ifndef BOOTSTRAP_ES
+#ifndef BOOTSTRAP_GA
 // uncomment this to use the PSO bootstrap
 #define BOOTSTRAP_PSO
-#endif //BOOTSTRAP_ES
+#endif //BOOTSTRAP_GA
 
+// uncomment this to allow the variables given by tree file/ command argument to change
+#define BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 
 /// BootstrapRandom class.
 /// bootstrap the optimization using the distributions of the variables
@@ -45,6 +47,7 @@ public:
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	/// @param[in] aNumTimes			Number of branch lengths to optimize. Set 0 if fixed branch lenghts.
 	/// @param[in] aSeed				seed for the random generation
+	/// @param[in] aInitStatus			initialization status (what has been initialized and how) (see InitVarStatus enum type in BranchSiteModel.h)
 	///
 	BootstrapRandom(BranchSiteModel* aModel
 				   ,bool aTrace
@@ -55,7 +58,8 @@ public:
 				   ,double aThreshold
 				   ,int aMaxIterations
 				   ,int aNumTimes
-				   ,unsigned int aSeed) 
+				   ,unsigned int aSeed
+				   ,unsigned int aInitStatus) 
 		:mUnifRandNumGenerator(aSeed)
 		,mGammaDistT(0.5031126, 0.1844347)
 		,mExpDistV0(9.441686)
@@ -76,6 +80,23 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
+		,mInitStatus(aInitStatus)
+		,mIndexBegin(0)
+		,mIndexEnd(0)
+#ifdef BOOTSTRAP_GA
+		,mPopSize(0)
+		,mPopPos(NULL)
+		,mPopFitness(NULL)
+#endif //BOOTSTRAP_GA
+#ifdef BOOTSTRAP_PSO
+		,mPopSize(0)
+		,mWorkSpace(NULL)
+		,mPositions(NULL)
+		,mFitnesses(NULL)
+		,mBestPositions(NULL)
+		,mBestFitnesses(NULL)
+		,mVelocities(NULL)
+#endif // BOOTSTRAP_PSO
 		{}
 	
 	/// Compute the maximum of computeLikelihood() over several tries
@@ -155,10 +176,10 @@ private:
 	
 	
 	
-#ifdef BOOTSTRAP_ES
+#ifdef BOOTSTRAP_GA
 
-	/// bootstrapEvolutionStrategy
-	///	use evolution strategy to bootstrap the optimization, i.e. help to find a good starting point
+	/// bootstrapGeneticAlgorithm
+	///	use genetic algorithm to bootstrap the optimization, i.e. help to find a good starting point
 	/// 
 	/// @param[out] aF The function value at x(out)
 	/// @param[out] aX The variables to be optimized; only output, will be initialized in the routine
@@ -166,7 +187,7 @@ private:
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	void bootstrapEvolutionStrategy(double *aF, double *aX, int aMaxNumGenerations);
+	void bootstrapGeneticAlgorithm(double *aF, double *aX, int aMaxNumGenerations);
 	
 private:
 	
@@ -175,7 +196,7 @@ private:
 	double*						mPopPos;			///< array containing the mPopSize positions of the individuals of the population 
 	double*						mPopFitness;		///< Values of the fitness function (likelihood) of each individual
 	
-#endif // BOOTSTRAP_ES
+#endif // BOOTSTRAP_GA
 #ifdef BOOTSTRAP_PSO
 
 	/// bootstrapParticlSwarm
@@ -234,6 +255,10 @@ private:
 	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	unsigned int				mNumTimes;			///< Number of branches in the optimizer
+	
+	unsigned int				mInitStatus;		///< Which variables have been initialized and how
+	unsigned int				mIndexBegin;		///< index of the first variable to bootstrap
+	unsigned int				mIndexEnd;			///< index of the last variable to bootstrap
 };
 
 #endif // BOOTSTRAP_RANDOM_H

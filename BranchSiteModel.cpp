@@ -20,11 +20,7 @@
 #include "MathSupport.h"
 #include "Exceptions.h"
 #include "CodeMLoptimizer.h"
-#include "OptAlternatorSQP.h"
 #include "OptSQP.h"
-#include "OptSQPSR1.h"
-#include "OptArc.h"	
-#include "OptTrustRegion.h"
 #include "ParseParameters.h"
 #include "BootstrapRandom.h"
 
@@ -254,6 +250,7 @@ void BranchSiteModel::initFromTree(void)
 
 	// Ask for initialization completion
 	mInitStatus |= INIT_TIMES|INIT_TIMES_FROM_FILE;
+	mInitFromData |= INIT_TIMES_FROM_FILE;
 }
 
 
@@ -284,6 +281,7 @@ void BranchSiteModel::initFromParams(void)
 
 	// The parameters have been initializated
 	mInitStatus |= INIT_PARAMS;
+	mInitFromData |= INIT_TIMES_FROM_FILE;
 }
 
 void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen)
@@ -337,6 +335,7 @@ void BranchSiteModel::initVariables(void)
         for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
     }
 #else
+    if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
     {
         boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
         for(i=0; i < mNumTimes; ++i)
@@ -1408,11 +1407,7 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo)
 	case OPTIM_LD_MMA:
 	case OPTIM_LN_BOBYQA:
 	case OPTIM_MLSL_LDS:
-	case OPTIM_ALTERNATOR_SQP:
 	case OPTIM_SQP:
-	case OPTIM_TRUST_REGION:
-	case OPTIM_SR1:
-	case OPTIM_ARC:
 		return;
 
 	default:
@@ -1611,18 +1606,21 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
 	
 #ifdef BOOTSTRAP
-	BootstrapRandom bootstrapper(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed);
-	double maxL = bootstrapper.bootstrap(mVar);
-	
+	BootstrapRandom *bootstrapper = new BootstrapRandom(this, mTrace, mVerbose, mLowerBound, mUpperBound, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes, mSeed, mInitFromData);
+	double maxL_after_bootstrap = bootstrapper->bootstrap(mVar);
+	mInitFromData = INIT_NONE;
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-		std::cout << "value after bootstrap: " << maxL << std::endl;
+		std::cout << "value after bootstrap: " << maxL_after_bootstrap  << std::endl;
+	delete bootstrapper;
 #endif
 
-	// Special case for the CodeML optimizer
-	if(mOptAlgo == OPTIM_LD_MING2)
+	// Special cases for the CodeML optimizer or SQP
+	std::string name_algorithm;
+	try
 	{
-		try
+		if(mOptAlgo == OPTIM_LD_MING2)
 		{
+			name_algorithm = "ming2";
 			// Create the optimizer (instead of mAbsoluteError is used the fixed value from CodeML)
 			//Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
 			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations);
@@ -1638,49 +1636,26 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 			}
 			return maxl;
 		}
-		catch(FastCodeMLEarlyStopLRT&)
+		else if(mOptAlgo == OPTIM_SQP)
 		{
-			if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
-			return DBL_MAX;
-		}
-		catch(std::exception& e)
-		{
-			std::ostringstream o;
-			o << "Exception in Ming2 computation: " << e.what() << std::endl;
-			throw FastCodeMLFatal(o);
+			name_algorithm = "SQP";
+			OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
+			double maxl = optim.maximizeFunction(mVar);
+			return maxl;
 		}
 	}
-	else if(mOptAlgo == OPTIM_SQP)
+	catch(FastCodeMLEarlyStopLRT&)
 	{
-		OptSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+		return DBL_MAX;
 	}
-	else if(mOptAlgo == OPTIM_SR1)
+	catch(std::exception& e)
 	{
-		OptSQPSR1 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
+		std::ostringstream o;
+		o << "Exception in " << name_algorithm << " computation: " << e.what() << std::endl;
+		throw FastCodeMLFatal(o);
 	}
-	else if(mOptAlgo == OPTIM_TRUST_REGION)
-	{
-		OptTrustRegion optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}	
-	else if(mOptAlgo == OPTIM_ALTERNATOR_SQP)
-	{
-		// Create the optimizer instance
-		OptAlternatorSQP optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}
-	else if(mOptAlgo == OPTIM_ARC)
-	{
-		OptArc optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mAbsoluteError, aStopIfBigger, aThreshold, mMaxIterations, mNumTimes);
-		double maxl = optim.maximizeFunction(mVar);
-		return maxl;
-	}
+	
 	
 	std::auto_ptr<nlopt::opt> opt;
 	
