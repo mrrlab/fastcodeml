@@ -68,7 +68,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		std::vector<int>::iterator it, jt;
 		int i, j, k, Nsub;
 		
-		// --- update parameters
+		// --- update parameters depending on their set
 		
 		for (it=mListLset.begin(); it!=mListLset.end(); ++it)
 		{
@@ -89,7 +89,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 			mLambda[i] 	= 0.0;
 		}
 		
-		// --- solve new linear system to get first x
+		// --- solve new linear system to get x components in the S set
 		
 		// setup the left hand side matrix and right hand side vector
 		Nsub = 0;
@@ -121,7 +121,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 			++Nsub;
 		}
 		
-		// solve linear subsystem
+		// solve |S| x |S| linear subsystem (Nsub = |S|)
 		dposvx_(&fact, &uplo, &Nsub, &I1, mLHS, &Nsub 
 			   ,mSubmatrixFact, &Nsub, &equed
 			   ,mDiagScaling, mRHS, &Nsub
@@ -134,7 +134,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 			std::cerr << "Error: couldn't solve the linear system in BOXCQP. info: " << info << std::endl;
 		
 		// update parameters
-		// x
+		// x <- solution of the linear system
 		k = 0;
 		for (it=mListSset.begin(); it!=mListSset.end(); ++it)
 		{
@@ -161,7 +161,7 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		#pragma omp parallel for reduction(&&: convergence_reached)
 		for (int i=0; i<mN; ++i)
 		{
-			// local variable
+			// local validity
 			bool current_variable_correct = false;
 			switch (mSets[i])
 			{
@@ -189,8 +189,8 @@ bool BOXCQP::solveQP(const double *aB, const double *aD, const int *aLDB, double
 		for (int i=0; i<mN; ++i)
 		{
 			double x = aX[i];
-			double l = mLowerBounds[i];
-			double u = mUpperBounds[i];
+			const double l = mLowerBounds[i];
+			const double u = mUpperBounds[i];
 			x = (x < l) ? l:x;
 			x = (x > u) ? u:x;
 			aX[i] = x;
@@ -213,13 +213,13 @@ void BOXCQP::allocateMemory(void)
 	mDWorkSpace.resize(3*mN);
 	mIWorkspace.resize(mN);
 	
-	mLambda = &mSpace[0];
-	mMu 	= mLambda + mN;
+	mLambda 		= &mSpace[0];
+	mMu 			= mLambda + mN;
 	mSubmatrixFact	= mMu + mN;
 	mDiagScaling	= mSubmatrixFact + mN*mN;
 	mSubSolution	= mDiagScaling + mN;
 	mRHS			= mSubSolution + mN;
-	mLHS	= mRHS + mN;
+	mLHS			= mRHS + mN;
 }
 
 
@@ -230,7 +230,7 @@ void BOXCQP::updateSets(double *aX)
 	mListUset.clear();
 	mListSset.clear();
 	
-	for(int i=0; i<mN; ++i)
+	for (int i(0); i<mN; ++i)
 	{
 		if ( (aX[i] < mLowerBounds[i])   ||   ( fabs(aX[i] - mLowerBounds[i]) < 1e-8 && mLambda[i] >= 0.0) )
 		{
@@ -249,6 +249,5 @@ void BOXCQP::updateSets(double *aX)
 		}
 	}
 }
-// ----------------------------------------------------------------------
 
 
