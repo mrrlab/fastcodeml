@@ -8,10 +8,6 @@
 #include "BOXCQP.h"
 
 
-// uncomment this to use a stopping criterion also implying the parameters
-//#define SQP_STOP_PARAMETERS_ACCURACY
-
-
 /// OptSQP class.
 /// sequential quadratic programming optimizer
 /// see http://djvuru.512.com1.ru:8073/WWW/e7e02357929ed3ac5afcd17cac4f44de.pdf
