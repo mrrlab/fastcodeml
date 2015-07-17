@@ -229,15 +229,15 @@ void BOXCQP::updateSets(double *aX)
 	mListLset.clear();
 	mListUset.clear();
 	mListSset.clear();
-	
+	const double tol_active_set = 1e-8;
 	for (int i(0); i<mN; ++i)
 	{
-		if ( (aX[i] < mLowerBounds[i])   ||   ( fabs(aX[i] - mLowerBounds[i]) < 1e-8 && mLambda[i] >= 0.0) )
+		if ( (aX[i] < mLowerBounds[i])   ||   ( fabs(aX[i] - mLowerBounds[i]) < tol_active_set && mLambda[i] >= 0.0) )
 		{
 			mSets[i] = LSET;
 			mListLset.push_back(i);
 		}
-		else if ( (aX[i] > mUpperBounds[i])   ||   ( fabs(aX[i] - mUpperBounds[i]) < 1e-8  && mMu[i] >= 0.0) )
+		else if ( (aX[i] > mUpperBounds[i])   ||   ( fabs(aX[i] - mUpperBounds[i]) < tol_active_set  && mMu[i] >= 0.0) )
 		{
 			mSets[i] = USET;
 			mListUset.push_back(i);

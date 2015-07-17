@@ -148,34 +148,6 @@ private:
 	double generateRandom(unsigned int aIndexVariable);
 	
 	
-	/// bootstrapRandomly
-	/// performs a bootstrap algorithm using the distribution of the variables x 
-	/// pick up random points in the space according the distributions of variables
-	/// 
-	/// @param[out] aF The function value at x(out)
-	/// @param[in,out] aX The variables to be optimized
-	/// @param[in] aNumTries The number of tests we perform
-	///
-	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
-	///
-	void bootstrapRandomly(double *aF, double *aX, unsigned int aNumTries);	
-	
-	
-	/// bootstrapEachDirectionRandomly
-	/// performs a bootstrap algorithm using the distribution of the variables x 
-	/// pick up random points in each direction according the distributions of variable
-	/// 
-	/// @param[out] aF The function value at x(out)
-	/// @param[in,out] aX The variables to be optimized
-	/// @param[in] aNumGlobal The number of numTries in bootstrapRandomly called at the beginning
-	///
-	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
-	///
-	void bootstrapEachDirectionRandomly(double *aF, double *aX, int aNumGlobal);	
-	
-	
-	
-	
 #ifdef BOOTSTRAP_GA
 
 	/// bootstrapGeneticAlgorithm
@@ -229,7 +201,7 @@ private:
 	RNGType 										mUnifRandNumGenerator;	///< Uniform random number generator
 	
 	boost::random::gamma_distribution<double> 		mGammaDistT;	///< distribution of the branchLengths(mixture)
-    boost::random::exponential_distribution<double> mExpDistV0;	///< distribution of 1 - v0
+    boost::random::exponential_distribution<double> mExpDistV0;		///< distribution of 1 - v0
     boost::random::gamma_distribution<double> 		mGammaDistV1;	///< distribution of 1 - v1
 	boost::random::beta_distribution<double> 		mBetaDistW0;	///< distribution of w0
     boost::random::gamma_distribution<double> 		mGammaDistK;	///< distribution of kappa
