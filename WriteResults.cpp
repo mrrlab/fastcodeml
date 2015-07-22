@@ -60,7 +60,7 @@ void WriteResults::outputResults(void)
 
 			ims = mParamStr[0].find(branch);
 			// This output does not work on BG/Q.
-						//out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
+			out << std::endl<< std::fixed <<"Branch lengths:" << ims->second << std::endl;
 		}
 		out << "  LnL1: ";
 
