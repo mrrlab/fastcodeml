@@ -44,7 +44,7 @@ svn up
 mkdir FastCodeML-$VERSION
 cp -r * FastCodeML-$VERSION/
 rm -Rf FastCodeML-$VERSION/FastCodeML-$VERSION/
-tar cvf FastCodeML-$VERSION.tar --exclude=$(basename $0) --exclude=.svn --exclude=fast.unstripped --exclude=TODO  FastCodeML-$VERSION/
+tar cvf FastCodeML-$VERSION.tar --exclude=$(basename $0) --exclude=.svn --exclude=.git --exclude=fast.unstripped --exclude=TODO  FastCodeML-$VERSION/
 gzip -9 FastCodeML-$VERSION.tar
 tar tvfz FastCodeML-$VERSION.tar.gz
 rm -Rf FastCodeML-$VERSION/
