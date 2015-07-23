@@ -224,7 +224,7 @@ void BOXCQP::allocateMemory(void)
 
 
 // ----------------------------------------------------------------------
-void BOXCQP::updateSets(double *aX)
+void BOXCQP::updateSets(const double *aX)
 {
 	mListLset.clear();
 	mListUset.clear();

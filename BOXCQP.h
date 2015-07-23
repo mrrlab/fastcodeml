@@ -81,7 +81,7 @@ private:
 	///
 	/// @param[in] aX The current solution vector
 	///
-	void updateSets(double *aX);
+	void updateSets(const double *aX);
 	
 private:
 	
