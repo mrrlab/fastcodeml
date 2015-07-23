@@ -201,7 +201,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_EXTRA_DEBUG,		"--extra-debug",		SO_REQ_SEP,	"" },
 		{ OPT_ABS_ERROR,		"-ae",					SO_REQ_SEP,	"Absolute error where to stop maximization (default: 1e-3)" },
 		{ OPT_ABS_ERROR,		"--absolute-error",		SO_REQ_SEP,	"" },
-		{ OPT_HIMMELBAU_TERMINATION,		"-ht",								SO_NONE,	"use Himmelbau termination for optimization (default: no)" },
+		{ OPT_HIMMELBAU_TERMINATION,		"-ht",								SO_NONE,	"use Himmelbau termination for optimization (default: no). This adds the termination condition |x^{k}-x^{k-1}| < epsilon." },
 		{ OPT_HIMMELBAU_TERMINATION,		"--himmelbau-termination",			SO_NONE,	"" },
 		{ OPT_OUT_RESULTS,		"-ou",					SO_REQ_SEP,	"Write results formatted to this file" },
 		{ OPT_OUT_RESULTS,		"--output",				SO_REQ_SEP,	"" },

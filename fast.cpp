@@ -613,7 +613,10 @@ Usage:
         Absolute error where to stop maximization (default: 1e-3)
 
 -ht  --himmelbau-termination (no argument)
-		Use Himmelbau stopping criterion for the optimizer
+		Use Himmelbau stopping criterion for the optimizer.
+		This corresponds to |f^{k}-f^{k-1}| < epsilon
+						 && |x^{k}-x^{k-1}| < epsilon.
+		Default stopping criterion is |f^{k}-f^{k-1}| < epsilon only
 
 -ou  --output (required argument)
         Write results formatted to this file
