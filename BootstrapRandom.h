@@ -21,9 +21,6 @@ typedef boost::random::mt19937 RNGType;
 #define BOOTSTRAP_PSO
 #endif //BOOTSTRAP_GA
 
-// uncomment this to allow the variables given by tree file/ command argument to change
-#define BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
-
 /// BootstrapRandom class.
 /// bootstrap the optimization using the distributions of the variables
 ///
@@ -63,11 +60,9 @@ public:
 		:mUnifRandNumGenerator(aSeed)
 		,mGammaDistT(0.5031126, 0.1844347)
 		,mExpDistV0(9.441686)
-		//,mExpDistV0(11.13923)
 		,mGammaDistV1(0.8764469, 0.126567)
 		,mBetaDistW0(1.638631, 21.841174)
 		,mGammaDistK(7.547445, 0.5789037)
-		//,mGammaDistW2(0.209741, 274.537247)
 		,mGammaDistW2(0.209741, 0.5)
 		,mN(0)
 		,mSizeVect(0)

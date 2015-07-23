@@ -224,17 +224,14 @@ void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMax
 		memcpy(individual_pos, aX, mSizeVect);
 		
 		// generate the initial position of individuals
-#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
+		// add mutations to the tree file
 		const double prop_file_init = 0.8;
 		for (unsigned int i(0); i<mIndexBegin; ++i)
 			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
-#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		for (unsigned int i(mIndexBegin); i<mIndexEnd; ++i)
 			individual_pos[i] = generateRandom(i);
-#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA 
 		for (int i(mIndexEnd); i<mN; ++i)
 			individual_pos[i] = prop_file_init*generateRandom(i) + (1.-prop_file_init)*aX[i];
-#endif // BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 
 		// compute its likelihood
 		double ftmp = evaluateLikelihood(individual_pos);
@@ -310,7 +307,6 @@ void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMax
 		}
 		
 		// --mutations
-#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		// allow mutations on every variable, even if it has been initialized from the files/command line
 		for (int i(0); i<lambda*mN; ++i)
 		{	
@@ -318,20 +314,8 @@ void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMax
 			const double prop = 0.9 + 0.1*randFrom0to1();
 			children[i] = prop*children[i] + (1.0-prop)*generateRandom(i%mN);
 		}
-#else
-		// do not allow mutations on variable if it has been initialized from the files/command line
-		for (int i(0); i<lambda; ++i)
-		{	
-			for (int j(mIndexBegin); j<mIndexEnd; ++j)
-			{
-				// apply a "little" mutation
-				const double prop = 0.9 + 0.1*randFrom0to1();
-				children[i*mN+j] = prop*children[i*mN+j] + (1.0-prop)*generateRandom(j);
-			}
-		}
-#endif
+
 		// --selection
-		
 		for (int childid(0); childid<lambda; ++childid)
 		{
 			double *child_pos = &children[childid*mN];
@@ -356,7 +340,7 @@ void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMax
 			}
 		}
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-		std::cout << "\t\tBest individual: f = " << fmax << std::endl;
+			std::cout << "\t\tBest individual: f = " << fmax << std::endl;
 	}
 	
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
@@ -378,7 +362,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		return;
 	
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-	std::cout << "\tInitialize the swarm..." << std::endl;
+		std::cout << "\tInitialize the swarm..." << std::endl;
 	
 	// initialize the population
 	for (int individual_id(0); individual_id<mPopSize; ++individual_id)
@@ -391,11 +375,7 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			individual_pos[i] = generateRandom(i);
 		memcpy(individual_best_pos, individual_pos, mN*sizeof(double));
 		// generate velocities
-#ifdef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
 		for (int i(0); i<mN; ++i)
-#else
-		for (int i(mIndexBegin); i<mIndexEnd; ++i)
-#endif
 		{
 			individual_velocity[i] = generateRandom(i) - individual_pos[i];
 		}
@@ -412,13 +392,13 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 	}
 	
 	if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-	std::cout << "\tEvolving swarm..." << std::endl;
+		std::cout << "\tEvolving swarm..." << std::endl;
 	
 	// main loop
 	for (int generation_id(0); generation_id < aMaxNumGenerations; ++ generation_id)
 	{
 		if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
-		std::cout << "\t\tGeneration " << generation_id << std::endl;
+			std::cout << "\t\tGeneration " << generation_id << std::endl;
 
 		const double dt = 1.0;
 		const double inverse_dt = 1.0 / dt;
@@ -446,11 +426,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			memcpy(mWorkSpace, aX, mN*sizeof(double));
 			daxpy_(&mN, &minus_one, individual_pos, &I1, mWorkSpace, &I1);
 			daxpy_(&mN, &trust_best, mWorkSpace, &I1, individual_velocity, &I1);
-			
-#ifndef BOOTSTRAP_ALLOW_CHANGE_VARIABLES_FROM_DATA
-			for (int i(0); i<mIndexBegin; ++i) {individual_velocity[i] = 0.0;}
-			for (int i(mIndexEnd); i<mN; ++i)  {individual_velocity[i] = 0.0;}
-#endif
 		}
 		
 		// update positions
@@ -497,7 +472,8 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 				{
 					*aF = f;
 					memcpy(aX, individual_pos, mN*sizeof(double));
-					std::cout << "\t\tNew f PSO: " << f << " at step " << generation_id << std::endl;
+					if( mVerbose >= VERBOSE_MORE_INFO_OUTPUT )
+						std::cout << "\t\tNew f PSO: " << f << " at step " << generation_id << std::endl;
 				}
 			}
 		}
