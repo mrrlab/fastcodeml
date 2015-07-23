@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
-#include <memory>
+//#include <memory>
 
 #ifdef _MSC_VER
     #pragma warning(push)
@@ -26,11 +26,11 @@
 
 #ifndef OLD_INITIALIZATION
 // boost random generation
-#include <boost/random/mersenne_twister.hpp>
+//#include <boost/random/mersenne_twister.hpp>
 #include <boost/random/beta_distribution.hpp>
 #include <boost/random/gamma_distribution.hpp>
 #include <boost/random/exponential_distribution.hpp>
-typedef boost::random::mt19937 RNGType;
+//typedef boost::random::mt19937 RNGType;
 #endif // OLD_INITIALIZATION
 
 
@@ -314,7 +314,7 @@ void BranchSiteModel::initFromResult(const std::vector<double>& aPreviousResult,
 
 void BranchSiteModel::initVariables(void)
 {
-	unsigned int i, index_vars_other;
+	unsigned int index_vars_other;
 	
 	// index of the variables other than branchlengths 
 	index_vars_other = mFixedBranchLength ? 0 : mNumTimes;
@@ -332,13 +332,13 @@ void BranchSiteModel::initVariables(void)
 #ifdef OLD_INITIALIZATION
 	if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
 	{
-        for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
+        for(unsigned int i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * randFrom0to1();// T
     }
 #else
     if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
     {
         boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
-        for(i=0; i < mNumTimes; ++i)
+        for(unsigned int i=0; i < mNumTimes; ++i)
         {
         	high = mUpperBound[i];
         	low  = mLowerBound[i];
@@ -388,13 +388,13 @@ void BranchSiteModel::initVariables(void)
         
 
 	#ifdef OLD_INITIALIZATION
-        mVar[index_vars_other+2] = 0.2  + 0.6 * randFrom0to1();				// w0
+        mVar[index_vars_other+2] = 0.2  + 0.6 * randFrom0to1();			// w0
         mVar[index_vars_other+3] = 0.5  +       randFrom0to1();			// k
     #else    
         boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);
         boost::random::gamma_distribution<double> gamma_dist_k(7.547445, 0.5789037);
         
-        mVar[index_vars_other+2] = beta_dist( rng );					// w0
+        mVar[index_vars_other+2] = beta_dist(rng);						// w0
         
         high = mUpperBound[index_vars_other+3];
         randGen = high+1.;
@@ -421,13 +421,13 @@ void BranchSiteModel::initVariables(void)
     // Don't clamp the results if they came from H1
     if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
     {
-        for(i=0; i < index_vars_other; ++i)
+        for(unsigned int i=0; i < index_vars_other; ++i)
         {
             if(mVar[i] < mLowerBound[i]+1e-6)      mVar[i] = mLowerBound[i] + 1e-6;
             else if(mVar[i] > mUpperBound[i]-1e-6) mVar[i] = mUpperBound[i] - 1e-6;
         }
         unsigned int nv = index_vars_other+mNumVariables;
-        for(i=index_vars_other; i < nv; ++i)
+        for(unsigned int i=index_vars_other; i < nv; ++i)
         {
             double range = mUpperBound[i]-mLowerBound[i];
             if(mVar[i] < mLowerBound[i]+0.05*range)      mVar[i] = mLowerBound[i] + range * 0.05;

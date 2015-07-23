@@ -48,6 +48,7 @@ public:
 		  ,int aMaxIterations
 		  ,int aNumTimes) 
 		:mN(0)
+		,mSizeVect(0)
 		,mStep(0)
 		,mModel(aModel)
 		,mTrace(aTrace)
@@ -60,7 +61,6 @@ public:
 		,mThreshold(-aThreshold)
 		,mMaxIterations(aMaxIterations)
 		,mNumTimes(aNumTimes)
-		,mSizeVect(0)
 		,mGradient(NULL)
 		,mHessian(NULL)
 		,mP(NULL)

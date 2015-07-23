@@ -55,11 +55,11 @@ public:
 			mListLset(),
 			mListUset(),
 			mListSset(),
-			mDWorkSpace(),
-			mIWorkspace(),
 			mSubmatrixFact(NULL),
 			mDiagScaling(NULL),
 			mSubSolution(NULL),			
+			mDWorkSpace(),
+			mIWorkspace(),
 #else
 			mXKnown(NULL),
 			mMuKnown(NULL),

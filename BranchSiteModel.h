@@ -21,17 +21,6 @@
 #include "ProbabilityMatrixSet.h"
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4267) // warning C4267: 'argument' : conversion from 'size_t' to 'unsigned int', possible loss of data
-#endif
-
-#include "nlopt.hpp"
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif
-
 #include <memory>
 
 /// Value used for the LRT test. It is chisq(.95, df=1)/2

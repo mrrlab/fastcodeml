@@ -70,6 +70,7 @@ public:
 		//,mGammaDistW2(0.209741, 274.537247)
 		,mGammaDistW2(0.209741, 0.5)
 		,mN(0)
+		,mSizeVect(0)
 		,mModel(aModel)
 		,mTrace(aTrace)
 		,mTraceFun(aTrace)
