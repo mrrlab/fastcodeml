@@ -33,6 +33,7 @@ public:
 	CmdLine() :
 		mDeltaValueForGradient(0.0),
 		mAbsoluteError(1e-3),
+		mHimmelblauTermination(false),
 		mTreeFile(NULL),
 		mGeneFile(NULL),
 		mGraphFile(NULL),
@@ -86,6 +87,7 @@ public:
 public:
 	double			mDeltaValueForGradient;	///< The variable increment to compute gradient (zero means use a hardcoded default value)
 	double			mAbsoluteError;			///< Absolute error to stop maximization
+	bool			mHimmelblauTermination;	///< Use a Himmelblau stopping criterion instead of function reduction only
 	const char*		mTreeFile;				///< %Newick tree file name
 	const char*		mGeneFile;				///< %Genes file name
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor

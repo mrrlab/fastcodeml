@@ -204,62 +204,6 @@ double BootstrapRandom::generateRandom(unsigned int aIndexVar)
 	return randNumber;
 }
 
-// --------------------------------------------------------------------
-void BootstrapRandom::bootstrapRandomly(double *aF, double *aX, unsigned int aNumTries)
-{
-	
-	*aF = evaluateLikelihood(aX);
-	double *rand_x = &mSpace[0];
-    
-	for (unsigned int step = 0; step < aNumTries; ++step)
-	{	
-		// generate the random variables
-		for (int i=0; i<mN; ++i) rand_x[i] = generateRandom(i);
-        
-        // verify if it is a better choice
-        double rand_f = evaluateLikelihood(rand_x);
-        
-        if( rand_f > *aF )
-        {
-        	*aF = rand_f;
-        	memcpy(aX, rand_x, mSizeVect);
-        }
-	}
-}
-
-
-// --------------------------------------------------------------------
-void BootstrapRandom::bootstrapEachDirectionRandomly(double *aF, double *aX, int aNumGlobal)
-{
-	if (aNumGlobal > 0)
-		bootstrapRandomly(aF, aX, aNumGlobal);
-	
-	double rand_f;
-	double *rand_x = &mSpace[0];
-	memcpy(rand_x, aX, mSizeVect);
-	
-	const unsigned int num_tries_per_var = static_cast<unsigned int>(ceil(log(static_cast<double>(mN))));
-	
-	// look in each direction the "best" variable
-	for (int i=0; i<mN; ++i)
-	{
-		for (unsigned int j=0; j<num_tries_per_var; ++j)
-		{
-			rand_x[i] = generateRandom(i);
-			memcpy(&mVarsCopy[0], rand_x, mSizeVect);
-			rand_f = mModel->computeLikelihoodForGradient(mVarsCopy, false, i);
-			
-			if( rand_f > *aF )
-			{
-				*aF = rand_f;
-				aX[i] = rand_x[i];
-			}
-			else
-				rand_x[i] = aX[i];
-		}	
-	}
-}
-
 
 // --------------------------------------------------------------------
 #ifdef BOOTSTRAP_GA
@@ -327,8 +271,6 @@ void BootstrapRandom::bootstrapGeneticAlgorithm(double *aF, double *aX, int aMax
 		// --children generation from distinct parents / dominant
 		for (int i=0; i<lambda; ++i)
 		{
-			// selected[i<<1] = static_cast<int>( randFrom0to1()*static_cast<double>(mPopSize-1) ); // i<<2; //
-			
 			if (randFrom0to1() < 0.5)
 				selected[i<<1] = i<<2;
 			else
@@ -455,11 +397,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 		for (int i(mIndexBegin); i<mIndexEnd; ++i)
 #endif
 		{
-			int id_var = i-mNumTimes;
-			/*
-			double shift = (id_var == 0 || id_var == 1) ? 0.7 : 0.5;
-			individual_velocity[i] = -1e-3*(randFrom0to1()-shift);
-			*/
 			individual_velocity[i] = generateRandom(i) - individual_pos[i];
 		}
 		// compute log-likelihood
@@ -565,7 +502,6 @@ void BootstrapRandom::bootstrapParticlSwarm(double *aF, double *aX, int aMaxNumG
 			}
 		}
 	}
-	
 }
 #endif // BOOTSTRAP_PSO
 

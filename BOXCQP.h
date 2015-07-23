@@ -22,13 +22,6 @@
 ///     @version 1.1
 ///
 
-// uncomment this to solve reduced linear systems, at the cost of copying the 
-// values sequentially
-#define USE_SUBMATRIX_QP
-
-#ifdef USE_SUBMATRIX_QP
-#define USE_SCALING_COND
-#endif
 
 class BOXCQP
 {
@@ -42,7 +35,6 @@ public:
 	BOXCQP(const int& aN
 		  ,double* aLowerBound
 		  ,double* aUpperBound) :
-
 			mN(aN),
 			mSpace(),
 			mRHS(NULL),
@@ -51,20 +43,12 @@ public:
 			mLambda(NULL),
 			mMu(NULL),
 			mSets(),
-#ifdef USE_SUBMATRIX_QP
 			mListLset(),
 			mListUset(),
 			mListSset(),
 			mSubmatrixFact(NULL),
 			mDiagScaling(NULL),
-			mSubSolution(NULL),			
-			mDWorkSpace(),
-			mIWorkspace(),
-#else
-			mXKnown(NULL),
-			mMuKnown(NULL),
-			mLambdaKnown(NULL),
-#endif //USE_SUBMATRIX_QP
+			mSubSolution(NULL),
 			mLowerBounds(aLowerBound),
 			mUpperBounds(aUpperBound)
 	{
@@ -106,9 +90,9 @@ private:
 	///
 	enum ActiveSet
 	{
-		LSET,	///< set {i: xi < ai , or xi = a1 and lambda_i >= 0}	
-		USET,	///< set {i: xi > bi , or xi = b1 and mu_i >= 0}
-		SSET	///< set {i: ai < xi < bi , or xi = a1 and lambdai < 0 , or xi = b1 and mu_i < 0}
+		LSET,	///< set {i: xi < ai , or xi = ai and lambda_i >= 0}	
+		USET,	///< set {i: xi > bi , or xi = bi and mu_i >= 0}
+		SSET	///< set {i: ai < xi < bi , or xi = ai and lambda_i < 0 , or xi = bi and mu_i < 0}
 	};
 
 private:
@@ -124,7 +108,7 @@ private:
 	double*					mMu;			///< Lagrange variables, upper constraints
 	
 	std::vector<ActiveSet>	mSets;			///< sets in which each variable belongs
-#ifdef USE_SUBMATRIX_QP
+
 	std::vector<int>		mListLset;		///< list containing the L set
 	std::vector<int>		mListUset;		///< list containing the U set
 	std::vector<int>		mListSset;		///< list containing the S set
@@ -135,11 +119,6 @@ private:
 	
 	std::vector<double>		mDWorkSpace;	///< double workspace for lapack
 	std::vector<int>		mIWorkspace;	///< int workspace for lapack
-#else
-	double*					mXKnown;		///< helper for solving linear system
-	double*					mMuKnown;		///< helper for solving linear system
-	double*					mLambdaKnown;	///< helper for solving linear system
-#endif //USE_SUBMATRIX_QP
 
 	double*					mLowerBounds;	///< lower bounds (constraints)
 	double*					mUpperBounds;	///< upper bounds (constraints)
