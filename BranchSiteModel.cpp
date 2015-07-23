@@ -333,7 +333,7 @@ void BranchSiteModel::initVariables(void)
 #else
     if((!mFixedBranchLength) && (mInitStatus & INIT_TIMES) != INIT_TIMES)
     {
-        boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);
+        boost::random::gamma_distribution<double> gamma_dist_T(0.5031126, 0.1844347);	// Distribution of branch lengths, estimated from the selectome database
         for(unsigned int i=0; i < mNumTimes; ++i)
         {
         	double high = mUpperBound[i];
@@ -367,8 +367,8 @@ void BranchSiteModel::initVariables(void)
 #else
 		double p0 = -1.0;
 		double p1 = 2.0;
-        boost::random::exponential_distribution<double> exp_dist_p0(4.605203);
-        boost::random::exponential_distribution<double> exp_dist_p1(5.807218);
+        boost::random::exponential_distribution<double> exp_dist_p0(4.605203);	// Distribution of p0, estimated from the selectome database
+        boost::random::exponential_distribution<double> exp_dist_p1(5.807218);	// Distribution of p1, estimated from the selectome database
         while(p0 < 0.0)
           	p0 = 1.0 - exp_dist_p0( rng );
         while(p1 > 1.0)
@@ -387,8 +387,8 @@ void BranchSiteModel::initVariables(void)
         mVar[index_vars_other+2] = 0.2  + 0.6 * randFrom0to1();			// w0
         mVar[index_vars_other+3] = 0.5  +       randFrom0to1();			// k
     #else    
-        boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);
-        boost::random::gamma_distribution<double> gamma_dist_k(7.547445, 0.5789037);
+        boost::random::beta_distribution<double> beta_dist(1.638631, 21.841174);		// Distribution of w0, estimated from the selectome database
+        boost::random::gamma_distribution<double> gamma_dist_k(7.547445, 0.5789037);	// Distribution of kappa, estimated from the selectome database
         
         mVar[index_vars_other+2] = beta_dist(rng);						// w0
         
@@ -405,7 +405,7 @@ void BranchSiteModel::initVariables(void)
 	#ifdef OLD_INITIALIZATION
         mVar[index_vars_other+4] = 1.0 + 0.5 * randFrom0to1();			// w2
 	#else
-        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.5); //(0.209740957, 274.5372468800901);
+        boost::random::gamma_distribution<double> gamma_dist_w2(0.209740957, 0.5);	// Distribution of w2, estimated from the selectome database
         mVar[index_vars_other+4] = 1.0 + gamma_dist_w2( rng );				// w2
     #endif // OLD_INITIALIZATION
     }

@@ -58,12 +58,12 @@ public:
 				   ,unsigned int aSeed
 				   ,unsigned int aInitStatus) 
 		:mUnifRandNumGenerator(aSeed)
-		,mGammaDistT(0.5031126, 0.1844347)
-		,mExpDistV0(9.441686)
-		,mGammaDistV1(0.8764469, 0.126567)
-		,mBetaDistW0(1.638631, 21.841174)
-		,mGammaDistK(7.547445, 0.5789037)
-		,mGammaDistW2(0.209741, 0.5)
+		,mGammaDistT(0.5031126, 0.1844347)	// Distribution of branch lengths, estimated from the selectome database
+		,mExpDistV0(9.441686)				// Distribution of v0, estimated from the selectome database
+		,mGammaDistV1(0.8764469, 0.126567)	// Distribution of v1, estimated from the selectome database
+		,mBetaDistW0(1.638631, 21.841174)	// Distribution of w0, estimated from the selectome database
+		,mGammaDistK(7.547445, 0.5789037)	// Distribution of kappa, estimated from the selectome database
+		,mGammaDistW2(0.209741, 0.5)		// Distribution of w2, estimated from the selectome database
 		,mN(0)
 		,mSizeVect(0)
 		,mModel(aModel)
