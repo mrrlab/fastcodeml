@@ -1,4 +1,4 @@
-/// @mainpage FastCodeML
+/// @mainpage FastCodeML (omid copy)
 ///
 /// @section intro_sect Introduction
 ///
