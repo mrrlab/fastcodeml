@@ -122,7 +122,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_BRANCH_END,
 		OPT_IGNORE_FREQ,
 		OPT_EXPORT,
-		OPT_NOT_REDUCE,
+//		OPT_NOT_REDUCE,
 		OPT_TIMES_FROM_FILE,
 		OPT_ONE_STEP,
 		OPT_COMP_TIMES,
@@ -168,8 +168,8 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_IGNORE_FREQ,		"--ignore-freq",		SO_NONE,	"" },
 		{ OPT_EXPORT,			"-e",					SO_REQ_SEP,	"Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)" },
 		{ OPT_EXPORT,			"--export",				SO_REQ_SEP,	"" },
-		{ OPT_NOT_REDUCE,		"-nr",					SO_NONE,	"Do not reduce forest by merging common subtrees" },
-		{ OPT_NOT_REDUCE,		"--no-reduce",			SO_NONE,	"" },
+//		{ OPT_NOT_REDUCE,		"-nr",					SO_NONE,	"Do not reduce forest by merging common subtrees" },
+//		{ OPT_NOT_REDUCE,		"--no-reduce",			SO_NONE,	"" },
 		{ OPT_TIMES_FROM_FILE,	"-l",					SO_NONE,	"Initial branch lengths from tree file" },
 		{ OPT_TIMES_FROM_FILE,	"--lengths-from-file",	SO_NONE,	"" },
 		{ OPT_TIMES_FROM_FILE,	"--times-from-file",	SO_NONE,	"" },
@@ -292,9 +292,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mGraphFile = args.OptionArg();
 			break;
 
-		case OPT_NOT_REDUCE:
-			mDoNotReduceForest = true;
-			break;
+//		case OPT_NOT_REDUCE:
+//			mDoNotReduceForest = true;
+//			break;
 
 		case OPT_TIMES_FROM_FILE:
 			mBranchLengthsFromFile = true;
