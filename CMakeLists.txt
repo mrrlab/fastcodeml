@@ -57,6 +57,11 @@ OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/o
 OPTION(USE_AGGREGATION			"Aggregate codon states" ON)
 
 
+# Currently aggregation doesn't work with lapack
+if(USE_AGGREGATION AND USE_LAPACK)
+	message(FATAL_ERROR "error: you cannot use aggregation with lapack at the moment")
+endif()
+
 # Search for OpenMP support
 if(USE_OPENMP)
 
