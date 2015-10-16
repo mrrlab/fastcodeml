@@ -190,6 +190,7 @@ endif(NOT WIN32)
 
 # Executable
 add_executable(fast ${SRCS})
+add_executable(fast_te fast_te.cpp Newick.cpp PhyloTree.cpp TreeNode.cpp Forest.cpp AlignedAllocator.cpp Genes.cpp CodonFrequencies.cpp)
 
 # Link libraries
 target_link_libraries(fast nlopt)
