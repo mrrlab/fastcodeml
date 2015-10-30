@@ -46,7 +46,7 @@ void WriteResults::outputResults(void)
 
 	for(size_t branch = min_branch; branch <= max_branch; ++branch)
 	{
-		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "	LnL0: ";
+		out << "Branch: " << std::setw(4) << branch<<std::endl<< std::endl<< "  LnL0: ";
 
 		// Prints LnL for H0 if present
 		im = mLnL[0].find(branch);
