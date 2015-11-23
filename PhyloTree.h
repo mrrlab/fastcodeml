@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <fstream>
 #include "TreeNode.h"
 #include "ForestNode.h"
@@ -75,6 +76,13 @@ public:
 	///
 	size_t getMarkedInternalBranch(void) const;
 
+
+	/// Return the index of the all marked branches.
+	///
+	/// @return The index of the marked branches or UINT_MAX if none marked
+	///
+	//std::set<std::size_t> getMarkedBranches(void) const;
+
 	/// Clone the tree using ForestNode.
 	/// Called without aTreeNode starts from the tree root.
 	///
@@ -94,12 +102,13 @@ public:
 	/// @param[out] aNodeNames Ordered list of the node labels
 	/// @param[out] aBranchLengths Ordered list of branch lists as read from the file
 	/// @param[out] aMarkedIntBranch Pointer to location where the marked internal branch number is stored
+	/// @param[out] aMarkedBranches Ordered list of marked branches from the file
 	/// @param[in] aTreeNode The node from which to start the cloning in the tree. If not present starts from the root
 	/// @param[in] aNodeId The node running id. For the root it is UINT_MAX.
 	///
 	/// @return The node id to the next node
-	///
-	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
+
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, std::set<std::size_t>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///

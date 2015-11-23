@@ -91,7 +91,7 @@ public:
 	///
 	/// @exception FastCodeMLFatal Invalid range from command line
 	///
-	bool getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd) const;
+	bool getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<size_t>& aFgSet) const;
 
 	/// Reduce common subtrees on the whole forest.
 	///
@@ -175,6 +175,12 @@ public:
 	/// @return The internal branch index of the branch marked in the tree file. UINT_MAX otherwise.
 	///
 	size_t getMarkedInternalBranch(void) const {return mMarkedInternalBranch;}
+
+	/// Get the all marked branches
+	///
+	/// @return The internal branch index of the branches marked in the tree file. UINT_MAX otherwise.
+	///
+	std::set<size_t> getMarkedBranches(void) const {return mMarkedBranches;}
 
 	/// Get site multiplicity values.
 	///
@@ -335,6 +341,7 @@ private:
 							mNodeNames;					///< List of node names. Zero is the root, then its first child and so on
 	std::vector<double>		mBranchLengths;				///< List of branch lengths (read from file or stored here to be exported in the tree file)
 	size_t					mMarkedInternalBranch;		///< Number of the internal branch as marked in the tree file
+	std::set<size_t>		mMarkedBranches;		    ///< Number of the marked branches in the tree file
 
 #ifdef NEW_LIKELIHOOD
 

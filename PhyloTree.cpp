@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 #include "PhyloTree.h"
 #include "Exceptions.h"
 #include "VerbosityLevels.h"
@@ -71,6 +72,24 @@ size_t PhyloTree::getMarkedInternalBranch(void) const
 	return marked_branch;
 }
 
+/*std::set<size_t> PhyloTree::getMarkedBranches(void) const
+{
+	const size_t nin = mInternalNodes.size();
+	// omid
+	std::cout << "NIN " << nin << std::endl;
+
+	// end omid
+
+	std::set<size_t> marked_branches;
+	size_t current_branch = 0;
+	for(; current_branch < nin; ++current_branch)
+	{
+		if(!mInternalNodes[current_branch]->getType().empty()) marked_branches.insert(current_branch);
+	}
+
+	return marked_branches;
+}*/
+
 
 
 unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode, unsigned int aNodeId) const
@@ -127,7 +146,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	return id;
 }
 
-unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, const TreeNode* aTreeNode, unsigned int aNodeId) const
+unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch,std::set<std::size_t>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
 {
 	unsigned int id;
 
@@ -138,6 +157,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 		aNodeId = UINT_MAX;
 		id = 0;
 		*aMarkedIntBranch = getMarkedInternalBranch();
+		//aMarkedBranches.insert(*aMarkedIntBranch); // Get all marked branches
 	}
 	else
 	{
@@ -145,6 +165,7 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 	}
 
 	// Save the node values
+	if (!aTreeNode->getType().empty()) aMarkedBranches.insert(aNodeId);// Get all marked branches
 	aNodeNames.push_back(aTreeNode->getLabel());
 	aBranchLengths.push_back(aTreeNode->getLen());
 
@@ -152,8 +173,12 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 	TreeNode *m;
 	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
-		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, m, id);
+		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, aMarkedBranches, m, id);
 	}
+
+
+
+
 
 	return id;
 }

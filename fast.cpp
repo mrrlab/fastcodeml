@@ -335,12 +335,21 @@ int main(int aRgc, char **aRgv)
 
 	// Compute the range of branches to mark as foreground
 	size_t branch_start, branch_end;
-	forest.getBranchRange(cmd, branch_start, branch_end);
+	// omid
+	std::set<size_t> fg_set; // to save a list of fg branches from the getBranchRange function
+	// end omid
+	forest.getBranchRange(cmd, branch_start, branch_end, fg_set); // omid : fgset is added to save a list of fg branches
 
 	// omid
 	std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
 	std :: cout << "total number of internal branches: " << forest.getNumInternalBranches() << std :: endl;
 	std :: cout << "marked internal branch (forest): " << forest.getMarkedInternalBranch() << std :: endl;
+	std :: cout << "num of fg_set members: " << fg_set.size() << std :: endl;
+	std :: cout << "fg_set members are : " << std :: endl;
+	for (std::set<std::size_t>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
+	    std::cout << " " << *it << ",";
+	std :: cout << std :: endl;
+
 
 	for (int i=0; i<forest.getNumBranches(); i++)
 	std :: cout << "internal branch of fg "<< i << " : "<< forest.adjustFgBranchIdx(i) << std :: endl;
