@@ -67,7 +67,7 @@ public:
 	///
 	/// @return The number of tree branches
 	///
-	size_t getNumBranches(void) const {return mInternalNodes.size()+mLeavesSpecies.size();}
+	size_t getNumBranches(void) const {return mInternalNodes.size()/* omid +mLeavesSpecies.size() end omid */;}
 
 	/// Return the index of the first marked branch.
 	///

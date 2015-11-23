@@ -54,7 +54,7 @@ INSTALLATION: How to generate the FastCodeML executable:
     BLAS_LIB_DIR       = path/to/installation/blas/lib
     LAPACK_LIB_DIR     = path/to/installation/blas/include
     MKL_INCLUDE_DIR    = path/to/installation/mkl/include
-    NLOPT_INCLUDE_DIR  = path/to/installation/nlopt/include
+    NLOPT_INCLUDE_DIR  = path/to/installation/nlopt/includemak
     NLOPT_LIB_DIR      = path/to/installation/nlopt/lib
     MATH_LIB_NAMES     = "openblas;lapack;gfortranbegin;gfortran"
 * Build executable

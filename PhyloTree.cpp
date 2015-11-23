@@ -43,7 +43,7 @@ const std::vector<std::string>& PhyloTree::getSpecies(void) const
 
 void PhyloTree::fillInternalBranches(TreeNode *aNode)
 {
-	if(!aNode->isLeaf() && aNode != &mTreeRoot)
+	if(/* omid !aNode->isLeaf() && end omid */ aNode != &mTreeRoot)
 	{
 		mInternalNodes.push_back(aNode);
 	}
@@ -56,6 +56,11 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode)
 size_t PhyloTree::getMarkedInternalBranch(void) const
 {
 	const size_t nin = mInternalNodes.size();
+	// omid
+	std::cout << "NIN " << nin << std::endl;
+
+	// end omid
+
 	size_t marked_branch = 0;
 	for(; marked_branch < nin; ++marked_branch)
 	{

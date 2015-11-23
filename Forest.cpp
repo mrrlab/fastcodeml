@@ -121,7 +121,13 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	mTableInternalToBranchID.resize(map_internal_to_branchID.size());
 	std::map<unsigned int, unsigned int>::const_iterator im(map_internal_to_branchID.begin());
 	const std::map<unsigned int, unsigned int>::const_iterator end(map_internal_to_branchID.end());
-	for(; im != end; ++im) mTableInternalToBranchID[im->first] = im->second;
+	for(; im != end; ++im) {mTableInternalToBranchID[im->first] = im->second;
+	// omid
+	std::cout << "map : " << im->first << " , " << im ->second << std ::endl;
+
+
+	// end omid
+	}
 
 	// Save the new to original site number map
 	mSitesMappingToOriginal = aGenes.getSitesMappingToOriginal();
@@ -253,8 +259,24 @@ void Forest::postLoad(void)
 
 bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd) const
 {
-	const size_t num_branches  = getNumInternalBranches();
+	const size_t num_branches  = getNumBranches() ; /* omid getNumInternalBranches(); end omid */
+
+	// omid
+
+	std :: cout << "num_branches" << num_branches << std :: endl;
+
+	// end omid
+
 	const size_t marked_branch = getMarkedInternalBranch();
+
+
+	// omid
+
+	std :: cout << "marked_branch" << marked_branch << std :: endl;
+
+	// end omid
+
+
 
 	// Check if the request make sense
 	if(num_branches == 0)
@@ -576,6 +598,14 @@ void Forest::mapInternalToBranchIdWalker(const ForestNode* aNode, std::map<unsig
 
 		mapInternalToBranchIdWalker(m, aMapInternalToBranchID);
 	}
+	// omid
+
+	//for(std::map<unsigned int, unsigned int >::const_iterator it = aMapInternalToBranchID.begin(); it != aMapInternalToBranchID.end(); ++it)
+	//{
+	//    std::cout << "MAP " << it->first << " " << it->second << "\n";
+	//}
+
+	//end omid
 }
 
 

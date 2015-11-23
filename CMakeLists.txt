@@ -82,12 +82,12 @@ endif(USE_MPI)
 
 
 # Load the needed paths
-set(LINK_DIR_BLAS     $ENV{BLAS_LIB_DIR}      CACHE PATH "BLAS lib dir")
-set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "LAPACK lib dir")
+set(LINK_DIR_BLAS     $ENV{BLAS_LIB_DIR}      CACHE PATH "/usr/lib")
+set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "/usr/lib/lapack/")
 set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir")
-set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
-set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
-set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')")
+set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "/usr/include/")
+set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "/usr/lib/x86_64-linux-gnu/")
+set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "openblas;lapack;gfortranbegin;gfortran")
 
 
 # Set compiler switches

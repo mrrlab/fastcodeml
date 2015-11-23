@@ -254,7 +254,7 @@ int main(int aRgc, char **aRgv)
 
 		if(zero_on_leaf_cnt > 0)
 		{
-			throw FastCodeMLFatal("Null or missing branch length in tree file");
+			//throw FastCodeMLFatal("Null or missing branch length in tree file");
 		}
 	}
 
@@ -263,6 +263,14 @@ int main(int aRgc, char **aRgv)
 
 	// Load the forest
 	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+
+	// omid
+
+	std :: cout << "marked internal branch (phylotree): " << tree.getMarkedInternalBranch() << std :: endl;
+
+	// omid
+
+
 	}
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
@@ -328,6 +336,16 @@ int main(int aRgc, char **aRgv)
 	// Compute the range of branches to mark as foreground
 	size_t branch_start, branch_end;
 	forest.getBranchRange(cmd, branch_start, branch_end);
+
+	// omid
+	std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
+	std :: cout << "total number of internal branches: " << forest.getNumInternalBranches() << std :: endl;
+	std :: cout << "marked internal branch (forest): " << forest.getMarkedInternalBranch() << std :: endl;
+
+	for (int i=0; i<forest.getNumBranches(); i++)
+	std :: cout << "internal branch of fg "<< i << " : "<< forest.adjustFgBranchIdx(i) << std :: endl;
+
+	// end omid
 
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
