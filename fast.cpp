@@ -336,7 +336,7 @@ int main(int aRgc, char **aRgv)
 	// Compute the range of branches to mark as foreground
 	size_t branch_start, branch_end;
 	// omid
-	std::set<size_t> fg_set; // to save a list of fg branches from the getBranchRange function
+	std::set<int> fg_set; // to save a list of fg branches from the getBranchRange function
 	// end omid
 	forest.getBranchRange(cmd, branch_start, branch_end, fg_set); // omid : fgset is added to save a list of fg branches
 
@@ -346,7 +346,7 @@ int main(int aRgc, char **aRgv)
 	std :: cout << "marked internal branch (forest): " << forest.getMarkedInternalBranch() << std :: endl;
 	std :: cout << "num of fg_set members: " << fg_set.size() << std :: endl;
 	std :: cout << "fg_set members are : " << std :: endl;
-	for (std::set<std::size_t>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
+	for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
 	    std::cout << " " << *it << ",";
 	std :: cout << std :: endl;
 
@@ -365,12 +365,17 @@ int main(int aRgc, char **aRgv)
 
 	// Initialize the test
 	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
-	if (fg_set.size()>1)
+	if (fg_set.size()>1) // in case of more than one fg branch
 	{
+		if(cmd.mInitFromParams)			h0.initFromParams();
+		if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+
+		double lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, 0-THRESHOLD_FOR_LRT);
+		std::cout << "lnl0 (multiple fg) = " << lnl0 << std::endl;
 
 		return -1;
 	}
-	// For all requested internal branches
+	// Else for all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch " << fg_branch << std::endl;

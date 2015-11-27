@@ -107,7 +107,7 @@ public:
 	///
 	std::string printFinalVars(std::ostream& aOut=std::cout) const;
 
-	/// Compute the maximum likelihood for the given forest
+	/// Compute the maximum likelihood for the given forest (single foreground)
 	///
 	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
 	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
@@ -121,6 +121,20 @@ public:
 	///
 	double maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger, double aThreshold);
 
+	/// Compute the maximum likelihood for the given forest (multiple foregrounds)
+	///
+	/// @param[in] aFgBranch The number of the internal branch to be marked as foreground
+	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
+	///
+	/// @return The maximum Likelihood value
+	///
+	/// @exception FastCodeMLFatal Exception in Ming2 computation
+	/// @exception FastCodeMLFatal Invalid optimization algorithm identifier on the command line
+	/// @exception FastCodeMLFatal Exception in computation
+	///
+	double maximizeLikelihood(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold);
+
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
 	/// @param[in] aVar The optimizer variables
@@ -129,6 +143,7 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
+
 	virtual double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
@@ -376,7 +391,7 @@ public:
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
+						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
 	{
 		// Initialize the dependency set
@@ -395,6 +410,16 @@ public:
 	/// @return The log likelihood under the null hypothesis
 	///
 	double operator()(size_t aFgBranch, bool aStopIfBigger=false, double aThreshold=0.);
+
+	/// Compute the null hypothesis log likelihood (multiple fg branches).
+	///
+	/// @param[in] aFgBranchSet The identifier for the branch marked as foreground branch
+	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
+	///
+	/// @return The log likelihood under the null hypothesis
+	///
+	double operator()(std::set<int> aFgBranchSet, bool aStopIfBigger=false, double aThreshold=0.);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -438,6 +463,8 @@ private:
 	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
 	ProbabilityMatrixSetH0	mSet;				///< Set of matrices used for the tree visits
 	ProbabilityMatrixSetH0	mSetForGradient;	///< Set of matrices used for the tree visits
+	mfgProbabilityMatrixSetH0	mfgmSet;			///< Set of matrices used for the tree visits (multiple foregrounds)
+	mfgProbabilityMatrixSetH0	mfgmSetForGradient;	///< Set of matrices used for the tree visits (multiple foregrounds)
 	double					mPrevK;				///< Previous k value used to compute matrices
 	double					mPrevOmega0;		///< Previous w0 value used to compute matrices
 	double					mScaleQw0;			///< Scale value for Qw0

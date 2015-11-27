@@ -257,7 +257,7 @@ void Forest::postLoad(void)
 }
 #endif
 
-bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<size_t>& aFgSet) const
+bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<int>& aFgSet) const
 {
 	const size_t num_branches  = getNumBranches() ; /* omid getNumInternalBranches(); end omid */
 

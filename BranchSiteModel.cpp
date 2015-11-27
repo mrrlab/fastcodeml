@@ -599,6 +599,23 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, 
 	return maximizeLikelihood(aFgBranch, aStopIfBigger, aThreshold);
 }
 
+double BranchSiteModelNullHyp::operator()(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold)
+{
+	// Initialize the variables to be optimized
+	initVariables();
+
+	// Initialize the variables used to avoid unneeded recomputing
+	mPrevK		= DBL_MAX;
+	mPrevOmega0 = DBL_MAX;
+
+	// Initialize the matrix set and the matrix set used for gradient computation
+	mfgmSet.initializeSet(aFgBranchSet);
+	mfgmSetForGradient.initializeFgBranch(aFgBranchSet);
+
+	// Run the optimizer
+	return maximizeLikelihood(aFgBranchSet, aStopIfBigger, aThreshold);
+}
+
 
 double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 {
@@ -1947,6 +1964,230 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
 	return maxl;
 }
+
+
+double BranchSiteModel::maximizeLikelihood(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold)
+{
+	// Print starting values
+	if(mTrace)
+	{
+		std::cout << std::endl;
+		std::cout << "*****************************************" << std::endl;
+		std::cout << "*** Foreground branch set: ";
+		for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
+			    std::cout << " " << *it << ",";
+		std::cout << std::endl;
+		printVar(mVar);
+		std::cout << "*** Upper" << std::endl;
+		printVar(mUpperBound);
+		std::cout << "*** Lower" << std::endl;
+		printVar(mLowerBound);
+		std::cout << std::endl;
+	}
+
+	// Initialize the maximum value found and the function evaluations counter
+	mMaxLnL = VERY_LOW_LIKELIHOOD;
+	mNumEvaluations = 0;
+
+	// If only the initial step is requested, do it and return
+	if(mOnlyInitialStep) return computeLikelihood(mVar, mTrace);
+
+	// Special case for the CodeML optimizer
+	if(mOptAlgo == OPTIM_LD_MING2)
+	{
+		try
+		{
+			// Create the optimizer (instead of mRelativeError is used the fixed value from CodeML)
+			Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound, mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold, mMaxIterations);
+
+			// Do the maximization
+			double maxl = optim.minimizeFunction(mVar);
+
+			if(mTrace)
+			{
+				std::cout << std::endl << "Function invocations:	   " << mNumEvaluations << std::endl;
+				std::cout <<			  "Final log-likelihood value: " << maxl << std::endl;
+				printVar(mVar);
+			}
+			return maxl;
+		}
+		catch(FastCodeMLEarlyStopLRT&)
+		{
+			if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+			return DBL_MAX;
+		}
+		catch(std::exception& e)
+		{
+			std::ostringstream o;
+			o << "Exception in Ming2 computation: " << e.what() << std::endl;
+			throw FastCodeMLFatal(o);
+		}
+	}
+
+	// Select the maximizer algorithm (the listed ones works and are reasonably fast for FastCodeML)
+	std::auto_ptr<nlopt::opt> opt;
+	switch(mOptAlgo)
+	{
+	case OPTIM_LD_LBFGS:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+		else
+			opt.reset(new nlopt::opt(nlopt::LD_LBFGS,	mNumTimes+mNumVariables));
+
+			opt->set_vector_storage(20);
+			break;
+
+	case OPTIM_LD_VAR1:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::LD_VAR1, mNumVariables));
+		else
+			opt.reset(new nlopt::opt(nlopt::LD_VAR1,   mNumTimes+mNumVariables));
+
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LD_VAR2:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::LD_VAR2, mNumVariables));
+		else
+			opt.reset(new nlopt::opt(nlopt::LD_VAR2,   mNumTimes+mNumVariables));
+
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LD_SLSQP:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+		else
+		opt.reset(new nlopt::opt(nlopt::LD_SLSQP,	mNumTimes+mNumVariables));
+
+		opt->set_vector_storage(20);
+		break;
+
+	case OPTIM_LN_BOBYQA:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
+		else
+			opt.reset(new nlopt::opt(nlopt::LN_BOBYQA,	mNumTimes+mNumVariables));
+		break;
+
+	case OPTIM_MLSL_LDS:
+		if (mFixedBranchLength)
+			opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumVariables));
+		else
+			opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumTimes+mNumVariables));
+
+		{
+			// For global optimization put a timeout of one day
+			opt->set_maxtime(24*60*60);
+
+			// This algorithm requires a local optimizer, add it
+			if (mFixedBranchLength)
+			{
+				nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
+				opt->set_local_optimizer(local_opt);
+			}
+
+			else
+			{
+				nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes+mNumVariables);
+				opt->set_local_optimizer(local_opt);
+			}
+		}
+		break;
+
+	default:
+		throw FastCodeMLFatal("Invalid optimization algorithm identifier on the command line.");
+	}
+
+	// Initialize bounds and termination criteria
+	opt->set_lower_bounds(mLowerBound);
+	opt->set_upper_bounds(mUpperBound);
+	opt->set_ftol_rel(mRelativeError);
+	nlopt::srand(static_cast<unsigned long>(mSeed));
+
+	// Optimize the function
+	double maxl = 0;
+	try
+	{
+		MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient, mNumVariables, aStopIfBigger, aThreshold);
+
+		opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+
+		// If the user has set a maximum number of iterations set it
+		if(mMaxIterations != MAX_ITERATIONS) opt->set_maxeval(mMaxIterations);
+
+		nlopt::result result = opt->optimize(mVar, maxl);
+
+		// Print the final optimum value
+		if(mTrace)
+		{
+			std::cout << std::endl << "Function invocations:	   " << mNumEvaluations << std::endl;
+			switch(result)
+			{
+			case nlopt::SUCCESS:
+				break;
+
+			case nlopt::STOPVAL_REACHED:
+				std::cout << "Optimization stopped because stopval was reached." << std::endl;
+				break;
+
+			case nlopt::FTOL_REACHED:
+				std::cout << "Optimization stopped because ftol_rel or ftol_abs was reached." << std::endl;
+				break;
+
+			case nlopt::XTOL_REACHED:
+				std::cout << "Optimization stopped because xtol_rel or xtol_abs was reached." << std::endl;
+				break;
+
+			case nlopt::MAXEVAL_REACHED:
+				std::cout << "Optimization stopped because maxeval was reached." << std::endl;
+				break;
+
+			case nlopt::MAXTIME_REACHED:
+				std::cout << "Optimization stopped because maxtime was reached." << std::endl;
+				break;
+
+			default:
+				std::cout << "Other reason: " << static_cast<unsigned int>(result) << std::endl;
+				break;
+			}
+			std::cout << "Final log-likelihood value: " << maxl << std::endl;
+			printVar(mVar);
+		}
+	}
+	catch(const nlopt::forced_stop&)
+	{
+		if(mTrace) std::cout << "Optimization stopped because LRT not satisfied" << std::endl;
+		return DBL_MAX;
+	}
+	catch(const nlopt::roundoff_limited&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Halted because roundoff errors limited progress, equivalent to NLOPT_ROUNDOFF_LIMITED.");
+	}
+	catch(const std::runtime_error&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Generic failure, equivalent to NLOPT_FAILURE.");
+	}
+	catch(const std::invalid_argument&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Invalid arguments (e.g. lower bounds are bigger than upper bounds, an unknown algorithm was specified, etcetera), equivalent to NLOPT_INVALID_ARGS.");
+	}
+	catch(const std::bad_alloc&)
+	{
+		throw FastCodeMLFatal("Exception in computation: Ran out of memory (a memory allocation failed), equivalent to NLOPT_OUT_OF_MEMORY.");
+	}
+	catch(const std::exception& e)
+	{
+		std::ostringstream o;
+		o << "Exception in computation: " << e.what();
+		throw FastCodeMLFatal(o);
+	}
+
+	return maxl;
+}
+
+
 
 /// @page vars_page Layout of free variables
 /// The vector containing the independent variables has the following layout

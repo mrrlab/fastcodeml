@@ -146,7 +146,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	return id;
 }
 
-unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch,std::set<std::size_t>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
+unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch,std::set<int>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
 {
 	unsigned int id;
 

@@ -108,7 +108,7 @@ public:
 	///
 	/// @return The node id to the next node
 
-	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, std::set<std::size_t>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, std::set<int>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///
