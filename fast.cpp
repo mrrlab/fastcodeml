@@ -365,7 +365,11 @@ int main(int aRgc, char **aRgv)
 
 	// Initialize the test
 	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
+	if (fg_set.size()>1)
+	{
 
+		return -1;
+	}
 	// For all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
