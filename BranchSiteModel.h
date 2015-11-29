@@ -391,7 +391,7 @@ public:
 						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
 						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
 						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
+						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
 						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
 	{
 		// Initialize the dependency set
@@ -410,16 +410,6 @@ public:
 	/// @return The log likelihood under the null hypothesis
 	///
 	double operator()(size_t aFgBranch, bool aStopIfBigger=false, double aThreshold=0.);
-
-	/// Compute the null hypothesis log likelihood (multiple fg branches).
-	///
-	/// @param[in] aFgBranchSet The identifier for the branch marked as foreground branch
-	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
-	/// @param[in] aThreshold The threshold at which the maximization should be stopped
-	///
-	/// @return The log likelihood under the null hypothesis
-	///
-	double operator()(std::set<int> aFgBranchSet, bool aStopIfBigger=false, double aThreshold=0.);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -463,6 +453,94 @@ private:
 	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
 	ProbabilityMatrixSetH0	mSet;				///< Set of matrices used for the tree visits
 	ProbabilityMatrixSetH0	mSetForGradient;	///< Set of matrices used for the tree visits
+	double					mPrevK;				///< Previous k value used to compute matrices
+	double					mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double					mScaleQw0;			///< Scale value for Qw0
+	double					mScaleQ1;			///< Scale value for Q1
+};
+
+
+/// Null Hypothesis test (multiple foreground branches).
+///
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
+///
+///
+class MfgBranchSiteModelNullHyp : public BranchSiteModel
+{
+public:
+	/// Constructor.
+	///
+	/// @param[in] aForest The forest for which the maximum likelihood should be computed
+	/// @param[in] aCmdLine The command line parameters
+	///
+	MfgBranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
+						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
+						  mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
+	{
+		// Initialize the dependency set
+		mDependencies.computeDependencies(3, mNoParallel);
+		mDependencies.print("TEST FOR H0 (before optimization)");
+		mDependencies.optimizeDependencies();
+		mDependencies.print("TEST FOR H0");
+	}
+
+	/// Compute the null hypothesis log likelihood (multiple fg branches).
+	///
+	/// @param[in] aFgBranchSet The identifier for the branch marked as foreground branch
+	/// @param[in] aStopIfBigger If true stop computation as soon as lnl is over aThreshold
+	/// @param[in] aThreshold The threshold at which the maximization should be stopped
+	///
+	/// @return The log likelihood under the null hypothesis
+	///
+	double operator()(std::set<int> aFgBranchSet, bool aStopIfBigger=false, double aThreshold=0.);
+
+	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations.
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+
+	/// Compute the likelihood for the given forest and the given set of parameters.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
+
+
+private:
+	/// Disabled assignment operator to avoid warnings on Windows
+	///
+	/// @fn BranchSiteModelNullHyp& operator=(const BranchSiteModelNullHyp& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	MfgBranchSiteModelNullHyp& operator=(const MfgBranchSiteModelNullHyp& /*aObj*/);
+
+	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
+	///
+	/// @return The tree log-likelihood value
+	///
+	double combineSiteLikelihoods(void);
+
+private:
+	TransitionMatrix		mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
 	mfgProbabilityMatrixSetH0	mfgmSet;			///< Set of matrices used for the tree visits (multiple foregrounds)
 	mfgProbabilityMatrixSetH0	mfgmSetForGradient;	///< Set of matrices used for the tree visits (multiple foregrounds)
 	double					mPrevK;				///< Previous k value used to compute matrices
@@ -562,5 +640,97 @@ private:
 	double							mScaleQw2;			///< Scale value for Qw2
 	double							mScaleQ1;			///< Scale value for Q1
 };
+
+
+/// Alternate Hypothesis test (multiple fg grounds).
+///
+///		@author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
+///
+///
+class MfgBranchSiteModelAltHyp : public BranchSiteModel
+{
+public:
+	/// Constructor.
+	///
+	/// @param[in] aForest The forest for which the maximum likelihood should be computed
+	/// @param[in] aCmdLine The command line parameters
+	///
+	MfgBranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
+		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
+						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
+						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
+						  mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
+						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
+	{
+		// Initialize the dependency set
+		mDependencies.computeDependencies(4, mNoParallel);
+		mDependencies.print("TEST FOR H1 (before optimization)");
+		mDependencies.optimizeDependencies();
+		mDependencies.print("TEST FOR H1");
+	}
+
+	/// Compute the alternative hypothesis log likelihood.
+	///
+	/// @param[in] aFgBranch The identifier for the branch marked as foreground branch
+	///
+	/// @return The log likelihood under the alternative hypothesis
+	///
+	double operator()(std::set<int> aFgBranchSet);
+
+	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	/// @param[in] aGradientVar Used in gradient computation to avoid unneeded computations. If set to UINT_MAX it is ignored
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+
+	/// Compute the likelihood for the given forest and the given set of parameters.
+	///
+	/// @param[in] aVar The optimizer variables
+	/// @param[in] aTrace If set visualize the best result so far
+	///
+	/// @return The maximum Likelihood value
+	///
+	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
+
+private:
+	/// Disabled assignment operator to avoid warnings on Windows.
+	///
+	/// @fn BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& aObj)
+	///
+	/// @param[in] aObj The object to be assigned
+	///
+	/// @return The object receiving the assignment
+	///
+	MfgBranchSiteModelAltHyp& operator=(const MfgBranchSiteModelAltHyp& /*aObj*/);
+
+	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
+	///
+	/// @return The tree log-likelihood value
+	///
+	double combineSiteLikelihoods(void);
+
+
+private:
+	CheckpointableTransitionMatrix	mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix				mQw2;				///< Q matrix for the omega2 case
+	CheckpointableTransitionMatrix	mQ1;				///< Q matrix for the omega1 == 1 case
+	mfgProbabilityMatrixSetH1		mfgmSet;			///< Set of matrices used for the tree visits (multiple foregrounds)
+	mfgProbabilityMatrixSetH1		mfgmSetForGradient;	///< Set of matrices used for the tree visits (multiple foregrounds)
+	double							mPrevK;				///< Previous k value used to compute matrices
+	double							mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double							mPrevOmega2;		///< Previous w2 value used to compute matrices
+	double							mScaleQw0;			///< Scale value for Qw0
+	double							mScaleQw2;			///< Scale value for Qw2
+	double							mScaleQ1;			///< Scale value for Q1
+};
+
 
 #endif

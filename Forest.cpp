@@ -894,6 +894,49 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDo
 	}
 }
 
+void Forest::computeLikelihoods(const mfgProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies)
+{
+	// To speedup the inner OpenMP parallel loop, this is precomputed
+	// so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes tmp_roots+site
+	const ForestNode* tmp_roots = &mRoots[0];
+	double* likelihoods = &aLikelihoods[0];
+
+	ListDependencies::const_iterator ivs(aDependencies.begin());
+	const ListDependencies::const_iterator end(aDependencies.end());
+	for(; ivs != end; ++ivs)
+	{
+		// Things that do not change in the parallel loop
+		const int len = static_cast<int>(ivs->size());
+		const unsigned int* tmp_ivs = &(*ivs)[0];
+
+#ifdef _MSC_VER
+		#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots, likelihoods) schedule(static)
+#else
+		#pragma omp parallel for default(shared)
+#endif
+		for(int i=0; i < len; ++i)
+		{
+#ifndef _MSC_VER
+			#pragma omp task untied
+#endif
+			{
+				// Compute likelihood array at the root of one tree (the access order is the fastest)
+				const unsigned int tmp	   = tmp_ivs[i];
+				const unsigned int site	   = TreeAndSetsDependencies::getSiteNum(tmp);
+				const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
+
+				const double* g = computeLikelihoodsWalkerTC(tmp_roots+site, aSet, set_idx);
+
+#ifdef USE_CPV_SCALING
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g)*g[N];
+#else
+				likelihoods[set_idx*mNumSites+site] = dot(mCodonFreq, g);
+#endif
+			}
+		}
+	}
+}
+
 double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx)
 {
 	double* anode_prob	  = aNode->mProb[aSetIdx];
@@ -1021,6 +1064,135 @@ double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const Probab
 
 	return anode_prob;
 }
+
+double* Forest::computeLikelihoodsWalkerTC(const ForestNode* aNode, const mfgProbabilityMatrixSet& aSet, unsigned int aSetIdx)
+{
+	double* anode_prob	  = aNode->mProb[aSetIdx];
+	const unsigned int nc = aNode->mChildrenCount;
+
+	// Shortcut (on the leaves return immediately the probability vector)
+	if(nc == 0) return anode_prob;
+
+	bool first = true;
+	for(unsigned int idx=0; idx < nc; ++idx)
+	{
+		// Copy to local var to avoid aliasing
+		double* anode_other_tree_prob = aNode->mOtherTreeProb[idx];
+
+		// If the node is in the same tree recurse and eventually save the value, else use the value
+		if(aNode->isSameTree(idx))
+		{
+			const ForestNode *m = aNode->mChildrenList[idx];
+			const unsigned int branch_id = m->mBranchId;
+			const int leaf_codon = m->mLeafCodon;
+
+			if(leaf_codon >= 0)
+			{
+				if(first)
+				{
+					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, anode_prob);
+#ifdef USE_CPV_SCALING
+					anode_prob[N] = normalizeVector(anode_prob);
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+1)*sizeof(double));
+#else
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
+#endif
+					first = false;
+				}
+				else
+				{
+#ifdef USE_CPV_SCALING
+					double ALIGN64 temp[N+1];
+#else
+					double ALIGN64 temp[N];
+#endif
+					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
+					aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, x);
+#ifdef USE_CPV_SCALING
+					x[N] = normalizeVector(x);
+					anode_prob[N] *= x[N];
+#endif
+					elementWiseMult(anode_prob, x);
+				}
+			}
+			else
+			{
+				if(first)
+				{
+					double* g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+					aSet.doTransition(aSetIdx, branch_id, g, anode_prob);
+#ifdef USE_CPV_SCALING
+					anode_prob[N] = normalizeVector(anode_prob)*g[N];
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, (N+1)*sizeof(double));
+#else
+					if(anode_other_tree_prob) memcpy(anode_other_tree_prob+VECTOR_SLOT*aSetIdx, anode_prob, N*sizeof(double));
+#endif
+					first = false;
+				}
+				else
+				{
+#ifdef USE_CPV_SCALING
+					double ALIGN64 temp[N+1];
+#else
+					double ALIGN64 temp[N];
+#endif
+					double* x = anode_other_tree_prob ? anode_other_tree_prob+VECTOR_SLOT*aSetIdx : temp;
+					double* g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+					aSet.doTransition(aSetIdx, branch_id, g, x);
+#ifdef USE_CPV_SCALING
+					x[N] = normalizeVector(x)*g[N];
+					anode_prob[N] *= x[N];
+#endif
+					elementWiseMult(anode_prob, x);
+				}
+			}
+		}
+		else
+		{
+			if(first)
+			{
+#ifdef USE_CPV_SCALING
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, (N+1)*sizeof(double));
+#else
+				memcpy(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx, N*sizeof(double));
+#endif
+				first = false;
+			}
+			else
+			{
+#ifdef USE_CPV_SCALING
+				anode_prob[N] *= anode_other_tree_prob[VECTOR_SLOT*aSetIdx+N];
+#endif
+				elementWiseMult(anode_prob, anode_other_tree_prob+VECTOR_SLOT*aSetIdx);
+			}
+		}
+	}
+#ifdef USE_LAPACK
+	switch(nc)
+	{
+	case 1:
+		elementWiseMult(anode_prob, mInvCodonFreq);
+		break;
+	case 2:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		break;
+	case 3:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		elementWiseMult(anode_prob, mInvCodonFreq);
+		break;
+	case 4:
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		elementWiseMult(anode_prob, mInv2CodonFreq);
+		break;
+	default:
+		for(unsigned int idx=0; idx < nc; ++idx) elementWiseMult(anode_prob, mInvCodonFreq);
+		break;
+	}
+#endif
+
+	return anode_prob;
+}
+
 
 #endif
 

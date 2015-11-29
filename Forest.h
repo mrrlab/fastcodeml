@@ -121,6 +121,8 @@ public:
 	/// @param[in] aDependencies The dependency list between sets of trees
 	///
 	void computeLikelihoods(const ProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
+
+	void computeLikelihoods(const mfgProbabilityMatrixSet& aSet, CacheAlignedDoubleVector& aLikelihoods, const ListDependencies& aDependencies);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -290,6 +292,8 @@ private:
 	/// @return The vector of codons probabilities at the aNode node
 	///
 	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
+
+	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const mfgProbabilityMatrixSet& aSet, unsigned int aSetIdx);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT

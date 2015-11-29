@@ -359,23 +359,41 @@ int main(int aRgc, char **aRgv)
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
+
+	double lnl0, lnl1 = 0.;
+	if (fg_set.size()>1) // in case of more than one fg branch
+	{
+		// Initialize the models
+		MfgBranchSiteModelNullHyp h0(forest, cmd);
+		MfgBranchSiteModelAltHyp  h1(forest, cmd);
+
+		// Initialize the test
+		BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
+
+		if(cmd.mInitFromParams)			h0.initFromParams();
+		if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+
+		lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, 0-THRESHOLD_FOR_LRT);
+		std::cout << "lnl0 (multiple fg) = " << lnl0 << std::endl;
+
+		if(cmd.mInitFromParams)			h1.initFromParams();
+		if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
+
+		lnl1 = h1(fg_set);
+		std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;
+
+		return -1;
+	}
+
+	// Else for all requested internal branches
+
 	// Initialize the models
 	BranchSiteModelNullHyp h0(forest, cmd);
 	BranchSiteModelAltHyp  h1(forest, cmd);
 
 	// Initialize the test
 	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
-	if (fg_set.size()>1) // in case of more than one fg branch
-	{
-		if(cmd.mInitFromParams)			h0.initFromParams();
-		if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
 
-		double lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, 0-THRESHOLD_FOR_LRT);
-		std::cout << "lnl0 (multiple fg) = " << lnl0 << std::endl;
-
-		return -1;
-	}
-	// Else for all requested internal branches
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch " << fg_branch << std::endl;

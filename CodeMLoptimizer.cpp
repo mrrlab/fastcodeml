@@ -90,6 +90,11 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 	   ix[i] specifies the i-th free parameter
 
 	*/
+
+	// omid
+	std::cout << "entering ming optimizer" << std::endl;
+	// end omid
+
 	int i, j, i1, i2, it, fail = 0, nfree;
 	int Ngoodtimes = 2, goodtimes = 0;
 	double small = 1.e-30, sizep0 = 0;	/* small value for checking |w|=0 */
@@ -98,6 +103,7 @@ int Ming2::ming2(FILE *fout, double *f,	double x[], const double xl[], const dou
 
 	// Sanity check.
 	if(n == 0) return 0;
+
 
 	// Prepare the temporary variables
 	double* g0 = space;
