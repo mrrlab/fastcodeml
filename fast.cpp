@@ -239,11 +239,26 @@ int main(int aRgc, char **aRgv)
 	// Check coherence between the two files
 	msa.checkNameCoherence(tree.getSpecies());
 
+	// omid
+	std :: cout << "TREE BEFORE UNROOTING" << std::endl;
+
+	std::ostream & objOstream = std::cout;
+	tree.printTreeAnnotated(objOstream, NULL,0);
+	std :: cout << "TREE INFO (number of branches)" << std::endl;
+	std :: cout << tree.getNumBranches() << std::endl;
+
+	// end omid
+
 	// Check root
-	tree.checkRootBranches();
+
+		tree.checkRootBranches();
 
 	// omid
-	std :: cout << "TREE INFO" << std::endl;
+	std :: cout << "TREE AFTER UNROOTING" << std::endl;
+
+	tree.printTreeAnnotated(objOstream, NULL,0);
+
+	std :: cout << "TREE INFO (number of branches)" << std::endl;
 	std :: cout << tree.getNumBranches() << std::endl;
 
 

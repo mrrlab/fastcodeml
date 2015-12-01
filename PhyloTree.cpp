@@ -209,7 +209,7 @@ void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const Tr
 	}
 }
 
-void PhyloTree::checkRootBranches(void) const
+void PhyloTree::checkRootBranches(void) //const
 {
 	TreeNode *m;
 	unsigned int cnt_root_branches = 0;
@@ -261,9 +261,13 @@ void PhyloTree::checkRootBranches(void) const
 
 			{cx = c0;c1->addLen(new_len);c1->addType(newBranchType);mTreeRoot.delChild(0);}
 
-		else
+		else if (c1->getChild(0) != NULL && c1->getChild(1) != NULL)
 
 			{cx = c1;c0->addLen(new_len);c0->addType(newBranchType);mTreeRoot.delChild(1);}
+		else
+
+			throw FastCodeMLFatal("All root children have only one child. Invalid tree. Quitting.");
+
 
 		std::cout << " len of cx : " << cx->getLen() << std::endl;
 
@@ -280,6 +284,17 @@ void PhyloTree::checkRootBranches(void) const
 			mTreeRoot.addChild(t);
 			t->addParent(&mTreeRoot);
 		}
+
+		// refill the tree
+
+
+		// Fill the leaves
+		mLeavesSpecies.clear();
+		this->fillSpecies(&mTreeRoot);
+
+		// Fill internal branches
+		mInternalNodes.clear();
+		this->fillInternalBranches(&mTreeRoot);
 
 		//cx->clearNode();
 

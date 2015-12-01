@@ -123,7 +123,7 @@ public:
 	///
 	/// @exception FastCodeMLFatal Root has only one branch or points only to leaves.
 	///
-	void checkRootBranches(void) const;
+	void checkRootBranches(void) ; //const;
 
 protected:
 
@@ -141,10 +141,10 @@ protected:
 
 
 protected:
-	mutable TreeNode				mTreeRoot;				///< The root of the phylogenetic tree in memory
+	mutable TreeNode		mTreeRoot;				///< The root of the phylogenetic tree in memory
 	unsigned int			mVerboseLevel;			///< The verbosity level
-	std::vector<TreeNode *>	mLeavesSpecies;			///< The list of the tree leaves
-	std::vector<TreeNode *> mInternalNodes;			///< The list of the tree internal nodes
+	mutable std::vector<TreeNode *>	mLeavesSpecies;			///< The list of the tree leaves
+	mutable std::vector<TreeNode *> mInternalNodes;			///< The list of the tree internal nodes
 	mutable std::vector<std::string> mSpeciesList;	///< Temporary to securely return the list of species from getSpecies()
 };
 
