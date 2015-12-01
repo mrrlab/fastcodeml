@@ -157,6 +157,23 @@ public:
 	///
 	TreeNode* getParent() const { return mParent;}
 
+	/// Delete a child from the node (only used in unrooting tree).
+	///
+	/// @param[in] aNode The child node
+	///
+	bool delChild(unsigned int aIdx) {
+
+		if(aIdx >= static_cast<unsigned int>(mChildrenList.size())) return false;
+
+		if (aIdx == 1)
+			mChildrenList.pop_back();
+		else
+		{
+			TreeNode *t=mChildrenList[1];
+			mChildrenList.pop_back();
+			mChildrenList.pop_back();
+			mChildrenList.push_back(t);}
+		}
 
 private:
 	TreeNode*				mParent;		///< Pointer to the node parent (null for the root)

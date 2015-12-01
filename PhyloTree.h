@@ -141,7 +141,7 @@ protected:
 
 
 protected:
-	TreeNode				mTreeRoot;				///< The root of the phylogenetic tree in memory
+	mutable TreeNode				mTreeRoot;				///< The root of the phylogenetic tree in memory
 	unsigned int			mVerboseLevel;			///< The verbosity level
 	std::vector<TreeNode *>	mLeavesSpecies;			///< The list of the tree leaves
 	std::vector<TreeNode *> mInternalNodes;			///< The list of the tree internal nodes

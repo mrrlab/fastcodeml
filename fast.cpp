@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <string>
 #include "CmdLine.h"
 #include "Newick.h"
 #include "Phylip.h"
@@ -27,6 +28,7 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 #include "WriteResults.h"
+
 
 #ifndef VTRACE
 #ifdef _OPENMP
@@ -239,6 +241,14 @@ int main(int aRgc, char **aRgv)
 
 	// Check root
 	tree.checkRootBranches();
+
+	// omid
+	std :: cout << "TREE INFO" << std::endl;
+	std :: cout << tree.getNumBranches() << std::endl;
+
+
+
+	// end omid
 
 	// If times from file then check for null branch lengths for any leaf
 	if(cmd.mBranchLengthsFromFile)

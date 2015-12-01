@@ -224,9 +224,97 @@ void PhyloTree::checkRootBranches(void) const
 		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 	}
 
+
+
 	if (cnt_root_branches == 2)
 	{
 		std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
+
+		// omid
+		TreeNode *c0,*c1,*cx; // cx is the child with at least 2 children
+		c0=mTreeRoot.getChild(0);
+		c1=mTreeRoot.getChild(1);
+
+
+		// get the length and marking of new branch
+
+		double new_len=c0->getLen() + c1->getLen();
+
+		std::cout << " Length Root : " << mTreeRoot.getLen() << std::endl;
+		std::cout << " Length Child 0 : " << c0->getLen() << std::endl;
+		std::cout << " Length Child 1 : " << c1->getLen() << std::endl;
+		std::cout << " New Length : " << new_len << std::endl;
+
+		//bool marked=0;
+		//if (c0->getType()!=NULL || c1->getType()!=NULL ) marked = true;
+
+		// choose the child who has also two children and adjust lengths and marks
+
+		std::cout << " type of c0 : " << c0->getType() << std::endl;
+		std::cout << " type of c1 : " << c1->getType() << std::endl;
+
+		std::string newBranchType;
+
+		if (c0->getType().size()>0) newBranchType=c0->getType(); else newBranchType=c1->getType();
+
+		if (c0->getChild(0) != NULL && c0->getChild(1) != NULL)
+
+			{cx = c0;c1->addLen(new_len);c1->addType(newBranchType);mTreeRoot.delChild(0);}
+
+		else
+
+			{cx = c1;c0->addLen(new_len);c0->addType(newBranchType);mTreeRoot.delChild(1);}
+
+		std::cout << " len of cx : " << cx->getLen() << std::endl;
+
+		// remove cx from stack of children of root
+		// all children of cx will be children of root
+		// parent of all children of cx will become root
+
+
+		TreeNode *t;
+		unsigned int cx_children = 0;
+
+		for(; (t = cx->getChild(cx_children)) != NULL; cx_children++)
+		{
+			mTreeRoot.addChild(t);
+			t->addParent(&mTreeRoot);
+		}
+
+		//cx->clearNode();
+
+
+
+
+
+		// c0->addLen(new_len);
+
+		//c1->addParent(c0);
+		//c1->addLen(new_len);
+
+		//mTreeRoot=*c0;
+
+		//this->mTreeRoot=*c0;
+		//mTreeRoot.clearNode();
+
+		//mTreeRoot.clearNode();
+
+		// child one becomes child of child zero
+
+		// adjust the new length and mark of the new branch between child zero and child one
+
+		TreeNode *m;
+		unsigned int cnt_root_branches = 0;
+		unsigned int cnt_root_leaves   = 0;
+		for(; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL; ++cnt_root_branches)
+		{
+			if(m->isLeaf()) ++cnt_root_leaves;
+		}
+
+		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
+
+
+		// end omid
 	}
 	// if it is an invalid tree then raise exception
 	if(cnt_root_branches < 2) throw FastCodeMLFatal("Root has only one branch. Invalid tree. Quitting.");
