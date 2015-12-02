@@ -47,7 +47,7 @@ public:
 		mExtraDebug(0),
 		mMaxIterations(MAX_ITERATIONS),
 		mIgnoreFreq(false),
-		mDoNotReduceForest(true),
+		mDoNotReduceForest(false),
 		mBranchLengthsFromFile(false),
 		mNoMaximization(false),
 		mTrace(false),
