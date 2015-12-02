@@ -62,6 +62,10 @@ public:
 		mInitFromParams(false),
 		mCleanData(false),
 		mStopIfNotLRT(true),
+#ifdef USE_AGGREGATION
+		mAggregate(0),
+#endif
+
 //		mCmdLineImpl(NULL),
 			mFixedBranchLength(false),
 				mCmdLineImpl(NULL)
@@ -101,6 +105,9 @@ public:
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
 	unsigned int	mExtraDebug;			///< Extra debug parameter for development tests
 	unsigned int	mMaxIterations;			///< Maximum number of iterations for the maximization
+#ifdef USE_AGGREGATION
+	unsigned int   	mAggregate;			///< Aggregation mode
+#endif
 	bool			mIgnoreFreq;			///< Ignore the computed codon frequencies and set them all to 1/61
 	bool			mDoNotReduceForest;		///< If true do not reduce the forest merging common subtrees
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file

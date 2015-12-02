@@ -72,9 +72,16 @@ public:
 	///
 	/// @exception FastCodeMLFatal Invalid codon found
 	///
+#ifdef USE_AGGREGATION
+	void loadTreeAndGenes(const PhyloTree& aTree,
+			      const Genes& aGenes,
+			      CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel,
+			      int mAggregate);
+#else
 	void loadTreeAndGenes(const PhyloTree& aTree,
 						  const Genes& aGenes,
 						  CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel);
+#endif
 
 	/// Print the class statistics as: cout << r;.
 	///
@@ -287,11 +294,12 @@ private:
 	///
 	/// @return The vector of codons probabilities at the aNode node
 	///
+	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
+
 #ifdef USE_AGGREGATION
 	double* computeLikelihoodsWalkerAG(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapCodonToState);
-#else
-	double* computeLikelihoodsWalkerTC(const ForestNode* aNode, const ProbabilityMatrixSet& aSet, unsigned int aSetIdx);
 #endif
+
 #endif
 
 #ifdef NON_RECURSIVE_VISIT

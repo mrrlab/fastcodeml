@@ -66,7 +66,11 @@ public:
 	///
 	/// @exception FastCodeMLFatal If saved codon is invalid.
 	///
+#ifdef USE_AGGREGATION
+	void setLeaveProb(double* aLeaveProbVect, int aAggregate) const;
+#else
 	void setLeaveProb(double* aLeaveProbVect) const;
+#endif
 
 	/// Save codons in a given array for later count.
 	/// For each codon the aCodon array contains one more vector that starts with the aSiteMultiplicity value followed by the codon positions
@@ -111,7 +115,8 @@ public:
 	// @param[out] aObservedCodons For each site vector of observed codons
 	// @param[out] aMapCodonToObserved For each site map codon to a new state
 	//
-	void observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState) const;
+	void observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState,
+			    int aAggregate) const;
 #endif
 
 private:

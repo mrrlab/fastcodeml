@@ -265,7 +265,13 @@ int main(int aRgc, char **aRgv)
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) tree.printTreeAnnotated(std::cout);
 
 	// Load the forest
+#ifdef USE_AGGREGATION
+	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4,
+				cmd.mAggregate);
+#else
 	forest.loadTreeAndGenes(tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
+#endif
+
 	}
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.

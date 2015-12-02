@@ -79,7 +79,6 @@ public:
 	/// @param[in] aGin The input vector to be multiplied by the matrix exponential
 	/// @param[out] aGout The resulting vector
 	///
-#ifndef USE_AGGREGATION
 	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout) const
 	{
 #ifdef USE_LAPACK
@@ -98,8 +97,8 @@ public:
 		}
 #endif
 	}
-#else // #ifdef USE_AGGREGATION
-	void doTransition(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
+#ifdef USE_AGGREGATION
+	void doTransitionAG(unsigned int aSetIdx, unsigned int aBranch, const double* aGin, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
 	{
 		int nObserved = aObservedCodons.size();
 /*
@@ -155,7 +154,6 @@ public:
 	/// @param[in] aCodon The leaf codon id (will supplant aGin)
 	/// @param[out] aGout The resulting vector
 	///
-#ifndef USE_AGGREGATION
 	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout) const
 	{
 #ifdef USE_LAPACK
@@ -191,8 +189,8 @@ public:
 		}
 #endif
 	}
-#else // #ifdef USE_AGGREGATION
-	void doTransitionAtLeaf(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
+#ifdef USE_AGGREGATION
+	void doTransitionAtLeafAG(unsigned int aSetIdx, unsigned int aBranch, int aCodon, double* aGout, const std::vector<int> &aObservedCodons, const std::vector<int> &aMapObservedToState) const
 	{
 		int nObserved = aObservedCodons.size();
 

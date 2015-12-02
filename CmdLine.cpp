@@ -142,6 +142,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		OPT_CLEAN_DATA,
 		OPT_NO_PRE_STOP,
 		OPT_MAX_ITER,
+#ifdef USE_AGGREGATION
+		OPT_AGGREGATE,
+#endif
 		OPT_BRANCH_LENGTH
 	};
 
@@ -211,6 +214,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{ OPT_MAX_ITER,			"--max-iterations",		SO_REQ_SEP,	"" },
 		{OPT_BRANCH_LENGTH,		 "-bl",					SO_NONE,	"The length of the brances is fixed"},
 		{OPT_BRANCH_LENGTH,		 "--branch-lengths-fixed", SO_NONE,	   ""},
+#ifdef USE_AGGREGATION
+		{OPT_AGGREGATE,			"-a",					SO_REQ_SEP, "Aggregation (0: off, 1: full, default:0)" },
+		{OPT_AGGREGATE,			"--aggregate",					SO_REQ_SEP, "" },
+#endif
 		SO_END_OF_OPTIONS
 	};
 
@@ -387,6 +394,15 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 			mFixedBranchLength = true;
 			mBranchLengthsFromFile = true;
 			break;
+
+#ifdef USE_AGGREGATION
+		case OPT_AGGREGATE:
+			tmpi = atoi(args.OptionArg());
+			if(tmpi < 0 || tmpi > 2) throw FastCodeMLFatal("Invalid aggregation mode");
+			mAggregate = static_cast<unsigned int>(tmpi);
+			break;
+#endif
+
 		}
 	}
 

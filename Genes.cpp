@@ -61,7 +61,11 @@ long long Genes::getCodonIdx(std::string aSpecie, size_t aSite) const
 	return -code;
 }
 
+#ifdef USE_AGGREGATION
+void Genes::setLeaveProb(double* aLeaveProbVect, int aAggregate) const
+#else
 void Genes::setLeaveProb(double* aLeaveProbVect) const
+#endif
 {
 	// This extra location aLeaveProbVect[N] will be used to carry the CPV norm to revert normalization at the end of the likelihood computation
 
@@ -87,11 +91,19 @@ void Genes::setLeaveProb(double* aLeaveProbVect) const
 
 		aLeaveProbVect[N] = static_cast<double>(cnt); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
 #else // USE_AGGREGATION
-		double prob = 1./static_cast<double>(cnt+1);
+		double prob;
+		if (aAggregate > 0)
+		  prob = 1./static_cast<double>(cnt+1);
+		else
+		  prob = 1./static_cast<double>(cnt);
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[mCurrentPositions[i]] = prob;
-		aLeaveProbVect[N+1] = prob; // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+		if (aAggregate > 0) {
+		  aLeaveProbVect[N+1] = prob; // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
 
-		aLeaveProbVect[N] = static_cast<double>(cnt+1); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+		  aLeaveProbVect[N] = static_cast<double>(cnt+1); // Set to 1. to have the CPV initialized to all 1/cnt instead of 1
+		} else {
+		  aLeaveProbVect[N] = static_cast<double>(cnt);
+		}
 #endif
 #else
 		for(size_t i=0; i < cnt; ++i) aLeaveProbVect[i] = 1.; // Set to 1./cnt to have the CPV initialized to all 1/cnt instead of 1
@@ -355,7 +367,8 @@ void Genes::readFile(const char* aFilename, bool aCleanData)
 }
 
 #ifdef USE_AGGREGATION
-void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState) const
+void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState,
+			   int aAggregate) const
 {
 	size_t nspecies = mDnaSpecies.size();
 	// Save observed states
