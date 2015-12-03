@@ -297,7 +297,7 @@ public:
   ///
   /// @return List of lists of dependencies
   ///
-  const std::vector<std::vector<unsigned int>> &
+  const std::vector<std::vector<unsigned int> > &
   getTreeDependencies(void) const {
     return mTreeDependencies;
   }
@@ -307,7 +307,7 @@ public:
   ///
   /// @return List of lists of reverse dependencies
   ///
-  const std::vector<std::vector<unsigned int>> &
+  const std::vector<std::vector<unsigned int> > &
   getTreeRevDependencies(void) const {
     return mTreeRevDependencies;
   }
@@ -415,8 +415,8 @@ private:
   size_t mMarkedInternalBranch; ///< Number of the internal branch as marked in
 /// the tree file
 #ifdef USE_AGGREGATION
-  std::vector<std::vector<int>> mObservedCodons;
-  std::vector<std::vector<int>> mMapCodonToState;
+  std::vector<std::vector<int> > mObservedCodons;
+  std::vector<std::vector<int> > mMapCodonToState;
 #endif
 
 #ifdef NEW_LIKELIHOOD
@@ -425,10 +425,12 @@ private:
 
   /// The mProbs and mProbsOut layout
   ///
-  /// [site0][site1][site2]...  [site0][site1][site2]...				 each
+  /// [site0][site1][site2]...  [site0][site1][site2]...
+  /// each
   /// is
   /// VECTOR_SLOT bytes long (for which only the first N are significant)
-  /// [  set 0				 ][	 set 1				   ]...			 there are 4
+  /// [  set 0				 ][	 set 1				   ]...			 there are
+  /// 4
   /// (Nt)
   /// sets
   /// [	 node 0
@@ -442,7 +444,8 @@ private:
   /// classes
   CacheAlignedDoubleVector
       mProbsOut; ///< mProbs after multiplication by exp(Qt)
-  std::vector<std::vector<ForestNode *>> mNodesByLevel; ///< Each level contains
+  std::vector<std::vector<ForestNode *> >
+      mNodesByLevel; ///< Each level contains
   /// a list of pointers to
   /// nodes at this level.
   /// List start from the
@@ -453,23 +456,23 @@ private:
 #else
   /// Unified array for each branch probability vector
   CacheAlignedDoubleVector mProbs; ///< The concatenation of all the probability
-/// vectors for all the nodes and all the
-/// classes
+                                   /// vectors for all the nodes and all the
+                                   /// classes
 #endif
-  std::vector<std::vector<unsigned int>>
+  std::vector<std::vector<unsigned int> >
       mTreeDependencies; ///< mTreeDependencies[tj] = [t1 t2 t3] means: tj can
   /// be done after: t1 t2 t3
-  std::vector<std::vector<unsigned int>>
+  std::vector<std::vector<unsigned int> >
       mTreeRevDependencies; ///< mTreeRevDependencies[tj] = [t1 t2 t3] means: tj
 /// should be ready before: t1 t2 t3
 
 #ifdef NON_RECURSIVE_VISIT
-  std::vector<std::vector<ForestNode *>> mVisitTree; ///< List of pointers to
+  std::vector<std::vector<ForestNode *> > mVisitTree; ///< List of pointers to
   /// tree nodes (a list per
   /// site) in the
   /// non-recursive visit
   /// order
-  std::vector<std::vector<ForestNode *>> mVisitTreeParents; ///< List of parent
+  std::vector<std::vector<ForestNode *> > mVisitTreeParents; ///< List of parent
 /// pointers for the
 /// corresponding
 /// nodes in the

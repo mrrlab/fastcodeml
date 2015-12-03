@@ -18,24 +18,29 @@ class Ming2 {
 public:
   /// Constructor
   ///
-  /// @param[in] aModel				The pointer to the hypothesis class that will
+  /// @param[in] aModel				The pointer to the hypothesis class that
+  /// will
   /// be
   /// used
   /// @param[in] aTrace				Trace or not the optimizer
   /// progress
   /// @param[in] aVerbose				The verbose level
-  /// @param[in] aLowerBound			Lower limit of the variables to constrain
+  /// @param[in] aLowerBound			Lower limit of the variables to
+  /// constrain
   /// the
   /// interval on which the optimum should be computed
-  /// @param[in] aUpperBound			Upper limit of the variables to constrain
+  /// @param[in] aUpperBound			Upper limit of the variables to
+  /// constrain
   /// the
   /// interval on which the optimum should be computed
   /// @param[in] aDeltaForGradient	Delta used to compute the gradient
   /// @param[in] aRelativeError		Relative error to stop computation
-  /// @param[in] aStopIfBigger		If true stop computation as soon as value
+  /// @param[in] aStopIfBigger		If true stop computation as soon as
+  /// value
   /// is
   /// over aThreshold
-  /// @param[in] aThreshold			The threshold at which the maximization
+  /// @param[in] aThreshold			The threshold at which the
+  /// maximization
   /// should
   /// be stopped
   /// @param[in] aMaxIterations		Maximum number of iterations for the

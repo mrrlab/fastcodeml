@@ -33,11 +33,11 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets,
 
   // Take values from forest
   size_t num_sites = mForest.getNumSites();
-  std::vector<std::vector<unsigned int>> tree_dependencies =
+  std::vector<std::vector<unsigned int> > tree_dependencies =
       mForest.getTreeDependencies();
 
   // Collect the class dependencies
-  std::vector<std::vector<unsigned int>> tree_groups_dependencies;
+  std::vector<std::vector<unsigned int> > tree_groups_dependencies;
 
   // If no dependencies
   if (aNoParallel) {
@@ -219,7 +219,7 @@ bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy) {
   if (mNoParallel)
     return false;
 
-  const std::vector<std::vector<unsigned int>> &tree_rev_dependencies =
+  const std::vector<std::vector<unsigned int> > &tree_rev_dependencies =
       mForest.getTreeRevDependencies();
 
   // At each level collect the 'jolly' threads (trees that are not preconditions

@@ -99,11 +99,13 @@ struct HighLevelCoordinator::WorkTable {
   ///
   /// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0,
   /// JOB_H1, JOB_BEB, JOB_SHUTDOWN);
-  ///									  [1] to the fg branch number (or zero
-  ///for
+  ///									  [1] to the fg branch number (or
+  ///zero
+  /// for
   /// JOB_SHUTDOWN);
-  ///									  [2] zero or the number of variables for
-  ///a
+  ///									  [2] zero or the number of variables
+  ///for
+  /// a
   /// JOB_BEB or JOB_H0 requests
   /// @param[in] aRank The current worker rank
   /// @param[in] aInitFromH1 If true for a H0 request send back also all H1

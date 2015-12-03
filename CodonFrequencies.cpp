@@ -22,7 +22,7 @@ CodonFrequencies *CodonFrequencies::getInstance(void) {
 }
 
 void CodonFrequencies::setCodonFrequencies(
-    const std::vector<std::vector<unsigned int>> &aCodons,
+    const std::vector<std::vector<unsigned int> > &aCodons,
     CodonFrequencyModel aModel, bool aShowMessages) {
   // Compute mCodonFrequencies based on the selected model
   if (aModel == CODON_FREQ_MODEL_F3X4) {
@@ -106,7 +106,7 @@ void CodonFrequencies::setCodonFrequencies(
 }
 
 void CodonFrequencies::updateCodonCount(
-    const std::vector<std::vector<unsigned int>> &aCodons,
+    const std::vector<std::vector<unsigned int> > &aCodons,
     std::vector<double> &aCodonCount) const {
   // Zero the count array
   aCodonCount.assign(N, 0.);

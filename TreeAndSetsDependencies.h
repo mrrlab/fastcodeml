@@ -4,7 +4,7 @@
 
 /// List (each list depends on the previous) of list (sites to be executed in
 /// parallel) of pairs (site, site class) stored as site*4+site_class
-typedef std::vector<std::vector<unsigned int>> ListDependencies;
+typedef std::vector<std::vector<unsigned int> > ListDependencies;
 
 #include "Forest.h"
 

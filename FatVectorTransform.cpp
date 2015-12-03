@@ -14,12 +14,12 @@
 #endif
 
 void FatVectorTransform::setBranchDependencies(
-    const std::vector<std::vector<ForestNode *>> &aNodesByLevel) {
+    const std::vector<std::vector<ForestNode *> > &aNodesByLevel) {
   // Push only the branch id's (and compute num branches). The root is not
   // pushed!
   mNumBranches = 0;
   mBranchByLevel.clear();
-  std::vector<std::vector<ForestNode *>>::const_reverse_iterator inbl;
+  std::vector<std::vector<ForestNode *> >::const_reverse_iterator inbl;
   for (inbl = aNodesByLevel.rbegin(); inbl != aNodesByLevel.rend(); ++inbl) {
     std::vector<unsigned int> v;
     std::vector<ForestNode *>::const_iterator ifn = inbl->begin();
@@ -96,9 +96,9 @@ void FatVectorTransform::printBranchVisitSequence(void) const {
   std::cout << std::endl
             << "Branch at level" << std::endl;
   unsigned int level = 1;
-  std::vector<std::vector<unsigned int>>::const_iterator inbl =
+  std::vector<std::vector<unsigned int> >::const_iterator inbl =
       mBranchByLevel.begin();
-  const std::vector<std::vector<unsigned int>>::const_iterator end =
+  const std::vector<std::vector<unsigned int> >::const_iterator end =
       mBranchByLevel.end();
   for (; inbl != end; ++inbl, ++level) {
     std::cout << level << ": ";

@@ -116,7 +116,7 @@ void Genes::setLeaveProb(double *aLeaveProbVect) const
   }
 }
 
-void Genes::saveCodonsForCount(std::vector<std::vector<unsigned int>> &aCodons,
+void Genes::saveCodonsForCount(std::vector<std::vector<unsigned int> > &aCodons,
                                unsigned int aSiteMultiplicity) const {
   // Check if valid translation of the codon
   size_t cnt = mCurrentPositions.size();
@@ -379,8 +379,8 @@ void Genes::readFile(const char *aFilename, bool aCleanData) {
 }
 
 #ifdef USE_AGGREGATION
-void Genes::observedCodons(std::vector<std::vector<int>> &aObservedCodons,
-                           std::vector<std::vector<int>> &aMapCodonToState,
+void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons,
+                           std::vector<std::vector<int> > &aMapCodonToState,
                            int aAggregate) const {
   size_t nspecies = mDnaSpecies.size();
   size_t naggr = 0;
@@ -518,7 +518,7 @@ void Genes::initFullCodonMap(void) {
 
         // This is a valid, possibly ambiguous codon
         if (valid) {
-          mMapCodonToPosition.insert(std::pair<std::string, std::vector<int>>(
+          mMapCodonToPosition.insert(std::pair<std::string, std::vector<int> >(
               std::string(codona), pos));
         }
       }
@@ -528,11 +528,11 @@ void Genes::initFullCodonMap(void) {
 
 #ifdef USE_AGGREGATION
 void Genes::initCodonDistanceMap(void) {
-  for (std::map<std::string, std::vector<int>>::iterator it1 =
+  for (std::map<std::string, std::vector<int> >::iterator it1 =
            mMapCodonToPosition.begin();
        it1 != mMapCodonToPosition.end(); it1++)
     if (it1->second.size() == 1)
-      for (std::map<std::string, std::vector<int>>::iterator it2 =
+      for (std::map<std::string, std::vector<int> >::iterator it2 =
                mMapCodonToPosition.begin();
            it2 != mMapCodonToPosition.end(); it2++)
         if (it2->second.size() == 1) {
@@ -592,7 +592,7 @@ const std::vector<int> &Genes::getPositions(const char *aCodon) const {
   codon[3] = '\0';
 
   // Check if it is in the list of valid codons
-  std::map<std::string, std::vector<int>>::const_iterator im(
+  std::map<std::string, std::vector<int> >::const_iterator im(
       mMapCodonToPosition.find(std::string(codon)));
 
   // If no, return an empty list, else return the list of corresponding

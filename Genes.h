@@ -92,7 +92,7 @@ public:
   ///
   /// @exception FastCodeMLFatal If saved codon is invalid.
   ///
-  void saveCodonsForCount(std::vector<std::vector<unsigned int>> &aCodons,
+  void saveCodonsForCount(std::vector<std::vector<unsigned int> > &aCodons,
                           unsigned int aSiteMultiplicity) const;
 
   /// Check coherence between tree and genes.
@@ -132,8 +132,8 @@ public:
   /// @param[out] aObservedCodons For each site vector of observed codons
   /// @param[out] aMapCodonToObserved For each site map codon to a new state
   ///
-  void observedCodons(std::vector<std::vector<int>> &aObservedCodons,
-                      std::vector<std::vector<int>> &aMapCodonToState,
+  void observedCodons(std::vector<std::vector<int> > &aObservedCodons,
+                      std::vector<std::vector<int> > &aMapCodonToState,
                       int aAggregate) const;
 #endif
 
@@ -230,8 +230,8 @@ private:
   /// original sites
   size_t mOriginalNumSites; ///< Original number of sites (before cleaning)
 
-  std::map<std::string, std::vector<int>> mMapCodonToPosition; ///< Map codons
-                                                               ///(including
+  std::map<std::string, std::vector<int> > mMapCodonToPosition; ///< Map codons
+                                                                ///(including
 /// ambiguous
 /// ones) to
 /// positions on
