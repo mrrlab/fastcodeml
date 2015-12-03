@@ -197,7 +197,9 @@ private:
 	size_t										mOriginalNumSites;			///< Original number of sites (before cleaning)
 
 	std::map<std::string, std::vector<int> >	mMapCodonToPosition;		///< Map codons (including ambiguous ones) to positions on the CPV
+#ifdef USE_AGGREGATION
 	std::map<std::pair<int, int>, size_t >	        mMapCodonPairToDistance;	///< Map codon pairs to edit distance between them
+#endif
 	std::vector<int>							mEmptyVector;				///< Empty vector to be returned if no position available
 	mutable std::vector<int>					mCurrentPositions;			///< Positions for the last codon decoded
 
