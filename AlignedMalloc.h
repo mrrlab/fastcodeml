@@ -10,12 +10,13 @@
 ///
 /// @return Pointer to the allocated area
 ///
-extern void* alignedMalloc(size_t aSize, size_t aAlignment);
+extern void *alignedMalloc(size_t aSize, size_t aAlignment);
 
 /// Free the memory allocated with alignedMalloc.
 ///
-/// @param[in] aPtr The pointer to the memory (allocated with alignedMalloc) to be freed
+/// @param[in] aPtr The pointer to the memory (allocated with alignedMalloc) to
+/// be freed
 ///
-extern void alignedFree(void* aPtr);
+extern void alignedFree(void *aPtr);
 
 #endif

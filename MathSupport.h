@@ -29,8 +29,7 @@
 ///
 /// @return The dot product
 ///
-inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
-{
+inline double dot(const double *RESTRICT aV1, const double *RESTRICT aV2) {
 #if 0
 	double result;
    __m128d num1, num2, num3, num4;
@@ -50,61 +49,66 @@ inline double dot(const double* RESTRICT aV1, const double* RESTRICT aV2)
 	return result;
 #endif
 #ifdef USE_LAPACK
-	return ddot_(&N, aV1, &I1, aV2, &I1);
+  return ddot_(&N, aV1, &I1, aV2, &I1);
 #else
-	double tot = 0.;
-	for(int i=0; i < N; ++i) tot += aV1[i]*aV2[i];
-	return tot;
+  double tot = 0.;
+  for (int i = 0; i < N; ++i)
+    tot += aV1[i] * aV2[i];
+  return tot;
 #endif
 }
 
 #ifdef USE_AGGREGATION
 // first argument is always codon frequency
-inline double dotn(const double* RESTRICT aV1, const double* RESTRICT aV2, const std::vector<int> &aObservedCodons)
-{
-	//TODO add LAPACK ddot
-	double tot = 0.;
-	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) tot += aV1[*it]*aV2[*it];
-	// if this is not freq vector, we except unobserved state at N+1
-	float ufreq=1;
-	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) 
-		ufreq -= aV1[*it];
-	tot += ufreq * aV2[N+1];
+inline double dotn(const double *RESTRICT aV1, const double *RESTRICT aV2,
+                   const std::vector<int> &aObservedCodons) {
+  // TODO add LAPACK ddot
+  double tot = 0.;
+  for (std::vector<int>::const_iterator it = aObservedCodons.begin();
+       it != aObservedCodons.end(); ++it)
+    tot += aV1[*it] * aV2[*it];
+  // if this is not freq vector, we except unobserved state at N+1
+  float ufreq = 1;
+  for (std::vector<int>::const_iterator it = aObservedCodons.begin();
+       it != aObservedCodons.end(); ++it)
+    ufreq -= aV1[*it];
+  tot += ufreq * aV2[N + 1];
 
-	return tot;
+  return tot;
 }
 #endif
 
-/// Element-wise vector-vector multiplication (specialized to 61 elements vectors)
+/// Element-wise vector-vector multiplication (specialized to 61 elements
+/// vectors)
 ///
 /// @param[in,out] aVres Vector that should be multiplied by the aV one
 /// @param[in] aV Multiplicand (that is: for(i=0; i < N; ++i) aVres[i] *= aV[i])
 ///
-inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
-{
-//#ifdef USE_MKL_VML
-//	vdMul(N, aVres, aV, aVres);
-//#elif defined(__SSE2__)
-//	__m128d num1, num2, num3;
-//
-//	  for(int i=0; i < N-1; )
-//	  {
-//		  num1 = _mm_load_pd(aVres+i);
-//		  num2 = _mm_load_pd(aV+i);
-//		  num3 = _mm_mul_pd(num1, num2);
-//		  _mm_store_pd(aVres+i, num3);
-//		i += 2;
-//
-//		  num1 = _mm_load_pd(aVres+i);
-//		  num2 = _mm_load_pd(aV+i);
-//		  num3 = _mm_mul_pd(num1, num2);
-//		  _mm_store_pd(aVres+i, num3);
-//		i += 2;
-//	  }
-//	aVres[N-1] *= aV[N-1];
-//#else
-	// Manual unrolling gives the best results here
-	for(int i=0; i < 61; ++i) aVres[i] *= aV[i];
+inline void elementWiseMult(double *RESTRICT aVres, const double *RESTRICT aV) {
+  //#ifdef USE_MKL_VML
+  //	vdMul(N, aVres, aV, aVres);
+  //#elif defined(__SSE2__)
+  //	__m128d num1, num2, num3;
+  //
+  //	  for(int i=0; i < N-1; )
+  //	  {
+  //		  num1 = _mm_load_pd(aVres+i);
+  //		  num2 = _mm_load_pd(aV+i);
+  //		  num3 = _mm_mul_pd(num1, num2);
+  //		  _mm_store_pd(aVres+i, num3);
+  //		i += 2;
+  //
+  //		  num1 = _mm_load_pd(aVres+i);
+  //		  num2 = _mm_load_pd(aV+i);
+  //		  num3 = _mm_mul_pd(num1, num2);
+  //		  _mm_store_pd(aVres+i, num3);
+  //		i += 2;
+  //	  }
+  //	aVres[N-1] *= aV[N-1];
+  //#else
+  // Manual unrolling gives the best results here
+  for (int i = 0; i < 61; ++i)
+    aVres[i] *= aV[i];
 #if 0
 	for(int i=0; i < 60; )
 	{
@@ -117,13 +121,16 @@ inline void elementWiseMult(double* RESTRICT aVres, const double* RESTRICT aV)
 	}
 	aVres[60] *= aV[60];
 #endif
-//#endif
+  //#endif
 }
 
 #ifdef USE_AGGREGATION
-inline void elementWiseMultN(double* RESTRICT aVres, const double* RESTRICT aV, const std::vector<int> &aObservedCodons) {
-	for(std::vector<int>::const_iterator it=aObservedCodons.begin(); it != aObservedCodons.end(); ++it) aVres[*it] *= aV[*it];
-	aVres[N + 1] *= aV[N + 1];
+inline void elementWiseMultN(double *RESTRICT aVres, const double *RESTRICT aV,
+                             const std::vector<int> &aObservedCodons) {
+  for (std::vector<int>::const_iterator it = aObservedCodons.begin();
+       it != aObservedCodons.end(); ++it)
+    aVres[*it] *= aV[*it];
+  aVres[N + 1] *= aV[N + 1];
 }
 #endif
 
@@ -134,26 +141,28 @@ inline void elementWiseMultN(double* RESTRICT aVres, const double* RESTRICT aV, 
 ///
 /// @return True if the two parameters differs more than (hardcoded) TOL
 ///
-inline bool isDifferent(double aFirst, double aSecond)
-{
-	static const double TOL = 1e-8;
-	const double diff = aFirst - aSecond;
-	return (diff > TOL || diff < -TOL);
+inline bool isDifferent(double aFirst, double aSecond) {
+  static const double TOL = 1e-8;
+  const double diff = aFirst - aSecond;
+  return (diff > TOL || diff < -TOL);
 }
 
 #ifdef USE_CPV_SCALING
 
-
 #ifdef USE_AGGREGATION
-inline double normalizeVectorN(double* RESTRICT aVector, const std::vector<int> &aObservedCodons)
-{
-	double norm = 0.;
-	for(std::vector<int>::const_iterator it = aObservedCodons.begin(); it != aObservedCodons.end(); ++it) norm += aVector[*it]*aVector[*it];
-	norm += aVector[N + 1] * aVector[N + 1];
-	norm = sqrt(norm);
-	for(std::vector<int>::const_iterator it = aObservedCodons.begin(); it != aObservedCodons.end(); ++it) aVector[*it] /= norm;
-	aVector[N + 1] /= norm;
-	return norm;
+inline double normalizeVectorN(double *RESTRICT aVector,
+                               const std::vector<int> &aObservedCodons) {
+  double norm = 0.;
+  for (std::vector<int>::const_iterator it = aObservedCodons.begin();
+       it != aObservedCodons.end(); ++it)
+    norm += aVector[*it] * aVector[*it];
+  norm += aVector[N + 1] * aVector[N + 1];
+  norm = sqrt(norm);
+  for (std::vector<int>::const_iterator it = aObservedCodons.begin();
+       it != aObservedCodons.end(); ++it)
+    aVector[*it] /= norm;
+  aVector[N + 1] /= norm;
+  return norm;
 }
 #endif
 
@@ -163,24 +172,23 @@ inline double normalizeVectorN(double* RESTRICT aVector, const std::vector<int> 
 ///
 /// @return The length of the vector
 ///
-inline double normalizeVector(double* RESTRICT aVector)
-{
+inline double normalizeVector(double *RESTRICT aVector) {
 #ifdef USE_LAPACK
-	double norm = dnrm2_(&N, aVector, &I1);
-	double inv_norm = 1./norm;
+  double norm = dnrm2_(&N, aVector, &I1);
+  double inv_norm = 1. / norm;
 
-	dscal_(&N, &inv_norm, aVector, &I1);
+  dscal_(&N, &inv_norm, aVector, &I1);
 #else
-	double norm = 0.;
-	for(int i=0; i < N; ++i) norm += aVector[i]*aVector[i];
-	norm = sqrt(norm);
-	for(int i=0; i < N; ++i) aVector[i] /= norm;
+  double norm = 0.;
+  for (int i = 0; i < N; ++i)
+    norm += aVector[i] * aVector[i];
+  norm = sqrt(norm);
+  for (int i = 0; i < N; ++i)
+    aVector[i] /= norm;
 #endif
-	return norm;
+  return norm;
 }
 
 #endif
 
-
 #endif
-
