@@ -67,20 +67,23 @@ public:
   ///
   long long getCodonIdx(std::string aSpecie, size_t aSite) const;
 
-  /// Set the correct positions in the leave probability vector to
-  /// 1/num_positions.
-  ///
-  /// @param[out] aLeaveProbVect The leave probability vector to be set.
-  ///
-  /// @exception FastCodeMLFatal If saved codon is invalid.
-  ///
+/// Set the correct positions in the leave probability vector to
+/// 1/num_positions.
+///
+/// @param[out] aLeaveProbVect The leave probability vector to be set.
+///
+/// @exception FastCodeMLFatal If saved codon is invalid.
+///
+#ifdef USE_AGGREGATION
+  void setLeaveProb(double *aLeaveProbVect, int aAggregate) const;
+#else
   void setLeaveProb(double *aLeaveProbVect) const;
+#endif
 
   /// Save codons in a given array for later count.
   /// For each codon the aCodon array contains one more vector that starts with
-  /// the aSiteMultiplicity value followed by the codon positions
-  /// that is, one position for non-ambiguous codons, 2 to 61 for ambiguous
-  /// codons.
+  /// the aSiteMultiplicity value followed by the codon positions that is, one
+  /// position for non-ambiguous codons, 2 to 61 for ambiguous codons.
   ///
   /// @param[in,out] aCodons Codon positions and multiplicity.
   /// @param[in] aSiteMultiplicity The multiplicity of the given site.
@@ -211,7 +214,7 @@ private:
   std::vector<std::string> mDnaSpecies;        ///< The list of species labels
   std::vector<std::string> mDnaGene;           ///< The gene DNA basis strings
   std::vector<unsigned int> mSiteMultiplicity; ///< Site multiplicity (sites
-    /// with multiplicity of zero has been removed from the site list)
+  /// with multiplicity of zero has been removed from the site list)
   std::vector<unsigned int>
       mMapSiteToDnaGene; ///< Map the site number to the position in mDnaGene
   std::map<std::string, unsigned int> mMapSpecieToDnaGene; ///< Map specie name
@@ -221,10 +224,10 @@ private:
   size_t mOriginalNumSites; ///< Original number of sites (before cleaning)
 
   std::map<std::string, std::vector<int> > mMapCodonToPosition; ///< Map codons
-    /// (including ambiguous ones) to positions on the CPV
+/// (including ambiguous ones) to positions on the CPV
 #ifdef USE_AGGREGATION
   std::map<std::pair<int, int>, size_t> mMapCodonPairToDistance; ///< Map codon
-    /// pairs to edit distance  between them
+/// pairs to edit distance  between them
 #endif
   std::vector<int>
       mEmptyVector; ///< Empty vector to be returned if no position available
