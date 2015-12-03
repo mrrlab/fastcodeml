@@ -182,8 +182,6 @@ int main(int aRgc, char **aRgv) {
       std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
       if (cmd.mResultsFile)
         std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
-      if (cmd.mNumThreads)
-        std::cout << "Threads:        " << cmd.mNumThreads << std::endl;
       if (cmd.mFixedBranchLength)
         std::cerr << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
