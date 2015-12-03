@@ -22,6 +22,9 @@ protected:
 	explicit Genes(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel), mOriginalNumSites(0)
 	{
 		initFullCodonMap();
+#ifdef USE_AGGREGATION
+		initCodonDistanceMap();
+#endif
 	}
 
 	/// Destructor
@@ -112,9 +115,10 @@ public:
 #ifdef USE_AGGREGATION
 	/// Generate observed codon tables.
 	///
-	// @param[out] aObservedCodons For each site vector of observed codons
-	// @param[out] aMapCodonToObserved For each site map codon to a new state
-	//
+	/// @param[in] aAggregate Aggregation mode, 0=no aggregation.
+	/// @param[out] aObservedCodons For each site vector of observed codons
+	/// @param[out] aMapCodonToObserved For each site map codon to a new state
+	///
 	void observedCodons(std::vector<std::vector<int> > &aObservedCodons, std::vector<std::vector<int> > &aMapCodonToState,
 			    int aAggregate) const;
 #endif
@@ -155,6 +159,14 @@ private:
 	///
 	void initFullCodonMap(void);
 
+#ifdef USE_AGGREGATION
+	/// Initialize the valid codon distance map.
+	/// This routine fills mMapCodonPairToDistance.
+	///
+	void initCodonDistanceMap(void);
+#endif
+
+
 	/// Compare two codons.
 	///
 	/// @param[in] aCodon1 First codon to be compared (three characters, no need for zero termination)
@@ -177,6 +189,7 @@ private:
 	size_t										mOriginalNumSites;			///< Original number of sites (before cleaning)
 
 	std::map<std::string, std::vector<int> >	mMapCodonToPosition;		///< Map codons (including ambiguous ones) to positions on the CPV
+	std::map<std::pair<int, int>, int >	        mMapCodonPairToDistance;	///< Map codon pairs to edit distance between them
 	std::vector<int>							mEmptyVector;				///< Empty vector to be returned if no position available
 	mutable std::vector<int>					mCurrentPositions;			///< Positions for the last codon decoded
 

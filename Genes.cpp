@@ -381,8 +381,9 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 			// Convert the site to the position on the gene
 			unsigned int position_on_gene = mMapSiteToDnaGene[j];
 
-			// Get the list of positions for the given codon
+			// Get the species i dna sequence
 			const char *p = mDnaGene[i].c_str();
+
 			//mObservedCodons[j]
 			const std::vector<int>& pos = getPositions(&p[3*position_on_gene]);
 
@@ -398,9 +399,9 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 		s.erase(last, s.end());
 		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
 
-		if (s.size() >= 61)
-			throw FastCodeMLFatal("Positions with full codon spectra. It's not working for now");
-
+		if (s.size() >= 61) { // If all the possible codons, no point to aggregate.
+		  s.clear();
+		}
 		aObservedCodons.push_back(s);
 	}
 	for(size_t j=0; j < mSiteMultiplicity.size(); ++j) {
@@ -511,6 +512,23 @@ void Genes::initFullCodonMap(void)
 		}
 	}
 }
+
+#ifdef USE_AGGREGATION
+void Genes::initCodonDistanceMap(void)
+{
+  for (std::map<std::string, std::vector<int> >::iterator it1=mMapCodonToPosition.begin(); it1!=mMapCodonToPosition.end(); it1++)
+    if (it1->second.size() == 1)
+      for (std::map<std::string, std::vector<int> >::iterator it2=mMapCodonToPosition.begin(); it2!=mMapCodonToPosition.end(); it2++)
+	if (it2->second.size() == 1) {
+	  // compute edit distance
+	  int dist = 0;
+	  for (int i = 0; i < 3; i++)
+	    if (it1->first[0] != it2->first[1])
+	      ++dist;
+	  mMapCodonPairToDistance.insert(std::make_pair(std::make_pair(it1->second[0], it2->second[0]), dist));
+	}
+}
+#endif
 
 
 const std::vector<int>& Genes::getPositions(const char* aCodon) const
