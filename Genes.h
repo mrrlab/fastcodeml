@@ -164,6 +164,14 @@ private:
 	/// This routine fills mMapCodonPairToDistance.
 	///
 	void initCodonDistanceMap(void);
+
+	/// Finds maximum minimum distance for the vector of codons.
+	///
+	/// @param[in] aCodons Vector of codons
+	///
+	/// @return Maximum minimal edit distance.
+	///
+	int maxMinCodonDistance(std::vector<int> aCodons);
 #endif
 
 

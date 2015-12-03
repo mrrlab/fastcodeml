@@ -528,6 +528,21 @@ void Genes::initCodonDistanceMap(void)
 	  mMapCodonPairToDistance.insert(std::make_pair(std::make_pair(it1->second[0], it2->second[0]), dist));
 	}
 }
+
+int Genes::maxMinCodonDistance(std::vector<int> aCodons)
+{
+  int maxDist = 0; // maximum minimum edit distance among every codons
+  for (std::vector<int>::iterator it1=aCodons.begin(); it1!=aCodons.end(); it1++) {
+    int minDist = -1; // minimal edit distance between this codon and some other
+    for (std::vector<int>::iterator it2=aCodons.begin(); it2!=aCodons.end(); it2++)
+      if (*it1 != *it2) {
+	int dist = mMapCodonPairToDistance[std::make_pair(*it1, *it2)];
+	if (minDist < 0 || minDist > dist) minDist = dist;
+      }
+    if (maxDist < minDist) maxDist = minDist;
+  }
+  return maxDist;
+}
 #endif
 
 
