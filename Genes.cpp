@@ -435,7 +435,7 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons,
   }
   if (mVerboseLevel >= VERBOSE_INFO_OUTPUT)
     std::cout << "N. aggregate: " << std::setw(6) << naggr << "/"
-              << mOriginalNumSites << std::endl
+              << mSiteMultiplicity.size() << std::endl
               << std::endl;
 }
 #endif
