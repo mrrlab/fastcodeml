@@ -149,6 +149,12 @@ int main(int aRgc, char **aRgv) {
         std::cout << "Reduce forest:  Do not reduce" << std::endl;
       else
         std::cout << "Reduce forest:  Aggressive" << std::endl;
+#ifdef USE_AGGREGATION
+      if (cmd.mAggregate)
+        std::cout << "Aggregate:      " << cmd.mAggregate << std::endl;
+      else
+        std::cout << "Aggregate:      No" << std::endl;
+#endif
       if (cmd.mInitH0fromH1)
         std::cout << "Starting val.:  From H1" << std::endl;
       else if (cmd.mInitFromParams && cmd.mBranchLengthsFromFile)
