@@ -123,7 +123,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	const std::map<unsigned int, unsigned int>::const_iterator end(map_internal_to_branchID.end());
 	for(; im != end; ++im) {mTableInternalToBranchID[im->first] = im->second;
 	// omid
-	std::cout << "map : " << im->first << " , " << im ->second << std ::endl;
+	//std::cout << "map : " << im->first << " , " << im ->second << std ::endl;
 
 
 	// end omid
@@ -260,10 +260,11 @@ void Forest::postLoad(void)
 bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<int>& aFgSet) const
 {
 	const size_t num_branches  = getNumBranches() ; /* omid getNumInternalBranches(); end omid */
+	const size_t num_internal_branches  = getNumInternalBranches();
 
 	// omid
 
-	std :: cout << "num_branches" << num_branches << std :: endl;
+	//std :: cout << "num_branches" << num_branches << std :: endl;
 
 	// end omid
 
@@ -271,7 +272,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 
 	// omid
 
-	std :: cout << "marked_branch" << marked_branch << std :: endl;
+	//std :: cout << "marked_branch" << marked_branch << std :: endl;
 
 	// end omid
 
@@ -291,7 +292,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 	bool do_all = true;
 
 	// Adjust the number of branches to compute
-	if(aCmdLine.mBranchFromFile)
+	/*if(aCmdLine.mBranchFromFile)
 	{
 		// Branch from file, verify if valid
 		if(marked_branch >= num_branches)
@@ -306,8 +307,8 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 			aBranchEnd	 = marked_branch;
 			do_all = false;
 		}
-	}
-	else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >= num_branches)
+	}*/
+	/*else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >= num_branches)
 	{
 		// Invalid start value, ignoring, do all branches
 		if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl << "Invalid branch requested. Ignoring" << std::endl;
@@ -336,12 +337,18 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 			aBranchEnd = static_cast<size_t>(aCmdLine.mBranchEnd);
 			if(aBranchStart > 0 && aBranchEnd < num_branches-1) do_all = false;
 		}
-	}
-	else
+	}*/
+	if (aCmdLine.mBranchAll)
 	{
 		// No limit set, do all branches
 		aBranchStart = 0;
 		aBranchEnd	 = num_branches-1;
+	}
+	else
+	{
+		// default, do all internal branches
+		aBranchStart = 0;
+		aBranchEnd	 = num_internal_branches-1;
 	}
 
 	return do_all;

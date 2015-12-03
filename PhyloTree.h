@@ -48,15 +48,16 @@ public:
 	///
 	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const =0;
 
-	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the internal branch number.
+	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the branch number.
 	///
 	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	/// @param[in] aInternalBranch Internal branch identifier to annotate the current branch.
+	/// @param[in] whether branch leaves should be considered or not
 	///
 	/// @return The new internal branch id
 	///
-	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0) const =0;
+	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0, bool wLeaves=false) const =0;
 
 	/// Return the list of species.
 	///

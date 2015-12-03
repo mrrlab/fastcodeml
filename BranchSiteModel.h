@@ -216,6 +216,10 @@ public:
 	///
 	void getScales(std::vector<double>& aScales) const {aScales.resize(2); aScales[0] = mBgScale; aScales[1] = mFgScale;}
 
+	/// Get the array of branch lengths.
+	///
+	std::vector<double> getBranchLengths(void) const {return mBranches;}
+
 	/// Verify if the code entered on command line is valid.
 	///
 	/// @param[in] aOptimizationAlgo The code set on the command line.
@@ -360,8 +364,8 @@ protected:
 	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
 	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
 	bool						mNoParallel;		///< True if no preparation for multithreading should be done
-	bool					   mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
-	std::vector<double>		mBranches;			///< Variable with the branch lengths
+	bool					    mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
+	std::vector<double>		    mBranches;			///< Variable with the branch lengths
 
 private:
 	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer

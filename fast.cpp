@@ -126,12 +126,13 @@ int main(int aRgc, char **aRgv)
 													std::cout << "Verbose level:  " << cmd.mVerboseLevel << " (" << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
 		if(cmd.mSeed)								std::cout << "Seed:			  " << cmd.mSeed << std::endl;
 		if(cmd.mBranchFromFile)						std::cout << "Branch:		  From tree file" << std::endl;
-		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchStart == cmd.mBranchEnd)
-													std::cout << "Branch:		  " << cmd.mBranchStart << std::endl;
-		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
-													std::cout << "Branches:		  " << cmd.mBranchStart << "-end" << std::endl;
-		else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
-													std::cout << "Branches:		  " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
+		else if(cmd.mBranchAll)						std::cout << "FG Branches:	  All (internals + leaves) " << std::endl;
+		//else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchStart == cmd.mBranchEnd)
+		//											std::cout << "Branch:		  " << cmd.mBranchStart << std::endl;
+		//else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
+		//											std::cout << "Branches:		  " << cmd.mBranchStart << "-end" << std::endl;
+		//else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
+		//											std::cout << "Branches:		  " << cmd.mBranchStart << '-' << cmd.mBranchEnd << std::endl;
 		if(!cmd.mStopIfNotLRT)						std::cout << "H0 pre stop:	  No" << std::endl;
 		if(cmd.mIgnoreFreq)							std::cout << "Codon freq.:	  Ignore" << std::endl;
 		if(cmd.mDoNotReduceForest)					std::cout << "Reduce forest:  Do not reduce" << std::endl;
@@ -227,7 +228,7 @@ int main(int aRgc, char **aRgv)
 	Forest forest(cmd.mVerboseLevel);
 
 	// Enclose file loading into a block so temporary structures could be deleted when no more needed
-	{
+	//{
 	// Load the multiple sequence alignment (MSA)
 	Phylip msa(cmd.mVerboseLevel);
 	msa.readFile(cmd.mGeneFile, cmd.mCleanData);
@@ -239,30 +240,29 @@ int main(int aRgc, char **aRgv)
 	// Check coherence between the two files
 	msa.checkNameCoherence(tree.getSpecies());
 
-	// omid
-	std :: cout << "TREE BEFORE UNROOTING" << std::endl;
+	//Print the tree with the numbering of internal branches
+	//std :: cout << "INITIAL TREE" << std::endl;
+	//tree.printTreeAnnotated(std::cout, NULL, 0, true);
+	//std :: cout << std::endl;
 
+	// omid
+/*	std :: cout << "TREE BEFORE UNROOTING" << std::endl;
 	std::ostream & objOstream = std::cout;
 	tree.printTreeAnnotated(objOstream, NULL,0);
 	std :: cout << "TREE INFO (number of branches)" << std::endl;
-	std :: cout << tree.getNumBranches() << std::endl;
-
+	std :: cout << tree.getNumBranches() << std::endl;*/
 	// end omid
 
 	// Check root
 
-		tree.checkRootBranches();
+	tree.checkRootBranches();
 
 	// omid
-	std :: cout << "TREE AFTER UNROOTING" << std::endl;
-
-	tree.printTreeAnnotated(objOstream, NULL,0);
-
-	std :: cout << "TREE INFO (number of branches)" << std::endl;
-	std :: cout << tree.getNumBranches() << std::endl;
-
-
-
+	//std :: cout << "TREE AFTER UNROOTING" << std::endl;
+	//tree.printTreeAnnotated(std::cout, NULL, 0, true);
+	//std :: cout << std::endl;
+	//std :: cout << "TREE INFO (number of branches)" << std::endl;
+	//std :: cout << tree.getNumBranches() << std::endl;
 	// end omid
 
 	// If times from file then check for null branch lengths for any leaf
@@ -277,13 +277,13 @@ int main(int aRgc, char **aRgv)
 			std::cout << "Found null or missing branch length in tree file. On leaves: " << zero_on_leaf_cnt << "  on internal branches: " << zero_on_int_cnt << std::endl;
 		}
 
-		if(zero_on_leaf_cnt > 0)
-		{
+		//if(zero_on_leaf_cnt > 0)
+		//{
 			//throw FastCodeMLFatal("Null or missing branch length in tree file");
-		}
+		//}
 	}
 
-	// Print the tree with the numbering of internal branches
+	//Print the tree with the numbering of internal branches
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) tree.printTreeAnnotated(std::cout);
 
 	// Load the forest
@@ -291,12 +291,12 @@ int main(int aRgc, char **aRgv)
 
 	// omid
 
-	std :: cout << "marked internal branch (phylotree): " << tree.getMarkedInternalBranch() << std :: endl;
+	// std :: cout << "marked internal branch (phylotree): " << tree.getMarkedInternalBranch() << std :: endl;
 
 	// omid
 
 
-	}
+	//}
 
 	// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 	if(!cmd.mDoNotReduceForest)
@@ -355,8 +355,7 @@ int main(int aRgc, char **aRgv)
 	}
 #endif
 
-	// Initialize the output results file (if the argument is null, no file is created)
-	WriteResults output_results(cmd.mResultsFile);
+
 
 	// Compute the range of branches to mark as foreground
 	size_t branch_start, branch_end;
@@ -366,7 +365,8 @@ int main(int aRgc, char **aRgv)
 	forest.getBranchRange(cmd, branch_start, branch_end, fg_set); // omid : fgset is added to save a list of fg branches
 
 	// omid
-	std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
+
+	/*std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
 	std :: cout << "total number of internal branches: " << forest.getNumInternalBranches() << std :: endl;
 	std :: cout << "marked internal branch (forest): " << forest.getMarkedInternalBranch() << std :: endl;
 	std :: cout << "num of fg_set members: " << fg_set.size() << std :: endl;
@@ -377,25 +377,191 @@ int main(int aRgc, char **aRgv)
 
 
 	for (int i=0; i<forest.getNumBranches(); i++)
-	std :: cout << "internal branch of fg "<< i << " : "<< forest.adjustFgBranchIdx(i) << std :: endl;
+	std :: cout << "internal branch of fg "<< i << " : "<< forest.adjustFgBranchIdx(i) << std :: endl;*/
 
 	// end omid
+
+	std :: cout << "FOREGROUND BRANCH(ES) : ";
+	for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
+	    std::cout << " " << *it << " ";
+	std :: cout << std :: endl;
 
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
 
-
 	double lnl0, lnl1 = 0.;
-	if (fg_set.size()>1) // in case of more than one fg branch
+
+	if (!fg_set.empty()) // in case of marked fg branches (one or multiple fg)
 	{
 		// Initialize the models
 		MfgBranchSiteModelNullHyp h0(forest, cmd);
 		MfgBranchSiteModelAltHyp  h1(forest, cmd);
 
 		// Initialize the test
-		BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
+		MfgBayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
-		if(cmd.mInitFromParams)			h0.initFromParams();
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		//if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch set : " ;
+		//for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
+		//	    std::cout << " " << *it << ",";
+		//std::cout << std::endl;
+
+				// Compute the alternate model maximum loglikelihood
+				double lnl1 = 0.;
+				if(cmd.mComputeHypothesis != 0)
+				{
+					if(cmd.mInitFromParams)			h1.initFromParams();
+					if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
+
+					lnl1 = h1(fg_set);
+					h1.saveComputedTimes();
+
+					//std::cout << "lnl1 = " << lnl1 << std::endl;
+					// Save the value for formatted output
+					//output_results.saveLnL(fg_set, lnl1, 1);
+				}
+
+				// Compute the null model maximum loglikelihood
+				double lnl0 = 0.;
+				if(cmd.mComputeHypothesis != 1)
+				{
+					if(cmd.mInitH0fromH1)				h0.initFromResult(h1.getVariables());
+					else
+					{
+						if(cmd.mInitFromParams)			h0.initFromParams();
+						if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+					}
+
+					lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
+
+					//std::cout << "lnl0 = " << lnl0 << std::endl;
+
+					// Save the value for formatted output (only if has not be forced to stop)
+					//if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+				}
+
+				if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+				{
+					std::cout << std::endl;
+					if(cmd.mComputeHypothesis != 1)
+					{
+						std::cout << "LnL0: ";
+						if(lnl0 == std::numeric_limits<double>::infinity())
+							std::cout << "**Invalid result**";
+						else if(lnl0 < DBL_MAX)
+							std::cout << std::setprecision(15) << std::fixed << lnl0;
+						else
+							std::cout << "(Doesn't pass LRT, skipping)";
+						std::cout << " Function calls: " << h0.getNumEvaluations() << "	  ";
+						std::cout << std::endl << std::endl;
+						if(lnl0 != std::numeric_limits<double>::infinity())
+						{
+							std::string s0 = h0.printFinalVars(std::cout);
+
+							//std::cout<<"EDW0: "<< s0 <<std::endl;
+							//output_results.saveParameters(fg_branch, s0, 0);
+						}
+						std::cout << std::endl;
+					}
+					if(cmd.mComputeHypothesis != 0)
+					{
+						std::cout << "LnL1: ";
+						if(lnl1 == std::numeric_limits<double>::infinity())
+							std::cout << "**Invalid result**";
+						else
+							std::cout << std::setprecision(15) << std::fixed << lnl1;
+						std::cout << " Function calls: " << h1.getNumEvaluations();
+						std::cout << std::endl << std::endl;
+						if(lnl1 != std::numeric_limits<double>::infinity())
+						{
+							std::string s1= h1.printFinalVars(std::cout);
+							//std::cout<<"EDW1: "<< s1 <<std::endl;
+							//output_results.saveParameters(fg_branch, s1, 1);
+						}
+						std::cout << std::endl;
+					}
+					if(cmd.mComputeHypothesis > 1)
+					{
+						if(lnl0 == std::numeric_limits<double>::infinity() || lnl1 == std::numeric_limits<double>::infinity())
+							std::cout << "LRT: **Invalid result**";
+						else if(lnl0 < DBL_MAX)
+							std::cout << "LRT: " << std::setprecision(15) << std::fixed << lnl1 - lnl0 << "	 (threshold: " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT << ')';
+						else
+							std::cout << "LRT: < " << std::setprecision(15) << std::fixed << THRESHOLD_FOR_LRT;
+						std::cout << std::endl;
+					}
+				}
+
+				// If requested set the time in the forest and export to a graph visualization tool
+				if(cmd.mGraphFile)
+				{
+					switch(cmd.mExportComputedTimes)
+					{
+					case 0:
+						h0.saveComputedTimes();
+						break;
+
+					case 1:
+						h1.saveComputedTimes();
+						break;
+
+					default:
+						break;
+					}
+
+					// Use the forest export class
+					ForestExport fe(forest);
+					fe.exportForest(cmd.mGraphFile, 0);
+				}
+
+				// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
+				if(cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX && BranchSiteModel::performLRT(lnl0, lnl1))
+				{
+					// Get the scale values from the latest optimized h1.
+					std::vector<double> scales(2);
+					h1.getScales(scales);
+
+					// Run the BEB test
+					beb.computeBEB(h1.getVariables(), fg_set, scales);
+
+					// Output the sites under positive selection (if any)
+					if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) beb.printPositiveSelSites(fg_set);
+
+					// Get the sites under positive selection for printing in the results file (if defined)
+					//if(output_results.isWriteResultsEnabled())
+					//{
+						std::vector<unsigned int> positive_sel_sites;
+						std::vector<double> positive_sel_sites_prob;
+						beb.extractPositiveSelSites(positive_sel_sites, positive_sel_sites_prob);
+
+						std::cout << std::endl << "Positively selected sites and their probabilities : " ;
+						std::cout << std::endl;
+						for (std::vector<unsigned int>::iterator it=positive_sel_sites.begin(); it!=positive_sel_sites.end(); ++it)
+						std::cout << " " << *it << ",";
+						std::cout << std::endl;
+						for (std::vector<double>::iterator it=positive_sel_sites_prob.begin(); it!=positive_sel_sites_prob.end(); ++it)
+						std::cout << " " << *it << ",";
+						std::cout << std::endl;
+
+						//output_results.savePositiveSelSites(fg_set, positive_sel_sites, positive_sel_sites_prob);
+					//}
+				}
+
+				// omid
+				//h1.saveComputedTimes();
+				//std :: cout << std::endl;
+				//std :: cout << "FINAL TREE" << std::endl;
+				tree.printTreeAnnotated(std::cout, NULL, 0, true);
+				std :: cout << std::endl;
+				//std :: cout << "TREE INFO (number of branches)" << std::endl;
+				//std :: cout << tree.getNumBranches() << std::endl;
+				// end omid
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		/*if(cmd.mInitFromParams)			h0.initFromParams();
 		if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
 
 		lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, 0-THRESHOLD_FOR_LRT);
@@ -405,12 +571,17 @@ int main(int aRgc, char **aRgv)
 		if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 		lnl1 = h1(fg_set);
-		std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;
+		std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
 		return -1;
 	}
 
 	// Else for all requested internal branches
+
+	// branch_start = branch_end = 5 ;
+
+	// Initialize the output results file (if the argument is null, no file is created)
+	WriteResults output_results(cmd.mResultsFile);
 
 	// Initialize the models
 	BranchSiteModelNullHyp h0(forest, cmd);
@@ -686,9 +857,6 @@ Usage:
 
 -nt	 --number-of-threads (required argument)
 		Number of threads (1 for non parallel execution)
-
--bf	 --branch-from-file (no argument)
-		Do only the branch marked in the file as foreground branch
 
 -hy	 --only-hyp (required argument)
 		Compute only H0 if 0, H1 if 1

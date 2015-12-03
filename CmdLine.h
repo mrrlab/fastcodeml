@@ -39,8 +39,9 @@ public:
 		mResultsFile(NULL),
 		mVerboseLevel(VERBOSE_ONLY_RESULTS),
 		mSeed(0),
-		mBranchStart(UINT_MAX),
-		mBranchEnd(UINT_MAX),
+		mBranchAll(false),
+		//mBranchStart(UINT_MAX),
+		//mBranchEnd(UINT_MAX),
 		mExportComputedTimes(UINT_MAX),
 		mComputeHypothesis(UINT_MAX),
 		mOptimizationAlgo(22),
@@ -63,8 +64,8 @@ public:
 		mCleanData(false),
 		mStopIfNotLRT(true),
 //		mCmdLineImpl(NULL),
-			mFixedBranchLength(false),
-				mCmdLineImpl(NULL)
+		mFixedBranchLength(false),
+		mCmdLineImpl(NULL)
 
 	{}
 
@@ -93,9 +94,10 @@ public:
 	const char*		mGraphFile;				///< If not null export the forest to this file in GML format to be visualized using R igraph package or yEd editor
 	const char*		mResultsFile;			///< File to which the results should be written
 	unsigned int	mVerboseLevel;			///< Verbosity level. 0: no messages; 1: basic messages; 2: messages useful for debugging; 3: really annoying
-	unsigned int	mSeed;					///< Random number generator seed (0 means not set from command line)
-	unsigned int	mBranchStart;			///< Compute from this branch. The numbering starts at 0 (UINT_MAX means run all branches)
-	unsigned int	mBranchEnd;				///< Compute to this branch. The numbering starts at 0 (UINT_MAX means run all branches). It is >= mBranchStart
+	unsigned int	mSeed; 					///< Random number generator seed (0 means not set from command line)
+	bool			mBranchAll;				///< If it should consider all branches (internals plus leaves) as foreground >
+	//unsigned int	mBranchStart;			///< Compute from this branch. The numbering starts at 0 (UINT_MAX means run all branches)
+	//unsigned int	mBranchEnd;				///< Compute to this branch. The numbering starts at 0 (UINT_MAX means run all branches). It is >= mBranchStart
 	unsigned int	mExportComputedTimes;	///< If 0 or 1 the times exported are the computed ones in H0 or H1, otherwise (UINT_MAX) the one read from file
 	unsigned int	mComputeHypothesis;		///< If set to 0 compute only H0, if set to 1 compute only H1, otherwise compute both
 	unsigned int	mOptimizationAlgo;		///< Select the optimization algorithm to use
@@ -106,14 +108,14 @@ public:
 	bool			mBranchLengthsFromFile;	///< The initial value of the branch lengths is taken from the phylo tree file
 	bool			mNoMaximization;		///< Only the first step of the likelihood maximization is taken
 	bool			mTrace;					///< Trace the optimization steps
-		unsigned int		mNumThreads;					///< Number of threads (if 1 the parallelization is disabled)
+	unsigned int	mNumThreads;					///< Number of threads (if 1 the parallelization is disabled)
 	bool			mForceSerial;			///< Disable all parallelism
 	bool			mBranchFromFile;		///< Read the foreground branch to use from the phylo tree file (it is marked as #1)
 	bool			mInitH0fromH1;			///< If set starts the H0 computation from the H1 results
 	bool			mInitFromParams;		///< Initialize times from phylo tree and the other from values hardcoded or entered on the command line
 	bool			mCleanData;				///< Remove ambiguous or missing sites from the MSA (genes)
 	bool			mStopIfNotLRT;			///< Stop H0 maximization when LRT cannot be satisfied
-		bool				 mFixedBranchLength;		   ///<fixed branch lengths
+	bool			mFixedBranchLength;		   ///<fixed branch lengths
 
 
 

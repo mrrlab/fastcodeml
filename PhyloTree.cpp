@@ -58,7 +58,7 @@ size_t PhyloTree::getMarkedInternalBranch(void) const
 {
 	const size_t nin = mInternalNodes.size();
 	// omid
-	std::cout << "NIN " << nin << std::endl;
+	//std::cout << "NIN " << nin << std::endl;
 
 	// end omid
 
@@ -228,7 +228,7 @@ void PhyloTree::checkRootBranches(void) //const
 
 	if (cnt_root_branches == 2)
 	{
-		std::cout << std::endl << "This is a rooted tree. Please check!" << std::endl;
+		std::cout << std::endl << "This is a rooted tree. Tree is unrooted !" << std::endl;
 
 		// omid
 		TreeNode *c0,*c1,*cx; // cx is the child with at least 2 children
@@ -240,18 +240,18 @@ void PhyloTree::checkRootBranches(void) //const
 
 		double new_len=c0->getLen() + c1->getLen();
 
-		std::cout << " Length Root : " << mTreeRoot.getLen() << std::endl;
-		std::cout << " Length Child 0 : " << c0->getLen() << std::endl;
-		std::cout << " Length Child 1 : " << c1->getLen() << std::endl;
-		std::cout << " New Length : " << new_len << std::endl;
+		//std::cout << " Length Root : " << mTreeRoot.getLen() << std::endl;
+		//std::cout << " Length Child 0 : " << c0->getLen() << std::endl;
+		//std::cout << " Length Child 1 : " << c1->getLen() << std::endl;
+		//std::cout << " New Length : " << new_len << std::endl;
 
 		//bool marked=0;
 		//if (c0->getType()!=NULL || c1->getType()!=NULL ) marked = true;
 
 		// choose the child who has also two children and adjust lengths and marks
 
-		std::cout << " type of c0 : " << c0->getType() << std::endl;
-		std::cout << " type of c1 : " << c1->getType() << std::endl;
+		//std::cout << " type of c0 : " << c0->getType() << std::endl;
+		//std::cout << " type of c1 : " << c1->getType() << std::endl;
 
 		std::string newBranchType;
 
@@ -266,10 +266,10 @@ void PhyloTree::checkRootBranches(void) //const
 			{cx = c1;c0->addLen(new_len);c0->addType(newBranchType);mTreeRoot.delChild(1);}
 		else
 
-			throw FastCodeMLFatal("All root children have only one child. Invalid tree. Quitting.");
+			throw FastCodeMLFatal("Both children of root have only one child. Invalid tree. Quitting.");
 
 
-		std::cout << " len of cx : " << cx->getLen() << std::endl;
+		//std::cout << " len of cx : " << cx->getLen() << std::endl;
 
 		// remove cx from stack of children of root
 		// all children of cx will be children of root
@@ -318,15 +318,15 @@ void PhyloTree::checkRootBranches(void) //const
 
 		// adjust the new length and mark of the new branch between child zero and child one
 
-		TreeNode *m;
-		unsigned int cnt_root_branches = 0;
-		unsigned int cnt_root_leaves   = 0;
-		for(; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL; ++cnt_root_branches)
-		{
-			if(m->isLeaf()) ++cnt_root_leaves;
-		}
+		//TreeNode *m;
+		//unsigned int cnt_root_branches = 0;
+		//unsigned int cnt_root_leaves   = 0;
+		//for(; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL; ++cnt_root_branches)
+		//{
+		//	if(m->isLeaf()) ++cnt_root_leaves;
+		//}
 
-		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
+		//std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 
 
 		// end omid

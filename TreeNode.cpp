@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 #include "TreeNode.h"
 
 
@@ -30,6 +31,7 @@ void TreeNode::printNode(void) const
 	// Print the node info
 	std::cout << mNodeName;
 	if(!mNodeMark.empty()) std::cout << '#' << mNodeMark;
+	std::cout  << std::setprecision(6) << ":" << mBranchLength;
 }
 
 
