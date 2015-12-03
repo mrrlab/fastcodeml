@@ -8,11 +8,10 @@
 
 /// Minimizer from CodeML.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-/// based on code from Ziheng Yang CodeML.
-///		@date 2012-01-11 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS) based
+///     on code from Ziheng Yang CodeML.
+///     @date 2012-01-11 (initial version)
+///     @version 1.1
 ///
 class Ming2 {
 public:
@@ -129,10 +128,10 @@ private:
   /// Linear search using quadratic interpolation from x0[] in the direction of
   /// p[].
   /// The formula used is:
-  ///				   x = x0 + a*p		   a ~(0,limit)
+  ///                x = x0 + a*p        a ~(0,limit)
   ///
   /// Adapted from: Wolfe M. A.  1978.  Numerical methods for unconstrained
-  /// optimization: An introduction.	Van Nostrand Reinhold Company, New York.
+  /// optimization: An introduction.  Van Nostrand Reinhold Company, New York.
   /// pp. 62-73.
   ///
   /// @param[in,out] f Contains f(x0) for input and f(x) for output
@@ -146,7 +145,7 @@ private:
   /// @param[in] iround Iteration number just for reporting
   /// @param[in] n Number of coordinates
   ///
-  /// @return The value of a as in: x = x0 + a*p	a ~(0,limit)
+  /// @return The value of a as in: x = x0 + a*p  a ~(0,limit)
   ///
   double LineSearch2(double *f, const double x0[], const double p[],
                      double step, double limit, double e, double space[],

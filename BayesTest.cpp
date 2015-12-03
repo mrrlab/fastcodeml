@@ -46,11 +46,11 @@ double BayesTest::getGridParams(const std::vector<double> &aVars,
 
   // Calculating f(x_h|w)
   // Order of site classes for iw or f(x_h|w):
-  //                    back  fore #sets
-  //     site class 0:  w0    w0   10
-  //     site class 1:  w1=1  w1=1 1
-  //     site class 2a: w0    w2   100
-  //     site class 2b: w1=1  w2   10
+  //                     back   fore     #sets
+  //   site class 0:      w0     w0        10
+  //   site class 1:      w1=1   w1=1       1
+  //   site class 2a:     w0     w2       100
+  //   site class 2b:     w1=1   w2        10
   //
   for (unsigned int iw = 0; iw < BEB_NUM_CAT; ++iw) {
     if (iw < BEB_N1D) // class 0: w0 w0
@@ -219,8 +219,7 @@ void BayesTest::computeBEB(const std::vector<double> &aVars, size_t aFgBranch,
     }
   }
 
-  // Calculate marginal prob of data, fX, and postpara[].	 scale2 is
-  // scale.
+  // Calculate marginal prob of data, fX, and postpara[].  scale2 is scale.
   if (mVerbose >= VERBOSE_ONLY_RESULTS)
     std::cout << std::endl
               << "Calculating f(X), the marginal probability of data."
@@ -337,7 +336,7 @@ void BayesTest::computeBEB(const std::vector<double> &aVars, size_t aFgBranch,
 
   if (mVerbose >= VERBOSE_ONLY_RESULTS)
     std::cout << "log(fX) = " << (fX + scale1 - BEB_DIMS * log(BEB_N1D * 1.))
-              << "	 Scales = " << scale1 << " " << scale2 << std::endl;
+              << "  Scales = " << scale1 << " " << scale2 << std::endl;
 
   // Calculate posterior probabilities for sites. scale1 is scale factor
   if (mVerbose >= VERBOSE_ONLY_RESULTS)

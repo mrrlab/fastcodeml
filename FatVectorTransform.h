@@ -9,10 +9,9 @@
 
 /// Manipulations on the per-branch probability vector array.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2011-09-31 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-09-31 (initial version)
+///     @version 1.1
 ///
 class FatVectorTransform {
 public:

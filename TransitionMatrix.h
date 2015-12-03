@@ -20,10 +20,9 @@
 
 /// The transition matrix plus its eigendecomposition.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2011-02-23 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-02-23 (initial version)
+///     @version 1.1
 ///
 class TransitionMatrix {
 public:
@@ -239,10 +238,9 @@ protected:
 
 /// The transition matrix that can be saved ad restored afterwards.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2012-09-07 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.1
 ///
 class CheckpointableTransitionMatrix : public TransitionMatrix {
 public:

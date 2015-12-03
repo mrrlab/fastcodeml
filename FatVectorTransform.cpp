@@ -269,7 +269,7 @@ void FatVectorTransform::printCommands(void) const {
                 << icr->to << std::endl;
     }
 
-    std::cout << "L	  from: " << mLimits[b].first
+    std::cout << "L   from: " << mLimits[b].first
               << " cnt: " << mLimits[b].second << std::endl;
   }
 }

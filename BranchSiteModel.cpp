@@ -210,17 +210,16 @@ void BranchSiteModel::printVar(const std::vector<double> &aVars, double aLnl,
         aOut << "  w0: " << *ix;
         break;
       case 3:
-        aOut << "	k: " << *ix;
+        aOut << "  k: " << *ix;
         break;
       case 4:
         aOut << "  w2: " << *ix;
         break;
         /*default:
-                aOut << *ix << ' ';
-                ++per_linea;
-                if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea =
-           0;}
-                break;*/
+            aOut << *ix << ' ';
+            ++per_linea;
+            if(per_linea == 10) {if(k != -1) aOut << std::endl; per_linea = 0;}
+            break;*/
       }
     }
   } else {
@@ -244,7 +243,7 @@ void BranchSiteModel::printVar(const std::vector<double> &aVars, double aLnl,
         aOut << "  w0: " << *ix;
         break;
       case 3:
-        aOut << "	k: " << *ix;
+        aOut << "  k: " << *ix;
         break;
       case 4:
         aOut << "  w2: " << *ix;
@@ -954,9 +953,9 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void) {
   for (size_t site = 0; site < num_sites; ++site) {
     // The following computation is split to avoid negative values
     // double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
-    //			 (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site]
+    //		     (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site]
     //+
-    //			  mProportions[2]*mLikelihoods[2*num_sites+site];
+    //		      mProportions[2]*mLikelihoods[2*num_sites+site];
     double p = likelihoods[0 * num_sites + site];
     if (p < 0)
       p = 0;
@@ -1476,9 +1475,9 @@ double BranchSiteModelAltHyp::combineSiteLikelihoods(void) {
   for (size_t site = 0; site < num_sites; ++site) {
     // The following computation is split to avoid negative values
     // double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
-    //			 mProportions[1]*mLikelihoods[1*num_sites+site] +
-    //			 mProportions[2]*mLikelihoods[2*num_sites+site] +
-    //			 mProportions[3]*mLikelihoods[3*num_sites+site];
+    //		     mProportions[1]*mLikelihoods[1*num_sites+site] +
+    //		     mProportions[2]*mLikelihoods[2*num_sites+site] +
+    //		     mProportions[3]*mLikelihoods[3*num_sites+site];
     //
     double p = likelihoods[0 * num_sites + site];
     if (p < 0)
@@ -1534,10 +1533,9 @@ void BranchSiteModel::verifyOptimizerAlgo(unsigned int aOptimizationAlgo) {
 
 /// Adapter class to pass the routine to the optimizer.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2011-01-13 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-01-13 (initial version)
+///     @version 1.1
 ///
 ///
 class MaximizerFunction {
@@ -1749,7 +1747,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
       if (mTrace) {
         std::cout << std::endl
-                  << "Function invocations:	   " << mNumEvaluations
+                  << "Function invocations:       " << mNumEvaluations
                   << std::endl;
         std::cout << "Final log-likelihood value: " << maxl << std::endl;
         printVar(mVar);
@@ -1865,7 +1863,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
     // Print the final optimum value
     if (mTrace) {
       std::cout << std::endl
-                << "Function invocations:	   " << mNumEvaluations
+                << "Function invocations:       " << mNumEvaluations
                 << std::endl;
       switch (result) {
       case nlopt::SUCCESS:
@@ -1952,7 +1950,7 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 /// @section w0_sect Omega 0
 /// The `w0` value is at index `mNumTimes+2`
 ///
-/// @section k_sect	 Kappa
+/// @section k_sect  Kappa
 /// The `k` value is at index `mNumTimes+3`
 ///
 /// @section w2_sect Omega 2

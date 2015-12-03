@@ -9,9 +9,9 @@
 /// Parse and accumulate initial values for parameters.
 /// New values for the parameters came in the form name=value or name:value
 ///
-///	  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///	  @date 2012-02-21 (initial version)
-///	  @version 1.1
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2012-02-21 (initial version)
+///   @version 1.1
 ///
 class ParseParameters {
 public:

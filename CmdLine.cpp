@@ -67,7 +67,7 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions) {
       if (done[j] || aParserOptions[j].nId != aParserOptions[i].nId)
         continue;
       done[j] = true;
-      std::cout << "	" << aParserOptions[j].pszArg;
+      std::cout << "  " << aParserOptions[j].pszArg;
     }
 
     // Translate the kind of argument
@@ -96,7 +96,7 @@ void CmdLine::CmdLineImpl::showHelp(const CSimpleOpt::SOption *aParserOptions) {
     }
 
     std::cout << " " << type << std::endl;
-    std::cout << "		  " << aParserOptions[i].pszHelp << std::endl
+    std::cout << "        " << aParserOptions[i].pszHelp << std::endl
               << std::endl;
   }
 }
@@ -291,7 +291,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
                 << "FastCodeML V" << version << std::endl
                 << "------------------" << std::endl;
       std::cout << "Usage:" << std::endl;
-      std::cout << "	  " << usage_msg << std::endl
+      std::cout << "    " << usage_msg << std::endl
                 << std::endl;
       mCmdLineImpl->showHelp(parser_options);
       throw FastCodeMLSuccess();
@@ -425,7 +425,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
     case OPT_NUM_THREADS:
       mNumThreads = static_cast<unsigned int>(atoi(args.OptionArg()));
       /*  if (mNumThreads == 1)
-                    mForceSerial = true;*/
+            mForceSerial = true;*/
       if (mNumThreads <= 0)
         throw FastCodeMLFatal("Invalid number of threads");
       break;
@@ -455,7 +455,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
               << "FastCodeML V" << version << std::endl
               << "------------------" << std::endl;
     std::cout << "Usage:" << std::endl;
-    std::cout << "	  " << usage_msg << std::endl
+    std::cout << "    " << usage_msg << std::endl
               << std::endl;
     mCmdLineImpl->showHelp(parser_options);
     throw FastCodeMLFatal();

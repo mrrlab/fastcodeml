@@ -16,10 +16,9 @@ static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
 /// Common routines for testing the two hypotheses (H0 and H1).
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-12-23 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-23 (initial version)
+///     @version 1.1
 ///
 class BranchSiteModel {
 protected:
@@ -395,10 +394,9 @@ private:
 
 /// Null Hypothesis test.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-12-23 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-23 (initial version)
+///     @version 1.1
 ///
 ///
 class BranchSiteModelNullHyp : public BranchSiteModel {
@@ -497,10 +495,9 @@ private:
 
 /// Alternate Hypothesis test.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-12-23 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-23 (initial version)
+///     @version 1.1
 ///
 ///
 class BranchSiteModelAltHyp : public BranchSiteModel {

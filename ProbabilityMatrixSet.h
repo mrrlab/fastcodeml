@@ -19,10 +19,9 @@
 
 /// Set of probability matrices for all branches of a tree.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2011-04-05 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-04-05 (initial version)
+///     @version 1.1
 ///
 class ProbabilityMatrixSet {
 protected:
@@ -215,10 +214,9 @@ protected:
 /// Set of probability matrices for all branches of a tree for the null
 /// hypothesis.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2012-09-07 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.1
 ///
 class ProbabilityMatrixSetH0 : public ProbabilityMatrixSet {
 public:
@@ -243,8 +241,8 @@ public:
   /// - set 1: w1, w1
   /// - set 2: w0, w1
   ///
-  /// @param[in] aQw0 The mQw0 transition matrix
-  /// @param[in] aQ1 The mQ1 transition matrix
+  ///	@param[in] aQw0 The mQw0 transition matrix
+  ///	@param[in] aQ1 The mQ1 transition matrix
   /// @param[in] aSbg Background Q matrix scale
   /// @param[in] aSfg Foreground Q matrix scale
   /// @param[in] aParams Optimization parameters. First the branch lengths, then
@@ -293,10 +291,9 @@ private:
 /// Set of probability matrices for all branches of a tree for the alternate
 /// hypothesis.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2012-09-07 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-07 (initial version)
+///     @version 1.1
 ///
 class ProbabilityMatrixSetH1 : public ProbabilityMatrixSet {
 public:
@@ -322,9 +319,9 @@ public:
   /// - set 2: w0, w2
   /// - set 3: w1, w2
   ///
-  /// @param[in] aQw0 The mQw0 transition matrix
-  /// @param[in] aQ1 The mQ1 transition matrix
-  /// @param[in] aQw2 The mQw2 transition matrix
+  ///	@param[in] aQw0 The mQw0 transition matrix
+  ///	@param[in] aQ1 The mQ1 transition matrix
+  ///	@param[in] aQw2 The mQw2 transition matrix
   /// @param[in] aSbg Background Q matrix scale
   /// @param[in] aSfg Foreground Q matrix scale
   /// @param[in] aParams Optimization parameters. First the branch lengths, then
@@ -375,10 +372,9 @@ private:
 /// Set of probability matrices for all branches of a tree for the BEB
 /// computation.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2012-09-20 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-20 (initial version)
+///     @version 1.1
 ///
 class ProbabilityMatrixSetBEB : public ProbabilityMatrixSet {
 public:
@@ -401,8 +397,8 @@ public:
   /// - set 2: w0, w2
   /// - set 3: w1, w2
   ///
-  /// @param[in] aQfg The transition matrix for the fg branch
-  /// @param[in] aQbg The transition matrix for the bg branch
+  ///	@param[in] aQfg The transition matrix for the fg branch
+  ///	@param[in] aQbg The transition matrix for the bg branch
   /// @param[in] aSbg Background Q matrix scale
   /// @param[in] aSfg Foreground Q matrix scale
   /// @param[in] aParams Optimization parameters. First the branch lengths, then

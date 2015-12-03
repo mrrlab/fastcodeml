@@ -16,10 +16,9 @@
 
 /// Simple timer.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-08-31 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-08-31 (initial version)
+///     @version 1.1
 ///
 class Timer {
 public:
@@ -81,10 +80,9 @@ private:
 
 /// Simple timer
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-08-31 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-08-31 (initial version)
+///     @version 1.1
 ///
 class Timer {
 public:
