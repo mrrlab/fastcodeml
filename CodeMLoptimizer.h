@@ -8,42 +8,30 @@
 
 /// Minimizer from CodeML.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-/// based on code from Ziheng Yang CodeML.
-///		@date 2012-01-11 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS) based
+///     on code from Ziheng Yang CodeML.
+///     @date 2012-01-11 (initial version)
+///     @version 1.1
 ///
 class Ming2 {
 public:
   /// Constructor
   ///
-  /// @param[in] aModel				The pointer to the hypothesis class that
-  /// will
-  /// be
-  /// used
-  /// @param[in] aTrace				Trace or not the optimizer
-  /// progress
-  /// @param[in] aVerbose				The verbose level
-  /// @param[in] aLowerBound			Lower limit of the variables to
-  /// constrain
-  /// the
-  /// interval on which the optimum should be computed
-  /// @param[in] aUpperBound			Upper limit of the variables to
-  /// constrain
-  /// the
-  /// interval on which the optimum should be computed
-  /// @param[in] aDeltaForGradient	Delta used to compute the gradient
-  /// @param[in] aRelativeError		Relative error to stop computation
-  /// @param[in] aStopIfBigger		If true stop computation as soon as
-  /// value
-  /// is
-  /// over aThreshold
-  /// @param[in] aThreshold			The threshold at which the
-  /// maximization
-  /// should
-  /// be stopped
-  /// @param[in] aMaxIterations		Maximum number of iterations for the
+  /// @param[in] aModel The pointer to the hypothesis class that will
+  ///   be used
+  /// @param[in] aTrace Trace or not the optimizer progress
+  /// @param[in] aVerbose The verbose level
+  /// @param[in] aLowerBound Lower limit of the variables to
+  ///   constrain the interval on which the optimum should be computed
+  /// @param[in] aUpperBound Upper limit of the variables to
+  ///   constrain the interval on which the optimum should be computed
+  /// @param[in] aDeltaForGradient Delta used to compute the gradient
+  /// @param[in] aRelativeError Relative error to stop computation
+  /// @param[in] aStopIfBigger If true stop computation as soon as
+  ///   value is over aThreshol
+  /// @param[in] aThreshold The threshold at which the maximization
+  /// should be stopped
+  /// @param[in] aMaxIterations	Maximum number of iterations for the
   /// maximization
   ///
   Ming2(BranchSiteModel *aModel, bool aTrace, unsigned int aVerbose,
@@ -134,10 +122,10 @@ private:
   /// Linear search using quadratic interpolation from x0[] in the direction of
   /// p[].
   /// The formula used is:
-  ///				   x = x0 + a*p		   a ~(0,limit)
+  ///                x = x0 + a*p        a ~(0,limit)
   ///
   /// Adapted from: Wolfe M. A.  1978.  Numerical methods for unconstrained
-  /// optimization: An introduction.	Van Nostrand Reinhold Company, New York.
+  /// optimization: An introduction.  Van Nostrand Reinhold Company, New York.
   /// pp. 62-73.
   ///
   /// @param[in,out] f Contains f(x0) for input and f(x) for output
@@ -151,7 +139,7 @@ private:
   /// @param[in] iround Iteration number just for reporting
   /// @param[in] n Number of coordinates
   ///
-  /// @return The value of a as in: x = x0 + a*p	a ~(0,limit)
+  /// @return The value of a as in: x = x0 + a*p  a ~(0,limit)
   ///
   double LineSearch2(double *f, const double x0[], const double p[],
                      double step, double limit, double e, double space[],

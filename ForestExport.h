@@ -10,9 +10,9 @@ class Forest;
 /// the forest of phylogenetic trees.
 /// It is a friend class of Forest.
 ///
-///	 @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///	 @date 2012-02-13 (initial version)
-///	 @version 1.1
+///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///  @date 2012-02-13 (initial version)
+///  @version 1.1
 ///
 class ForestExport {
 public:

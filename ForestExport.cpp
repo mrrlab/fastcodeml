@@ -78,9 +78,9 @@ void ForestExport::exportForest(const char *aFilename, size_t aCounter) const {
       } else {
         std::string s = mForest.mNodeNames[iv->second];
         if (s.empty())
-          net << "	 label \"" << iv->second << "\"\n";
+          net << "   label \"" << iv->second << "\"\n";
         else
-          net << "	 label \"" << s << "\"\n";
+          net << "   label \"" << s << "\"\n";
         net << "   type 1\n";
       }
       net << "]\n";

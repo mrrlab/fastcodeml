@@ -15,10 +15,9 @@ static const unsigned int MAX_ITERATIONS = 10000;
 
 /// Parse the command line flags.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-12-22 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-22 (initial version)
+///     @version 1.1
 ///
 ///
 class CmdLine {

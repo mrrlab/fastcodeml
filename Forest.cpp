@@ -219,7 +219,7 @@ void Forest::postLoad(void) {
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "	 ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
 		}
 		std::cout << std::endl;
 	}
@@ -283,7 +283,7 @@ void Forest::postLoad(void) {
 		std::vector<ForestNode*>::const_iterator ifn;
 		for(ifn=rinbl->begin(); ifn != rinbl->end(); ++ifn)
 		{
-			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "	 ");
+			std::cout << (*ifn)->mBranchId << ((*ifn)->mChildrenList.empty() ? "* " : "  ");
 		}
 		std::cout << std::endl;
 	}
@@ -438,13 +438,13 @@ void Forest::cleanReductionWorkingData(ForestNode *aNode) {
 std::ostream &operator<<(std::ostream &aOut, const Forest &aForest) {
   // General forest statistics
   aOut << std::endl;
-  aOut << "Num branches:		 " << std::setw(7)
-       << aForest.mNumBranches << std::endl;
-  aOut << "Internal branches:	 " << std::setw(7)
-       << aForest.mNumInternalBranches << std::endl;
-  aOut << "Unique sites:		 " << std::setw(7) << aForest.mNumSites
+  aOut << "Num branches:       " << std::setw(7) << aForest.mNumBranches
        << std::endl;
-  aOut << "Total branches:	 " << std::setw(7)
+  aOut << "Internal branches:  " << std::setw(7) << aForest.mNumInternalBranches
+       << std::endl;
+  aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites
+       << std::endl;
+  aOut << "Total branches:     " << std::setw(7)
        << aForest.mNumBranches * aForest.mNumSites << std::endl;
 
   // Count total branches on the reduced forest
@@ -456,7 +456,7 @@ std::ostream &operator<<(std::ostream &aOut, const Forest &aForest) {
     cnt += n.countBranches();
     cntAggressive += n.countBranches(true);
   }
-  aOut << "Reduced branches:	 " << std::fixed << std::setw(7) << cnt
+  aOut << "Reduced branches:   " << std::fixed << std::setw(7) << cnt
        << std::setw(8) << std::setprecision(2)
        << static_cast<double>(cnt * 100.) /
               static_cast<double>(aForest.mNumBranches * aForest.mNumSites)
@@ -844,7 +844,7 @@ void Forest::prepareNewReductionNoReuse(void) {
 #endif
 
 #if !defined(NON_RECURSIVE_VISIT) && !defined(NEW_LIKELIHOOD)
-// Optimizing this function ~ idavydov
+
 void Forest::computeLikelihoods(const ProbabilityMatrixSet &aSet,
                                 CacheAlignedDoubleVector &aLikelihoods,
                                 const ListDependencies &aDependencies) {

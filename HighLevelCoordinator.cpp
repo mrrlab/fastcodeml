@@ -99,14 +99,10 @@ struct HighLevelCoordinator::WorkTable {
   ///
   /// @param[out] aJob The job request: [0] is set to the kind of job (JOB_H0,
   /// JOB_H1, JOB_BEB, JOB_SHUTDOWN);
-  ///									  [1] to the fg branch number (or
-  ///zero
-  /// for
-  /// JOB_SHUTDOWN);
-  ///									  [2] zero or the number of variables
-  ///for
-  /// a
-  /// JOB_BEB or JOB_H0 requests
+  ///                                   [1] to the fg branch number (or zero
+  /// for JOB_SHUTDOWN);
+  ///                                   [2] zero or the number of variables for
+  ///                                   a JOB_BEB or JOB_H0 requests
   /// @param[in] aRank The current worker rank
   /// @param[in] aInitFromH1 If true for a H0 request send back also all H1
   /// variables
@@ -135,7 +131,7 @@ struct HighLevelCoordinator::WorkTable {
   /// Print completed branches.
   /// This routine should be called after markJobFinished().
   ///
-  /// @param[in] aIdx	 The identifier of the finished job (it is
+  /// @param[in] aIdx  The identifier of the finished job (it is
   /// branch*JOBS_PER_BRANCH+job_type) as returned by markJobFinished().
   ///
   void printFinishedBranch(int aIdx) const;
@@ -710,34 +706,34 @@ void HighLevelCoordinator::doMaster(WriteResults &aOutputResults,
     std::cout << "Branch: " << std::fixed << std::setw(3) << branch;
     if (mWorkTable->mResults[branch].mLnl[0] ==
         std::numeric_limits<double>::infinity()) {
-      std::cout << "	Lnl H0: " << std::setw(24) << "Inf";
+      std::cout << "  Lnl H0: " << std::setw(24) << "Inf";
     } else if (mWorkTable->mResults[branch].mLnl[0] == DBL_MAX) {
-      std::cout << "	Lnl H0: " << std::setw(24) << "NA";
+      std::cout << "  Lnl H0: " << std::setw(24) << "NA";
     } else {
-      std::cout << "	Lnl H0: " << std::setw(24) << std::setprecision(15)
+      std::cout << "  Lnl H0: " << std::setw(24) << std::setprecision(15)
                 << mWorkTable->mResults[branch].mLnl[0];
     }
     if (mWorkTable->mResults[branch].mLnl[1] ==
         std::numeric_limits<double>::infinity()) {
-      std::cout << "	Lnl H1: " << std::setw(24) << "Inf";
+      std::cout << "  Lnl H1: " << std::setw(24) << "Inf";
     } else {
-      std::cout << "	Lnl H1: " << std::setw(24) << std::setprecision(15)
+      std::cout << "  Lnl H1: " << std::setw(24) << std::setprecision(15)
                 << mWorkTable->mResults[branch].mLnl[1];
     }
     if (mWorkTable->mResults[branch].mLnl[0] ==
             std::numeric_limits<double>::infinity() ||
         mWorkTable->mResults[branch].mLnl[1] ==
             std::numeric_limits<double>::infinity()) {
-      std::cout << "	LRT: " << std::setw(24) << "*Invalid*";
+      std::cout << "  LRT: " << std::setw(24) << "*Invalid*";
     } else if (mWorkTable->mResults[branch].mLnl[0] < DBL_MAX)
-      std::cout << "	LRT: " << std::setw(24) << std::setprecision(15)
+      std::cout << "  LRT: " << std::setw(24) << std::setprecision(15)
                 << std::fixed
                 << mWorkTable->mResults[branch].mLnl[1] -
                        mWorkTable->mResults[branch].mLnl[0]
-                << "	(threshold: " << std::setprecision(15) << std::fixed
+                << "  (threshold: " << std::setprecision(15) << std::fixed
                 << THRESHOLD_FOR_LRT << ')';
     else
-      std::cout << "	LRT: < " << std::setprecision(15) << std::fixed
+      std::cout << "  LRT: < " << std::setprecision(15) << std::fixed
                 << THRESHOLD_FOR_LRT;
     std::cout << std::endl;
     std::cout << std::endl;

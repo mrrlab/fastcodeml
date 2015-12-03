@@ -8,10 +8,9 @@
 
 /// The genes of the set of species under analysis.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2010-12-22 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2010-12-22 (initial version)
+///     @version 1.1
 ///
 class Genes {
 protected:
@@ -68,18 +67,14 @@ public:
   ///
   long long getCodonIdx(std::string aSpecie, size_t aSite) const;
 
-/// Set the correct positions in the leave probability vector to
-/// 1/num_positions.
-///
-/// @param[out] aLeaveProbVect The leave probability vector to be set.
-///
-/// @exception FastCodeMLFatal If saved codon is invalid.
-///
-#ifdef USE_AGGREGATION
-  void setLeaveProb(double *aLeaveProbVect, int aAggregate) const;
-#else
+  /// Set the correct positions in the leave probability vector to
+  /// 1/num_positions.
+  ///
+  /// @param[out] aLeaveProbVect The leave probability vector to be set.
+  ///
+  /// @exception FastCodeMLFatal If saved codon is invalid.
+  ///
   void setLeaveProb(double *aLeaveProbVect) const;
-#endif
 
   /// Save codons in a given array for later count.
   /// For each codon the aCodon array contains one more vector that starts with
@@ -216,32 +211,20 @@ private:
   std::vector<std::string> mDnaSpecies;        ///< The list of species labels
   std::vector<std::string> mDnaGene;           ///< The gene DNA basis strings
   std::vector<unsigned int> mSiteMultiplicity; ///< Site multiplicity (sites
-  /// with multiplicity of zero has
-  /// been removed from the site
-  /// list)
+    /// with multiplicity of zero has been removed from the site list)
   std::vector<unsigned int>
       mMapSiteToDnaGene; ///< Map the site number to the position in mDnaGene
   std::map<std::string, unsigned int> mMapSpecieToDnaGene; ///< Map specie name
-  /// to position in the
-  /// gene list mDnaGene
+  /// to position in the gene list mDnaGene
   std::multimap<size_t, size_t> mSitesMappingToOriginal; ///< Map reduced site
-  /// num. to list of
-  /// corresponding
-  /// original sites
+  /// num. to list of corresponding original sites
   size_t mOriginalNumSites; ///< Original number of sites (before cleaning)
 
   std::map<std::string, std::vector<int> > mMapCodonToPosition; ///< Map codons
-                                                                ///(including
-/// ambiguous
-/// ones) to
-/// positions on
-/// the CPV
+    /// (including ambiguous ones) to positions on the CPV
 #ifdef USE_AGGREGATION
   std::map<std::pair<int, int>, size_t> mMapCodonPairToDistance; ///< Map codon
-/// pairs to
-/// edit
-/// distance
-/// between them
+    /// pairs to edit distance  between them
 #endif
   std::vector<int>
       mEmptyVector; ///< Empty vector to be returned if no position available

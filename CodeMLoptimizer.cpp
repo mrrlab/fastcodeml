@@ -82,10 +82,10 @@ int Ming2::ming2(FILE *fout, double *f, double x[], const double xl[],
                  const double xu[], double space[], int ispace[],
                  double rel_error, int n) {
   /* n-variate minimization with bounds using the BFGS algorithm
-           g0[n] g[n] p[n] x0[n] y[n] s[n] z[n] H[n*n] C[n*n] tv[2*n]
-           xmark[n],ix[n]
+       g0[n] g[n] p[n] x0[n] y[n] s[n] z[n] H[n*n] C[n*n] tv[2*n]
+       xmark[n],ix[n]
      Size of space should be (check carefully?)
-            #define spaceming2(n) ((n)*((n)*2+9+2)*sizeof(double))
+        #define spaceming2(n) ((n)*((n)*2+9+2)*sizeof(double))
      nfree: # free variables
      xmark[i]=0 for inside space; -1 for lower boundary; 1 for upper boundary.
      x[] has initial values at input and returns the estimates in return.
@@ -120,8 +120,8 @@ int Ming2::ming2(FILE *fout, double *f, double x[], const double xl[],
   // Initialize the two integer workspaces
   // for(i = 0; i < n; i++)
   //{
-  //	  xmark[i] = 0;
-  //	  ix[i] = i;
+  //    xmark[i] = 0;
+  //    ix[i] = i;
   //}
   memset(ispace, 0, 2 * n * sizeof(int));
 
@@ -333,10 +333,10 @@ int Ming2::ming2(FILE *fout, double *f, double x[], const double xl[],
     }
 
     // for(i=0; i < n; ++i)
-    //	  {
-    //		  g0[i] = g[i];
-    //		  x0[i] = x[i];
-    //	  }
+    //      {
+    //          g0[i] = g[i];
+    //          x0[i] = x[i];
+    //      }
     memcpy(g0, g, n * sizeof(double));
     memcpy(x0, x, n * sizeof(double));
     /* renewal of H varies with different algorithms   */
@@ -425,12 +425,12 @@ double Ming2::LineSearch2(double *f, const double x0[], const double p[],
                           int iround, int n) {
   /* linear search using quadratic interpolation
      from x0[] in the direction of p[],
-                                  x = x0 + a*p		a ~(0,limit)
-     returns (a).	   *f: f(x0) for input and f(x) for output
+                  x = x0 + a*p        a ~(0,limit)
+     returns (a).    *f: f(x0) for input and f(x) for output
 
      x0[n] x[n] p[n] space[n]
 
-     adapted from Wolfe M. A.	 1978.	Numerical methods for unconstrained
+     adapted from Wolfe M. A.  1978.  Numerical methods for unconstrained
      optimization: An introduction.  Van Nostrand Reinhold Company, New York.
      pp. 62-73.
      step is used to find the bracket and is increased or reduced as necessary,
@@ -530,7 +530,7 @@ double Ming2::LineSearch2(double *f, const double x0[], const double p[],
 
   /* iteration by quadratic interpolation, fig 2.2.9-10 (pp 71-71) */
   for (ii = 0; ii < maxround; ii++) {
-    /* a4 is the minimum from the parabola over (a1,a2,a3)	*/
+    /* a4 is the minimum from the parabola over (a1,a2,a3)  */
     a4 = (a2 - a3) * f1 + (a3 - a1) * f2 + (a1 - a2) * f3;
 
     if (fabs(a4) > 1e-100)
@@ -751,7 +751,7 @@ void Ming2::gradientB(int n, const double x[], double f0, double g[],
              (eh * 2.0);
     } else /* forward or backward */
     {
-      // for(j=0; j < n; ++j)	x1[j] = x[j];
+      // for(j=0; j < n; ++j)  x1[j] = x[j];
       memcpy(x1, x, n * sizeof(double));
 
       if (xmark[i]) {

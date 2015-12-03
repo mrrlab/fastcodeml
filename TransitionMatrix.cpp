@@ -205,7 +205,7 @@ static int EigenTridagQLImplicit(double d[], double e[], int n, double z[]) {
           f = s * e[i];
           b = c * e[i];
 
-          /*	r=pythag(f,g);	*/
+          /*  r=pythag(f,g);  */
           aa = fabs(f);
           bb = fabs(g);
 
@@ -290,10 +290,10 @@ void TransitionMatrix::eigenRealSymm(double *aU, int aDim, double *aR,
 #include "lapack.h"
 
 //
-//	Using LAPACK DSYEVR driver routine to compute the eigenvalues and
-// eigenvector of the symmetric input matrix aU[n*n]
-//	Reorders the output values so they are ordered as the ones computed by
-// the original eigenRealSym() routine.
+//  Using LAPACK DSYEVR driver routine to compute the eigenvalues and
+//  eigenvector of the symmetric input matrix aU[n*n]
+//  Reorders the output values so they are ordered as the ones computed by the
+//  original eigenRealSym() routine.
 //
 void TransitionMatrix::eigenRealSymm(double *aU, int aDim, double *aR,
                                      double * /* aIgnored */) {
@@ -375,16 +375,16 @@ void TransitionMatrix::eigenRealSymm(double *aU, int aDim, double *aR,
 
 void TransitionMatrix::eigenQREV(void) {
   /*
-   This finds the eigensolution of the rate matrix Q for a time-reversible
-   Markov process, using the algorithm for a real symmetric matrix.
-   Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
-   where S is symmetrical, all elements of pi are positive, and U*V = I.
-   space[n] is for storing sqrt(pi).
+This finds the eigensolution of the rate matrix Q for a time-reversible
+Markov process, using the algorithm for a real symmetric matrix.
+Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
+where S is symmetrical, all elements of pi are positive, and U*V = I.
+space[n] is for storing sqrt(pi).
 
-   [U 0] [Q_0 0] [U^-1 0]	 [Root	0]
-   [0 I] [0	  0] [0	   I]  = [0		0]
+[U 0] [Q_0 0] [U^-1 0]    [Root  0]
+[0 I] [0   0] [0    I]  = [0     0]
 
-   Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
+Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
 */
   int i, j;
 
@@ -473,17 +473,17 @@ void TransitionMatrix::eigenQREV(void) {
 
 void TransitionMatrix::eigenQREV(void) {
   /*
-     This finds the eigensolution of the rate matrix Q for a time-reversible
-     Markov process, using the algorithm for a real symmetric matrix.
-     Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
-     where S is symmetrical, all elements of pi are positive, and U*V = I.
-     space[n] is for storing sqrt(pi).
+ This finds the eigensolution of the rate matrix Q for a time-reversible
+ Markov process, using the algorithm for a real symmetric matrix.
+ Rate matrix Q = S * diag{pi} = U * diag{Root} * V,
+ where S is symmetrical, all elements of pi are positive, and U*V = I.
+ space[n] is for storing sqrt(pi).
 
-     [U 0] [Q_0 0] [U^-1 0]	 [Root	0]
-     [0 I] [0	  0] [0	   I]  = [0		0]
+ [U 0] [Q_0 0] [U^-1 0]    [Root  0]
+ [0 I] [0   0] [0    I]  = [0     0]
 
-     Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
-  */
+ Ziheng Yang, 25 December 2001 (ref is CME/eigenQ.pdf)
+*/
   int i, j;
 
   try {

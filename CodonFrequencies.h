@@ -16,10 +16,9 @@ static const double GOOD_CODON_THRESHOLD = 1e-100;
 
 /// Compute and distribute codon empirical frequencies.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2011-10-24 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2011-10-24 (initial version)
+///     @version 1.1
 ///
 class CodonFrequencies {
 public:

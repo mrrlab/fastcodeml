@@ -4,7 +4,7 @@
 
 // The following headers are required for all allocators.
 #include <cstddef> // Required for size_t and ptrdiff_t and NULL
-//#include <new>	   // Required for placement new and std::bad_alloc
+//#include <new>       // Required for placement new and std::bad_alloc
 #include <stdexcept> // Required for std::length_error
 
 #include "AlignedMalloc.h"
@@ -14,9 +14,9 @@
 /// Example allocation aligned to 64: std::vector<double,
 /// AlignedAllocator<double, 64> > aligned_vector;
 ///
-///	 @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///	 @date 2010-12-22 (initial version)
-///	 @version 1.1
+///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///  @date 2010-12-22 (initial version)
+///  @version 1.1
 ///
 template <typename T, size_t A> class AlignedAllocator {
 public:
@@ -96,7 +96,7 @@ public:
     // AlignedAllocator prints a diagnostic message to demonstrate
     // what it's doing. Real allocators won't do this.
     // std::cout << "Allocating " << n << (n == 1 ? " object" : " objects")
-    //	  << " of size " << sizeof(T) << " aligned on " << A << std::endl;
+    //    << " of size " << sizeof(T) << " aligned on " << A << std::endl;
 
     // The return value of allocate(0) is unspecified.
     // AlignedAllocator returns NULL in order to avoid depending
@@ -129,7 +129,7 @@ public:
     // AlignedAllocator prints a diagnostic message to demonstrate
     // what it's doing. Real allocators won't do this.
     // std::cout << "Deallocating " << n << (n == 1 ? " object" : " objects")
-    //	  << " of size " << sizeof(T) << "." << std::endl;
+    //    << " of size " << sizeof(T) << "." << std::endl;
 
     // AlignedAllocator wraps aligned free().
     alignedFree(p);

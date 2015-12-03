@@ -8,10 +8,9 @@
 
 /// Write all results to a given file.
 ///
-///		@author Mario Valle - Swiss National Supercomputing Centre
-///(CSCS)
-///		@date 2012-09-24 (initial version)
-///		@version 1.1
+///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///     @date 2012-09-24 (initial version)
+///     @version 1.1
 ///
 ///
 class WriteResults {

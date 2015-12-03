@@ -25,9 +25,9 @@
 /// This class encapsulates the forest of phylogenetic tree that will be used
 /// for computing the tree's maximum likelihood
 ///
-///	 @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///	 @date 2011-02-23 (initial version)
-///	 @version 1.1
+///  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///  @date 2011-02-23 (initial version)
+///  @version 1.1
 ///
 class Forest {
 public:
@@ -425,16 +425,11 @@ private:
 
   /// The mProbs and mProbsOut layout
   ///
-  /// [site0][site1][site2]...  [site0][site1][site2]...
-  /// each
-  /// is
+  /// [site0][site1][site2]...  [site0][site1][site2]...               each is
   /// VECTOR_SLOT bytes long (for which only the first N are significant)
-  /// [  set 0				 ][	 set 1				   ]...			 there are
-  /// 4
-  /// (Nt)
-  /// sets
-  /// [	 node 0
-  /// ]...
+  /// [  set 0                 ][  set 1                 ]...          there are
+  /// 4 (Nt) sets
+  /// [    node 0                                             ]...
   ///
   /// site_index = node*(Nt*NumSites*VECTOR_SLOT) + set*(NumSites*VECTOR_SLOT) +
   /// site*(VECTOR_SLOT)

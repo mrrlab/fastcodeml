@@ -266,11 +266,11 @@ void Genes::readFile(const char *aFilename, bool aCleanData) {
   if (mVerboseLevel >= VERBOSE_INFO_OUTPUT) {
     std::cout << std::endl;
     std::cout << "Num. species: " << std::setw(6) << nspecies << std::endl;
-    std::cout << "Num. basis:	" << std::setw(6) << nbasis << std::endl;
+    std::cout << "Num. basis:   " << std::setw(6) << nbasis << std::endl;
     std::cout << "Valid codons: " << std::setw(6) << valid_codons << "/"
               << ncodons << std::endl;
     if (num_ambiguous)
-      std::cout << "Ambiguous:	" << std::setw(6) << num_ambiguous << "/"
+      std::cout << "Ambiguous:    " << std::setw(6) << num_ambiguous << "/"
                 << ncodons << std::endl;
     if (num_gaps)
       std::cout << "Gaps removed: " << std::setw(6) << num_gaps << std::endl;
@@ -311,8 +311,8 @@ void Genes::readFile(const char *aFilename, bool aCleanData) {
   mSiteMultiplicity.erase(pend, mSiteMultiplicity.end());
 
   if (mVerboseLevel >= VERBOSE_INFO_OUTPUT) {
-    std::cout << "Sites:		" << std::setw(6)
-              << mSiteMultiplicity.size() << "/" << ncodons << std::endl;
+    std::cout << "Sites:        " << std::setw(6) << mSiteMultiplicity.size()
+              << "/" << ncodons << std::endl;
     int multi_codons = static_cast<int>(
         std::count_if(codon_multiplicity.begin(), codon_multiplicity.end(),
                       std::bind2nd(std::greater<unsigned int>(), 1)));

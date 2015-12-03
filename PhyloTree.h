@@ -11,9 +11,9 @@
 
 /// Phylogenetic tree public interface.
 ///
-///	  @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///	  @date 2010-08-30 (initial version)
-///	  @version 1.1
+///   @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
+///   @date 2010-08-30 (initial version)
+///   @version 1.1
 ///
 class PhyloTree {
 protected:

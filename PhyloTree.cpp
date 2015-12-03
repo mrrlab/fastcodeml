@@ -87,7 +87,7 @@ unsigned int PhyloTree::cloneTree(ForestNode *aForestNode, unsigned int aTreeId,
       (int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
-  // Set the pointers.		The sequence is: Branch -> Set -> Site -> 1:N
+  // Set the pointers.        The sequence is: Branch -> Set -> Site -> 1:N
   // Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
   for (int i = 0; i < Nt; ++i) {
     // aForestNode->mProb[i] =
