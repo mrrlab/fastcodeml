@@ -385,7 +385,8 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons,
   size_t nspecies = mDnaSpecies.size();
   size_t naggr = 0;
   // Save observed states
-  std::cout << "Creating codons/position table" << std::endl;
+  if (mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+    std::cout << std::endl << "Creating codons/position table" << std::endl;
   for (size_t j = 0; j < mSiteMultiplicity.size(); ++j) {
     std::vector<int> s;
     for (size_t i = 0; i < nspecies; ++i) {
@@ -431,7 +432,10 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons,
     // std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
     aMapCodonToState.push_back(s);
   }
-  std::cout << "Will aggregate " << naggr << " positions." << std::endl;
+  if (mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+    std::cout << "N. aggregate: " << std::setw(6) << naggr << "/"
+	      << mOriginalNumSites << std::endl << std::endl;
+
 }
 #endif
 
