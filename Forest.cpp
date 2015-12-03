@@ -61,7 +61,6 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 	std::vector<ForestNode*> leaves;
 
 #ifdef USE_AGGREGATION
-	if (aAggregate > 0)
 	  aGenes.observedCodons(mObservedCodons, mMapCodonToState, aAggregate);
 #endif
 
@@ -108,7 +107,7 @@ void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, Codon
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb(&mProbs[VECTOR_SLOT*(node*(Nt*mNumSites)+set*mNumSites+site)]);
 #else
 #ifdef USE_AGGREGATION
-			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set], aAggregate);
+			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set], mObservedCodons[site].size() > 0);
 #else
 			for(int set=0; set < Nt; ++set) aGenes.setLeaveProb((*il)->mProb[set]);
 #endif

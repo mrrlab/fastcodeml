@@ -215,7 +215,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		{OPT_BRANCH_LENGTH,		 "-bl",					SO_NONE,	"The length of the brances is fixed"},
 		{OPT_BRANCH_LENGTH,		 "--branch-lengths-fixed", SO_NONE,	   ""},
 #ifdef USE_AGGREGATION
-		{OPT_AGGREGATE,			"-a",					SO_REQ_SEP, "Aggregation (0: off, 1: full, default:0)" },
+		{OPT_AGGREGATE,			"-a",					SO_REQ_SEP, "Aggregation (0: off, 1: full, 2: without positions having distance of three between codons, default:0)" },
 		{OPT_AGGREGATE,			"--aggregate",					SO_REQ_SEP, "" },
 #endif
 		SO_END_OF_OPTIONS

@@ -371,6 +371,7 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 			   int aAggregate) const
 {
 	size_t nspecies = mDnaSpecies.size();
+	size_t naggr = 0;
 	// Save observed states
 	std::cout << "Creating codons/position table" << std::endl;
 	for(size_t j=0; j < mSiteMultiplicity.size(); ++j)
@@ -399,9 +400,16 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 		s.erase(last, s.end());
 		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
 
-		if (s.size() >= 61) { // If all the possible codons, no point to aggregate.
-		  s.clear();
-		}
+		if (s.size() >= 61 || // all the possible codons, no point to aggregate.
+		    aAggregate == 0 || // aggregation is off
+		    (aAggregate == 2 && maxMinCodonDistance(s) > 2) // aggregation mode = 2 and huge edit distance
+		    )
+		  {
+		    s.clear();
+		  } else
+		  {
+		    ++naggr;
+		  }
 		aObservedCodons.push_back(s);
 	}
 	for(size_t j=0; j < mSiteMultiplicity.size(); ++j) {
@@ -413,6 +421,8 @@ void Genes::observedCodons(std::vector<std::vector<int> > &aObservedCodons, std:
 		//std::cout << "pos=" << j << ",size=" << s.size() << std::endl;
 		aMapCodonToState.push_back(s);
 	}
+	std::cout << "Will aggregate " << naggr << " positions." << std::endl;
+
 }
 #endif
 
@@ -522,26 +532,28 @@ void Genes::initCodonDistanceMap(void)
 	if (it2->second.size() == 1) {
 	  // compute edit distance
 	  int dist = 0;
-	  for (int i = 0; i < 3; i++)
-	    if (it1->first[0] != it2->first[1])
+	  for (size_t i = 0; i < 3; i++)
+	    if (it1->first[i] != it2->first[i])
 	      ++dist;
 	  mMapCodonPairToDistance.insert(std::make_pair(std::make_pair(it1->second[0], it2->second[0]), dist));
 	}
 }
 
-int Genes::maxMinCodonDistance(std::vector<int> aCodons)
+size_t Genes::maxMinCodonDistance(std::vector<int> aCodons) const
 {
-  int maxDist = 0; // maximum minimum edit distance among every codons
+  int maxMinDist = 0; // maximum minimum edit distance among every codons
   for (std::vector<int>::iterator it1=aCodons.begin(); it1!=aCodons.end(); it1++) {
     int minDist = -1; // minimal edit distance between this codon and some other
     for (std::vector<int>::iterator it2=aCodons.begin(); it2!=aCodons.end(); it2++)
       if (*it1 != *it2) {
-	int dist = mMapCodonPairToDistance[std::make_pair(*it1, *it2)];
-	if (minDist < 0 || minDist > dist) minDist = dist;
+	std::map<std::pair<int, int>, size_t>::const_iterator dist = mMapCodonPairToDistance.find(std::make_pair(*it1, *it2));
+	if (dist == mMapCodonPairToDistance.end())
+	  FastCodeMLFatal("Couldn't find codon distance.");
+	if (minDist < 0 || minDist > dist->second) minDist = dist->second;
       }
-    if (maxDist < minDist) maxDist = minDist;
+    if (maxMinDist < minDist) maxMinDist = minDist;
   }
-  return maxDist;
+  return maxMinDist;
 }
 #endif
 
