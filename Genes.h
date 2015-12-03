@@ -84,7 +84,7 @@ public:
   ///
   /// @exception FastCodeMLFatal If saved codon is invalid.
   ///
-  void saveCodonsForCount(std::vector<std::vector<unsigned int>> &aCodons,
+  void saveCodonsForCount(std::vector<std::vector<unsigned int> > &aCodons,
                           unsigned int aSiteMultiplicity) const;
 
   /// Check coherence between tree and genes.
@@ -181,26 +181,17 @@ private:
   std::vector<std::string> mDnaSpecies;        ///< The list of species labels
   std::vector<std::string> mDnaGene;           ///< The gene DNA basis strings
   std::vector<unsigned int> mSiteMultiplicity; ///< Site multiplicity (sites
-  /// with multiplicity of zero has
-  /// been removed from the site
-  /// list)
+    /// with multiplicity of zero has been removed from the site list)
   std::vector<unsigned int>
       mMapSiteToDnaGene; ///< Map the site number to the position in mDnaGene
   std::map<std::string, unsigned int> mMapSpecieToDnaGene; ///< Map specie name
-  /// to position in the
-  /// gene list mDnaGene
+  /// to position in the gene list mDnaGene
   std::multimap<size_t, size_t> mSitesMappingToOriginal; ///< Map reduced site
-  /// num. to list of
-  /// corresponding
-  /// original sites
+  /// num. to list of corresponding original sites
   size_t mOriginalNumSites; ///< Original number of sites (before cleaning)
 
-  std::map<std::string, std::vector<int>> mMapCodonToPosition; ///< Map codons
-                                                               ///(including
-  /// ambiguous
-  /// ones) to
-  /// positions on
-  /// the CPV
+  std::map<std::string, std::vector<int> > mMapCodonToPosition; ///< Map codons
+    ///(including ambiguous ones) to positions on the CPV
   std::vector<int>
       mEmptyVector; ///< Empty vector to be returned if no position available
   mutable std::vector<int>

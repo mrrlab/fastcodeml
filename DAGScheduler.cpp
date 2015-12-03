@@ -62,7 +62,7 @@ void DAGScheduler::dumpDAG(std::ostream &aOut) const {
   aOut << '#' << std::endl;
 
   // Then output all edges
-  std::vector<std::pair<const void *, const void *>>::const_iterator ied =
+  std::vector<std::pair<const void *, const void *> >::const_iterator ied =
       mEdges.begin();
   for (; ied != mEdges.end(); ++ied) {
     aOut << ied->first << ' ' << ied->second << std::endl;

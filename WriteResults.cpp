@@ -84,7 +84,7 @@ void WriteResults::outputResults(void) {
   // they start from 1 and not zero)
   for (size_t branch = min_branch; branch <= max_branch; ++branch) {
     std::map<size_t, std::pair<std::vector<unsigned int>,
-                               std::vector<double>>>::const_iterator ipss;
+                               std::vector<double> > >::const_iterator ipss;
     ipss = mPositiveSelSites.find(branch);
     if (ipss != mPositiveSelSites.end()) {
       const std::vector<unsigned int> &site = ipss->second.first;

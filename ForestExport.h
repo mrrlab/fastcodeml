@@ -42,8 +42,8 @@ private:
   ///
   void exportForestWalker(const ForestNode *aNode,
                           const std::vector<double> &aBranchLengths,
-                          std::vector<std::pair<int, int>> &aNodeFrom,
-                          std::vector<std::pair<int, int>> &aNodeTo,
+                          std::vector<std::pair<int, int> > &aNodeFrom,
+                          std::vector<std::pair<int, int> > &aNodeTo,
                           std::vector<double> &aLength) const;
 
   /// Disabled assignment operator to avoid warnings on Windows.

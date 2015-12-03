@@ -45,16 +45,16 @@ struct NewickGrammar : public grammar<NewickGrammar> {
       marker = leaf_node_d[+alnum_p];
     }
 
-    rule<ScannerT, parser_context<>, parser_tag<treeID>> tree;
-    rule<ScannerT, parser_context<>, parser_tag<nodelistID>> nodelist;
-    rule<ScannerT, parser_context<>, parser_tag<subtreeID>> subtree;
-    rule<ScannerT, parser_context<>, parser_tag<fulllabelID>> full_label;
-    rule<ScannerT, parser_context<>, parser_tag<branchlenID>> branch_length;
-    rule<ScannerT, parser_context<>, parser_tag<cblenID>> colon_plus_len;
-    rule<ScannerT, parser_context<>, parser_tag<labelID>> label;
-    rule<ScannerT, parser_context<>, parser_tag<markerID>> marker;
+    rule<ScannerT, parser_context<>, parser_tag<treeID> > tree;
+    rule<ScannerT, parser_context<>, parser_tag<nodelistID> > nodelist;
+    rule<ScannerT, parser_context<>, parser_tag<subtreeID> > subtree;
+    rule<ScannerT, parser_context<>, parser_tag<fulllabelID> > full_label;
+    rule<ScannerT, parser_context<>, parser_tag<branchlenID> > branch_length;
+    rule<ScannerT, parser_context<>, parser_tag<cblenID> > colon_plus_len;
+    rule<ScannerT, parser_context<>, parser_tag<labelID> > label;
+    rule<ScannerT, parser_context<>, parser_tag<markerID> > marker;
 
-    rule<ScannerT, parser_context<>, parser_tag<treeID>> const &start() const {
+    rule<ScannerT, parser_context<>, parser_tag<treeID> > const &start() const {
       return tree;
     }
   };

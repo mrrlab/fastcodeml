@@ -37,7 +37,7 @@ public:
   /// level
   ///
   void setBranchDependencies(
-      const std::vector<std::vector<ForestNode *>> &aNodesByLevel);
+      const std::vector<std::vector<ForestNode *> > &aNodesByLevel);
 
   /// Initialize the class instance
   ///
@@ -212,7 +212,7 @@ private:
   /// position, to position)
   typedef std::vector<VectorOfRangesNoCnt>
       VectorOfVectorOfRangesNoCnt; ///< Vector of vectors of single item copies
-  typedef std::vector<std::pair<size_t, size_t>>
+  typedef std::vector<std::pair<size_t, size_t> >
       VectorOfPairs; ///< Vector of pairs of values
 
   VectorOfPairs mLimits; ///< Lower index and total count for each branch
@@ -225,7 +225,7 @@ private:
   /// is the first entry for its level
   bool mNoTransformations; ///< If set no transformation will take place
                            ///(corresponds to no tree prune case)
-  std::vector<std::vector<unsigned int>> mBranchByLevel; ///< Each level
+  std::vector<std::vector<unsigned int> > mBranchByLevel; ///< Each level
   /// contains a list of
   /// branch numbers at
   /// this level. List

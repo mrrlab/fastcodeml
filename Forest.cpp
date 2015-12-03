@@ -44,7 +44,7 @@ void Forest::loadTreeAndGenes(
   const std::vector<unsigned int> &mult = aGenes.getSiteMultiplicity();
 
   // Initialize the codon info list
-  std::vector<std::vector<unsigned int>> codons_info;
+  std::vector<std::vector<unsigned int> > codons_info;
   codons_info.reserve(mNumSites * aGenes.getNumSpecies());
 
   // Initialize the array of all probability vectors to be all zeros
@@ -208,9 +208,9 @@ void Forest::postLoad(void) {
     unsigned int max_level = 0;
     unsigned int max_leaf = 0;
     unsigned int level = 0;
-    std::vector<std::vector<ForestNode *>>::iterator inbl(
+    std::vector<std::vector<ForestNode *> >::iterator inbl(
         mNodesByLevel.begin());
-    const std::vector<std::vector<ForestNode *>>::iterator end(
+    const std::vector<std::vector<ForestNode *> >::iterator end(
         mNodesByLevel.end());
     for (level = 0; inbl != end; ++inbl, ++level) {
       unsigned int num_leaves = 0;
@@ -532,7 +532,7 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet &aSet,
 
   // For each level of the tree (except the root)
   unsigned int level = 0;
-  std::vector<std::vector<ForestNode *>>::reverse_iterator inbl;
+  std::vector<std::vector<ForestNode *> >::reverse_iterator inbl;
   for (inbl = mNodesByLevel.rbegin(); inbl != mNodesByLevel.rend();
        ++inbl, ++level) {
     const int num_sites = static_cast<int>(inbl->size());

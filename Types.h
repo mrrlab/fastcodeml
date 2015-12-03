@@ -8,12 +8,12 @@
 
 /// Array of doubles aligned on a cache line
 ///
-typedef std::vector<double, AlignedAllocator<double, CACHE_LINE_ALIGN>>
+typedef std::vector<double, AlignedAllocator<double, CACHE_LINE_ALIGN> >
     CacheAlignedDoubleVector;
 
 /// Array of doubles to be used by SSE instructions
 ///
-typedef std::vector<double, AlignedAllocator<double, 16>>
+typedef std::vector<double, AlignedAllocator<double, 16> >
     SSEAlignedDoubleVector;
 
 #endif

@@ -45,7 +45,7 @@ public:
   /// @exception FastCodeMLFatal If invalid codon frequency model requested
   ///
   void
-  setCodonFrequencies(const std::vector<std::vector<unsigned int>> &aCodons,
+  setCodonFrequencies(const std::vector<std::vector<unsigned int> > &aCodons,
                       CodonFrequencyModel aModel, bool aShowMessages);
 
   /// Return a pointer to the codon frequencies array
@@ -106,7 +106,7 @@ private:
   /// @param[in] aCodons Codon positions and multiplicity.
   /// @param[in,out] aCodonCount The count of each codon occurrences.
   ///
-  void updateCodonCount(const std::vector<std::vector<unsigned int>> &aCodons,
+  void updateCodonCount(const std::vector<std::vector<unsigned int> > &aCodons,
                         std::vector<double> &aCodonCount) const;
 
   /// Convert the codon number in the 1 to 64 range to 1 to 61

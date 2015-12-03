@@ -89,7 +89,7 @@ private:
   /// If null, no printing appear
   std::map<size_t, double> mLnL[2]; ///< The log-likelihood for the given fg
   /// branch and for the two hypothesis
-  std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double>>>
+  std::map<size_t, std::pair<std::vector<unsigned int>, std::vector<double> > >
       mPositiveSelSites; ///< The sites under positive selection and the
   /// corresponding probabilities for a given fg branch
   mutable std::vector<size_t>

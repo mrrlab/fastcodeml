@@ -91,7 +91,7 @@ void Genes::setLeaveProb(double *aLeaveProbVect) const {
   }
 }
 
-void Genes::saveCodonsForCount(std::vector<std::vector<unsigned int>> &aCodons,
+void Genes::saveCodonsForCount(std::vector<std::vector<unsigned int> > &aCodons,
                                unsigned int aSiteMultiplicity) const {
   // Check if valid translation of the codon
   size_t cnt = mCurrentPositions.size();
@@ -436,7 +436,7 @@ void Genes::initFullCodonMap(void) {
 
         // This is a valid, possibly ambiguous codon
         if (valid) {
-          mMapCodonToPosition.insert(std::pair<std::string, std::vector<int>>(
+          mMapCodonToPosition.insert(std::pair<std::string, std::vector<int> >(
               std::string(codona), pos));
         }
       }
@@ -468,7 +468,7 @@ const std::vector<int> &Genes::getPositions(const char *aCodon) const {
   codon[3] = '\0';
 
   // Check if it is in the list of valid codons
-  std::map<std::string, std::vector<int>>::const_iterator im(
+  std::map<std::string, std::vector<int> >::const_iterator im(
       mMapCodonToPosition.find(std::string(codon)));
 
   // If no, return an empty list, else return the list of corresponding

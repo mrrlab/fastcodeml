@@ -273,16 +273,11 @@ void BranchSiteModel::setLimits(size_t aNumTimes, size_t aNumVariables,
   } else {
     mLowerBound.reserve(aNumTimes + aNumVariables);
     mUpperBound.reserve(aNumTimes + aNumVariables);
-    // Set lower constrains							// Set
-    // upper
-    // constrains
+    // Set lower & upper constrains
     mLowerBound.assign(aNumTimes, 0);
     mUpperBound.assign(aNumTimes, 50.0); // T
   }
 
-// Set lower constrains							// Set
-// upper
-// constrains
 #ifdef USE_ORIGINAL_PROPORTIONS
   mLowerBound.push_back(-99.0);
   mUpperBound.push_back(99.0); // x0 -> p0

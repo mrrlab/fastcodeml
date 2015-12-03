@@ -67,7 +67,8 @@ public:
 
 private:
   std::set<const void *> mNodes; ///< Load the distinct node addresses
-  std::vector<std::pair<const void *, const void *>> mEdges; ///< Load the edges
+  std::vector<std::pair<const void *, const void *> >
+      mEdges;                              ///< Load the edges
   std::map<const void *, int> mRefCounter; ///< Reference counter
   std::map<const void *, int>
       mRefCounterSave; ///< Save the reference counter map
