@@ -361,9 +361,13 @@ int main(int aRgc, char **aRgv)
 	size_t branch_start, branch_end;
 	// omid
 	std::set<int> fg_set; // to save a list of fg branches from the getBranchRange function
+	std::set<int> ib_set; // to save a list of internal branches from the getBranchRange function
 	// end omid
-	forest.getBranchRange(cmd, branch_start, branch_end, fg_set); // omid : fgset is added to save a list of fg branches
+	forest.getBranchRange(cmd, branch_start, branch_end, fg_set, ib_set); // omid : fgset is added to save a list of fg branches
 
+	for (std::set<int>::iterator it=ib_set.begin(); it!=ib_set.end(); ++it)
+				    std::cout << " " << *it << ",";
+	std::cout << std::endl;
 	// omid
 
 	/*std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
@@ -381,10 +385,7 @@ int main(int aRgc, char **aRgv)
 
 	// end omid
 
-	std :: cout << "FOREGROUND BRANCH(ES) : ";
-	for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
-	    std::cout << " " << *it << " ";
-	std :: cout << std :: endl;
+
 
 	// Start timing parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) timer.start();
@@ -393,6 +394,10 @@ int main(int aRgc, char **aRgv)
 
 	if (!fg_set.empty()) // in case of marked fg branches (one or multiple fg)
 	{
+		std :: cout << "Doing foreground branch(es) ";
+		for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
+		    std::cout << " " << *it << " ";
+		std :: cout << std :: endl;
 		// Initialize the models
 		MfgBranchSiteModelNullHyp h0(forest, cmd);
 		MfgBranchSiteModelAltHyp  h1(forest, cmd);
@@ -403,9 +408,7 @@ int main(int aRgc, char **aRgv)
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		//if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch set : " ;
-		//for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
-		//	    std::cout << " " << *it << ",";
-		//std::cout << std::endl;
+
 
 				// Compute the alternate model maximum loglikelihood
 				double lnl1 = 0.;
@@ -551,7 +554,7 @@ int main(int aRgc, char **aRgv)
 				// omid
 				//h1.saveComputedTimes();
 				//std :: cout << std::endl;
-				//std :: cout << "FINAL TREE" << std::endl;
+				std :: cout << std::endl << "H1 Final ";
 				tree.printTreeAnnotated(std::cout, NULL, 0, true);
 				std :: cout << std::endl;
 				//std :: cout << "TREE INFO (number of branches)" << std::endl;
@@ -573,7 +576,7 @@ int main(int aRgc, char **aRgv)
 		lnl1 = h1(fg_set);
 		std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
-		return -1;
+		return 0;
 	}
 
 	// Else for all requested internal branches
@@ -590,10 +593,34 @@ int main(int aRgc, char **aRgv)
 	// Initialize the test
 	BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
+	// omid
+
+	std :: cout << std::endl << " internal : ";
+	tree.printTreeAnnotated(std::cout, NULL, 0, false);
+	std :: cout << std::endl;
+
+	std :: cout << std::endl << " leaves : ";
+	tree.printTreeAnnotated(std::cout, NULL, 0, true);
+	std :: cout << std::endl;
+
+
+	// branch_start=branch_end=20;
+	//std :: cout<< "all" << tree.mInternalNodes.size() << std::endl;
+	//for (int i = 0; i<13;i++)
+	//{std :: cout<< "leave " << i << "?" << tree.isLeaf(i) << std::endl;}
+
+	// end omid
+
+
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
-		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch " << fg_branch << std::endl;
 
+		// if -ba is active or (-ba is not active and fg_branch is in ib_set) )
+
+		{
+
+		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing foreground branch " << fg_branch << std::endl;
+		//std :: cout<< "branch label" << tree.mInternalNodes.size();
 		// Compute the alternate model maximum loglikelihood
 		double lnl1 = 0.;
 		if(cmd.mComputeHypothesis != 0)
@@ -602,9 +629,10 @@ int main(int aRgc, char **aRgv)
 			if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
+			h1.saveComputedTimes();
 
 			// Save the value for formatted output
-			output_results.saveLnL(fg_branch, lnl1, 1);
+			//output_results.saveLnL(fg_branch, lnl1, 1);
 		}
 
 		// Compute the null model maximum loglikelihood
@@ -621,7 +649,7 @@ int main(int aRgc, char **aRgv)
 			lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0, lnl1-THRESHOLD_FOR_LRT);
 
 			// Save the value for formatted output (only if has not be forced to stop)
-			if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+			//if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
 		}
 
 		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
@@ -719,13 +747,20 @@ int main(int aRgc, char **aRgv)
 				output_results.savePositiveSelSites(fg_branch, positive_sel_sites, positive_sel_sites_prob);
 			}
 		}
+
+		std :: cout << std::endl << "H1 Final ";
+		tree.printTreeAnnotated(std::cout, NULL, 0, true);
+		std :: cout << std::endl;
+
+	}
 	}
 
 	// Get the time needed by the parallel part
 	if(cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {timer.stop(); std::cout << std::endl << "TIMER (processing) ncores: " << std::setw(2) << num_threads << " time: " << timer.get() << std::endl;}
 
+
 	// Output the results
-	output_results.outputResults();
+	//output_results.outputResults();
 
 	////////////////////////////////////////////////////////////////////
 	// Catch all exceptions

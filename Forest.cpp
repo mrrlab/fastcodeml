@@ -31,7 +31,7 @@ const unsigned char ForestNode::mMaskTable[MAX_NUM_CHILDREN] = {0x1, 0x2, 0x4, 0
 void Forest::loadTreeAndGenes(const PhyloTree& aTree, const Genes& aGenes, CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel)
 {
 	// Collect global data that refers to the tree and that should not be duplicated on each tree of the forest
-	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, &mMarkedInternalBranch, mMarkedBranches);
+	aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, mInternalBranches, &mMarkedInternalBranch, mMarkedBranches);
 
 	// Number of branches of one tree
 	mNumBranches = aTree.getNumBranches();
@@ -257,10 +257,10 @@ void Forest::postLoad(void)
 }
 #endif
 
-bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<int>& aFgSet) const
+bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_t& aBranchEnd, std::set<int>& aFgSet, std::set<int>& aIbSet) const
 {
 	const size_t num_branches  = getNumBranches() ; /* omid getNumInternalBranches(); end omid */
-	const size_t num_internal_branches  = getNumInternalBranches();
+	//const size_t num_internal_branches  = getNumInternalBranches();
 
 	// omid
 
@@ -268,7 +268,7 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 
 	// end omid
 
-	const size_t marked_branch = getMarkedInternalBranch();
+	//const size_t marked_branch = getMarkedInternalBranch();
 
 	// omid
 
@@ -279,13 +279,14 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 	// omid
 
 	aFgSet = getMarkedBranches();
+	aIbSet = getInternalBranches();
 
 	// end omid
 
 	// Check if the request make sense
 	if(num_branches == 0)
 	{
-		throw FastCodeMLFatal("No internal branches present. Quitting.");
+		throw FastCodeMLFatal("No branches present. Quitting.");
 	}
 
 	// By default do all branches
@@ -338,18 +339,18 @@ bool Forest::getBranchRange(const CmdLine& aCmdLine, size_t& aBranchStart, size_
 			if(aBranchStart > 0 && aBranchEnd < num_branches-1) do_all = false;
 		}
 	}*/
-	if (aCmdLine.mBranchAll)
-	{
+	//if (aCmdLine.mBranchAll)
+	//{
 		// No limit set, do all branches
 		aBranchStart = 0;
 		aBranchEnd	 = num_branches-1;
-	}
-	else
-	{
+	//}
+	//else
+	//{
 		// default, do all internal branches
-		aBranchStart = 0;
-		aBranchEnd	 = num_internal_branches-1;
-	}
+	//	aBranchStart = 0;
+	//	aBranchEnd	 = num_internal_branches-1;
+	//}
 
 	return do_all;
 }

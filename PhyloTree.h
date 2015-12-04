@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 #include <fstream>
+#include <algorithm>
 #include "TreeNode.h"
 #include "ForestNode.h"
 #include "Types.h"
@@ -77,7 +78,6 @@ public:
 	///
 	size_t getMarkedInternalBranch(void) const;
 
-
 	/// Return the index of the all marked branches.
 	///
 	/// @return The index of the marked branches or UINT_MAX if none marked
@@ -102,6 +102,7 @@ public:
 	///
 	/// @param[out] aNodeNames Ordered list of the node labels
 	/// @param[out] aBranchLengths Ordered list of branch lists as read from the file
+	/// @param[out] aInternalBranches list of internal branches as read from the file
 	/// @param[out] aMarkedIntBranch Pointer to location where the marked internal branch number is stored
 	/// @param[out] aMarkedBranches Ordered list of marked branches from the file
 	/// @param[in] aTreeNode The node from which to start the cloning in the tree. If not present starts from the root
@@ -109,7 +110,7 @@ public:
 	///
 	/// @return The node id to the next node
 
-	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch, std::set<int>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, std::set<int>& aInternalBranches, size_t* aMarkedIntBranch, std::set<int>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///
@@ -125,6 +126,15 @@ public:
 	/// @exception FastCodeMLFatal Root has only one branch or points only to leaves.
 	///
 	void checkRootBranches(void) ; //const;
+
+	/// checks whether a branch is leaf or not (omid).
+	///
+	/// @param[in] branchLabel The branch label
+	///
+	/// @return whether a branch is leaf or not
+	///bool isLeaf(int branchLabel){return std::find(mLeavesSpecies.begin(), mLeavesSpecies.end(), branchLabel) != mLeavesSpecies.end();};
+
+
 
 protected:
 

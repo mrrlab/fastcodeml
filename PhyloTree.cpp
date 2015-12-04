@@ -146,7 +146,7 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	return id;
 }
 
-unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, size_t* aMarkedIntBranch,std::set<int>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
+unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, std::set<int>& aInternalBranches, size_t* aMarkedIntBranch,std::set<int>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
 {
 	unsigned int id;
 
@@ -168,12 +168,13 @@ unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNam
 	if (!aTreeNode->getType().empty()) aMarkedBranches.insert(aNodeId);// Get all marked branches
 	aNodeNames.push_back(aTreeNode->getLabel());
 	aBranchLengths.push_back(aTreeNode->getLen());
+	if (!aTreeNode->isLeaf()) aInternalBranches.insert(aNodeId);
 
 	// Recurse
 	TreeNode *m;
 	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
 	{
-		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aMarkedIntBranch, aMarkedBranches, m, id);
+		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aInternalBranches, aMarkedIntBranch, aMarkedBranches, m, id);
 	}
 
 

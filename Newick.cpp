@@ -290,9 +290,9 @@ int Newick::printTreeAnnotated(std::ostream& aOut, TreeNode *aNode, int aBranch,
 	if(!aNode)
 	{
 		if (wLeaves)
-			aOut << std::endl << "Annotated Newick tree (*N mark the branch N)" << std::endl;
+			aOut << "Annotated Newick Tree (*N mark the branch N)" << std::endl;
 		else
-			aOut << std::endl << "Annotated Newick tree (*N mark the internal branch N)" << std::endl;
+			aOut << "Annotated Newick Tree (*N mark the internal branch N)" << std::endl;
 		aOut << '(';
 		for(idx=0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx)
 		{
