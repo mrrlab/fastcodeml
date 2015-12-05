@@ -253,7 +253,7 @@ int main(int aRgc, char **aRgv)
 	std :: cout << tree.getNumBranches() << std::endl;*/
 	// end omid
 
-	// Check root
+	// Check root and unrooting if tree is rooted
 
 	tree.checkRootBranches();
 
@@ -274,7 +274,7 @@ int main(int aRgc, char **aRgv)
 
 		if(zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0)
 		{
-			std::cout << "Found null or missing branch length in tree file. On leaves: " << zero_on_leaf_cnt << "  on internal branches: " << zero_on_int_cnt << std::endl;
+			std::cout << "Found null or missing branch length in tree file: on " << zero_on_leaf_cnt << " leaves and on " << zero_on_int_cnt << " internal branches." << std::endl;
 		}
 
 		//if(zero_on_leaf_cnt > 0)
@@ -362,12 +362,13 @@ int main(int aRgc, char **aRgv)
 	// omid
 	std::set<int> fg_set; // to save a list of fg branches from the getBranchRange function
 	std::set<int> ib_set; // to save a list of internal branches from the getBranchRange function
+	std::vector<double> mVar; // to save optimization variables
 	// end omid
 	forest.getBranchRange(cmd, branch_start, branch_end, fg_set, ib_set); // omid : fgset is added to save a list of fg branches
 
-	for (std::set<int>::iterator it=ib_set.begin(); it!=ib_set.end(); ++it)
-				    std::cout << " " << *it << ",";
-	std::cout << std::endl;
+	//for (std::set<int>::iterator it=ib_set.begin(); it!=ib_set.end(); ++it)
+				   // std::cout << " " << *it << ",";
+	// std::cout << std::endl;
 	// omid
 
 	/*std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
@@ -385,6 +386,19 @@ int main(int aRgc, char **aRgv)
 
 	// end omid
 
+	// omid
+
+	//	std :: cout << std::endl << " internal : ";
+	//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
+	//	std :: cout << std::endl;
+
+//		std :: cout << std::endl << " leaves : ";
+//		tree.printTreeAnnotated(std::cout, NULL, 0, true);
+//		std :: cout << std::endl;
+
+
+	// end omid
+
 
 
 	// Start timing parallel part
@@ -394,6 +408,8 @@ int main(int aRgc, char **aRgv)
 
 	if (!fg_set.empty()) // in case of marked fg branches (one or multiple fg)
 	{
+		std::cout << std::endl << "Doing foreground branch(es) from tree file " << std::endl;
+		std::cout << "-------------------------------------------" << std::endl;
 		std :: cout << "Doing foreground branch(es) ";
 		for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
 		    std::cout << " " << *it << " ";
@@ -554,12 +570,18 @@ int main(int aRgc, char **aRgv)
 				// omid
 				//h1.saveComputedTimes();
 				//std :: cout << std::endl;
-				std :: cout << std::endl << "H1 Final ";
-				tree.printTreeAnnotated(std::cout, NULL, 0, true);
-				std :: cout << std::endl;
+				//std :: cout << std::endl << "H1 Final ";
+				//tree.printTreeAnnotated(std::cout, NULL, 0, true);
+				//std :: cout << std::endl;
 				//std :: cout << "TREE INFO (number of branches)" << std::endl;
 				//std :: cout << tree.getNumBranches() << std::endl;
 				// end omid
+
+				mVar=  h1.getVariables();
+				std :: cout << std::endl << "H1 Final ";
+				tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
+				//tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &h1.getVariables());
+				//std :: cout << std::endl;
 
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -595,13 +617,13 @@ int main(int aRgc, char **aRgv)
 
 	// omid
 
-	std :: cout << std::endl << " internal : ";
-	tree.printTreeAnnotated(std::cout, NULL, 0, false);
-	std :: cout << std::endl;
-
-	std :: cout << std::endl << " leaves : ";
-	tree.printTreeAnnotated(std::cout, NULL, 0, true);
-	std :: cout << std::endl;
+//	std :: cout << std::endl << " internal : ";
+//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
+//	std :: cout << std::endl;
+//
+//	std :: cout << std::endl << " leaves : ";
+//	tree.printTreeAnnotated(std::cout, NULL, 0, true);
+//	std :: cout << std::endl;
 
 
 	// branch_start=branch_end=20;
@@ -610,16 +632,19 @@ int main(int aRgc, char **aRgv)
 	//{std :: cout<< "leave " << i << "?" << tree.isLeaf(i) << std::endl;}
 
 	// end omid
+	if ( cmd.mBranchAll) std::cout << std::endl << "Doing all foreground branches" << std::endl;
+	else std::cout << std::endl << "Doing internal foreground branches" << std::endl;
+	std::cout << "------------------------------------" << std::endl;
 
 
 	for(size_t fg_branch=branch_start; fg_branch <= branch_end; ++fg_branch)
 	{
 
-		// if -ba is active or (-ba is not active and fg_branch is in ib_set) )
+		if ( cmd.mBranchAll or ( !cmd.mBranchAll and ib_set.find(fg_branch)!=ib_set.end() ))
 
 		{
 
-		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing foreground branch " << fg_branch << std::endl;
+		if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << "Doing foreground branch " << fg_branch << std::endl;
 		//std :: cout<< "branch label" << tree.mInternalNodes.size();
 		// Compute the alternate model maximum loglikelihood
 		double lnl1 = 0.;
@@ -630,6 +655,7 @@ int main(int aRgc, char **aRgv)
 
 			lnl1 = h1(fg_branch);
 			h1.saveComputedTimes();
+			//h1.mBranches
 
 			// Save the value for formatted output
 			//output_results.saveLnL(fg_branch, lnl1, 1);
@@ -748,8 +774,10 @@ int main(int aRgc, char **aRgv)
 			}
 		}
 
+		//std :: cout << std::endl;
+		mVar=h1.getVariables();
 		std :: cout << std::endl << "H1 Final ";
-		tree.printTreeAnnotated(std::cout, NULL, 0, true);
+		tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
 		std :: cout << std::endl;
 
 	}

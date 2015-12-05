@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include "Newick.h"
 #include "NewickGrammar.h"
 #include "Exceptions.h"
@@ -290,9 +291,9 @@ int Newick::printTreeAnnotated(std::ostream& aOut, TreeNode *aNode, int aBranch,
 	if(!aNode)
 	{
 		if (wLeaves)
-			aOut << "Annotated Newick Tree (*N mark the branch N)" << std::endl;
+			aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl;
 		else
-			aOut << "Annotated Newick Tree (*N mark the internal branch N)" << std::endl;
+			aOut << "Annotated Newick Tree (*N marks the internal branch N)" << std::endl;
 		aOut << '(';
 		for(idx=0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx)
 		{
@@ -321,6 +322,56 @@ int Newick::printTreeAnnotated(std::ostream& aOut, TreeNode *aNode, int aBranch,
 		}
 		aOut << ')';
 		aNode->printNode();
+		aOut << '*' << aBranch;
+	}
+
+	return branch_idx;
+}
+
+int Newick::printTreeAnnotatedWithEstLens(std::ostream& aOut, TreeNode *aNode, int aBranch, bool wLeaves, std::vector<double>* mVar) const
+{
+	TreeNode *m;
+	unsigned int idx;
+	int branch_idx = aBranch;
+
+	// Special case for the root
+	if(!aNode)
+	{
+		if (wLeaves)
+			aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl;
+		else
+			aOut << "Annotated Newick Tree (*N marks the internal branch N)" << std::endl;
+		aOut << '(';
+		for(idx=0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx)
+		{
+			if(idx > 0) aOut << ',';
+			branch_idx = printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar);
+		}
+		aOut << ')';
+		mTreeRoot.printNodeWoutLen();
+		//std::cout  << std::setprecision(6) << ":" << (*mVar)[aBranch];
+		aOut << ';' << std::endl;
+	}
+	else if(aNode->isLeaf())
+	{
+
+		if (wLeaves) branch_idx = aBranch+1;
+		aNode->printNodeWoutLen();
+		std::cout  << std::setprecision(6) << ":" << (*mVar)[aBranch];
+		if (wLeaves) aOut << '*' << aBranch;
+	}
+	else
+	{
+		branch_idx = aBranch+1;
+		aOut << '(';
+		for(idx=0; (m = aNode->getChild(idx)) != NULL; ++idx)
+		{
+			if(idx > 0) aOut << ',';
+			branch_idx = printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar);
+		}
+		aOut << ')';
+		aNode->printNodeWoutLen();
+		std::cout  << std::setprecision(6) << ":" << (*mVar)[aBranch];
 		aOut << '*' << aBranch;
 	}
 

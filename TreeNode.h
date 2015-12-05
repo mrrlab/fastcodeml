@@ -111,6 +111,10 @@ public:
 	///
 	void printNode(void) const;
 
+	/// Print the node in the format of %Newick tree (without branch length).
+	///
+	void printNodeWoutLen(void) const;
+
 	/// Clear the node.
 	///
 	void clearNode(void);

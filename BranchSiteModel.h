@@ -91,7 +91,15 @@ protected:
 public:
 	/// Set the times on the tree from the variables
 	///
-	void saveComputedTimes(void) const {mForest.setLengthsFromTimes(mVar);}
+	void saveComputedTimes(void) {//const {
+		// omid
+		/*std::cout << "mVar : "<<std::endl;
+		for (std::vector<double>::iterator it=mVar.begin(); it!=mVar.end(); ++it)
+			std::cout << " " << *it << ",";
+		std::cout << std::endl;*/
+		// end omid
+
+		mForest.setLengthsFromTimes(mVar);}
 
 	/// Formatted print of the maximizer variables array
 	///
@@ -180,7 +188,13 @@ public:
 	///
 	/// @return The optimized variables
 	///
-	const std::vector<double>& getVariables(void) const {return mVar;}
+	///const std::vector<double>* getVariables(void) const {return &mVar;} // should return refference ?
+
+	/// Get variable values
+	///
+	/// @return The optimized variables
+	///
+	const std::vector<double>& getVariables(void) const {return mVar;} // should return refference ?
 
 	/// Get the number of function evaluation.
 	///

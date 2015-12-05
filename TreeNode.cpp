@@ -34,6 +34,14 @@ void TreeNode::printNode(void) const
 	std::cout  << std::setprecision(6) << ":" << mBranchLength;
 }
 
+void TreeNode::printNodeWoutLen(void) const
+{
+	// Print the node info
+	std::cout << mNodeName;
+	if(!mNodeMark.empty()) std::cout << '#' << mNodeMark;
+	//std::cout  << std::setprecision(6) << ":" << mBranchLength;
+}
+
 
 void TreeNode::clearNode(void)
 {
