@@ -327,16 +327,16 @@ void BranchSiteModel::initFromParams(void)
 
 	if(mFixedBranchLength)
 	{
-			// Initialization as in CodeML (seems)
+		// Initialization as in CodeML (seems)
 		mVar[2] = params->getParameter("w0");							// w0
 		mVar[3] = params->getParameter("k");							// k
 
 		double p0 = params->getParameter("p0");
 		double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
-		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
-		mVar[0] = log(p0);											// p0 -> x0
-		mVar[1] = log(p1);											// p1 -> x1
+		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values"); // SEEMS WRONG (OMID)
+		mVar[0] = log((2*p0-p0*p1)/((1-p0)*(1-p1))) ;//log(p0);											// p0 -> x0
+		mVar[1] = log((2*p1-p0*p1)/((1-p0)*(1-p1))) ;//log(p1);											// p1 -> x1
 #else
 		if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 		mVar[0] = p0+p1;												// p0+p1
@@ -353,9 +353,9 @@ void BranchSiteModel::initFromParams(void)
 		double p0 = params->getParameter("p0");
 		double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
-		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
-		mVar[mNumTimes+0] = log(p0);											// p0 -> x0
-		mVar[mNumTimes+1] = log(p1);											// p1 -> x1
+		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values"); // SEEMS WRONG (OMID)
+		mVar[0] = log((2*p0-p0*p1)/((1-p0)*(1-p1))) ;//log(p0);											// p0 -> x0
+		mVar[1] = log((2*p1-p0*p1)/((1-p0)*(1-p1))) ;//log(p1);											// p1 -> x1
 #else
 		if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 		mVar[mNumTimes+0] = p0+p1;												// p0+p1
@@ -582,10 +582,182 @@ void BranchSiteModel::initVariables(void)
 }
 
 
+void BranchSiteModel::initVariablesCodeml(void) // shall random number generator changed with the codeml one ? 32 bit
+{
+	unsigned int i;
+
+	if(mFixedBranchLength)
+	{
+		// Initialize w0, k, v1, v2 (if not already initialized)
+		if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+		{
+			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+			{
+#ifdef USE_ORIGINAL_PROPORTIONS
+				mVar[0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
+				mVar[1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+#else
+				double x0 =	 exp(1.0 + 0.2 * randFrom0to1());
+				double x1 =	 exp(0.0 + 0.2 * randFrom0to1());
+				double tot = x0 + x1 + 1.0;
+				double p0 = x0/tot;
+				double p1 = x1/tot;
+				if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
+
+				mVar[0] = p0+p1;											// p0+p1
+				mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
+#endif
+				mVar[2] = 0.2 + 0.1 * randFrom0to1();						// w0
+				mVar[3] = 1.0;											// k
+			}
+			else
+			{
+#ifdef USE_ORIGINAL_PROPORTIONS
+				mVar[0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
+				mVar[1] = 0.0 + 0.2 * randFrom0to1();					// x1 -> p1
+#else
+				double x0 =	 exp(0.5 + randFrom0to1());
+				double x1 =	 exp(0.5 + randFrom0to1());
+				double tot = x0 + x1 + 1.0;
+				double p0 = x0/tot;
+				double p1 = x1/tot;
+				if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
+
+				mVar[0] = p0+p1;											// p0+p1
+				mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
+#endif
+				mVar[2] = 0.2 + 0.1 * randFrom0to1();					// w0
+				mVar[3] = 1.0 ;					// k
+			}
+		}
+
+		// Initialize w2 if needed
+		if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+		{
+			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+			{
+				mVar[4] = 2.1 ;						// w2
+			}
+			else
+			{
+				mVar[4] = 2.1 ;						// w2
+			}
+		}
+
+		// Re-initialize the next time
+		mInitStatus = INIT_NONE;
+
+		// Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
+		// Don't clamp the results if they came from H1
+		if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+		{
+			unsigned int nv = mNumVariables;
+			for(i=0; i < nv; ++i)
+			{
+				if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
+				if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
+			}
+			for(i=0; i < nv; ++i)
+			{
+				if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
+				if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+			}
+		}
+	}
+
+	else
+	{
+		// Initialize times (if not already initialized)
+		if((mInitStatus & INIT_TIMES) != INIT_TIMES)
+		{
+			for(i=0; i < mNumTimes; ++i) mVar[i] = 0.01 + 0.1 * randFrom0to1();	// T
+		}
+
+		// Initialize w0, k, v1, v2 (if not already initialized)
+		if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+		{
+			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+			{
+#ifdef USE_ORIGINAL_PROPORTIONS
+				mVar[mNumTimes+0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
+				mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+#else
+				double x0 =	 exp(1.0 + 0.2 * randFrom0to1());
+				double x1 =	 exp(0.0 + 0.2 * randFrom0to1());
+				double tot = x0 + x1 + 1.0;
+				double p0 = x0/tot;
+				double p1 = x1/tot;
+				if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
+
+				mVar[mNumTimes+0] = p0+p1;											// p0+p1
+				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
+#endif
+				mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();								// w0
+				mVar[mNumTimes+3] = 1.0;											// k
+			}
+			else
+			{
+#ifdef USE_ORIGINAL_PROPORTIONS
+				mVar[mNumTimes+0] =  1.0 + 0.5 * randFrom0to1();							// x0 -> p0
+				mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();								// x1 -> p1
+#else
+				double x0 =	 exp(0.5 + randFrom0to1());
+				double x1 =	 exp(0.5 + randFrom0to1());
+				double tot = x0 + x1 + 1.0;
+				double p0 = x0/tot;
+				double p1 = x1/tot;
+				if(p0+p1 < 1e-15) {p0 = 1e-6; p1 = 1e-6;}
+
+				mVar[mNumTimes+0] = p0+p1;											// p0+p1
+				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
+#endif
+				mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();								// w0
+				mVar[mNumTimes+3] = 1.0;											// k
+			}
+		}
+
+		// Initialize w2 if needed
+		if(mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2)
+		{
+			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
+			{
+				mVar[mNumTimes+4] = 2.1 ;						// w2
+			}
+			else
+			{
+				mVar[mNumTimes+4] = 2.1 ;						// w2
+			}
+		}
+
+		// Re-initialize the next time
+		mInitStatus = INIT_NONE;
+
+		// Check the initial values to be inside the domain (otherwise use the same clamp as in CodeML)
+		// Don't clamp the results if they came from H1
+		if((mInitStatus & (INIT_TIMES|INIT_PARAMS_H1)) != (INIT_TIMES|INIT_PARAMS_H1))
+		{
+			unsigned int nv = mNumTimes+mNumVariables;
+			for(i=0; i < nv; ++i)
+			{
+				if(mVar[i] < mLowerBound[i] * 1.05) mVar[i] = mLowerBound[i] * 1.05;
+				if(mVar[i] > mUpperBound[i] / 1.05) mVar[i] = mUpperBound[i] / 1.05;
+			}
+			for(i=0; i < nv; ++i)
+			{
+				if(mVar[i] < mLowerBound[i]) mVar[i] = mLowerBound[i] * 1.2;
+				if(mVar[i] > mUpperBound[i]) mVar[i] = mUpperBound[i] * 0.8;
+			}
+		}
+	}
+
+}
+
+
 double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, double aThreshold)
 {
 	// Initialize the variables to be optimized
-	initVariables();
+	//initVariables();
+	initVariablesCodeml();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK		= DBL_MAX;
@@ -602,7 +774,8 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger, 
 double MfgBranchSiteModelNullHyp::operator()(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold)
 {
 	// Initialize the variables to be optimized
-	initVariables();
+	//initVariables();
+	initVariablesCodeml();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK		= DBL_MAX;
@@ -620,7 +793,8 @@ double MfgBranchSiteModelNullHyp::operator()(std::set<int> aFgBranchSet, bool aS
 double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 {
 	// Initialize the variables to be optimized
-	initVariables();
+	//initVariables();
+	initVariablesCodeml();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK		= DBL_MAX;
@@ -638,7 +812,8 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch)
 double MfgBranchSiteModelAltHyp::operator()(std::set<int> aFgBranchSet)
 {
 	// Initialize the variables to be optimized
-	initVariables();
+	//initVariables();
+	initVariablesCodeml();
 
 	// Initialize the variables used to avoid unneeded recomputing
 	mPrevK		= DBL_MAX;

@@ -28,6 +28,7 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 #include "WriteResults.h"
+#include "MathSupport.h"
 
 
 #ifndef VTRACE
@@ -53,6 +54,8 @@
 /// @param[in] aRgv Command line parameters
 ///
 const char* version="1.2.0";
+
+
 
 
 int main(int aRgc, char **aRgv)
@@ -215,7 +218,8 @@ int main(int aRgc, char **aRgv)
 #else
 	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));
 #endif
-	srand(cmd.mSeed);
+	srand(cmd.mSeed); // fastcodeml seed
+	//SetSeed(1,0); // codeml seed
 
 	// Verify the optimizer algorithm selected on the command line
 	if(!cmd.mNoMaximization) BranchSiteModel::verifyOptimizerAlgo(cmd.mOptimizationAlgo);

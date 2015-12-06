@@ -6,6 +6,8 @@
 #undef __SSE2__
 #endif
 
+#include <iostream>
+
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif
@@ -17,6 +19,67 @@
 #else
 #include <cmath>
 #endif
+
+// Codeml random number generator (setting seed, returning random number)
+
+/*static unsigned int z_rndu=1237;
+static int          w_rndu=1237;
+
+void SetSeed (int seed, int PrintSeed)
+{
+   int i;
+   FILE *frand, *fseed;
+
+   if(sizeof(unsigned int) != 4)
+      std :: cout <<"oh-oh, we are in trouble.  int not 32-bit?";
+
+   if(seed <= 0) {
+      frand = fopen("/dev/urandom", "r");
+      if (frand) {
+         for (i=0,seed=0; i<sizeof(unsigned int); i++)
+            seed += (seed << 8) + getc(frand);
+         seed = 2*seed + 1;
+         fclose(frand);
+      }
+      else {
+         seed = 1234567891*(int)time(NULL) + 1;
+      }
+
+      seed = abs(seed);
+
+      if(PrintSeed) {
+         fseed = fopen("SeedUsed", "w");
+         if(fseed == NULL) std::cout << "can't open file SeedUsed.";
+         fprintf(fseed, "%d\n", seed);
+         fclose(fseed);
+      }
+   }
+
+   z_rndu = (unsigned int)seed;
+   w_rndu = seed;
+}
+
+
+double rndu (void)
+{
+ 32-bit integer assumed.
+   From Ripley (1987) p. 46 or table 2.4 line 2.
+   This may return 0 or 1, which can be a problem.
+
+   z_rndu = z_rndu*69069 + 1;
+   if(z_rndu==0 || z_rndu==4294967295)  z_rndu = 13;
+   return z_rndu/4294967295.0;
+}
+
+double rndu2 (void)
+{
+ 32-bit integer assumed.
+   From Ripley (1987) table 2.4 line 4.
+
+   w_rndu = abs(w_rndu*16807) % 2147483647;
+   if(w_rndu==0)  w_rndu = 13;
+   return w_rndu/2147483647.0;
+}*/
 
 //#ifdef USE_MKL_VML
 //#include <mkl_vml_functions.h>

@@ -11,6 +11,7 @@
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
 
+
 //// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
@@ -258,6 +259,36 @@ protected:
 	void getProportions(double aV0, double aV1, double* aProportions) const
 	{
 #ifdef USE_ORIGINAL_PROPORTIONS
+
+		/*   // codeml code //
+	 	 int f_and_x(double x[], double f[], int n, int fromf, int LastItem)
+		{
+		 This transforms between x and f.  x and f can be identical.
+		   If (fromf), f->x
+		   else        x->f.
+		   The iterative variable x[] and frequency f[0,1,n-2] are related as:
+		      freq[k] = exp(x[k])/(1+SUM(exp(x[k]))), k=0,1,...,n-2,
+		   x[] and freq[] may be the same vector.
+		   The last element (f[n-1] or x[n-1]=1) is updated only if(LastItem).
+
+		   int i;
+		   double tot;
+
+		   if (fromf) {   f => x
+		      if((tot=1-sum(f,n-1))<1e-80) error2("f[n-1]==1, not dealt with.");
+		      tot = 1/tot;
+		      for(i=0; i<n-1; i++)  x[i] = log(f[i]*tot);
+		      if(LastItem) x[n-1] = 0;
+		   }
+		   else {         x => f
+		      for(i=0,tot=1; i<n-1; i++)  tot  += (f[i]=exp(x[i]));
+		      for(i=0; i<n-1; i++)        f[i] /= tot;
+		      if(LastItem) f[n-1] = 1/tot;
+		   }
+		   return(0);
+		}*/
+
+
 		aProportions[0] = exp(aV0);
 		aProportions[1] = exp(aV1);
 		double tot = aProportions[0] + aProportions[1] + 1;
@@ -279,6 +310,11 @@ protected:
 	/// It uses mInitType to know what has been already initialized by initFromTree() or initFromResult()
 	///
 	void initVariables(void);
+
+	/// Initialize variables to be optimized.
+	/// It uses mInitType to know what has been already initialized by initFromTree() or initFromResult()
+	///
+	void initVariablesCodeml(void);
 
 private:
 	/// Set upper and lower limits for the maximization domain
