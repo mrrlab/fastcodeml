@@ -7,6 +7,7 @@
 #endif
 
 #include <iostream>
+#include <stdio.h>
 
 #ifdef __SSE2__
 #include <emmintrin.h>
@@ -22,10 +23,10 @@
 
 // Codeml random number generator (setting seed, returning random number)
 
-/*static unsigned int z_rndu=1237;
+static unsigned int z_rndu=1237;
 static int          w_rndu=1237;
 
-void SetSeed (int seed, int PrintSeed)
+inline void SetSeedCodeml (int seed, int PrintSeed)
 {
    int i;
    FILE *frand, *fseed;
@@ -47,12 +48,12 @@ void SetSeed (int seed, int PrintSeed)
 
       seed = abs(seed);
 
-      if(PrintSeed) {
-         fseed = fopen("SeedUsed", "w");
-         if(fseed == NULL) std::cout << "can't open file SeedUsed.";
-         fprintf(fseed, "%d\n", seed);
-         fclose(fseed);
-      }
+      //if(PrintSeed) {
+        // fseed = fopen("SeedUsed", "w");
+        // if(fseed == NULL) std::cout << "can't open file SeedUsed.";
+        // fprintf(fseed, "%d\n", seed);
+        // fclose(fseed);
+      //}
    }
 
    z_rndu = (unsigned int)seed;
@@ -60,26 +61,26 @@ void SetSeed (int seed, int PrintSeed)
 }
 
 
-double rndu (void)
+inline double rnduCodeml (void)
 {
- 32-bit integer assumed.
-   From Ripley (1987) p. 46 or table 2.4 line 2.
-   This may return 0 or 1, which can be a problem.
+   //32-bit integer assumed.
+   //From Ripley (1987) p. 46 or table 2.4 line 2.
+   //This may return 0 or 1, which can be a problem.
 
    z_rndu = z_rndu*69069 + 1;
    if(z_rndu==0 || z_rndu==4294967295)  z_rndu = 13;
    return z_rndu/4294967295.0;
 }
 
-double rndu2 (void)
+inline double rndu2Codeml (void)
 {
- 32-bit integer assumed.
-   From Ripley (1987) table 2.4 line 4.
+   //32-bit integer assumed.
+   //From Ripley (1987) table 2.4 line 4.
 
    w_rndu = abs(w_rndu*16807) % 2147483647;
    if(w_rndu==0)  w_rndu = 13;
    return w_rndu/2147483647.0;
-}*/
+}
 
 //#ifdef USE_MKL_VML
 //#include <mkl_vml_functions.h>

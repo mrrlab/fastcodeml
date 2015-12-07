@@ -218,8 +218,8 @@ int main(int aRgc, char **aRgv)
 #else
 	if(cmd.mSeed == 0) cmd.mSeed = static_cast<unsigned int>(time(NULL));
 #endif
-	srand(cmd.mSeed); // fastcodeml seed
-	//SetSeed(1,0); // codeml seed
+	//srand(cmd.mSeed); // fastcodeml seed
+	SetSeedCodeml(1,0); // codeml seed
 
 	// Verify the optimizer algorithm selected on the command line
 	if(!cmd.mNoMaximization) BranchSiteModel::verifyOptimizerAlgo(cmd.mOptimizationAlgo);

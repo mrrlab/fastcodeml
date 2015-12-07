@@ -594,11 +594,11 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
-				mVar[0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
-				mVar[1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+				mVar[0] = 1.0 + 0.5 * rnduCodeml();						// x0 -> p0
+				mVar[1] = 0.0 + 0.2 * rnduCodeml();						// x1 -> p1
 #else
-				double x0 =	 exp(1.0 + 0.2 * randFrom0to1());
-				double x1 =	 exp(0.0 + 0.2 * randFrom0to1());
+				double x0 =	 exp(1.0 + 0.2 * rnduCodeml());
+				double x1 =	 exp(0.0 + 0.2 * rnduCodeml());
 				double tot = x0 + x1 + 1.0;
 				double p0 = x0/tot;
 				double p1 = x1/tot;
@@ -607,17 +607,17 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[0] = p0+p1;											// p0+p1
 				mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-				mVar[2] = 0.2 + 0.1 * randFrom0to1();						// w0
+				mVar[2] = 0.2 + 0.1 * rnduCodeml();						// w0
 				mVar[3] = 1.0;											// k
 			}
 			else
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
-				mVar[0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
-				mVar[1] = 0.0 + 0.2 * randFrom0to1();					// x1 -> p1
+				mVar[0] = 1.0 + 0.5 * rnduCodeml();						// x0 -> p0
+				mVar[1] = 0.0 + 0.2 * rnduCodeml();					// x1 -> p1
 #else
-				double x0 =	 exp(0.5 + randFrom0to1());
-				double x1 =	 exp(0.5 + randFrom0to1());
+				double x0 =	 exp(0.5 + rnduCodeml());
+				double x1 =	 exp(0.5 + rnduCodeml());
 				double tot = x0 + x1 + 1.0;
 				double p0 = x0/tot;
 				double p1 = x1/tot;
@@ -626,7 +626,7 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[0] = p0+p1;											// p0+p1
 				mVar[1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-				mVar[2] = 0.2 + 0.1 * randFrom0to1();					// w0
+				mVar[2] = 0.2 + 0.1 * rnduCodeml();					// w0
 				mVar[3] = 1.0 ;					// k
 			}
 		}
@@ -670,7 +670,7 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 		// Initialize times (if not already initialized)
 		if((mInitStatus & INIT_TIMES) != INIT_TIMES)
 		{
-			for(i=0; i < mNumTimes; ++i) mVar[i] = 0.01 + 0.1 * randFrom0to1();	// T
+			for(i=0; i < mNumTimes; ++i) mVar[i] = 0.01 + 0.1 * rnduCodeml();	// T
 		}
 
 		// Initialize w0, k, v1, v2 (if not already initialized)
@@ -679,11 +679,11 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
-				mVar[mNumTimes+0] = 1.0 + 0.5 * randFrom0to1();						// x0 -> p0
-				mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();						// x1 -> p1
+				mVar[mNumTimes+0] = 1.0 + 0.5 * rnduCodeml();						// x0 -> p0
+				mVar[mNumTimes+1] = 0.0 + 0.2 * rnduCodeml();						// x1 -> p1
 #else
-				double x0 =	 exp(1.0 + 0.2 * randFrom0to1());
-				double x1 =	 exp(0.0 + 0.2 * randFrom0to1());
+				double x0 =	 exp(1.0 + 0.2 * rnduCodeml());
+				double x1 =	 exp(0.0 + 0.2 * rnduCodeml());
 				double tot = x0 + x1 + 1.0;
 				double p0 = x0/tot;
 				double p1 = x1/tot;
@@ -692,17 +692,17 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[mNumTimes+0] = p0+p1;											// p0+p1
 				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-				mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();								// w0
+				mVar[mNumTimes+2] = 0.2 + 0.1 * rnduCodeml();								// w0
 				mVar[mNumTimes+3] = 1.0;											// k
 			}
 			else
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
-				mVar[mNumTimes+0] =  1.0 + 0.5 * randFrom0to1();							// x0 -> p0
-				mVar[mNumTimes+1] = 0.0 + 0.2 * randFrom0to1();								// x1 -> p1
+				mVar[mNumTimes+0] =  1.0 + 0.5 * rnduCodeml();							// x0 -> p0
+				mVar[mNumTimes+1] = 0.0 + 0.2 * rnduCodeml();								// x1 -> p1
 #else
-				double x0 =	 exp(0.5 + randFrom0to1());
-				double x1 =	 exp(0.5 + randFrom0to1());
+				double x0 =	 exp(0.5 + rnduCodeml());
+				double x1 =	 exp(0.5 + rnduCodeml());
 				double tot = x0 + x1 + 1.0;
 				double p0 = x0/tot;
 				double p1 = x1/tot;
@@ -711,7 +711,7 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[mNumTimes+0] = p0+p1;											// p0+p1
 				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-				mVar[mNumTimes+2] = 0.2 + 0.1 * randFrom0to1();								// w0
+				mVar[mNumTimes+2] = 0.2 + 0.1 * rnduCodeml();								// w0
 				mVar[mNumTimes+3] = 1.0;											// k
 			}
 		}

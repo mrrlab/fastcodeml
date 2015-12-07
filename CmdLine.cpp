@@ -184,7 +184,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal)
 		//{ OPT_FORCE_SERIAL,		"-np",					SO_NONE,	"Don't use parallel execution" },
 		//{ OPT_FORCE_SERIAL,		"--no-parallel",		SO_NONE,	"" },
 		//{ OPT_BRANCH_FROM_FILE,	"-bf",					SO_NONE,	"Do only the branch marked in the file as foreground branch" },
-		{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
+		//{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
 		{ OPT_ONE_HYP_ONLY,		"-hy",					SO_REQ_SEP,	"Compute only H0 if 0, H1 if 1" },
 		{ OPT_ONE_HYP_ONLY,		"--only-hyp",			SO_REQ_SEP,	"" },
 		{ OPT_INIT_H0_FROM_H1,	"-i1",					SO_NONE,	"Start H0 optimization from H1 results" },
