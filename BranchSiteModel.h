@@ -294,6 +294,9 @@ protected:
 		double tot = aProportions[0] + aProportions[1] + 1;
 		aProportions[0] /= tot;
 		aProportions[1] /= tot;
+
+		//std::cout << "p[0]" << aProportions[0]<< "p[1]" << aProportions[1] << std::endl;
+
 		tot = aProportions[0] + aProportions[1];
 
 		aProportions[2] = (1. - tot)*aProportions[0]/tot;

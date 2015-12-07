@@ -334,9 +334,12 @@ void BranchSiteModel::initFromParams(void)
 		double p0 = params->getParameter("p0");
 		double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
-		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values"); // SEEMS WRONG (OMID)
-		mVar[0] = log((2*p0-p0*p1)/((1-p0)*(1-p1))) ;//log(p0);											// p0 -> x0
-		mVar[1] = log((2*p1-p0*p1)/((1-p0)*(1-p1))) ;//log(p1);											// p1 -> x1
+		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values");
+		if(p0 + p1 > 1) throw FastCodeMLFatal("Invalid p0 and p1 values");
+		mVar[0] = log((p0)/(1-p0-p1)) ;//log(p0);		// p0 -> x0
+
+		mVar[1] = log((p1)/(1-p0-p1)) ;//log(p1);			// p1 -> x1
+		//std::cout << "mVar[0]" << mVar[0]<< "mVar[1]" << mVar[1] << std::endl;
 #else
 		if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 		mVar[0] = p0+p1;												// p0+p1
@@ -353,9 +356,11 @@ void BranchSiteModel::initFromParams(void)
 		double p0 = params->getParameter("p0");
 		double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
-		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values"); // SEEMS WRONG (OMID)
-		mVar[0] = log((2*p0-p0*p1)/((1-p0)*(1-p1))) ;//log(p0);											// p0 -> x0
-		mVar[1] = log((2*p1-p0*p1)/((1-p0)*(1-p1))) ;//log(p1);											// p1 -> x1
+		if(p0 <= 0 || p1 <= 0) throw FastCodeMLFatal("Invalid p0 and p1 values"); //
+		if(p0 + p1 > 1) throw FastCodeMLFatal("Invalid p0 and p1 values");
+		mVar[0] = log((p0)/(1-p0-p1)) ;//log(p0);		// p0 -> x0
+
+		mVar[1] = log((p1)/(1-p0-p1)) ;//log(p1);			// p1 -> x1
 #else
 		if(p0 < 0 || p1 < 0 || (p0+p1) < 1e-15) throw FastCodeMLFatal("Invalid p0 and p1 values");
 		mVar[mNumTimes+0] = p0+p1;												// p0+p1

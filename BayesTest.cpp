@@ -146,7 +146,7 @@ void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTr
 
 void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing BEB for fg branch " << aFgBranch << std::endl;
 
 	// Get the site multiplicity
 	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
@@ -201,7 +201,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	}
 
 	// Calculate marginal prob of data, fX, and postpara[].	 scale2 is scale.
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
 	double fX = 1.;
 	double scale2 = -1e300;
 	double lnfXs[BEB_NGRID];
@@ -232,7 +232,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 				fh += codon_class_proportion[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
 			if(fh < 1e-300)
 			{
-				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
+				if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
 				continue;
 			}
 			lnfXs[igrid] += log(fh)*site_multiplicity[site];
@@ -265,7 +265,7 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 	for(unsigned int k=0; k<BEB_N1D*BEB_N1D; k++) postp0p1[k] /=fX;
 
 	// Print
-	if(mVerbose >= VERBOSE_ONLY_RESULTS)
+	if(mVerbose > VERBOSE_ONLY_RESULTS)
 	{
 		std::cout << std::endl << "Posterior on the grid" << std::endl << std::endl;
 		const char* paras[5] = {"p0","p1","w0","w2","w3"};
@@ -296,11 +296,11 @@ void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, c
 
 	fX = log(fX)+scale2;
 
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
 												   << "	 Scales = " << scale1 << " " << scale2 << std::endl;
 
 	// Calculate posterior probabilities for sites. scale1 is scale factor
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
 
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -361,7 +361,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			// Put a title the firts time
 			if(print_title)
 			{
-				std::cout << "Printing positive sel sites for branch " << aFgBranch << std::endl;
+				std::cout << std::endl << "Printing positive sel sites for branch " << aFgBranch << std::endl;
 				print_title = false;
 			}
 
@@ -586,7 +586,7 @@ void MfgBayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int 
 
 void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aFgBranchSet, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing BEB for FG branch set : " ;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing BEB for FG branch set : " ;
 
 	for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
 				    std::cout << " " << *it << ",";
@@ -646,7 +646,7 @@ void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aF
 	}
 
 	// Calculate marginal prob of data, fX, and postpara[].	 scale2 is scale.
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(X), the marginal probability of data." << std::endl;
 	double fX = 1.;
 	double scale2 = -1e300;
 	double lnfXs[BEB_NGRID];
@@ -677,7 +677,7 @@ void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aF
 				fh += codon_class_proportion[igrid*BEB_DIMS+k]*mPriors[iw[igrid*BEB_DIMS+k]*mNumSites+site];
 			if(fh < 1e-300)
 			{
-				if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
+				if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << "Strange: f[" << site << "] = " << fh << " very small." << std::endl;
 				continue;
 			}
 			lnfXs[igrid] += log(fh)*site_multiplicity[site];
@@ -710,7 +710,7 @@ void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aF
 	for(unsigned int k=0; k<BEB_N1D*BEB_N1D; k++) postp0p1[k] /=fX;
 
 	// Print
-	if(mVerbose >= VERBOSE_ONLY_RESULTS)
+	if(mVerbose > VERBOSE_ONLY_RESULTS)
 	{
 		std::cout << std::endl << "Posterior on the grid" << std::endl << std::endl;
 		const char* paras[5] = {"p0","p1","w0","w2","w3"};
@@ -741,11 +741,11 @@ void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aF
 
 	fX = log(fX)+scale2;
 
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << "log(fX) = " << (fX+scale1-BEB_DIMS*log(BEB_N1D*1.))
 												   << "	 Scales = " << scale1 << " " << scale2 << std::endl;
 
 	// Calculate posterior probabilities for sites. scale1 is scale factor
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
+	if(mVerbose > VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Calculating f(w|X), posterior probs of site classes." << std::endl;
 
 	for(unsigned int site=0; site < mNumSites; ++site)
 	{
@@ -806,7 +806,7 @@ void MfgBayesTest::printPositiveSelSites(std::set<int> aFgBranchSet) const
 			// Put a title the firts time
 			if(print_title)
 			{
-				std::cout << "Printing positive sel sites for FG branch set : " ;
+				std::cout << std::endl << "Printing positive sel sites for branch(es) " ;
 
 				for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
 							    std::cout << " " << *it << ",";
