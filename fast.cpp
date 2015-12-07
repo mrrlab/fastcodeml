@@ -221,6 +221,8 @@ int main(int aRgc, char **aRgv)
 	//srand(cmd.mSeed); // fastcodeml seed
 	SetSeedCodeml(1,0); // codeml seed
 
+	//std::cout << "random numbers: " << rnduCodeml() << " "<< rnduCodeml() << " "<< rnduCodeml() ;
+
 	// Verify the optimizer algorithm selected on the command line
 	if(!cmd.mNoMaximization) BranchSiteModel::verifyOptimizerAlgo(cmd.mOptimizationAlgo);
 
@@ -438,7 +440,7 @@ int main(int aRgc, char **aRgv)
 					if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 					lnl1 = h1(fg_set);
-					h1.saveComputedTimes();
+					//h1.saveComputedTimes();
 
 					//std::cout << "lnl1 = " << lnl1 << std::endl;
 					// Save the value for formatted output
@@ -581,12 +583,24 @@ int main(int aRgc, char **aRgv)
 				//std :: cout << tree.getNumBranches() << std::endl;
 				// end omid
 
+				// if brances are fixed
+
+				if (cmd.mFixedBranchLength)
+
+				{
+				std :: cout << std::endl << "H1 Final ";
+				tree.printTreeAnnotated(std::cout, NULL, 0, true);
+				}
+
+				else
+
+				{
 				mVar=  h1.getVariables();
 				std :: cout << std::endl << "H1 Final ";
 				tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
 				//tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &h1.getVariables());
 				//std :: cout << std::endl;
-
+				}
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -658,7 +672,7 @@ int main(int aRgc, char **aRgv)
 			if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
 
 			lnl1 = h1(fg_branch);
-			h1.saveComputedTimes();
+			//h1.saveComputedTimes();
 			//h1.mBranches
 
 			// Save the value for formatted output
@@ -778,11 +792,22 @@ int main(int aRgc, char **aRgv)
 			}
 		}
 
-		//std :: cout << std::endl;
-		mVar=h1.getVariables();
-		std :: cout << std::endl << "H1 Final ";
-		tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
-		std :: cout << std::endl;
+		if (cmd.mFixedBranchLength)
+
+						{
+						std :: cout << std::endl << "H1 Final ";
+						tree.printTreeAnnotated(std::cout, NULL, 0, true);
+						std :: cout << std::endl;
+						}
+
+		else
+						{
+						//std :: cout << std::endl;
+						mVar=h1.getVariables();
+						std :: cout << std::endl << "H1 Final ";
+						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
+						std :: cout << std::endl;
+						}
 
 	}
 	}

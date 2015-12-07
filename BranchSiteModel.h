@@ -311,7 +311,7 @@ protected:
 	///
 	void initVariables(void);
 
-	/// Initialize variables to be optimized.
+	/// Initialize variables to be optimized in the same way as codeml.
 	/// It uses mInitType to know what has been already initialized by initFromTree() or initFromResult()
 	///
 	void initVariablesCodeml(void);
