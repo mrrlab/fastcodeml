@@ -211,35 +211,35 @@ void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const Tr
 }
 
 void PhyloTree::checkRootBranches(void) //const
-{
+		{
 	TreeNode *m;
 	unsigned int cnt_root_branches = 0;
-	unsigned int cnt_root_leaves   = 0;
-	for(; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL; ++cnt_root_branches)
-	{
-		if(m->isLeaf()) ++cnt_root_leaves;
+	unsigned int cnt_root_leaves = 0;
+	for (; (m = mTreeRoot.getChild(cnt_root_branches)) != NULL;
+			++cnt_root_branches) {
+		if (m->isLeaf())
+			++cnt_root_leaves;
 	}
 
-	if(mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-	{
-		std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
+	if (mVerboseLevel >= VERBOSE_INFO_OUTPUT) {
+		std::cout << std::endl << "Root has " << cnt_root_branches
+				<< " children of which " << cnt_root_leaves << " are leaves"
+				<< std::endl;
 	}
 
-
-
-	if (cnt_root_branches == 2)
-	{
-		std::cout << std::endl << "This is a rooted tree. Tree is unrooted !" << std::endl;
+	if (cnt_root_branches == 2) {
+		if (mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+			std::cout << std::endl
+					<< "This is a rooted tree. Tree is unrooted !" << std::endl;
 
 		// omid
-		TreeNode *c0,*c1,*cx; // cx is the child with at least 2 children
-		c0=mTreeRoot.getChild(0);
-		c1=mTreeRoot.getChild(1);
-
+		TreeNode *c0, *c1, *cx; // cx is the child with at least 2 children
+		c0 = mTreeRoot.getChild(0);
+		c1 = mTreeRoot.getChild(1);
 
 		// get the length and marking of new branch
 
-		double new_len=c0->getLen() + c1->getLen();
+		double new_len = c0->getLen() + c1->getLen();
 
 		//std::cout << " Length Root : " << mTreeRoot.getLen() << std::endl;
 		//std::cout << " Length Child 0 : " << c0->getLen() << std::endl;
@@ -256,19 +256,31 @@ void PhyloTree::checkRootBranches(void) //const
 
 		std::string newBranchType;
 
-		if (c0->getType().size()>0) newBranchType=c0->getType(); else newBranchType=c1->getType();
+		if (c0->getType().size() > 0)
+			newBranchType = c0->getType();
+		else
+			newBranchType = c1->getType();
 
 		if (c0->getChild(0) != NULL && c0->getChild(1) != NULL)
 
-			{cx = c0;c1->addLen(new_len);c1->addType(newBranchType);mTreeRoot.delChild(0);}
+		{
+			cx = c0;
+			c1->addLen(new_len);
+			c1->addType(newBranchType);
+			mTreeRoot.delChild(0);
+		}
 
 		else if (c1->getChild(0) != NULL && c1->getChild(1) != NULL)
 
-			{cx = c1;c0->addLen(new_len);c0->addType(newBranchType);mTreeRoot.delChild(1);}
-		else
+		{
+			cx = c1;
+			c0->addLen(new_len);
+			c0->addType(newBranchType);
+			mTreeRoot.delChild(1);
+		} else
 
-			throw FastCodeMLFatal("Both children of root have only one child. Invalid tree. Quitting.");
-
+			throw FastCodeMLFatal(
+					"Both children of root have only one child. Invalid tree. Quitting.");
 
 		//std::cout << " len of cx : " << cx->getLen() << std::endl;
 
@@ -276,18 +288,15 @@ void PhyloTree::checkRootBranches(void) //const
 		// all children of cx will be children of root
 		// parent of all children of cx will become root
 
-
 		TreeNode *t;
 		unsigned int cx_children = 0;
 
-		for(; (t = cx->getChild(cx_children)) != NULL; cx_children++)
-		{
+		for (; (t = cx->getChild(cx_children)) != NULL; cx_children++) {
 			mTreeRoot.addChild(t);
 			t->addParent(&mTreeRoot);
 		}
 
 		// refill the tree
-
 
 		// Fill the leaves
 		mLeavesSpecies.clear();
@@ -298,10 +307,6 @@ void PhyloTree::checkRootBranches(void) //const
 		this->fillInternalBranches(&mTreeRoot);
 
 		//cx->clearNode();
-
-
-
-
 
 		// c0->addLen(new_len);
 
@@ -329,12 +334,15 @@ void PhyloTree::checkRootBranches(void) //const
 
 		//std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 
-
 		// end omid
 	}
 	// if it is an invalid tree then raise exception
-	if(cnt_root_branches < 2) throw FastCodeMLFatal("Root has only one branch. Invalid tree. Quitting.");
+	if (cnt_root_branches < 2)
+		throw FastCodeMLFatal(
+				"Root has only one branch. Invalid tree. Quitting.");
 
 	// if it is an invalid tree then raise exception
-	if(cnt_root_branches == cnt_root_leaves) throw FastCodeMLFatal("Root points only to leaves. Invalid tree. Quitting.");
+	if (cnt_root_branches == cnt_root_leaves)
+		throw FastCodeMLFatal(
+				"Root points only to leaves. Invalid tree. Quitting.");
 }
