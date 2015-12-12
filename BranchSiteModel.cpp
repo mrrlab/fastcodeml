@@ -591,13 +591,13 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 {
 	unsigned int i;
 
-	if(mFixedBranchLength)
+	if(mFixedBranchLength) // fixed_blength =2 (-bl)
 	{
 		// Initialize w0, k, v1, v2 (if not already initialized)
 		if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
 		{
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
-			{
+				{
 #ifdef USE_ORIGINAL_PROPORTIONS
 				mVar[0] = 1.0 + 0.5 * rnduCodeml();						// x0 -> p0
 				mVar[1] = 0.0 + 0.2 * rnduCodeml();						// x1 -> p1
@@ -615,7 +615,7 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[2] = 0.2 + 0.1 * rnduCodeml();						// w0
 				mVar[3] = 1.0;											// k
 			}
-			else
+			else // no use
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
 				mVar[0] = 1.0 + 0.5 * rnduCodeml();						// x0 -> p0
@@ -641,11 +641,11 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 		{
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 			{
-				mVar[4] = 2.1 ;						// w2
+				mVar[4] = 2.1 + 1.0 + rnduCodeml();						// w2
 			}
 			else
 			{
-				mVar[4] = 2.1 ;						// w2
+				mVar[4] = 2.1 + 1.0 + rnduCodeml();						// w2
 			}
 		}
 
@@ -673,13 +673,13 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 	else
 	{
 		// Initialize times (if not already initialized)
-		if((mInitStatus & INIT_TIMES) != INIT_TIMES)
+		if((mInitStatus & INIT_TIMES) != INIT_TIMES) // fixed_blengh = -1 (fcml : default)
 		{
-			for(i=0; i < mNumTimes; ++i) mVar[i] = 0.01 + 0.1 * rnduCodeml();	// T
+			for(i=0; i < mNumTimes; ++i) mVar[i] = 0.1 + 0.5 * rnduCodeml();	// T
 		}
 
 		// Initialize w0, k, v1, v2 (if not already initialized)
-		if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1)
+		if((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1) // fixed_blengh = 1 (fcml : -l)
 		{
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 			{
@@ -698,13 +698,13 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
 				mVar[mNumTimes+2] = 0.2 + 0.1 * rnduCodeml();								// w0
-				mVar[mNumTimes+3] = 1.0;											// k
+				mVar[mNumTimes+3] = 1.0 ;											// k
 			}
-			else
+			else // fixed_blengh = -1 (fcml : default)
 			{
 #ifdef USE_ORIGINAL_PROPORTIONS
-				mVar[mNumTimes+0] =  1.0 + 0.5 * rnduCodeml();							// x0 -> p0
-				mVar[mNumTimes+1] = 0.0 + 0.2 * rnduCodeml();								// x1 -> p1
+				mVar[mNumTimes+0] =  0.5 + rnduCodeml();							// x0 -> p0
+				mVar[mNumTimes+1] = 0.5 + rnduCodeml();								// x1 -> p1
 #else
 				double x0 =	 exp(0.5 + rnduCodeml());
 				double x1 =	 exp(0.5 + rnduCodeml());
@@ -716,8 +716,8 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 				mVar[mNumTimes+0] = p0+p1;											// p0+p1
 				mVar[mNumTimes+1] = p0/(p0+p1);										// p0/(p0+p1)
 #endif
-				mVar[mNumTimes+2] = 0.2 + 0.1 * rnduCodeml();								// w0
-				mVar[mNumTimes+3] = 1.0;											// k
+				mVar[mNumTimes+2] = 0.5 + rnduCodeml();								// w0
+				mVar[mNumTimes+3] = 0.5 + rnduCodeml();								// k
 			}
 		}
 
@@ -726,11 +726,11 @@ void BranchSiteModel::initVariablesCodeml(void) // shall random number generator
 		{
 			if((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE)
 			{
-				mVar[mNumTimes+4] = 2.1 ;						// w2
+				mVar[mNumTimes+4] = 2.1 + 1.0 + rnduCodeml() ;	// fixed_blengh = 1 (fcml : -l)					// w2
 			}
 			else
 			{
-				mVar[mNumTimes+4] = 2.1 ;						// w2
+				mVar[mNumTimes+4] = 0.5 + rnduCodeml() ;	// fixed_blengh = -1 (fcml : default)					// w2
 			}
 		}
 
