@@ -1,7 +1,7 @@
 This is the FastCodeML evaluation package including sources and a precompiled executable. This package is currently for evaluation purposes only. 
 
 Usage, e.g.:
-./fast -m 22 -bf -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
+./fast -m 22 -bl -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
 Above execution estimates the log likelihood for hypothesis 0 and the foreground specified in the Newick file. The output could be like the following:
 ===
 Doing branch 0
@@ -19,3 +19,4 @@ w0:  0.0000010  k:   5.1561778
 Please always use optimisation method "-m 22" on the command line, as the other optimisers are still under investigation and not discussed in the paper.
 
 Read INSTALL for installation instructions!
+

@@ -1,3 +1,5 @@
+
+
 REQUIREMENTS to generate the executable:
 * C++ compiler, e.g. GCC 4
 * CMake 2.8.0 (including ccmake) or later recommended, although compilation possible without
@@ -65,9 +67,13 @@ INSTALLATION: How to generate the FastCodeML executable:
     ccmake . 
     (on mac: g++ compiler for c++ code and gcc compiler for c code OR use -lstdc++ option with gcc OR with clang)
     make
-    (linking issue with lapack, mkl,mpi library set to on)
+    (linking issue with lapack or mkl or mpi library set to on)
+    to make lapackwork on mac , we need to add '-framework accelerate' linking flag in CMakeCache.txt
+    mkl is usually not free unless for academics or students
+     
 * An executable "fast" is created
 
 Computer system:
 * Linux preferred, but sources are portable to other platforms
+
 

@@ -176,11 +176,10 @@ public:
 			TreeNode *t=mChildrenList[1];
 			mChildrenList.pop_back();
 			mChildrenList.pop_back();
-			mChildrenList.push_back(t);
-		}
+			mChildrenList.push_back(t);}
+
 		return true;
 		}
-
 
 private:
 	TreeNode*				mParent;		///< Pointer to the node parent (null for the root)
