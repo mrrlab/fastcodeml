@@ -55,6 +55,12 @@
 const char* version = "1.2.0";
 
 int main(int aRgc, char **aRgv) {
+
+	Timer timer_omid;
+
+	timer_omid.start();
+
+
 	try {
 
 #ifdef USE_MKL_VML
@@ -673,6 +679,12 @@ int main(int aRgc, char **aRgv) {
 			 lnl1 = h1(fg_set);
 			 std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
+			timer_omid.stop();
+			std::cout << "Time needed: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+			//std::cout << std::endl << "Total time for ncore: "
+				//				<< std::setw(2) << num_threads << " time: " << timer_omid.get()
+					//			<< std::endl;}
+
 			return 0;
 		}
 
@@ -920,6 +932,11 @@ int main(int aRgc, char **aRgv) {
 				<< std::endl;
 		return 1;
 	}
+
+
+
+	timer_omid.stop();
+	std::cout << "Time needed: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
 
 	return 0;
 }
