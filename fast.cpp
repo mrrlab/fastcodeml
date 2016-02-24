@@ -685,7 +685,8 @@ int main(int aRgc, char **aRgv) {
 			 std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
 			timer_omid.stop();
-			std::cout << "Time needed: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+			std::cout << "Time used: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+			std::cout << "Cores used: " << num_threads << std::endl;
 			//std::cout << std::endl << "Total time for ncore: "
 				//				<< std::setw(2) << num_threads << " time: " << timer_omid.get()
 					//			<< std::endl;}
@@ -916,6 +917,10 @@ int main(int aRgc, char **aRgv) {
 					<< std::endl;
 		}
 
+		timer_omid.stop();
+		std::cout << "Time used: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+		std::cout << "Cores used: " << num_threads << std::endl;
+
 		// Output the results
 		//output_results.outputResults();
 
@@ -942,8 +947,7 @@ int main(int aRgc, char **aRgv) {
 
 
 
-	timer_omid.stop();
-	std::cout << "Time needed: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+
 
 	return 0;
 }
