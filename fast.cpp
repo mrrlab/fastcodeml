@@ -592,12 +592,15 @@ int main(int aRgc, char **aRgv) {
 			// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
 			if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX
 					&& BranchSiteModel::performLRT(lnl0, lnl1)) {
+				if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;
+
+
 				// Get the scale values from the latest optimized h1.
 				std::vector<double> scales(2);
 				h1.getScales(scales);
 
 				// Run the BEB test
-				if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
+				//if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;
 				beb.computeBEB(h1.getVariables(), fg_set, scales);
 
 				// Output the sites under positive selection (if any)
@@ -857,13 +860,14 @@ int main(int aRgc, char **aRgv) {
 				// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
 				if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX
 						&& BranchSiteModel::performLRT(lnl0, lnl1)) {
+					if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;
+
 					// Get the scale values from the latest optimized h1.
 					std::vector<double> scales(2);
 					h1.getScales(scales);
 
 					// Run the BEB test
-					if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
-					beb.computeBEB(h1.getVariables(), fg_branch, scales);
+					//if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;					beb.computeBEB(h1.getVariables(), fg_branch, scales);
 
 					// Output the sites under positive selection (if any)
 					if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
