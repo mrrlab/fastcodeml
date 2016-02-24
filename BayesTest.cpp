@@ -146,7 +146,7 @@ void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTr
 
 void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Computing sites under positive selection on foreground branch " << aFgBranch << std::endl;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;//<< aFgBranch << std::endl;
 
 	// Get the site multiplicity
 	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
@@ -361,7 +361,7 @@ void BayesTest::printPositiveSelSites(size_t aFgBranch) const
 			// Put a title the firts time
 			if(print_title)
 			{
-				std::cout << std::endl << "Printing positive sel sites for branch " << aFgBranch << std::endl;
+				std::cout << std::endl << "Positive selection sites and their probabilities for foreground branch " << aFgBranch << std::endl;
 				print_title = false;
 			}
 
@@ -586,12 +586,12 @@ void MfgBayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int 
 
 void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aFgBranchSet, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) {std::cout << std::endl << "Computing sites under positive selection on foreground branch(es) " ;
+	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
 
-	for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
-				    std::cout << " " << *it << ",";
+	//for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
+		//		    std::cout << " " << *it << ",";
 
-	std::cout<< std::endl;}
+	// std::cout<< std::endl;}
 
 	// Get the site multiplicity
 	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
@@ -803,10 +803,10 @@ void MfgBayesTest::printPositiveSelSites(std::set<int> aFgBranchSet) const
 		double prob = mSiteClassProb[2*mNumSites+site] + mSiteClassProb[3*mNumSites+site];
 		if(prob > MIN_PROB)
 		{
-			// Put a title the firts time
+			// Put a title the first time
 			if(print_title)
 			{
-				std::cout << std::endl << "Printing positive sel sites for branch(es) " ;
+				std::cout << std::endl << "Positive selection sites and their probabilities for foreground branch(es) " ;
 
 				for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
 							    std::cout << " " << *it << ",";

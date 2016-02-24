@@ -604,8 +604,9 @@ int main(int aRgc, char **aRgv) {
 					beb.printPositiveSelSites(fg_set);
 
 				// Get the sites under positive selection for printing in the results file (if defined)
-				//if(output_results.isWriteResultsEnabled())
-				//{
+
+				/*if(output_results.isWriteResultsEnabled())
+				{
 				std::vector<unsigned int> positive_sel_sites;
 				std::vector<double> positive_sel_sites_prob;
 				beb.extractPositiveSelSites(positive_sel_sites,
@@ -627,8 +628,8 @@ int main(int aRgc, char **aRgv) {
 					std::cout << std::endl;
 				}
 
-				//output_results.savePositiveSelSites(fg_set, positive_sel_sites, positive_sel_sites_prob);
-				//}
+				output_results.savePositiveSelSites(fg_set, positive_sel_sites, positive_sel_sites_prob);
+				}*/
 			}
 
 			// omid
