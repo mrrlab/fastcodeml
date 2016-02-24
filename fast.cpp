@@ -597,6 +597,7 @@ int main(int aRgc, char **aRgv) {
 				h1.getScales(scales);
 
 				// Run the BEB test
+				if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
 				beb.computeBEB(h1.getVariables(), fg_set, scales);
 
 				// Output the sites under positive selection (if any)
@@ -861,6 +862,7 @@ int main(int aRgc, char **aRgv) {
 					h1.getScales(scales);
 
 					// Run the BEB test
+					if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
 					beb.computeBEB(h1.getVariables(), fg_branch, scales);
 
 					// Output the sites under positive selection (if any)
@@ -870,7 +872,7 @@ int main(int aRgc, char **aRgv) {
 					// Get the sites under positive selection for printing in the results file (if defined)
 					if (output_results.isWriteResultsEnabled()) {
 						std::vector<unsigned int> positive_sel_sites;
-						std::vector<double> positive_sel_sites_prob;
+					   	std::vector<double> positive_sel_sites_prob;
 						beb.extractPositiveSelSites(positive_sel_sites,
 								positive_sel_sites_prob);
 						output_results.savePositiveSelSites(fg_branch,

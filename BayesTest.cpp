@@ -146,7 +146,7 @@ void BayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int aTr
 
 void BayesTest::computeBEB(const std::vector<double>& aVars, size_t aFgBranch, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;//<< aFgBranch << std::endl;
+	//if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;//<< aFgBranch << std::endl;
 
 	// Get the site multiplicity
 	const std::vector<double>& site_multiplicity = mForest.getSiteMultiplicity();
@@ -586,7 +586,7 @@ void MfgBayesTest::getIndexTernary(double* aProbX, double* aProbY, unsigned int 
 
 void MfgBayesTest::computeBEB(const std::vector<double>& aVars, std::set<int> aFgBranchSet, const std::vector<double>& aScales)
 {
-	if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
+	//if(mVerbose >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " ;
 
 	//for (std::set<int>::iterator it=aFgBranchSet.begin(); it!=aFgBranchSet.end(); ++it)
 		//		    std::cout << " " << *it << ",";
