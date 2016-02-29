@@ -99,9 +99,7 @@ int Ming2::ming2(FILE *fout, double *f, double x[], const double xl[],
 
 	 */
 
-	// omid
 	//std::cout << "entering ming optimizer" << std::endl;
-	// end omid
 	int i, j, i1, i2, it, fail = 0, nfree;
 	int Ngoodtimes = 2, goodtimes = 0;
 	double small = 1.e-30, sizep0 = 0; /* small value for checking |w|=0 */

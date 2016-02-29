@@ -1,4 +1,4 @@
-/// @mainpage FastCodeML (omid copy)
+/// @mainpage FastCodeML
 ///
 /// @section intro_sect Introduction
 ///
@@ -52,7 +52,7 @@
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
 ///
-const char* version = "1.2.0";
+const char* version = "1.3.0";
 
 int main(int aRgc, char **aRgv) {
 
@@ -253,8 +253,6 @@ int main(int aRgc, char **aRgv) {
 		//srand(cmd.mSeed); // fastcodeml seed
 		SetSeedCodeml(cmd.mSeed, 0); // codeml seed is 1
 
-		//std::cout << "random numbers: " << rnduCodeml() << " "<< rnduCodeml() << " "<< rnduCodeml() ;
-
 		// Verify the optimizer algorithm selected on the command line
 		if (!cmd.mNoMaximization)
 			BranchSiteModel::verifyOptimizerAlgo(cmd.mOptimizationAlgo);
@@ -280,28 +278,8 @@ int main(int aRgc, char **aRgv) {
 		// Check coherence between the two files
 		msa.checkNameCoherence(tree.getSpecies());
 
-		//Print the tree with the numbering of internal branches
-		//std :: cout << "INITIAL TREE" << std::endl;
-		//tree.printTreeAnnotated(std::cout, NULL, 0, true);
-		//std :: cout << std::endl;
-
-		// omid
-		/*	std :: cout << "TREE BEFORE UNROOTING" << std::endl;
-		 std::ostream & objOstream = std::cout;
-		 tree.printTreeAnnotated(objOstream, NULL,0);
-		 std :: cout << "TREE INFO (number of branches)" << std::endl;
-		 std :: cout << tree.getNumBranches() << std::endl;*/
-		// end omid
 		// Check root and unrooting if tree is rooted
 		tree.checkRootBranches();
-
-		// omid
-		//std :: cout << "TREE AFTER UNROOTING" << std::endl;
-		//tree.printTreeAnnotated(std::cout, NULL, 0, true);
-		//std :: cout << std::endl;
-		//std :: cout << "TREE INFO (number of branches)" << std::endl;
-		//std :: cout << tree.getNumBranches() << std::endl;
-		// end omid
 
 		// If times from file then check for null branch lengths for any leaf
 		if (cmd.mBranchLengthsFromFile) {
@@ -318,11 +296,6 @@ int main(int aRgc, char **aRgv) {
 							<< std::endl;
 				}
 			}
-
-			//if(zero_on_leaf_cnt > 0)
-			//{
-			//throw FastCodeMLFatal("Null or missing branch length in tree file");
-			//}
 		}
 
 		//Print the tree with the numbering of internal branches
@@ -334,14 +307,6 @@ int main(int aRgc, char **aRgv) {
 				cmd.mIgnoreFreq ?
 						CodonFrequencies::CODON_FREQ_MODEL_UNIF :
 						CodonFrequencies::CODON_FREQ_MODEL_F3X4);
-
-		// omid
-
-		// std :: cout << "marked internal branch (phylotree): " << tree.getMarkedInternalBranch() << std :: endl;
-
-		// omid
-
-		//}
 
 		// Reduce the forest merging common subtrees. Add also more reduction, then clean the no more useful data.
 		if (!cmd.mDoNotReduceForest) {
@@ -407,40 +372,16 @@ int main(int aRgc, char **aRgv) {
 
 		// Compute the range of branches to mark as foreground
 		size_t branch_start, branch_end;
-		// omid
+
 		std::set<int> fg_set; // to save a list of fg branches from the getBranchRange function
 		std::set<int> ib_set; // to save a list of internal branches from the getBranchRange function
 		std::vector<double> mVar; // to save optimization variables
-		// end omid
-		forest.getBranchRange(cmd, branch_start, branch_end, fg_set, ib_set); // omid : fgset is added to save a list of fg branches
+
+		forest.getBranchRange(cmd, branch_start, branch_end, fg_set, ib_set); // fgset is added to save a list of fg branches
 
 		//for (std::set<int>::iterator it=ib_set.begin(); it!=ib_set.end(); ++it)
 		// std::cout << " " << *it << ",";
-		// std::cout << std::endl;
-		// omid
 
-		/*std :: cout << "total number of branches: " << (forest.getNumBranches()) << std :: endl;
-		 std :: cout << "total number of internal branches: " << forest.getNumInternalBranches() << std :: endl;
-		 std :: cout << "marked internal branch (forest): " << forest.getMarkedInternalBranch() << std :: endl;
-		 std :: cout << "num of fg_set members: " << fg_set.size() << std :: endl;
-		 std :: cout << "fg_set members are : " << std :: endl;
-		 for (std::set<int>::iterator it=fg_set.begin(); it!=fg_set.end(); ++it)
-		 std::cout << " " << *it << ",";
-		 std :: cout << std :: endl;
-
-
-		 for (int i=0; i<forest.getNumBranches(); i++)
-		 std :: cout << "internal branch of fg "<< i << " : "<< forest.adjustFgBranchIdx(i) << std :: endl;*/
-
-		// end omid
-		// omid
-		//	std :: cout << std::endl << " internal : ";
-		//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
-		//	std :: cout << std::endl;
-		//		std :: cout << std::endl << " leaves : ";
-		//		tree.printTreeAnnotated(std::cout, NULL, 0, true);
-		//		std :: cout << std::endl;
-		// end omid
 		// Start timing parallel part
 		if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 			timer.start();
@@ -469,10 +410,6 @@ int main(int aRgc, char **aRgv) {
 
 			// Initialize the test
 			MfgBayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
-
-			///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			//if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "Doing branch set : " ;
 
 			// Compute the alternate model maximum loglikelihood
 			double lnl1 = 0.;
@@ -507,7 +444,6 @@ int main(int aRgc, char **aRgv) {
 						lnl1 - THRESHOLD_FOR_LRT);
 
 				//std::cout << "lnl0 = " << lnl0 << std::endl;
-
 				// Save the value for formatted output (only if has not be forced to stop)
 				//if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
 			}
@@ -528,7 +464,6 @@ int main(int aRgc, char **aRgv) {
 					std::cout << std::endl << std::endl;
 					if (lnl0 != std::numeric_limits<double>::infinity()) {
 						std::string s0 = h0.printFinalVars(std::cout);
-
 						//std::cout<<"EDW0: "<< s0 <<std::endl;
 						//output_results.saveParameters(fg_branch, s0, 0);
 					}
@@ -635,17 +570,7 @@ int main(int aRgc, char **aRgv) {
 				 }*/
 			}
 
-			// omid
-			//h1.saveComputedTimes();
-			//std :: cout << std::endl;
-			//std :: cout << std::endl << "H1 Final ";
-			//tree.printTreeAnnotated(std::cout, NULL, 0, true);
-			//std :: cout << std::endl;
-			//std :: cout << "TREE INFO (number of branches)" << std::endl;
-			//std :: cout << tree.getNumBranches() << std::endl;
-			// end omid
-
-			// if brances are fixed
+			// if branches are fixed
 
 			if (cmd.mFixedBranchLength)
 
@@ -669,8 +594,6 @@ int main(int aRgc, char **aRgv) {
 				//std :: cout << std::endl;
 			}
 
-			///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 			/*if(cmd.mInitFromParams)			h0.initFromParams();
 			 if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
 
@@ -684,19 +607,13 @@ int main(int aRgc, char **aRgv) {
 			 std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
 			timer_app.stop();
-			std::cout << std::endl << "Time used: " << timer_app.get() / 60000 << ":"
-					<< (timer_app.get() / 1000) % 60 << std::endl;
+			std::cout << std::endl << "Time used: " << timer_app.get() / 60000
+					<< ":" << (timer_app.get() / 1000) % 60 << std::endl;
 			std::cout << "Cores used: " << num_threads << std::endl;
-			//std::cout << std::endl << "Total time for ncore: "
-			//				<< std::setw(2) << num_threads << " time: " << timer_omid.get()
-			//			<< std::endl;}
-
 			return 0;
 		}
 
 		// Else for all requested internal branches
-
-		// branch_start = branch_end = 5 ;
 
 		// Initialize the output results file (if the argument is null, no file is created)
 		WriteResults output_results(cmd.mResultsFile);
@@ -708,22 +625,6 @@ int main(int aRgc, char **aRgv) {
 		// Initialize the test
 		BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
-		// omid
-
-		//	std :: cout << std::endl << " internal : ";
-		//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
-		//	std :: cout << std::endl;
-		//
-		//	std :: cout << std::endl << " leaves : ";
-		//	tree.printTreeAnnotated(std::cout, NULL, 0, true);
-		//	std :: cout << std::endl;
-
-		// branch_start=branch_end=20;
-		//std :: cout<< "all" << tree.mInternalNodes.size() << std::endl;
-		//for (int i = 0; i<13;i++)
-		//{std :: cout<< "leave " << i << "?" << tree.isLeaf(i) << std::endl;}
-
-		// end omid
 		if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 			if (cmd.mBranchAll)
 				std::cout << std::endl << "Doing all foreground branches"
@@ -746,7 +647,7 @@ int main(int aRgc, char **aRgv) {
 				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
 					std::cout << "Doing foreground branch " << fg_branch
 							<< std::endl;
-				//std :: cout<< "branch label" << tree.mInternalNodes.size();
+
 				// Compute the alternate model maximum loglikelihood
 				double lnl1 = 0.;
 				if (cmd.mComputeHypothesis != 0) {
@@ -799,7 +700,6 @@ int main(int aRgc, char **aRgv) {
 						std::cout << std::endl << std::endl;
 						if (lnl0 != std::numeric_limits<double>::infinity()) {
 							std::string s0 = h0.printFinalVars(std::cout);
-							//std::cout<<"EDW0: "<< s0 <<std::endl;
 							output_results.saveParameters(fg_branch, s0, 0);
 						}
 						std::cout << std::endl;
@@ -816,7 +716,6 @@ int main(int aRgc, char **aRgv) {
 						std::cout << std::endl << std::endl;
 						if (lnl1 != std::numeric_limits<double>::infinity()) {
 							std::string s1 = h1.printFinalVars(std::cout);
-							//std::cout<<"EDW1: "<< s1 <<std::endl;
 							output_results.saveParameters(fg_branch, s1, 1);
 						}
 						std::cout << std::endl;
@@ -921,14 +820,13 @@ int main(int aRgc, char **aRgv) {
 		}
 
 		timer_app.stop();
-		std::cout << std::endl << "Time used: " << timer_app.get() / 60000 << ":"
-				<< (timer_app.get() / 1000) % 60 << std::endl;
+		std::cout << std::endl << "Time used: " << timer_app.get() / 60000
+				<< ":" << (timer_app.get() / 1000) % 60 << std::endl;
 		std::cout << "Cores used: " << num_threads << std::endl;
 
 		// Output the results
 		//output_results.outputResults();
 
-		////////////////////////////////////////////////////////////////////
 		// Catch all exceptions
 	} catch (const FastCodeMLSuccess&) {
 		return 0;
@@ -994,105 +892,6 @@ int main(int aRgc, char **aRgv) {
 ///
 /// The null pointer should be written as NULL, not 0 to make clear its purpose.
 ///
-
-/**
- @page cmd_page Command Line Switches
- Here is a quick list of the valid command line switches for FastCodeML.
-
- The input `tree_file` is in %Newick format with the file containing only one tree. The `alignment_file` instead is in %Phylip format.
-
- @verbatim
-
- Usage:
- FastCodeML [options] tree_file alignment_file
-
- -d	--debug	 -v	 --verbose (required argument)
- Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace; 4: more debug) (default: 1)
-
- -q	--quiet (no argument)
- No messages except results
-
- -?	-h	--help (no argument)
- This help
-
- -s	--seed (required argument)
- Random number generator seed (0 < seed < 1000000000)
-
- -b	--branch (required argument)
- Do only this branch as foreground branch (count from 0)
-
- -bs	 --branch-start (required argument)
- Start computing from this branch as foreground one (count from 0) (default: first one)
-
- -be	 --branch-end (required argument)
- End computing at this branch as foreground one (count from 0) (default: last one)
-
- -i	--ignore-freq (no argument)
- Ignore computed codon frequency and set all of them to 1/61
-
- -e	--export (required argument)
- Export forest in GML format (if %03d or @03d is present, one is created for each fg branch)
-
- -nr	 --no-reduce (no argument)
- Do not reduce forest by merging common subtrees
-
- -l	--lengths-from-file	 --times-from-file (no argument)
- Initial branch lengths from tree file
-
- -o	--initial-step (no argument)
- Only the initial step is performed (no maximization)
-
- -c	--export-comp-times (required argument)
- Export the computed times from H0 if 0, H1 if 1, otherwise the one read in the phylo tree
-
- -r	--trace (no argument)
- Trace the maximization run
-
- -nt	 --number-of-threads (required argument)
- Number of threads (1 for non parallel execution)
-
- -hy	 --only-hyp (required argument)
- Compute only H0 if 0, H1 if 1
-
- -i1	 --init-from-h1 (no argument)
- Start H0 optimization from H1 results
-
- -m	--maximizer (required argument)
- Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, 22:FromCodeML, 99:MLSL_LDS) (default: 22)
-
- -sd	 --small-diff (required argument)
- Delta used in gradient computation (default: 1.49e-8)
-
- -p	--init-param (required argument)
- Pass initialization parameter in the form: P=value (P: w0, k, p0, p1, w2)
-
- -ic	 --init-default (no argument)
- Start from default parameter values and times from tree file
-
- -x	--extra-debug (required argument)
- Extra debug parameter (zero disables it)
-
- -re	 --relative-error (required argument)
- Relative error where to stop maximization (default: 1e-3)
-
- -ou	 --output (required argument)
- Write results formatted to this file
-
- -cl	 --clean-data (no argument)
- Remove ambiguous or missing sites from the MSA (default: no)
-
- -ps	 --no-pre-stop (no argument)
- Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
-
- -mi	 --max-iterations (required argument)
- Maximum number of iterations for the maximizer (default: 10000)
-
- -bl	 --branch-lengths-fixed (no argument)
- The length of the brances is fixed
-
- @endverbatim
- */
-
 /// @page vampir_page Using Vampir for profiling
 /// On Linux we use VampirTrace to collect profile data and Vampir to display the results (http://www.vampir.eu/).
 ///

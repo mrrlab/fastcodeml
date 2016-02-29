@@ -73,13 +73,7 @@ protected:
 public:
 	/// Set the times on the tree from the variables
 	///
-	void saveComputedTimes(void) {	//const {
-		// omid
-		/*std::cout << "mVar : "<<std::endl;
-		 for (std::vector<double>::iterator it=mVar.begin(); it!=mVar.end(); ++it)
-		 std::cout << " " << *it << ",";
-		 std::cout << std::endl;*/
-		// end omid
+	void saveComputedTimes(void) {	//const
 		mForest.setLengthsFromTimes(mVar);
 	}
 
@@ -451,7 +445,7 @@ public:
 					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mSet(
 					aForest.getNumBranches()), mSetForGradient(
 					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
-					DBL_MAX) {
+			DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(3, mNoParallel);
 		mDependencies.print("TEST FOR H0 (before optimization)");
@@ -543,7 +537,7 @@ public:
 					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mfgmSet(
 					aForest.getNumBranches()), mfgmSetForGradient(
 					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
-					DBL_MAX) {
+			DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(3, mNoParallel);
 		mDependencies.print("TEST FOR H0 (before optimization)");
@@ -636,7 +630,7 @@ public:
 					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mSet(
 					aForest.getNumBranches()), mSetForGradient(
 					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
-					DBL_MAX), mPrevOmega2(DBL_MAX) {
+			DBL_MAX), mPrevOmega2(DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(4, mNoParallel);
 		mDependencies.print("TEST FOR H1 (before optimization)");
@@ -728,7 +722,7 @@ public:
 					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mfgmSet(
 					aForest.getNumBranches()), mfgmSetForGradient(
 					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
-					DBL_MAX), mPrevOmega2(DBL_MAX) {
+			DBL_MAX), mPrevOmega2(DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(4, mNoParallel);
 		mDependencies.print("TEST FOR H1 (before optimization)");

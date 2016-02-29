@@ -35,7 +35,7 @@ const std::vector<std::string>& PhyloTree::getSpecies(void) const {
 }
 
 void PhyloTree::fillInternalBranches(TreeNode *aNode) {
-	if (/* omid !aNode->isLeaf() && end omid */aNode != &mTreeRoot) {
+	if (/*!aNode->isLeaf() && */aNode != &mTreeRoot) {
 		mInternalNodes.push_back(aNode);
 	}
 
@@ -46,10 +46,8 @@ void PhyloTree::fillInternalBranches(TreeNode *aNode) {
 
 size_t PhyloTree::getMarkedInternalBranch(void) const {
 	const size_t nin = mInternalNodes.size();
-	// omid
-	//std::cout << "NIN " << nin << std::endl;
 
-	// end omid
+	//std::cout << "NIN " << nin << std::endl;
 
 	size_t marked_branch = 0;
 	for (; marked_branch < nin; ++marked_branch) {
@@ -65,10 +63,8 @@ size_t PhyloTree::getMarkedInternalBranch(void) const {
 /*std::set<size_t> PhyloTree::getMarkedBranches(void) const
  {
  const size_t nin = mInternalNodes.size();
- // omid
- std::cout << "NIN " << nin << std::endl;
 
- // end omid
+ std::cout << "NIN " << nin << std::endl;
 
  std::set<size_t> marked_branches;
  size_t current_branch = 0;
@@ -214,7 +210,6 @@ void PhyloTree::checkRootBranches(void) //const
 			std::cout << std::endl
 					<< "This is a rooted tree. Tree is unrooted !" << std::endl;
 
-		// omid
 		TreeNode *c0, *c1, *cx; // cx is the child with at least 2 children
 		c0 = mTreeRoot.getChild(0);
 		c1 = mTreeRoot.getChild(1);
@@ -316,7 +311,6 @@ void PhyloTree::checkRootBranches(void) //const
 
 		//std::cout << std::endl << "Root has " << cnt_root_branches << " children of which " << cnt_root_leaves << " are leaves" << std::endl;
 
-		// end omid
 	}
 	// if it is an invalid tree then raise exception
 	if (cnt_root_branches < 2)

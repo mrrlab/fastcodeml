@@ -73,7 +73,7 @@ public:
 	/// @return The number of tree branches
 	///
 	size_t getNumBranches(void) const {
-		return mInternalNodes.size()/* omid +mLeavesSpecies.size() end omid */;
+		return mInternalNodes.size()/* +mLeavesSpecies.size() */;
 	}
 
 	/// Return the index of the first marked branch.
@@ -138,7 +138,7 @@ public:
 	///
 	void checkRootBranches(void); //const;
 
-	/// checks whether a branch is leaf or not (omid).
+	/// checks whether a branch is leaf or not.
 	///
 	/// @param[in] branchLabel The branch label
 	///

@@ -5,9 +5,9 @@ Read INSTALL for installation instructions!
 
 Usage, e.g.:
 
-./fast -m 22 -bl -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
+./fast -m 22 -bl -nt 1 -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
 
-Above execution estimates the log likelihood for hypothesis 0 and the foreground specified in the Newick file. The output could be like the following:
+Above execution estimates the log likelihood for hypothesis 0 and the foreground specified in the Newick file using only one thread. The output could be like the following:
 
 ===
 
@@ -26,8 +26,8 @@ w0:  0.0000010  k:   5.1252258
 H1 Final Annotated Newick Tree (*N marks the branch N)
 ((a001:0.169176*1,a002:0.199833*2)#1:0.254441*0,(((a003:0.005008*6,a004:0.008439*7):0.010175*5,a005:0.025300*8):0.015333*4,a006:0.130950*9):0.044605*3,a007:0.074303*10):0.000000;
 
-Time used: 0:18
-Cores used: 16
+Time used: 0:4
+Cores used: 1
 
 ===
 
