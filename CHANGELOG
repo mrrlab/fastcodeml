@@ -2,11 +2,11 @@ FastCodeML 1.3.0:
 - Support for trees with length 0 branches
 - Supporting rooted trees by unrooting them first
 - Support for terminal branches as foreground
-- Supporting multiple forground branches
-- More consistent results with codeml by unifying initial distributions
+- Supporting multiple foreground branches
+- More consistent results with codeml by unifying initial points and distributions
 -- Detail
 - Better installations guide, standard output and command line options
-- Corrcting bugs in converting external and internal proportions
+- Correcting bugs in converting external and internal proportions
 
 FastCodeML 1.2.0:
 - (Major) BG/Q compatibility (detail below)
