@@ -1,17 +1,17 @@
 // The following headers are required for all allocators.
-#include <cstddef>	// Required for size_t and ptrdiff_t and NULL
+#include <cstddef>   // Required for size_t and ptrdiff_t and NULL
 #include <stdexcept> // Required for std::length_error
 
 // The following headers contain stuff that AlignedAllocator uses.
-#include <cstdlib>	// For malloc() and free()
+#include <cstdlib> // For malloc() and free()
 
-// For XMT the following function should be supplied till the bug is fixed by Cray
+// For XMT the following function should be supplied till the bug is fixed by
+// Cray
 #ifdef __MTA__
-//extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
-static int posix_memalign(void **memptr, size_t alignment, size_t size)
-{
-	*memptr = malloc(size);
-	return 0;
+// extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
+static int posix_memalign(void **memptr, size_t alignment, size_t size) {
+  *memptr = malloc(size);
+  return 0;
 }
 #endif
 
@@ -23,7 +23,7 @@ static int posix_memalign(void **memptr, size_t alignment, size_t size)
 #endif
 
 // Alignment must be power of 2 (1,2,4,8,16...)
-void* alignedMalloc(size_t aSize, size_t aAlignment) {
+void *alignedMalloc(size_t aSize, size_t aAlignment) {
 #ifdef _MSC_VER
 #if 0
 	--aAlignment;
@@ -34,34 +34,34 @@ void* alignedMalloc(size_t aSize, size_t aAlignment) {
 	reinterpret_cast<uintptr_t*>(o)[-1] = r;
 	return reinterpret_cast<void*>(o);
 #endif
-	return _aligned_malloc(aSize, aAlignment);
+  return _aligned_malloc(aSize, aAlignment);
 #else
-	void* ptr = NULL;
-	if (posix_memalign(&ptr, aAlignment, aSize))
-		return NULL;
-	return ptr;
+  void *ptr = NULL;
+  if (posix_memalign(&ptr, aAlignment, aSize))
+    return NULL;
+  return ptr;
 #endif
 }
 
-void alignedFree(void* aPtr) {
-	if (!aPtr)
-		return;
+void alignedFree(void *aPtr) {
+  if (!aPtr)
+    return;
 #ifdef _MSC_VER
 #if 0
 	free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(aPtr)[-1]));
 #endif
-	_aligned_free(aPtr);
+  _aligned_free(aPtr);
 #else
-	free(aPtr);
+  free(aPtr);
 #endif
 }
 
 #if 0
 
 // The following headers contain stuff that main() uses.
-#include <iostream>	 // For std::cout
-#include <ostream>	 // For std::endl
-#include <vector>	 // For std::vector
+#include <iostream> // For std::cout
+#include <ostream>  // For std::endl
+#include <vector>   // For std::vector
 #include "AlignedAllocator.h"
 
 int main()
@@ -95,4 +95,3 @@ int main()
 	cout << endl << "Destroying l:" << endl;
 }
 #endif
-

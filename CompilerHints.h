@@ -1,7 +1,8 @@
 #ifndef COMPILERHINTS_H
 #define COMPILERHINTS_H
 
-#if defined(__INTEL_COMPILER) || defined(__ICL) || defined(__ICC) || defined(__ECC)
+#if defined(__INTEL_COMPILER) || defined(__ICL) || defined(__ICC) ||           \
+    defined(__ECC)
 //	Intel
 #define ALIGN64 __declspec(align(64))
 #define RESTRICT restrict
@@ -9,7 +10,7 @@
 
 #elif defined(__GNUC__)
 //	GNU C++
-#define ALIGN64 __attribute__ ((aligned (64)))
+#define ALIGN64 __attribute__((aligned(64)))
 #define RESTRICT __restrict__
 //#define PURE	  __attribute__ ((pure))
 
@@ -27,7 +28,7 @@
 
 #elif defined(_CRAYC)
 //	Cray C++
-#define ALIGN64 __attribute__ ((aligned (64)))
+#define ALIGN64 __attribute__((aligned(64)))
 #define RESTRICT restrict
 //#define PURE	  __attribute__ ((pure))
 
@@ -54,4 +55,3 @@
 #endif
 
 #endif
-
