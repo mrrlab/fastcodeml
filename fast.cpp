@@ -22,6 +22,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <string>
 #include "CmdLine.h"
 #include "Newick.h"
 #include "Phylip.h"
@@ -32,6 +33,7 @@
 #include "ParseParameters.h"
 #include "VerbosityLevels.h"
 #include "WriteResults.h"
+#include "MathSupport.h"
 
 #ifndef VTRACE
 #ifdef _OPENMP
@@ -55,9 +57,14 @@
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
 ///
-const char *version = "1.2.0";
+const char *version = "1.3.0";
 
 int main(int aRgc, char **aRgv) {
+
+  Timer timer_app;
+
+  timer_app.start();
+
   try {
 
 #ifdef USE_MKL_VML
@@ -131,16 +138,21 @@ int main(int aRgc, char **aRgv) {
       if (cmd.mSeed)
         std::cout << "Seed:           " << cmd.mSeed << std::endl;
       if (cmd.mBranchFromFile)
-        std::cout << "Branch:         From tree file" << std::endl;
-      else if (cmd.mBranchStart != UINT_MAX &&
-               cmd.mBranchStart == cmd.mBranchEnd)
-        std::cout << "Branch:         " << cmd.mBranchStart << std::endl;
-      else if (cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
-        std::cout << "Branches:       " << cmd.mBranchStart << "-end"
+        std::cout << "Branch:		  From tree file" << std::endl;
+      else if (cmd.mBranchAll)
+        std::cout << "FG Branches:	  All (internals + leaves) "
                   << std::endl;
-      else if (cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
-        std::cout << "Branches:       " << cmd.mBranchStart << '-'
-                  << cmd.mBranchEnd << std::endl;
+      // else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchStart ==
+      // cmd.mBranchEnd)
+      //											std::cout
+      //<< "Branch:		  " << cmd.mBranchStart << std::endl;
+      // else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd == UINT_MAX)
+      //											std::cout
+      //<< "Branches:		  " << cmd.mBranchStart << "-end" << std::endl;
+      // else if(cmd.mBranchStart != UINT_MAX && cmd.mBranchEnd != UINT_MAX)
+      //											std::cout
+      //<< "Branches:		  " << cmd.mBranchStart << '-' <<
+      //cmd.mBranchEnd << std::endl;
       if (!cmd.mStopIfNotLRT)
         std::cout << "H0 pre stop:    No" << std::endl;
       if (cmd.mIgnoreFreq)
@@ -182,8 +194,10 @@ int main(int aRgc, char **aRgv) {
       std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
       if (cmd.mResultsFile)
         std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
+      if (cmd.mNumThreads)
+        std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
       if (cmd.mFixedBranchLength)
-        std::cerr << "Branch lengths are fixed" << std::endl;
+        std::cout << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
       if (num_threads > 1) {
         std::cout << "Num. threads:   " << num_threads << std::endl
@@ -250,7 +264,8 @@ int main(int aRgc, char **aRgv) {
     if (cmd.mSeed == 0)
       cmd.mSeed = static_cast<unsigned int>(time(NULL));
 #endif
-    srand(cmd.mSeed);
+    // srand(cmd.mSeed); // fastcodeml seed
+    SetSeedCodeml(cmd.mSeed, 0); // codeml seed is 1
 
     // Verify the optimizer algorithm selected on the command line
     if (!cmd.mNoMaximization)
@@ -266,38 +281,35 @@ int main(int aRgc, char **aRgv) {
 
     // Enclose file loading into a block so temporary structures could be
     // deleted when no more needed
-    {
-      // Load the multiple sequence alignment (MSA)
-      Phylip msa(cmd.mVerboseLevel);
-      msa.readFile(cmd.mGeneFile, cmd.mCleanData);
+    //{
+    // Load the multiple sequence alignment (MSA)
+    Phylip msa(cmd.mVerboseLevel);
+    msa.readFile(cmd.mGeneFile, cmd.mCleanData);
 
-      // Load the phylogenetic tree
-      Newick tree(cmd.mVerboseLevel);
-      tree.readFile(cmd.mTreeFile);
+    // Load the phylogenetic tree
+    Newick tree(cmd.mVerboseLevel);
+    tree.readFile(cmd.mTreeFile);
 
-      // Check coherence between the two files
-      msa.checkNameCoherence(tree.getSpecies());
+    // Check coherence between the two files
+    msa.checkNameCoherence(tree.getSpecies());
 
-      // Check root
-      tree.checkRootBranches();
+    // Check root and unrooting if tree is rooted
+    tree.checkRootBranches();
 
-      // If times from file then check for null branch lengths for any leaf
-      if (cmd.mBranchLengthsFromFile) {
-        int zero_on_leaf_cnt = 0;
-        int zero_on_int_cnt = 0;
-        tree.countNullBranchLengths(zero_on_leaf_cnt, zero_on_int_cnt);
+    // If times from file then check for null branch lengths for any leaf
+    if (cmd.mBranchLengthsFromFile) {
+      int zero_on_leaf_cnt = 0;
+      int zero_on_int_cnt = 0;
+      tree.countNullBranchLengths(zero_on_leaf_cnt, zero_on_int_cnt);
 
-        if (zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0) {
-          std::cout
-              << "Found null or missing branch length in tree file. On leaves: "
-              << zero_on_leaf_cnt
-              << "  on internal branches: " << zero_on_int_cnt << std::endl;
-        }
-
-        if (zero_on_leaf_cnt > 0) {
-          throw FastCodeMLFatal("Null or missing branch length in tree file");
+      if (zero_on_leaf_cnt > 0 || zero_on_int_cnt > 0) {
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+          std::cout << "Found null or missing branch length in tree file: on "
+                    << zero_on_leaf_cnt << " leave(s) and on "
+                    << zero_on_int_cnt << " internal branch(es)." << std::endl;
         }
       }
+    }
 
       // Print the tree with the numbering of internal branches
       if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
@@ -377,31 +389,48 @@ int main(int aRgc, char **aRgv) {
     }
 #endif
 
-    // Initialize the output results file (if the argument is null, no file is
-    // created)
-    WriteResults output_results(cmd.mResultsFile);
-
     // Compute the range of branches to mark as foreground
     size_t branch_start, branch_end;
-    forest.getBranchRange(cmd, branch_start, branch_end);
+
+    std::set<int> fg_set;     // to save a list of fg branches from the
+                              // getBranchRange function
+    std::set<int> ib_set;     // to save a list of internal branches from the
+                              // getBranchRange function
+    std::vector<double> mVar; // to save optimization variables
+
+    forest.getBranchRange(
+        cmd, branch_start, branch_end, fg_set,
+        ib_set); // fgset is added to save a list of fg branches
+
+    // for (std::set<int>::iterator it=ib_set.begin(); it!=ib_set.end(); ++it)
+    // std::cout << " " << *it << ",";
 
     // Start timing parallel part
     if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
       timer.start();
 
-    // Initialize the models
-    BranchSiteModelNullHyp h0(forest, cmd);
-    BranchSiteModelAltHyp h1(forest, cmd);
+    double lnl0, lnl1 = 0.;
 
-    // Initialize the test
-    BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
-
-    // For all requested internal branches
-    for (size_t fg_branch = branch_start; fg_branch <= branch_end;
-         ++fg_branch) {
+    if (!fg_set.empty()) // in case of marked fg branches (one or multiple fg)
+    {
       if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
         std::cout << std::endl
-                  << "Doing branch " << fg_branch << std::endl;
+                  << "Doing foreground branch(es) from tree file " << std::endl;
+      if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+        std::cout << "-------------------------------------------" << std::endl;
+      if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+        std::cout << "Doing foreground branch(es) ";
+        for (std::set<int>::iterator it = fg_set.begin(); it != fg_set.end();
+             ++it)
+          std::cout << " " << *it << " ";
+        std::cout << std::endl;
+      }
+      // Initialize the models
+      MfgBranchSiteModelNullHyp h0(forest, cmd);
+      MfgBranchSiteModelAltHyp h1(forest, cmd);
+
+      // Initialize the test
+      MfgBayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
 
       // Compute the alternate model maximum loglikelihood
       double lnl1 = 0.;
@@ -411,10 +440,12 @@ int main(int aRgc, char **aRgv) {
         if (cmd.mBranchLengthsFromFile)
           h1.initFromTree();
 
-        lnl1 = h1(fg_branch);
+        lnl1 = h1(fg_set);
+        // h1.saveComputedTimes();
 
+        // std::cout << "lnl1 = " << lnl1 << std::endl;
         // Save the value for formatted output
-        output_results.saveLnL(fg_branch, lnl1, 1);
+        // output_results.saveLnL(fg_set, lnl1, 1);
       }
 
       // Compute the null model maximum loglikelihood
@@ -429,13 +460,13 @@ int main(int aRgc, char **aRgv) {
             h0.initFromTree();
         }
 
-        lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0,
+        lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0,
                   lnl1 - THRESHOLD_FOR_LRT);
 
+        // std::cout << "lnl0 = " << lnl0 << std::endl;
         // Save the value for formatted output (only if has not be forced to
         // stop)
-        if (lnl0 < DBL_MAX)
-          output_results.saveLnL(fg_branch, lnl0, 0);
+        // if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
       }
 
       if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
@@ -448,13 +479,13 @@ int main(int aRgc, char **aRgv) {
             std::cout << std::setprecision(15) << std::fixed << lnl0;
           else
             std::cout << "(Doesn't pass LRT, skipping)";
-          std::cout << " Function calls: " << h0.getNumEvaluations() << "   ";
-          std::cout << std::endl
-                    << std::endl;
+          std::cout << " Function calls: " << h0.getNumEvaluations()
+                    << "	  ";
+          std::cout << std::endl << std::endl;
           if (lnl0 != std::numeric_limits<double>::infinity()) {
             std::string s0 = h0.printFinalVars(std::cout);
             // std::cout<<"EDW0: "<< s0 <<std::endl;
-            output_results.saveParameters(fg_branch, s0, 0);
+            // output_results.saveParameters(fg_branch, s0, 0);
           }
           std::cout << std::endl;
         }
@@ -470,7 +501,7 @@ int main(int aRgc, char **aRgv) {
           if (lnl1 != std::numeric_limits<double>::infinity()) {
             std::string s1 = h1.printFinalVars(std::cout);
             // std::cout<<"EDW1: "<< s1 <<std::endl;
-            output_results.saveParameters(fg_branch, s1, 1);
+            // output_results.saveParameters(fg_branch, s1, 1);
           }
           std::cout << std::endl;
         }
@@ -508,33 +539,302 @@ int main(int aRgc, char **aRgv) {
 
         // Use the forest export class
         ForestExport fe(forest);
-        fe.exportForest(cmd.mGraphFile, fg_branch);
+        fe.exportForest(cmd.mGraphFile, 0);
       }
 
       // If the two hypothesis are computed, H0 has not been stopped and the run
       // passes the LRT, then compute the BEB
       if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX &&
           BranchSiteModel::performLRT(lnl0, lnl1)) {
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+          std::cout << std::endl
+                    << "LRT is significant. Computing sites under positive "
+                       "selection ... "
+                    << std::endl;
+
         // Get the scale values from the latest optimized h1.
         std::vector<double> scales(2);
         h1.getScales(scales);
 
         // Run the BEB test
-        beb.computeBEB(h1.getVariables(), fg_branch, scales);
+        // if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl
+        // << "LRT is significant. Computing sites under positive selection ...
+        // " << std::endl ;
+        beb.computeBEB(h1.getVariables(), fg_set, scales);
 
         // Output the sites under positive selection (if any)
         if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
-          beb.printPositiveSelSites(fg_branch);
+          beb.printPositiveSelSites(fg_set);
 
         // Get the sites under positive selection for printing in the results
         // file (if defined)
-        if (output_results.isWriteResultsEnabled()) {
-          std::vector<unsigned int> positive_sel_sites;
-          std::vector<double> positive_sel_sites_prob;
-          beb.extractPositiveSelSites(positive_sel_sites,
-                                      positive_sel_sites_prob);
-          output_results.savePositiveSelSites(fg_branch, positive_sel_sites,
-                                              positive_sel_sites_prob);
+
+        /*if(output_results.isWriteResultsEnabled())
+         {
+         std::vector<unsigned int> positive_sel_sites;
+         std::vector<double> positive_sel_sites_prob;
+         beb.extractPositiveSelSites(positive_sel_sites,
+         positive_sel_sites_prob);
+
+         if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+         std::cout << std::endl
+         << "Positively selected sites and their probabilities : ";
+         std::cout << std::endl;
+         for (std::vector<unsigned int>::iterator it =
+         positive_sel_sites.begin();
+         it != positive_sel_sites.end(); ++it)
+         std::cout << " " << *it << ",";
+         std::cout << std::endl;
+         for (std::vector<double>::iterator it =
+         positive_sel_sites_prob.begin();
+         it != positive_sel_sites_prob.end(); ++it)
+         std::cout << " " << *it << ",";
+         std::cout << std::endl;
+         }
+
+         output_results.savePositiveSelSites(fg_set, positive_sel_sites,
+         positive_sel_sites_prob);
+         }*/
+      }
+
+      // if branches are fixed
+
+      if (cmd.mFixedBranchLength)
+
+      {
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+          std::cout << std::endl << "H1 Final ";
+          tree.printTreeAnnotated(std::cout, NULL, 0, true);
+        }
+      }
+
+      else
+
+      {
+        mVar = h1.getVariables();
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+          std::cout << std::endl << "H1 Final ";
+          tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
+        }
+        // tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
+        // &h1.getVariables());
+        // std :: cout << std::endl;
+      }
+
+      /*if(cmd.mInitFromParams)			h0.initFromParams();
+       if(cmd.mBranchLengthsFromFile)	h0.initFromTree();
+
+       lnl0 = h0(fg_set, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0,
+       0-THRESHOLD_FOR_LRT);
+       std::cout << "lnl0 (multiple fg) = " << lnl0 << std::endl;
+
+       if(cmd.mInitFromParams)			h1.initFromParams();
+       if(cmd.mBranchLengthsFromFile)	h1.initFromTree();
+
+       lnl1 = h1(fg_set);
+       std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
+
+      timer_app.stop();
+      std::cout << std::endl
+                << "Time used: " << timer_app.get() / 60000 << ":"
+                << (timer_app.get() / 1000) % 60 << std::endl;
+      std::cout << "Cores used: " << num_threads << std::endl;
+      return 0;
+    }
+
+    // Else for all requested internal branches
+
+    // Initialize the output results file (if the argument is null, no file is
+    // created)
+    WriteResults output_results(cmd.mResultsFile);
+
+    // Initialize the models
+    BranchSiteModelNullHyp h0(forest, cmd);
+    BranchSiteModelAltHyp h1(forest, cmd);
+
+    // Initialize the test
+    BayesTest beb(forest, cmd.mVerboseLevel, cmd.mDoNotReduceForest);
+
+    if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+      if (cmd.mBranchAll)
+        std::cout << std::endl << "Doing all foreground branches" << std::endl;
+      else
+        std::cout << std::endl
+                  << "Doing internal foreground branches" << std::endl;
+      std::cout << "------------------------------------" << std::endl;
+    }
+
+    for (size_t fg_branch = branch_start; fg_branch <= branch_end;
+         ++fg_branch) {
+
+      if (cmd.mBranchAll or
+          (!cmd.mBranchAll and ib_set.find(fg_branch) != ib_set.end()))
+
+      {
+
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+          std::cout << "Doing foreground branch " << fg_branch << std::endl;
+
+        // Compute the alternate model maximum loglikelihood
+        double lnl1 = 0.;
+        if (cmd.mComputeHypothesis != 0) {
+          if (cmd.mInitFromParams)
+            h1.initFromParams();
+          if (cmd.mBranchLengthsFromFile)
+            h1.initFromTree();
+
+          lnl1 = h1(fg_branch);
+          // h1.saveComputedTimes();
+          // h1.mBranches
+
+          // Save the value for formatted output
+          // output_results.saveLnL(fg_branch, lnl1, 1);
+        }
+
+        // Compute the null model maximum loglikelihood
+        double lnl0 = 0.;
+        if (cmd.mComputeHypothesis != 1) {
+          if (cmd.mInitH0fromH1)
+            h0.initFromResult(h1.getVariables());
+          else {
+            if (cmd.mInitFromParams)
+              h0.initFromParams();
+            if (cmd.mBranchLengthsFromFile)
+              h0.initFromTree();
+          }
+
+          lnl0 = h0(fg_branch, cmd.mStopIfNotLRT && cmd.mComputeHypothesis != 0,
+                    lnl1 - THRESHOLD_FOR_LRT);
+
+          // Save the value for formatted output (only if has not be forced to
+          // stop)
+          // if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+        }
+
+        if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+          std::cout << std::endl;
+          if (cmd.mComputeHypothesis != 1) {
+            std::cout << "LnL0: ";
+            if (lnl0 == std::numeric_limits<double>::infinity())
+              std::cout << "**Invalid result**";
+            else if (lnl0 < DBL_MAX)
+              std::cout << std::setprecision(15) << std::fixed << lnl0;
+            else
+              std::cout << "(Doesn't pass LRT, skipping)";
+            std::cout << " Function calls: " << h0.getNumEvaluations()
+                      << "	  ";
+            std::cout << std::endl << std::endl;
+            if (lnl0 != std::numeric_limits<double>::infinity()) {
+              std::string s0 = h0.printFinalVars(std::cout);
+              output_results.saveParameters(fg_branch, s0, 0);
+            }
+            std::cout << std::endl;
+          }
+          if (cmd.mComputeHypothesis != 0) {
+            std::cout << "LnL1: ";
+            if (lnl1 == std::numeric_limits<double>::infinity())
+              std::cout << "**Invalid result**";
+            else
+              std::cout << std::setprecision(15) << std::fixed << lnl1;
+            std::cout << " Function calls: " << h1.getNumEvaluations();
+            std::cout << std::endl << std::endl;
+            if (lnl1 != std::numeric_limits<double>::infinity()) {
+              std::string s1 = h1.printFinalVars(std::cout);
+              output_results.saveParameters(fg_branch, s1, 1);
+            }
+            std::cout << std::endl;
+          }
+          if (cmd.mComputeHypothesis > 1) {
+            if (lnl0 == std::numeric_limits<double>::infinity() ||
+                lnl1 == std::numeric_limits<double>::infinity())
+              std::cout << "LRT: **Invalid result**";
+            else if (lnl0 < DBL_MAX)
+              std::cout << "LRT: " << std::setprecision(15) << std::fixed
+                        << lnl1 - lnl0
+                        << "	 (threshold: " << std::setprecision(15)
+                        << std::fixed << THRESHOLD_FOR_LRT << ')';
+            else
+              std::cout << "LRT: < " << std::setprecision(15) << std::fixed
+                        << THRESHOLD_FOR_LRT;
+            std::cout << std::endl;
+          }
+        }
+
+        // If requested set the time in the forest and export to a graph
+        // visualization tool
+        if (cmd.mGraphFile) {
+          switch (cmd.mExportComputedTimes) {
+          case 0:
+            h0.saveComputedTimes();
+            break;
+
+          case 1:
+            h1.saveComputedTimes();
+            break;
+
+          default:
+            break;
+          }
+
+          // Use the forest export class
+          ForestExport fe(forest);
+          fe.exportForest(cmd.mGraphFile, fg_branch);
+        }
+
+        // If the two hypothesis are computed, H0 has not been stopped and the
+        // run passes the LRT, then compute the BEB
+        if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX &&
+            BranchSiteModel::performLRT(lnl0, lnl1)) {
+          if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+            std::cout << std::endl
+                      << "LRT is significant. Computing sites under positive "
+                         "selection ... "
+                      << std::endl;
+
+          // Get the scale values from the latest optimized h1.
+          std::vector<double> scales(2);
+          h1.getScales(scales);
+
+          // Run the BEB test
+          // if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout <<
+          // std::endl << "LRT is significant. Computing sites under positive
+          // selection ... " << std::endl ;
+          // beb.computeBEB(h1.getVariables(), fg_branch, scales);
+
+          // Output the sites under positive selection (if any)
+          if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+            beb.printPositiveSelSites(fg_branch);
+
+          // Get the sites under positive selection for printing in the results
+          // file (if defined)
+          if (output_results.isWriteResultsEnabled()) {
+            std::vector<unsigned int> positive_sel_sites;
+            std::vector<double> positive_sel_sites_prob;
+            beb.extractPositiveSelSites(positive_sel_sites,
+                                        positive_sel_sites_prob);
+            output_results.savePositiveSelSites(fg_branch, positive_sel_sites,
+                                                positive_sel_sites_prob);
+          }
+        }
+
+        if (cmd.mFixedBranchLength)
+
+        {
+          if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+            std::cout << std::endl << "H1 Final ";
+            tree.printTreeAnnotated(std::cout, NULL, 0, true);
+            std::cout << std::endl;
+          }
+        }
+
+        else {
+          // std :: cout << std::endl;
+          if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+            mVar = h1.getVariables();
+            std::cout << std::endl << "H1 Final ";
+            tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true, &mVar);
+            std::cout << std::endl;
+          }
         }
       }
     }
@@ -547,10 +847,15 @@ int main(int aRgc, char **aRgv) {
                 << " time: " << timer.get() << std::endl;
     }
 
-    // Output the results
-    output_results.outputResults();
+    timer_app.stop();
+    std::cout << std::endl
+              << "Time used: " << timer_app.get() / 60000 << ":"
+              << (timer_app.get() / 1000) % 60 << std::endl;
+    std::cout << "Cores used: " << num_threads << std::endl;
 
-    ////////////////////////////////////////////////////////////////////
+    // Output the results
+    // output_results.outputResults();
+
     // Catch all exceptions
   } catch (const FastCodeMLSuccess &) {
     return 0;
@@ -626,116 +931,6 @@ int main(int aRgc, char **aRgv) {
 ///
 /// The null pointer should be written as NULL, not 0 to make clear its purpose.
 ///
-
-/**
-@page cmd_page Command Line Switches
-Here is a quick list of the valid command line switches for FastCodeML.
-
-The input `tree_file` is in %Newick format with the file containing only one
-tree. The `alignment_file` instead is in %Phylip format.
-
-@verbatim
-
-Usage:
-    FastCodeML [options] tree_file alignment_file
-
--d  --debug  -v  --verbose (required argument)
-        Verbosity level (0: none; 1: results only; 2: normal info; 3: MPI trace;
-4: more debug) (default: 1)
-
--q  --quiet (no argument)
-        No messages except results
-
--?  -h  --help (no argument)
-        This help
-
--s  --seed (required argument)
-        Random number generator seed (0 < seed < 1000000000)
-
--b  --branch (required argument)
-        Do only this branch as foreground branch (count from 0)
-
--bs  --branch-start (required argument)
-        Start computing from this branch as foreground one (count from 0)
-(default: first one)
-
--be  --branch-end (required argument)
-        End computing at this branch as foreground one (count from 0) (default:
-last one)
-
--i  --ignore-freq (no argument)
-        Ignore computed codon frequency and set all of them to 1/61
-
--e  --export (required argument)
-        Export forest in GML format (if %03d or @03d is present, one is created
-for each fg branch)
-
--nr  --no-reduce (no argument)
-        Do not reduce forest by merging common subtrees
-
--l  --lengths-from-file  --times-from-file (no argument)
-        Initial branch lengths from tree file
-
--o  --initial-step (no argument)
-        Only the initial step is performed (no maximization)
-
--c  --export-comp-times (required argument)
-        Export the computed times from H0 if 0, H1 if 1, otherwise the one read
-in the phylo tree
-
--r  --trace (no argument)
-        Trace the maximization run
-
--nt  --number-of-threads (required argument)
-        Number of threads (1 for non parallel execution)
-
--bf  --branch-from-file (no argument)
-        Do only the branch marked in the file as foreground branch
-
--hy  --only-hyp (required argument)
-        Compute only H0 if 0, H1 if 1
-
--i1  --init-from-h1 (no argument)
-        Start H0 optimization from H1 results
-
--m  --maximizer (required argument)
-        Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA,
-22:FromCodeML, 99:MLSL_LDS) (default: 22)
-
--sd  --small-diff (required argument)
-        Delta used in gradient computation (default: 1.49e-8)
-
--p  --init-param (required argument)
-        Pass initialization parameter in the form: P=value (P: w0, k, p0, p1,
-w2)
-
--ic  --init-default (no argument)
-        Start from default parameter values and times from tree file
-
--x  --extra-debug (required argument)
-        Extra debug parameter (zero disables it)
-
--re  --relative-error (required argument)
-        Relative error where to stop maximization (default: 1e-3)
-
--ou  --output (required argument)
-        Write results formatted to this file
-
--cl  --clean-data (no argument)
-        Remove ambiguous or missing sites from the MSA (default: no)
-
--ps  --no-pre-stop (no argument)
-        Don't stop H0 maximization even if it cannot satisfy LRT (default: stop)
-
--mi  --max-iterations (required argument)
-        Maximum number of iterations for the maximizer (default: 10000)
-
--bl  --branch-lengths-fixed (no argument)
-        The length of the brances is fixed
-
-@endverbatim
-*/
-
 /// @page vampir_page Using Vampir for profiling
 /// On Linux we use VampirTrace to collect profile data and Vampir to display
 /// the results (http://www.vampir.eu/).
