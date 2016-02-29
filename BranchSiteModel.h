@@ -117,6 +117,25 @@ public:
   double maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
                             double aThreshold);
 
+  /// Compute the maximum likelihood for the given forest (multiple foregrounds)
+  ///
+  /// @param[in] aFgBranch The number of the internal branch to be marked as
+  /// foreground
+  /// @param[in] aStopIfBigger If true stop computation as soon as lnl is over
+  /// aThreshold
+  /// @param[in] aThreshold The threshold at which the maximization should be
+  /// stopped
+  ///
+  /// @return The maximum Likelihood value
+  ///
+  /// @exception FastCodeMLFatal Exception in Ming2 computation
+  /// @exception FastCodeMLFatal Invalid optimization algorithm identifier on
+  /// the command line
+  /// @exception FastCodeMLFatal Exception in computation
+  ///
+  double maximizeLikelihood(std::set<int> aFgBranchSet, bool aStopIfBigger,
+                            double aThreshold);
+
   /// Compute the likelihood for the given forest and the given set of
   /// parameters when computing gradient.
   ///
@@ -169,7 +188,16 @@ public:
   ///
   /// @return The optimized variables
   ///
-  const std::vector<double> &getVariables(void) const { return mVar; }
+  /// const std::vector<double>* getVariables(void) const {return &mVar;} //
+  /// should return refference ?
+
+  /// Get variable values
+  ///
+  /// @return The optimized variables
+  ///
+  const std::vector<double> &getVariables(void) const {
+    return mVar;
+  } // should return refference ?
 
   /// Get the number of function evaluation.
   ///
@@ -214,6 +242,10 @@ public:
     aScales[1] = mFgScale;
   }
 
+  /// Get the array of branch lengths.
+  ///
+  std::vector<double> getBranchLengths(void) const { return mBranches; }
+
   /// Verify if the code entered on command line is valid.
   ///
   /// @param[in] aOptimizationAlgo The code set on the command line.
@@ -242,11 +274,44 @@ protected:
   ///
   void getProportions(double aV0, double aV1, double *aProportions) const {
 #ifdef USE_ORIGINAL_PROPORTIONS
+
+    /*   // codeml code //
+     int f_and_x(double x[], double f[], int n, int fromf, int LastItem)
+     {
+     This transforms between x and f.  x and f can be identical.
+     If (fromf), f->x
+     else        x->f.
+     The iterative variable x[] and frequency f[0,1,n-2] are related as:
+     freq[k] = exp(x[k])/(1+SUM(exp(x[k]))), k=0,1,...,n-2,
+     x[] and freq[] may be the same vector.
+     The last element (f[n-1] or x[n-1]=1) is updated only if(LastItem).
+
+     int i;
+     double tot;
+
+     if (fromf) {   f => x
+     if((tot=1-sum(f,n-1))<1e-80) error2("f[n-1]==1, not dealt with.");
+     tot = 1/tot;
+     for(i=0; i<n-1; i++)  x[i] = log(f[i]*tot);
+     if(LastItem) x[n-1] = 0;
+     }
+     else {         x => f
+     for(i=0,tot=1; i<n-1; i++)  tot  += (f[i]=exp(x[i]));
+     for(i=0; i<n-1; i++)        f[i] /= tot;
+     if(LastItem) f[n-1] = 1/tot;
+     }
+     return(0);
+     }*/
+
     aProportions[0] = exp(aV0);
     aProportions[1] = exp(aV1);
     double tot = aProportions[0] + aProportions[1] + 1;
     aProportions[0] /= tot;
     aProportions[1] /= tot;
+
+    // std::cout << "p[0]" << aProportions[0]<< "p[1]" << aProportions[1] <<
+    // std::endl;
+
     tot = aProportions[0] + aProportions[1];
 
     aProportions[2] = (1. - tot) * aProportions[0] / tot;
@@ -264,6 +329,12 @@ protected:
   /// initFromTree() or initFromResult()
   ///
   void initVariables(void);
+
+  /// Initialize variables to be optimized in the same way as codeml.
+  /// It uses mInitType to know what has been already initialized by
+  /// initFromTree() or initFromResult()
+  ///
+  void initVariablesCodeml(void);
 
 private:
   /// Set upper and lower limits for the maximization domain
@@ -590,6 +661,109 @@ private:
   double mScaleQw0;    ///< Scale value for Qw0
   double mScaleQw2;    ///< Scale value for Qw2
   double mScaleQ1;     ///< Scale value for Q1
+};
+
+/// Alternate Hypothesis test (multiple fg grounds).
+///
+///		@author Mario Valle - Swiss National Supercomputing Centre
+///(CSCS)
+///		@date 2010-12-23 (initial version)
+///		@version 1.1
+///
+///
+class MfgBranchSiteModelAltHyp : public BranchSiteModel {
+public:
+  /// Constructor.
+  ///
+  /// @param[in] aForest The forest for which the maximum likelihood should be
+  /// computed
+  /// @param[in] aCmdLine The command line parameters
+  ///
+  MfgBranchSiteModelAltHyp(Forest &aForest, const CmdLine &aCmdLine)
+      : BranchSiteModel(
+            aForest, aForest.getNumBranches(), aForest.getNumSites(),
+            aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
+            aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+            aCmdLine.mRelativeError,
+            aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+            aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug,
+            aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
+        mfgmSet(aForest.getNumBranches()),
+        mfgmSetForGradient(aForest.getNumBranches()), mPrevK(DBL_MAX),
+        mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX) {
+    // Initialize the dependency set
+    mDependencies.computeDependencies(4, mNoParallel);
+    mDependencies.print("TEST FOR H1 (before optimization)");
+    mDependencies.optimizeDependencies();
+    mDependencies.print("TEST FOR H1");
+  }
+
+  /// Compute the alternative hypothesis log likelihood.
+  ///
+  /// @param[in] aFgBranch The identifier for the branch marked as foreground
+  /// branch
+  ///
+  /// @return The log likelihood under the alternative hypothesis
+  ///
+  double operator()(std::set<int> aFgBranchSet);
+
+  /// Compute the likelihood for the given forest and the given set of
+  /// parameters when computing gradient.
+  ///
+  /// @param[in] aVar The optimizer variables
+  /// @param[in] aTrace If set visualize the best result so far
+  /// @param[in] aGradientVar Used in gradient computation to avoid unneeded
+  /// computations. If set to UINT_MAX it is ignored
+  ///
+  /// @return The maximum Likelihood value
+  ///
+  double computeLikelihoodForGradient(const std::vector<double> &aVar,
+                                      bool aTrace, size_t aGradientVar);
+
+  /// Compute the likelihood for the given forest and the given set of
+  /// parameters.
+  ///
+  /// @param[in] aVar The optimizer variables
+  /// @param[in] aTrace If set visualize the best result so far
+  ///
+  /// @return The maximum Likelihood value
+  ///
+  double computeLikelihood(const std::vector<double> &aVar, bool aTrace);
+
+private:
+  /// Disabled assignment operator to avoid warnings on Windows.
+  ///
+  /// @fn BranchSiteModelAltHyp& operator=(const BranchSiteModelAltHyp& aObj)
+  ///
+  /// @param[in] aObj The object to be assigned
+  ///
+  /// @return The object receiving the assignment
+  ///
+  MfgBranchSiteModelAltHyp &
+  operator=(const MfgBranchSiteModelAltHyp & /*aObj*/);
+
+  /// Combine the sites' various codon classes likelihoods into one
+  /// log-likelihood value
+  ///
+  /// @return The tree log-likelihood value
+  ///
+  double combineSiteLikelihoods(void);
+
+private:
+  CheckpointableTransitionMatrix mQw0; ///< Q matrix for the omega0 case
+  TransitionMatrix mQw2;               ///< Q matrix for the omega2 case
+  CheckpointableTransitionMatrix mQ1;  ///< Q matrix for the omega1 == 1 case
+  mfgProbabilityMatrixSetH1 mfgmSet;   ///< Set of matrices used for the tree
+                                       ///visits (multiple foregrounds)
+  mfgProbabilityMatrixSetH1 mfgmSetForGradient; ///< Set of matrices used for
+                                                ///the tree visits (multiple
+                                                ///foregrounds)
+  double mPrevK;      ///< Previous k value used to compute matrices
+  double mPrevOmega0; ///< Previous w0 value used to compute matrices
+  double mPrevOmega2; ///< Previous w2 value used to compute matrices
+  double mScaleQw0;   ///< Scale value for Qw0
+  double mScaleQw2;   ///< Scale value for Qw2
+  double mScaleQ1;    ///< Scale value for Q1
 };
 
 #endif

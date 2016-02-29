@@ -1,2 +1,1 @@
-1. Parameter optimizers other than "-m 22" are untested and might not converge properly.
-2. -nt 1 yields results inconsistent with the test case when specified without MPI
+1. Look at the Gitlab page / issues section (https://gitlab.isb-sib.ch/phylo/fastcodeml/issues)

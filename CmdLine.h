@@ -30,12 +30,13 @@ public:
   CmdLine()
       : mDeltaValueForGradient(0.0), mRelativeError(1e-3), mTreeFile(NULL),
         mGeneFile(NULL), mGraphFile(NULL), mResultsFile(NULL),
-        mVerboseLevel(VERBOSE_ONLY_RESULTS), mSeed(0), mBranchStart(UINT_MAX),
-        mBranchEnd(UINT_MAX), mExportComputedTimes(UINT_MAX),
-        mComputeHypothesis(UINT_MAX), mOptimizationAlgo(22), mExtraDebug(0),
-        mMaxIterations(MAX_ITERATIONS), mIgnoreFreq(false),
-        mDoNotReduceForest(false), mBranchLengthsFromFile(false),
-        mNoMaximization(false), mTrace(false),
+        mVerboseLevel(VERBOSE_ONLY_RESULTS), mSeed(0), mBranchAll(false),
+        // mBranchStart(UINT_MAX),
+        // mBranchEnd(UINT_MAX),
+        mExportComputedTimes(UINT_MAX), mComputeHypothesis(UINT_MAX),
+        mOptimizationAlgo(22), mExtraDebug(0), mMaxIterations(MAX_ITERATIONS),
+        mIgnoreFreq(false), mDoNotReduceForest(false),
+        mBranchLengthsFromFile(false), mNoMaximization(false), mTrace(false),
 #ifdef _OPENMP
         mNumThreads(omp_get_max_threads()),
 #else
@@ -77,12 +78,14 @@ public:
   /// messages; 2: messages useful for debugging; 3:
   /// really annoying
   unsigned int mSeed; ///< Random number generator seed (0 means not set from
-  /// command line)
-  unsigned int mBranchStart; ///< Compute from this branch. The numbering starts
-  /// at 0 (UINT_MAX means run all branches)
-  unsigned int mBranchEnd; ///< Compute to this branch. The numbering starts at
-  /// 0 (UINT_MAX means run all branches). It is >=
-  /// mBranchStart
+                      ///command line)
+  bool mBranchAll;    ///< If it should consider all branches (internals plus
+                      ///leaves) as foreground >
+  // unsigned int	mBranchStart;			///< Compute from this branch. The
+  // numbering starts at 0 (UINT_MAX means run all branches)
+  // unsigned int	mBranchEnd;				///< Compute to this branch. The
+  // numbering starts at 0 (UINT_MAX means run all branches). It is >=
+  // mBranchStart
   unsigned int mExportComputedTimes; ///< If 0 or 1 the times exported are the
   /// computed ones in H0 or H1, otherwise
   ///(UINT_MAX) the one read from file

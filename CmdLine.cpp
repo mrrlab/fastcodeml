@@ -116,9 +116,9 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
     OPT_QUIET,
     OPT_HELP,
     OPT_SEED,
-    OPT_BRANCH,
-    OPT_BRANCH_START,
-    OPT_BRANCH_END,
+    OPT_BRANCH_ALL,
+    // OPT_BRANCH_START,
+    // OPT_BRANCH_END,
     OPT_IGNORE_FREQ,
     OPT_EXPORT,
     OPT_NOT_REDUCE,
@@ -146,69 +146,63 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
 
   // Then the definitions of each command line option
   CSimpleOpt::SOption parser_options[] = {
-      {OPT_VERBOSE, "-d", SO_REQ_SEP, "Verbosity level (0: none; 1: results "
+
+      // reporting parameters
+      {OPT_HELP, "-h", SO_NONE, "This help"},
+      //{ OPT_HELP,				"-h",
+      //SO_NONE,	"" },
+      {OPT_HELP, "--help", SO_NONE, ""},
+      //{ OPT_VERBOSE,			"-d",
+      //SO_REQ_SEP, "Verbosity level (0: none; 1: results only; 2: normal info;
+      //3: MPI trace; 4: more debug) (default: 1)" },
+      //{ OPT_VERBOSE,			"--debug",
+      //SO_REQ_SEP, "" },
+      {OPT_VERBOSE, "-v", SO_REQ_SEP, "Verbosity level (0: none; 1: results "
                                       "only; 2: normal info; 3: MPI trace; 4: "
                                       "more debug) (default: 1)"},
-      {OPT_VERBOSE, "--debug", SO_REQ_SEP, ""},
-      {OPT_VERBOSE, "-v", SO_REQ_SEP, ""},
       {OPT_VERBOSE, "--verbose", SO_REQ_SEP, ""},
       {OPT_QUIET, "-q", SO_NONE, "No messages except results"},
       {OPT_QUIET, "--quiet", SO_NONE, ""},
-      {OPT_HELP, "-?", SO_NONE, "This help"},
-      {OPT_HELP, "-h", SO_NONE, ""},
-      {OPT_HELP, "--help", SO_NONE, ""},
-      {OPT_SEED, "-s", SO_REQ_SEP,
-       "Random number generator seed (0 < seed < 1000000000)"},
-      {OPT_SEED, "--seed", SO_REQ_SEP, ""},
-      {OPT_BRANCH, "-b", SO_REQ_SEP,
-       "Do only this branch as foreground branch (count from 0)"},
-      {OPT_BRANCH, "--branch", SO_REQ_SEP, ""},
-      {OPT_BRANCH_START, "-bs", SO_REQ_SEP, "Start computing from this branch "
-                                            "as foreground one (count from 0) "
-                                            "(default: first one)"},
-      {OPT_BRANCH_START, "--branch-start", SO_REQ_SEP, ""},
-      {OPT_BRANCH_END, "-be", SO_REQ_SEP, "End computing at this branch as "
-                                          "foreground one (count from 0) "
-                                          "(default: last one)"},
-      {OPT_BRANCH_END, "--branch-end", SO_REQ_SEP, ""},
-      {OPT_IGNORE_FREQ, "-i", SO_NONE,
-       "Ignore computed codon frequency and set all of them to 1/61"},
-      {OPT_IGNORE_FREQ, "--ignore-freq", SO_NONE, ""},
       {OPT_EXPORT, "-e", SO_REQ_SEP, "Export forest in GML format (if %03d or "
                                      "@03d is present, one is created for each "
                                      "fg branch)"},
       {OPT_EXPORT, "--export", SO_REQ_SEP, ""},
-      {OPT_NOT_REDUCE, "-nr", SO_NONE,
-       "Do not reduce forest by merging common subtrees"},
-      {OPT_NOT_REDUCE, "--no-reduce", SO_NONE, ""},
-      {OPT_TIMES_FROM_FILE, "-l", SO_NONE,
-       "Initial branch lengths from tree file"},
-      {OPT_TIMES_FROM_FILE, "--lengths-from-file", SO_NONE, ""},
-      {OPT_TIMES_FROM_FILE, "--times-from-file", SO_NONE, ""},
-      {OPT_ONE_STEP, "-o", SO_NONE,
-       "Only the initial step is performed (no maximization)"},
-      {OPT_ONE_STEP, "--initial-step", SO_NONE, ""},
-      {OPT_COMP_TIMES, "-c", SO_REQ_SEP, "Export the computed times from H0 if "
-                                         "0, H1 if 1, otherwise the one read "
-                                         "in the phylo tree"},
-      {OPT_COMP_TIMES, "--export-comp-times", SO_REQ_SEP, ""},
       {OPT_TRACE, "-r", SO_NONE, "Trace the maximization run"},
       {OPT_TRACE, "--trace", SO_NONE, ""},
+      {OPT_EXTRA_DEBUG, "-x", SO_REQ_SEP,
+       "Extra debug parameter (zero disables it)"},
+      {OPT_EXTRA_DEBUG, "--extra-debug", SO_REQ_SEP, ""},
+      {OPT_OUT_RESULTS, "-ou", SO_REQ_SEP,
+       "Write results formatted to this file"},
+      {OPT_OUT_RESULTS, "--output", SO_REQ_SEP, ""},
+      {OPT_CLEAN_DATA, "-cl", SO_NONE,
+       "Remove ambiguous or missing sites from the MSA (default: no)"},
+      {OPT_CLEAN_DATA, "--clean-data", SO_NONE, ""},
+
+      // configuration parameters
+
+      {OPT_SEED, "-s", SO_REQ_SEP,
+       "Random number generator seed (0 < seed < 1000000000)"},
+      {OPT_SEED, "--seed", SO_REQ_SEP, ""},
       {OPT_NUM_THREADS, "-nt", SO_REQ_SEP,
        "Number of threads (1 for non parallel execution)"},
       {OPT_NUM_THREADS, "--number-of-threads", SO_REQ_SEP, ""},
-      //{ OPT_FORCE_SERIAL,		"-np",
-      // SO_NONE,	"Don't use parallel execution" },
-      //{ OPT_FORCE_SERIAL,		"--no-parallel",
-      // SO_NONE,	"" },
-      {OPT_BRANCH_FROM_FILE, "-bf", SO_NONE,
-       "Do only the branch marked in the file as foreground branch"},
-      {OPT_BRANCH_FROM_FILE, "--branch-from-file", SO_NONE, ""},
-      {OPT_ONE_HYP_ONLY, "-hy", SO_REQ_SEP, "Compute only H0 if 0, H1 if 1"},
-      {OPT_ONE_HYP_ONLY, "--only-hyp", SO_REQ_SEP, ""},
-      {OPT_INIT_H0_FROM_H1, "-i1", SO_NONE,
-       "Start H0 optimization from H1 results"},
-      {OPT_INIT_H0_FROM_H1, "--init-from-h1", SO_NONE, ""},
+      //	{ OPT_BRANCH_START,		"-bs",
+      //SO_REQ_SEP, "Start computing from this branch as foreground one (count
+      //from 0) (default: first one)" },
+      //	{ OPT_BRANCH_START,		"--branch-start",
+      //SO_REQ_SEP, "" },
+      //	{ OPT_BRANCH_END,		"-be",
+      //SO_REQ_SEP, "End computing at this branch as foreground one (count from
+      //0) (default: last one)" },
+      //	{ OPT_BRANCH_END,		"--branch-end",
+      //SO_REQ_SEP, "" },
+      {OPT_IGNORE_FREQ, "-i", SO_NONE,
+       "Ignore computed codon frequency and set all of them to 1/61"},
+      {OPT_IGNORE_FREQ, "--ignore-freq", SO_NONE, ""},
+      {OPT_NOT_REDUCE, "-nr", SO_NONE,
+       "Do not reduce forest by merging common subtrees"},
+      {OPT_NOT_REDUCE, "--no-reduce", SO_NONE, ""},
       {OPT_OPTIM_ALGO, "-m", SO_REQ_SEP,
        "Optimizer algorithm (0:LBFGS, 1:VAR1, 2:VAR2, 3:SLSQP, 11:BOBYQA, "
        "22:FromCodeML, 99:MLSL_LDS) (default: 22)"},
@@ -216,33 +210,58 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
       {OPT_DELTA_VAL, "-sd", SO_REQ_SEP,
        "Delta used in gradient computation (default: 1.49e-8)"},
       {OPT_DELTA_VAL, "--small-diff", SO_REQ_SEP, ""},
+      {OPT_REL_ERROR, "-re", SO_REQ_SEP,
+       "Relative error where to stop maximization (default: 1e-3)"},
+      {OPT_REL_ERROR, "--relative-error", SO_REQ_SEP, ""},
+      {OPT_MAX_ITER, "-mi", SO_REQ_SEP,
+       "Maximum number of iterations for the maximizer (default: 10000)"},
+      {OPT_MAX_ITER, "--max-iterations", SO_REQ_SEP, ""},
+
+      //{ OPT_TIMES_FROM_FILE,	"--times-from-file",	SO_NONE,	"" },
+
+      //{ OPT_FORCE_SERIAL,		"-np",
+      //SO_NONE,	"Don't use parallel execution" },
+      //{ OPT_FORCE_SERIAL,		"--no-parallel",
+      //SO_NONE,	"" },
+      //{ OPT_BRANCH_FROM_FILE,	"-bf",
+      //SO_NONE,	"Do only the branch marked in the file as foreground
+      //branch" },
+      //{ OPT_BRANCH_FROM_FILE,	"--branch-from-file",	SO_NONE,	"" },
+      {OPT_ONE_HYP_ONLY, "-hy", SO_REQ_SEP, "Compute only H0 if 0, H1 if 1"},
+      {OPT_ONE_HYP_ONLY, "--only-hyp", SO_REQ_SEP, ""},
+      {OPT_INIT_H0_FROM_H1, "-i1", SO_NONE,
+       "Start H0 optimization from H1 results"},
+      {OPT_INIT_H0_FROM_H1, "--init-from-h1", SO_NONE, ""},
+      {OPT_ONE_STEP, "-o", SO_NONE,
+       "Only the initial step is performed (no maximization)"},
+      {OPT_ONE_STEP, "--initial-step", SO_NONE, ""},
+      {OPT_NO_PRE_STOP, "-ps", SO_NONE, "Don't stop H0 maximization even if it "
+                                        "cannot satisfy LRT (default: stop)"},
+      {OPT_NO_PRE_STOP, "--no-pre-stop", SO_NONE, ""},
+
+      // initialization parameters
+
+      {OPT_TIMES_FROM_FILE, "-l", SO_NONE,
+       "Initial branch lengths from tree file"},
+      {OPT_TIMES_FROM_FILE, "--blengths-from-file", SO_NONE, ""},
+      {OPT_BRANCH_LENGTH, "-bl", SO_NONE,
+       "The length of the branches is fixed"},
+      {OPT_BRANCH_LENGTH, "--branch-lengths-fixed", SO_NONE, ""},
+      {OPT_BRANCH_ALL, "-ba", SO_NONE,
+       "Do for all branches as foreground branch (including leaves)"},
+      {OPT_BRANCH_ALL, "--branch-all", SO_NONE, ""},
+      {OPT_COMP_TIMES, "-c", SO_REQ_SEP, "Export the computed times from H0 if "
+                                         "0, H1 if 1, otherwise the one read "
+                                         "in the phylo tree"},
+      {OPT_COMP_TIMES, "--export-comp-times", SO_REQ_SEP, ""},
       {OPT_INIT_PARAM, "-p", SO_REQ_SEP, "Pass initialization parameter in the "
-                                         "form: P=value (P: w0, k, p0, p1, "
-                                         "w2)"},
+                                         "form: P=value (P: w0, k, p0, p1, w2) "
+                                         "-> e.g. -p w0=1.1 -p p0=2.1 ..."},
       {OPT_INIT_PARAM, "--init-param", SO_REQ_SEP, ""},
       {OPT_INIT_DEFAULT, "-ic", SO_NONE,
        "Start from default parameter values and times from tree file"},
       {OPT_INIT_DEFAULT, "--init-default", SO_NONE, ""},
-      {OPT_EXTRA_DEBUG, "-x", SO_REQ_SEP,
-       "Extra debug parameter (zero disables it)"},
-      {OPT_EXTRA_DEBUG, "--extra-debug", SO_REQ_SEP, ""},
-      {OPT_REL_ERROR, "-re", SO_REQ_SEP,
-       "Relative error where to stop maximization (default: 1e-3)"},
-      {OPT_REL_ERROR, "--relative-error", SO_REQ_SEP, ""},
-      {OPT_OUT_RESULTS, "-ou", SO_REQ_SEP,
-       "Write results formatted to this file"},
-      {OPT_OUT_RESULTS, "--output", SO_REQ_SEP, ""},
-      {OPT_CLEAN_DATA, "-cl", SO_NONE,
-       "Remove ambiguous or missing sites from the MSA (default: no)"},
-      {OPT_CLEAN_DATA, "--clean-data", SO_NONE, ""},
-      {OPT_NO_PRE_STOP, "-ps", SO_NONE, "Don't stop H0 maximization even if it "
-                                        "cannot satisfy LRT (default: stop)"},
-      {OPT_NO_PRE_STOP, "--no-pre-stop", SO_NONE, ""},
-      {OPT_MAX_ITER, "-mi", SO_REQ_SEP,
-       "Maximum number of iterations for the maximizer (default: 10000)"},
-      {OPT_MAX_ITER, "--max-iterations", SO_REQ_SEP, ""},
-      {OPT_BRANCH_LENGTH, "-bl", SO_NONE, "The length of the brances is fixed"},
-      {OPT_BRANCH_LENGTH, "--branch-lengths-fixed", SO_NONE, ""},
+
       SO_END_OF_OPTIONS};
 
   // Setup the usage string
@@ -303,26 +322,27 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
       mSeed = static_cast<unsigned int>(tmpi);
       break;
 
-    case OPT_BRANCH:
-      tmpi = atoi(args.OptionArg());
-      if (tmpi < 0)
-        throw FastCodeMLFatal("Invalid branch value");
-      mBranchStart = mBranchEnd = static_cast<unsigned int>(tmpi);
+    case OPT_BRANCH_ALL:
+      mBranchAll = true;
+      //		tmpi = atoi(args.OptionArg());
+      //		if(tmpi < 0) throw FastCodeMLFatal("Invalid branch
+      //value");
+      //		mBranchStart = mBranchEnd = static_cast<unsigned
+      //int>(tmpi);
       break;
 
-    case OPT_BRANCH_START:
-      tmpi = atoi(args.OptionArg());
-      if (tmpi < 0)
-        throw FastCodeMLFatal("Invalid start branch value");
-      mBranchStart = static_cast<unsigned int>(tmpi);
-      break;
+    //	case OPT_BRANCH_START:
+    //		tmpi = atoi(args.OptionArg());
+    //		if(tmpi < 0) throw FastCodeMLFatal("Invalid start branch
+    //value");
+    //		mBranchStart = static_cast<unsigned int>(tmpi);
+    //		break;
 
-    case OPT_BRANCH_END:
-      tmpi = atoi(args.OptionArg());
-      if (tmpi < 0)
-        throw FastCodeMLFatal("Invalid end branch value");
-      mBranchEnd = static_cast<unsigned int>(tmpi);
-      break;
+    //	case OPT_BRANCH_END:
+    //		tmpi = atoi(args.OptionArg());
+    //		if(tmpi < 0) throw FastCodeMLFatal("Invalid end branch value");
+    //		mBranchEnd = static_cast<unsigned int>(tmpi);
+    //		break;
 
     case OPT_IGNORE_FREQ:
       mIgnoreFreq = true;
@@ -475,8 +495,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
     mExportComputedTimes = 0;
   if (mComputeHypothesis == 1 && mExportComputedTimes < 2)
     mExportComputedTimes = 1;
-  if (mBranchStart == UINT_MAX && mBranchEnd < UINT_MAX)
-    mBranchStart = 0;
-  if (mBranchStart > mBranchEnd)
-    throw FastCodeMLFatal("Start branch after end branch. Quitting.");
+  // if(mBranchStart == UINT_MAX && mBranchEnd < UINT_MAX) mBranchStart = 0;
+  // if(mBranchStart > mBranchEnd) throw FastCodeMLFatal("Start branch after end
+  // branch. Quitting.");
 }

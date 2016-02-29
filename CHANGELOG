@@ -1,3 +1,13 @@
+FastCodeML 1.3.0:
+- Support for trees with length 0 branches
+- Supporting rooted trees by unrooting them first
+- Support for terminal branches as foreground
+- Supporting multiple foreground branches
+- More consistent results with codeml by unifying initial points and distributions
+-- Detail
+- Better installations guide, standard output and command line options
+- Correcting bugs in converting external and internal proportions
+
 FastCodeML 1.2.0:
 - (Major) BG/Q compatibility (detail below)
 - (Minor) Removal of -np option (now controlled by -nt), cleanup of std::cout in main.
@@ -25,6 +35,7 @@ FastCodeML 1.2.0:
 - fast.cpp
 	> Removal of -np option.
 - SETPATHS - example explaining how to set envionment variables per machine.
+
 FastCodeML 1.1.0:
 - Few corrections to accept pipe character also in sequence names
 - New option to fixed branch lengths (-bl)

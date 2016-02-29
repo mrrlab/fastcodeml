@@ -325,8 +325,13 @@ void BranchSiteModel::initFromParams(void) {
 #ifdef USE_ORIGINAL_PROPORTIONS
     if (p0 <= 0 || p1 <= 0)
       throw FastCodeMLFatal("Invalid p0 and p1 values");
-    mVar[0] = log(p0); // p0 -> x0
-    mVar[1] = log(p1); // p1 -> x1
+    if (p0 + p1 > 1)
+      throw FastCodeMLFatal("Invalid p0 and p1 values");
+    mVar[0] = log((p0) / (1 - p0 - p1)); // log(p0);		// p0 -> x0
+
+    mVar[1] =
+        log((p1) / (1 - p0 - p1)); // log(p1);			// p1 -> x1
+// std::cout << "mVar[0]" << mVar[0]<< "mVar[1]" << mVar[1] << std::endl;
 #else
     if (p0 < 0 || p1 < 0 || (p0 + p1) < 1e-15)
       throw FastCodeMLFatal("Invalid p0 and p1 values");
@@ -344,9 +349,13 @@ void BranchSiteModel::initFromParams(void) {
     double p1 = params->getParameter("p1");
 #ifdef USE_ORIGINAL_PROPORTIONS
     if (p0 <= 0 || p1 <= 0)
+      throw FastCodeMLFatal("Invalid p0 and p1 values"); //
+    if (p0 + p1 > 1)
       throw FastCodeMLFatal("Invalid p0 and p1 values");
-    mVar[mNumTimes + 0] = log(p0); // p0 -> x0
-    mVar[mNumTimes + 1] = log(p1); // p1 -> x1
+    mVar[0] = log((p0) / (1 - p0 - p1)); // log(p0);		// p0 -> x0
+
+    mVar[1] =
+        log((p1) / (1 - p0 - p1)); // log(p1);			// p1 -> x1
 #else
     if (p0 < 0 || p1 < 0 || (p0 + p1) < 1e-15)
       throw FastCodeMLFatal("Invalid p0 and p1 values");
@@ -573,10 +582,192 @@ void BranchSiteModel::initVariables(void) {
   }
 }
 
+void BranchSiteModel::initVariablesCodeml(
+    void) // shall random number generator changed with the codeml one ? 32 bit
+{
+  unsigned int i;
+
+  if (mFixedBranchLength) // fixed_blength =2 (-bl)
+  {
+    // Initialize w0, k, v1, v2 (if not already initialized)
+    if ((mInitStatus & INIT_PARAMS_H1) != INIT_PARAMS_H1) {
+      if ((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE) {
+#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[0] = 1.0 + 0.5 * rnduCodeml(); // x0 -> p0
+        mVar[1] = 0.0 + 0.2 * rnduCodeml(); // x1 -> p1
+#else
+        double x0 = exp(1.0 + 0.2 * rnduCodeml());
+        double x1 = exp(0.0 + 0.2 * rnduCodeml());
+        double tot = x0 + x1 + 1.0;
+        double p0 = x0 / tot;
+        double p1 = x1 / tot;
+        if (p0 + p1 < 1e-15) {
+          p0 = 1e-6;
+          p1 = 1e-6;
+        }
+
+        mVar[0] = p0 + p1;        // p0+p1
+        mVar[1] = p0 / (p0 + p1); // p0/(p0+p1)
+#endif
+        mVar[2] = 0.2 + 0.1 * rnduCodeml(); // w0
+        mVar[3] = 1.0;                      // k
+      } else                                // no use
+      {
+#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[0] = 1.0 + 0.5 * rnduCodeml(); // x0 -> p0
+        mVar[1] = 0.0 + 0.2 * rnduCodeml(); // x1 -> p1
+#else
+        double x0 = exp(0.5 + rnduCodeml());
+        double x1 = exp(0.5 + rnduCodeml());
+        double tot = x0 + x1 + 1.0;
+        double p0 = x0 / tot;
+        double p1 = x1 / tot;
+        if (p0 + p1 < 1e-15) {
+          p0 = 1e-6;
+          p1 = 1e-6;
+        }
+
+        mVar[0] = p0 + p1;        // p0+p1
+        mVar[1] = p0 / (p0 + p1); // p0/(p0+p1)
+#endif
+        mVar[2] = 0.2 + 0.1 * rnduCodeml(); // w0
+        mVar[3] = 1.0;                      // k
+      }
+    }
+
+    // Initialize w2 if needed
+    if (mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2) {
+      if ((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE) {
+        mVar[4] = 2.1 + 1.0 + rnduCodeml(); // w2
+      } else {
+        mVar[4] = 2.1 + 1.0 + rnduCodeml(); // w2
+      }
+    }
+
+    // Re-initialize the next time
+    mInitStatus = INIT_NONE;
+
+    // Check the initial values to be inside the domain (otherwise use the same
+    // clamp as in CodeML)
+    // Don't clamp the results if they came from H1
+    if ((mInitStatus & (INIT_TIMES | INIT_PARAMS_H1)) !=
+        (INIT_TIMES | INIT_PARAMS_H1)) {
+      unsigned int nv = mNumVariables;
+      for (i = 0; i < nv; ++i) {
+        if (mVar[i] < mLowerBound[i] * 1.05)
+          mVar[i] = mLowerBound[i] * 1.05;
+        if (mVar[i] > mUpperBound[i] / 1.05)
+          mVar[i] = mUpperBound[i] / 1.05;
+      }
+      for (i = 0; i < nv; ++i) {
+        if (mVar[i] < mLowerBound[i])
+          mVar[i] = mLowerBound[i] * 1.2;
+        if (mVar[i] > mUpperBound[i])
+          mVar[i] = mUpperBound[i] * 0.8;
+      }
+    }
+  }
+
+  else {
+    // Initialize times (if not already initialized)
+    if ((mInitStatus & INIT_TIMES) !=
+        INIT_TIMES) // fixed_blengh = -1 (fcml : default)
+    {
+      for (i = 0; i < mNumTimes; ++i)
+        mVar[i] = 0.1 + 0.5 * rnduCodeml(); // T
+    }
+
+    // Initialize w0, k, v1, v2 (if not already initialized)
+    if ((mInitStatus & INIT_PARAMS_H1) !=
+        INIT_PARAMS_H1) // fixed_blengh = 1 (fcml : -l)
+    {
+      if ((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE) {
+#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[mNumTimes + 0] = 1.0 + 0.5 * rnduCodeml(); // x0 -> p0
+        mVar[mNumTimes + 1] = 0.0 + 0.2 * rnduCodeml(); // x1 -> p1
+#else
+        double x0 = exp(1.0 + 0.2 * rnduCodeml());
+        double x1 = exp(0.0 + 0.2 * rnduCodeml());
+        double tot = x0 + x1 + 1.0;
+        double p0 = x0 / tot;
+        double p1 = x1 / tot;
+        if (p0 + p1 < 1e-15) {
+          p0 = 1e-6;
+          p1 = 1e-6;
+        }
+
+        mVar[mNumTimes + 0] = p0 + p1;        // p0+p1
+        mVar[mNumTimes + 1] = p0 / (p0 + p1); // p0/(p0+p1)
+#endif
+        mVar[mNumTimes + 2] = 0.2 + 0.1 * rnduCodeml(); // w0
+        mVar[mNumTimes + 3] = 1.0;                      // k
+      } else // fixed_blengh = -1 (fcml : default)
+      {
+#ifdef USE_ORIGINAL_PROPORTIONS
+        mVar[mNumTimes + 0] = 0.5 + rnduCodeml(); // x0 -> p0
+        mVar[mNumTimes + 1] = 0.5 + rnduCodeml(); // x1 -> p1
+#else
+        double x0 = exp(0.5 + rnduCodeml());
+        double x1 = exp(0.5 + rnduCodeml());
+        double tot = x0 + x1 + 1.0;
+        double p0 = x0 / tot;
+        double p1 = x1 / tot;
+        if (p0 + p1 < 1e-15) {
+          p0 = 1e-6;
+          p1 = 1e-6;
+        }
+
+        mVar[mNumTimes + 0] = p0 + p1;        // p0+p1
+        mVar[mNumTimes + 1] = p0 / (p0 + p1); // p0/(p0+p1)
+#endif
+        mVar[mNumTimes + 2] = 0.5 + rnduCodeml(); // w0
+        mVar[mNumTimes + 3] = 0.5 + rnduCodeml(); // k
+      }
+    }
+
+    // Initialize w2 if needed
+    if (mNumVariables == 5 && (mInitStatus & INIT_PARAM_W2) != INIT_PARAM_W2) {
+      if ((mInitStatus & INIT_TIMES_FROM_FILE) == INIT_TIMES_FROM_FILE) {
+        mVar[mNumTimes + 4] = 2.1 + 1.0 + rnduCodeml(); // fixed_blengh = 1
+                                                        // (fcml : -l)
+                                                        // // w2
+      } else {
+        mVar[mNumTimes + 4] =
+            0.5 + rnduCodeml(); // fixed_blengh = -1 (fcml : default)
+                                // // w2
+      }
+    }
+
+    // Re-initialize the next time
+    mInitStatus = INIT_NONE;
+
+    // Check the initial values to be inside the domain (otherwise use the same
+    // clamp as in CodeML)
+    // Don't clamp the results if they came from H1
+    if ((mInitStatus & (INIT_TIMES | INIT_PARAMS_H1)) !=
+        (INIT_TIMES | INIT_PARAMS_H1)) {
+      unsigned int nv = mNumTimes + mNumVariables;
+      for (i = 0; i < nv; ++i) {
+        if (mVar[i] < mLowerBound[i] * 1.05)
+          mVar[i] = mLowerBound[i] * 1.05;
+        if (mVar[i] > mUpperBound[i] / 1.05)
+          mVar[i] = mUpperBound[i] / 1.05;
+      }
+      for (i = 0; i < nv; ++i) {
+        if (mVar[i] < mLowerBound[i])
+          mVar[i] = mLowerBound[i] * 1.2;
+        if (mVar[i] > mUpperBound[i])
+          mVar[i] = mUpperBound[i] * 0.8;
+      }
+    }
+  }
+}
+
 double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger,
                                           double aThreshold) {
   // Initialize the variables to be optimized
-  initVariables();
+  // initVariables();
+  initVariablesCodeml();
 
   // Initialize the variables used to avoid unneeded recomputing
   mPrevK = DBL_MAX;
@@ -590,9 +781,28 @@ double BranchSiteModelNullHyp::operator()(size_t aFgBranch, bool aStopIfBigger,
   return maximizeLikelihood(aFgBranch, aStopIfBigger, aThreshold);
 }
 
+double MfgBranchSiteModelNullHyp::
+operator()(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold) {
+  // Initialize the variables to be optimized
+  // initVariables();
+  initVariablesCodeml();
+
+  // Initialize the variables used to avoid unneeded recomputing
+  mPrevK = DBL_MAX;
+  mPrevOmega0 = DBL_MAX;
+
+  // Initialize the matrix set and the matrix set used for gradient computation
+  mfgmSet.initializeSet(aFgBranchSet);
+  mfgmSetForGradient.initializeFgBranch(aFgBranchSet);
+
+  // Run the optimizer
+  return maximizeLikelihood(aFgBranchSet, aStopIfBigger, aThreshold);
+}
+
 double BranchSiteModelAltHyp::operator()(size_t aFgBranch) {
   // Initialize the variables to be optimized
-  initVariables();
+  // initVariables();
+  initVariablesCodeml();
 
   // Initialize the variables used to avoid unneeded recomputing
   mPrevK = DBL_MAX;
@@ -605,6 +815,24 @@ double BranchSiteModelAltHyp::operator()(size_t aFgBranch) {
 
   // Run the optimizer
   return maximizeLikelihood(aFgBranch, false, 0.);
+}
+
+double MfgBranchSiteModelAltHyp::operator()(std::set<int> aFgBranchSet) {
+  // Initialize the variables to be optimized
+  // initVariables();
+  initVariablesCodeml();
+
+  // Initialize the variables used to avoid unneeded recomputing
+  mPrevK = DBL_MAX;
+  mPrevOmega0 = DBL_MAX;
+  mPrevOmega2 = DBL_MAX;
+
+  // Initialize the matrix set and the matrix set used for gradient computation
+  mfgmSet.initializeSet(aFgBranchSet);
+  mfgmSetForGradient.initializeFgBranch(aFgBranchSet);
+
+  // Run the optimizer
+  return maximizeLikelihood(aFgBranchSet, false, 0.);
 }
 
 double BranchSiteModelNullHyp::computeLikelihoodForGradient(
@@ -792,6 +1020,190 @@ double BranchSiteModelNullHyp::computeLikelihoodForGradient(
   return lnl;
 }
 
+double MfgBranchSiteModelNullHyp::computeLikelihoodForGradient(
+    const std::vector<double> &aVar, bool aTrace, size_t aGradientVar) {
+  // One more function invocation
+  ++mNumEvaluations;
+
+  if (mFixedBranchLength) {
+    // Compute the following values for gradient
+    // Save the values to local variables to speedup access
+
+    // const double* params = &aVar[mNumTimes];
+    const double omega0 = aVar[2];
+    const double kappa = aVar[3];
+
+    // The values for gradient are computed in order, use this fact to reduce
+    // computations
+    switch (aGradientVar) {
+    case 0:
+    case 1:
+      // Recompute all proportions if v0 or v1 change
+      getProportions(aVar[0], aVar[1], mProportions);
+      break;
+
+    case 2:
+      // Return to the original values
+      getProportions(aVar[0], aVar[1], mProportions);
+
+      mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+      mQw0.eigenQREV();
+      break;
+
+    case 3:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+    {
+#pragma omp section
+      {
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+      }
+#pragma omp section
+      {
+        mScaleQ1 = mQ1.fillMatrix(kappa);
+        mQ1.eigenQREV();
+      }
+    }
+
+      // Initialize the variables used to refill the values next time
+      mPrevK = DBL_MAX;
+      mPrevOmega0 = DBL_MAX;
+      break;
+    }
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               mProportions[2] * mScaleQ1 + mProportions[3] * mScaleQ1;
+    mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+               (mProportions[0] + mProportions[1]);
+#else
+    mFgScale = mProportions[0] * mScaleQw0 + (1.0 - mProportions[0]) * mScaleQ1;
+    mBgScale = aVar[1] * mScaleQw0 + (1.0 - aVar[1]) * mScaleQ1;
+#endif
+
+    // Fill the set of Probability Matrices
+    mfgmSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mBranches);
+
+    // Compute likelihoods
+    mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                               mDependencies.getDependencies());
+  } else {
+    // Compute the following values for gradient only if anything different from
+    // branch length has changed
+    if (aGradientVar >= mNumTimes) {
+      // Save the values to local variables to speedup access
+
+      const double *params = &aVar[mNumTimes];
+      const double omega0 = params[2];
+      const double kappa = params[3];
+
+      // The values for gradient are computed in order, use this fact to reduce
+      // computations
+      switch (aGradientVar - mNumTimes) {
+      case 0:
+      case 1:
+        // Recompute all proportions if v0 or v1 change
+        getProportions(params[0], params[1], mProportions);
+        break;
+
+      case 2:
+        // Return to the original values
+        getProportions(params[0], params[1], mProportions);
+
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+        break;
+
+      case 3:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+      }
+
+        // Initialize the variables used to refill the values next time
+        mPrevK = DBL_MAX;
+        mPrevOmega0 = DBL_MAX;
+        break;
+      }
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+      mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+                 mProportions[2] * mScaleQ1 + mProportions[3] * mScaleQ1;
+      mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+                 (mProportions[0] + mProportions[1]);
+#else
+      mFgScale =
+          mProportions[0] * mScaleQw0 + (1.0 - mProportions[0]) * mScaleQ1;
+      mBgScale = params[1] * mScaleQw0 + (1.0 - params[1]) * mScaleQ1;
+#endif
+
+      // Fill the set of Probability Matrices
+      mfgmSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
+
+      // Compute likelihoods
+      mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                                 mDependencies.getDependencies());
+    } else {
+      // Compute all the matrices for all branches. aVar contains the branch
+      // lengths varied each by its delta.
+      if (aGradientVar == 0)
+        mfgmSetForGradient.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
+
+      // Save and change one matrix
+      mfgmSet.saveMatrix(aGradientVar);
+      mfgmSet.setMatrices(aGradientVar,
+                          mfgmSetForGradient.getChangedMatrices(aGradientVar));
+
+      // Compute likelihoods
+      mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                                 mDependencies.getDependencies());
+
+      // Restore the previous value of the matrix
+      mfgmSet.restoreSavedMatrix(aGradientVar);
+    }
+
+    if (mExtraDebug > 0) {
+      std::cout << "FG: " << std::setprecision(8) << mFgScale
+                << " BG: " << mBgScale << std::endl;
+      std::cout << "The following is the value printed by CodeML" << std::endl;
+      std::cout << "FG: " << std::setprecision(8) << 1. / mFgScale
+                << " BG: " << 1. / mBgScale << std::endl;
+      std::cout << "Q0 " << mScaleQw0 << std::endl;
+      std::cout << "Q1 " << mScaleQ1 << std::endl << std::endl;
+    }
+  }
+
+  // Combine the site likelihood into a single value
+  double lnl = combineSiteLikelihoods();
+
+  // Output the trace message and update maxima found
+  if (aTrace && lnl > mMaxLnL) {
+    mMaxLnL = lnl;
+    printVar(aVar, lnl);
+  }
+
+  return lnl;
+}
+
 double
 BranchSiteModelNullHyp::computeLikelihood(const std::vector<double> &aVar,
                                           bool aTrace) {
@@ -933,6 +1345,146 @@ BranchSiteModelNullHyp::computeLikelihood(const std::vector<double> &aVar,
   return lnl;
 }
 
+double
+MfgBranchSiteModelNullHyp::computeLikelihood(const std::vector<double> &aVar,
+                                             bool aTrace) {
+  // One more function invocation
+  ++mNumEvaluations;
+
+  // Save the values to local variables to speedup access
+  if (mFixedBranchLength) {
+    const double omega0 = aVar[2];
+    const double kappa = aVar[3];
+
+    // Check if steps can be skipped
+    const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+    const bool changed_k = isDifferent(kappa, mPrevK);
+    if (changed_w0)
+      mPrevOmega0 = omega0;
+    if (changed_k)
+      mPrevK = kappa;
+
+    // Fill the matrices and compute their eigendecomposition.
+    if (changed_k) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+      }
+    } else if (changed_w0) {
+      mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+      mQw0.eigenQREV();
+    }
+
+    // Compute all proportions
+    getProportions(aVar[0], aVar[1], mProportions);
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               mProportions[2] * mScaleQ1 + mProportions[3] * mScaleQ1;
+    mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+               (mProportions[0] + mProportions[1]);
+#else
+    mFgScale = mProportions[0] * mScaleQw0 + (1.0 - mProportions[0]) * mScaleQ1;
+    mBgScale = aVar[1] * mScaleQw0 + (1.0 - aVar[1]) * mScaleQ1;
+#endif
+
+    // Fill the set of Probability Matrices
+    mfgmSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, mBranches);
+  } else {
+    const double *params = &aVar[mNumTimes];
+    const double omega0 = params[2];
+    const double kappa = params[3];
+
+    // Check if steps can be skipped
+    const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+    const bool changed_k = isDifferent(kappa, mPrevK);
+    if (changed_w0)
+      mPrevOmega0 = omega0;
+    if (changed_k)
+      mPrevK = kappa;
+
+    // Fill the matrices and compute their eigendecomposition.
+    if (changed_k) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+      }
+    } else if (changed_w0) {
+      mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+      mQw0.eigenQREV();
+    }
+
+    // Compute all proportions
+    getProportions(params[0], params[1], mProportions);
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               mProportions[2] * mScaleQ1 + mProportions[3] * mScaleQ1;
+    mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+               (mProportions[0] + mProportions[1]);
+#else
+    mFgScale = mProportions[0] * mScaleQw0 + (1.0 - mProportions[0]) * mScaleQ1;
+    mBgScale = params[1] * mScaleQw0 + (1.0 - params[1]) * mScaleQ1;
+#endif
+
+    // Fill the set of Probability Matrices
+    mfgmSet.fillMatrixSet(mQw0, mQ1, mBgScale, mFgScale, aVar);
+  }
+
+  // Compute likelihoods
+  mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                             mDependencies.getDependencies());
+
+  if (mExtraDebug > 0) {
+    std::cout << "FG: " << std::setprecision(8) << mFgScale
+              << " BG: " << mBgScale << std::endl;
+    std::cout << "The following is the value printed by CodeML" << std::endl;
+    std::cout << "FG: " << std::setprecision(8) << 1. / mFgScale
+              << " BG: " << 1. / mBgScale << std::endl;
+    std::cout << "Q0 " << mScaleQw0 << std::endl;
+    std::cout << "Q1 " << mScaleQ1 << std::endl << std::endl;
+  }
+
+  // Combine the site likelihood into a single value
+  double lnl = combineSiteLikelihoods();
+
+  // Output the trace message and update maxima found
+  if (aTrace && lnl > mMaxLnL) {
+    mMaxLnL = lnl;
+    printVar(aVar, lnl);
+  }
+
+  return lnl;
+}
+
 double BranchSiteModelNullHyp::combineSiteLikelihoods(void) {
   // Precompute the proportions to be used
   const double p0 = mProportions[0];
@@ -948,9 +1500,57 @@ double BranchSiteModelNullHyp::combineSiteLikelihoods(void) {
   for (size_t site = 0; site < num_sites; ++site) {
     // The following computation is split to avoid negative values
     // double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
-    //		     (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site]
+    //			 (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site]
     //+
-    //		      mProportions[2]*mLikelihoods[2*num_sites+site];
+    //			  mProportions[2]*mLikelihoods[2*num_sites+site];
+    double p = likelihoods[0 * num_sites + site];
+    if (p < 0)
+      p = 0;
+    else
+      p *= p0;
+    double x = likelihoods[1 * num_sites + site];
+    if (x > 0)
+      p += p1_p2b * x;
+    x = likelihoods[2 * num_sites + site];
+    if (x > 0)
+      p += p2a * x;
+
+    x = (p > 0) ? log(p) : mMaxLnL - 100000;
+    lnl += x * mult[site];
+
+    if (mExtraDebug > 1) {
+      std::cout << std::setw(4) << site << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[0 * num_sites + site] << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[1 * num_sites + site] << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[2 * num_sites + site] << " -> ";
+      std::cout << std::fixed << std::setw(14) << x * mult[site] << std::endl;
+    }
+  }
+
+  return lnl;
+}
+
+double MfgBranchSiteModelNullHyp::combineSiteLikelihoods(void) {
+  // Precompute the proportions to be used
+  const double p0 = mProportions[0];
+  const double p1_p2b = mProportions[1] + mProportions[3];
+  const double p2a = mProportions[2];
+
+  // For all (valid) sites. Don't parallelize: time increases and results are
+  // errant
+  const size_t num_sites = mForest.getNumSites();
+  const std::vector<double> &mult = mForest.getSiteMultiplicity();
+  double lnl = 0;
+  double *likelihoods = &mLikelihoods[0];
+  for (size_t site = 0; site < num_sites; ++site) {
+    // The following computation is split to avoid negative values
+    // double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
+    //			 (mProportions[1]+mProportions[3])*mLikelihoods[1*num_sites+site]
+    //+
+    //			  mProportions[2]*mLikelihoods[2*num_sites+site];
     double p = likelihoods[0 * num_sites + site];
     if (p < 0)
       p = 0;
@@ -1229,6 +1829,269 @@ double BranchSiteModelAltHyp::computeLikelihoodForGradient(
               << " BG: " << 1. / mBgScale << std::endl;
     std::cout << "Q0 " << mScaleQw0 << std::endl;
     std::cout << "Q1 " << mScaleQ1 << std::endl;
+    std::cout << "Q2 " << mScaleQw2 << std::endl << std::endl;
+  }
+
+  // Combine the site likelihood into a single value
+  double lnl = combineSiteLikelihoods();
+
+  // Output the trace message and update maxima found
+  if (aTrace && lnl > mMaxLnL) {
+    mMaxLnL = lnl;
+    printVar(aVar, lnl);
+  }
+
+  return lnl;
+}
+
+double MfgBranchSiteModelAltHyp::computeLikelihoodForGradient(
+    const std::vector<double> &aVar, bool aTrace, size_t aGradientVar) {
+  // One more function invocation
+  ++mNumEvaluations;
+
+  if (mFixedBranchLength) {
+    // Compute the following values for gradient only if anything different from
+    // branch length has changed
+    if (aGradientVar) {
+      // Save the values to local variables to speedup access
+      // const double* params = &aVar[mNumTimes];
+      const double omega0 = aVar[2];
+      const double omega2 = aVar[4];
+      const double kappa = aVar[3];
+
+      // The values for gradient are computed in order, use this fact to reduce
+      // computations
+      switch (aGradientVar - mNumTimes) {
+      case 0:
+      case 1:
+        // Recompute all proportions if v0 or v1 change
+        getProportions(aVar[0], aVar[1], mProportions);
+        break;
+
+      case 2:
+// Save Qw0 and Q1
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(aVar)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        { mQw0.saveCheckpoint(mScaleQw0); }
+#pragma omp section
+        { mQ1.saveCheckpoint(mScaleQ1); }
+#pragma omp section
+        {
+          // Return to the original values
+          getProportions(aVar[0], aVar[1], mProportions);
+        }
+      }
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+        break;
+
+      case 3:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      } break;
+
+      case 4:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(aVar)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        { mScaleQw0 = mQw0.restoreCheckpoint(); }
+#pragma omp section
+        { mScaleQ1 = mQ1.restoreCheckpoint(); }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+
+        // Initialize the variables used to refill the values next time
+        mPrevK = DBL_MAX;
+        mPrevOmega0 = DBL_MAX;
+        mPrevOmega2 = DBL_MAX;
+        break;
+      }
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+      mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+                 mProportions[2] * mScaleQw2 + mProportions[3] * mScaleQw2;
+      mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+                 (mProportions[0] + mProportions[1]);
+#else
+      mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+                 (1.0 - aVar[0]) * mScaleQw2;
+      mBgScale = aVar[1] * mScaleQw0 + (1.0 - aVar[1]) * mScaleQ1;
+#endif
+      // Fill the set of Probability Matrices
+      mfgmSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, mBranches);
+
+      // Compute likelihoods
+      mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                                 mDependencies.getDependencies());
+    }
+  } else {
+    // Compute the following values for gradient only if anything different from
+    // branch length has changed
+    if (aGradientVar >= mNumTimes) {
+      // Save the values to local variables to speedup access
+      const double *params = &aVar[mNumTimes];
+      const double omega0 = params[2];
+      const double omega2 = params[4];
+      const double kappa = params[3];
+
+      // The values for gradient are computed in order, use this fact to reduce
+      // computations
+      switch (aGradientVar - mNumTimes) {
+      case 0:
+      case 1:
+        // Recompute all proportions if v0 or v1 change
+        getProportions(params[0], params[1], mProportions);
+        break;
+
+      case 2:
+// Save Qw0 and Q1
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(params)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        { mQw0.saveCheckpoint(mScaleQw0); }
+#pragma omp section
+        { mQ1.saveCheckpoint(mScaleQ1); }
+#pragma omp section
+        {
+          // Return to the original values
+          getProportions(params[0], params[1], mProportions);
+        }
+      }
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+        break;
+
+      case 3:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      } break;
+
+      case 4:
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(params)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        { mScaleQw0 = mQw0.restoreCheckpoint(); }
+#pragma omp section
+        { mScaleQ1 = mQ1.restoreCheckpoint(); }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+
+        // Initialize the variables used to refill the values next time
+        mPrevK = DBL_MAX;
+        mPrevOmega0 = DBL_MAX;
+        mPrevOmega2 = DBL_MAX;
+        break;
+      }
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+      mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+                 mProportions[2] * mScaleQw2 + mProportions[3] * mScaleQw2;
+      mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+                 (mProportions[0] + mProportions[1]);
+#else
+      mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+                 (1.0 - params[0]) * mScaleQw2;
+      mBgScale = params[1] * mScaleQw0 + (1.0 - params[1]) * mScaleQ1;
+#endif
+      // Fill the set of Probability Matrices
+      mfgmSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
+
+      // Compute likelihoods
+      mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                                 mDependencies.getDependencies());
+    } else {
+      // Compute all the matrices for all branches
+      if (aGradientVar == 0)
+        mfgmSetForGradient.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale,
+                                         aVar);
+
+      // Save and change one matrix
+      mfgmSet.saveMatrix(aGradientVar);
+      mfgmSet.setMatrices(aGradientVar,
+                          mfgmSetForGradient.getChangedMatrices(aGradientVar));
+
+      // Compute likelihoods
+      mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                                 mDependencies.getDependencies());
+
+      // Restore the previous value of the matrices
+      mfgmSet.restoreSavedMatrix(aGradientVar);
+    }
+  }
+
+  if (mExtraDebug > 0) {
+    std::cout << "FG: " << std::setprecision(8) << mFgScale
+              << " BG: " << mBgScale << std::endl;
+    std::cout << "The following is the value printed by CodeML" << std::endl;
+    std::cout << "FG: " << std::setprecision(8) << 1. / mFgScale
+              << " BG: " << 1. / mBgScale << std::endl;
+    std::cout << "Q0 " << mScaleQw0 << std::endl;
+    std::cout << "Q1 " << mScaleQ1 << std::endl;
     std::cout << "Q2 " << mScaleQw2 << std::endl
               << std::endl;
   }
@@ -1438,8 +2301,216 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double> &aVar,
               << " BG: " << 1. / mBgScale << std::endl;
     std::cout << "Q0 " << mScaleQw0 << std::endl;
     std::cout << "Q1 " << mScaleQ1 << std::endl;
-    std::cout << "Q2 " << mScaleQw2 << std::endl
-              << std::endl;
+    std::cout << "Q2 " << mScaleQw2 << std::endl << std::endl;
+  }
+
+  // Combine the site likelihood into a single value
+  double lnl = combineSiteLikelihoods();
+
+  // Output the trace message and update maxima found
+  if (aTrace && lnl > mMaxLnL) {
+    mMaxLnL = lnl;
+    printVar(aVar, lnl);
+  }
+
+  return lnl;
+}
+
+double
+MfgBranchSiteModelAltHyp::computeLikelihood(const std::vector<double> &aVar,
+                                            bool aTrace) {
+  // One more function invocation
+  ++mNumEvaluations;
+
+  // Save the values to local variables to speedup access
+  if (mFixedBranchLength) {
+    // Save the values to local variables to speedup access
+    const double omega0 = aVar[2];
+    const double omega2 = aVar[4];
+    const double kappa = aVar[3];
+
+    // Check if steps can be skipped
+    const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+    const bool changed_w2 = isDifferent(omega2, mPrevOmega2);
+    const bool changed_k = isDifferent(kappa, mPrevK);
+    if (changed_w0)
+      mPrevOmega0 = omega0;
+    if (changed_w2)
+      mPrevOmega2 = omega2;
+    if (changed_k)
+      mPrevK = kappa;
+
+    // Fill the matrices and compute their eigendecomposition.
+    if (changed_k) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+    } else if (changed_w0 && changed_w2) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+    } else {
+      if (changed_w0) {
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+      }
+      if (changed_w2) {
+        mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+        mQw2.eigenQREV();
+      }
+    }
+
+    // Compute all proportions
+    getProportions(aVar[0], aVar[1], mProportions);
+
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               mProportions[2] * mScaleQw2 + mProportions[3] * mScaleQw2;
+    mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+               (mProportions[0] + mProportions[1]);
+#else
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               (1.0 - aVar[0]) * mScaleQw2;
+    mBgScale = aVar[1] * mScaleQw0 + (1.0 - aVar[1]) * mScaleQ1;
+#endif
+
+    // Fill the set of Probability Matrices
+    mfgmSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, mBranches);
+  } else {
+    // Save the values to local variables to speedup access
+    const double *params = &aVar[mNumTimes];
+    const double omega0 = params[2];
+    const double omega2 = params[4];
+    const double kappa = params[3];
+
+    // Check if steps can be skipped
+    const bool changed_w0 = isDifferent(omega0, mPrevOmega0);
+    const bool changed_w2 = isDifferent(omega2, mPrevOmega2);
+    const bool changed_k = isDifferent(kappa, mPrevK);
+    if (changed_w0)
+      mPrevOmega0 = omega0;
+    if (changed_w2)
+      mPrevOmega2 = omega2;
+    if (changed_k)
+      mPrevK = kappa;
+
+    // Fill the matrices and compute their eigendecomposition.
+    if (changed_k) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQ1 = mQ1.fillMatrix(kappa);
+          mQ1.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+    } else if (changed_w0 && changed_w2) {
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(omega0, omega2, kappa)
+#else
+#pragma omp parallel sections default(shared)
+#endif
+      {
+#pragma omp section
+        {
+          mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+          mQw0.eigenQREV();
+        }
+#pragma omp section
+        {
+          mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+          mQw2.eigenQREV();
+        }
+      }
+    } else {
+      if (changed_w0) {
+        mScaleQw0 = mQw0.fillMatrix(omega0, kappa);
+        mQw0.eigenQREV();
+      }
+      if (changed_w2) {
+        mScaleQw2 = mQw2.fillMatrix(omega2, kappa);
+        mQw2.eigenQREV();
+      }
+    }
+    // Compute all proportions
+    getProportions(params[0], params[1], mProportions);
+// Compute the scale values
+#ifdef USE_ORIGINAL_PROPORTIONS
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               mProportions[2] * mScaleQw2 + mProportions[3] * mScaleQw2;
+    mBgScale = (mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1) /
+               (mProportions[0] + mProportions[1]);
+#else
+    mFgScale = mProportions[0] * mScaleQw0 + mProportions[1] * mScaleQ1 +
+               (1.0 - params[0]) * mScaleQw2;
+    mBgScale = params[1] * mScaleQw0 + (1.0 - params[1]) * mScaleQ1;
+#endif
+
+    // Fill the set of Probability Matrices
+    mfgmSet.fillMatrixSet(mQw0, mQ1, mQw2, mBgScale, mFgScale, aVar);
+  }
+
+  // Compute likelihoods
+  mForest.computeLikelihoods(mfgmSet, mLikelihoods,
+                             mDependencies.getDependencies());
+
+  if (mExtraDebug > 0) {
+    std::cout << "FG: " << std::setprecision(8) << mFgScale
+              << " BG: " << mBgScale << std::endl;
+    std::cout << "The following is the value printed by CodeML" << std::endl;
+    std::cout << "FG: " << std::setprecision(8) << 1. / mFgScale
+              << " BG: " << 1. / mBgScale << std::endl;
+    std::cout << "Q0 " << mScaleQw0 << std::endl;
+    std::cout << "Q1 " << mScaleQ1 << std::endl;
+    std::cout << "Q2 " << mScaleQw2 << std::endl << std::endl;
   }
 
   // Combine the site likelihood into a single value
@@ -1455,6 +2526,61 @@ double BranchSiteModelAltHyp::computeLikelihood(const std::vector<double> &aVar,
 }
 
 double BranchSiteModelAltHyp::combineSiteLikelihoods(void) {
+  // Precompute the proportions to be used
+  const double p0 = mProportions[0];
+  const double p1 = mProportions[1];
+  const double p2a = mProportions[2];
+  const double p2b = mProportions[3];
+
+  // For all (valid) sites. Don't parallelize: time increase and the results are
+  // errant
+  const size_t num_sites = mForest.getNumSites();
+  const std::vector<double> &mult = mForest.getSiteMultiplicity();
+  double lnl = 0;
+  double *likelihoods = &mLikelihoods[0];
+  for (size_t site = 0; site < num_sites; ++site) {
+    // The following computation is split to avoid negative values
+    // double p = mProportions[0]*mLikelihoods[0*num_sites+site] +
+    //			 mProportions[1]*mLikelihoods[1*num_sites+site] +
+    //			 mProportions[2]*mLikelihoods[2*num_sites+site] +
+    //			 mProportions[3]*mLikelihoods[3*num_sites+site];
+    //
+    double p = likelihoods[0 * num_sites + site];
+    if (p < 0)
+      p = 0;
+    else
+      p *= p0;
+    double x = likelihoods[1 * num_sites + site];
+    if (x > 0)
+      p += p1 * x;
+    x = likelihoods[2 * num_sites + site];
+    if (x > 0)
+      p += p2a * x;
+    x = likelihoods[3 * num_sites + site];
+    if (x > 0)
+      p += p2b * x;
+
+    x = (p > 0) ? log(p) : mMaxLnL - 100000;
+    lnl += x * mult[site];
+
+    if (mExtraDebug > 1) {
+      std::cout << std::setw(4) << site << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[0 * num_sites + site] << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[1 * num_sites + site] << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[2 * num_sites + site] << ' ';
+      std::cout << std::scientific << std::setw(14)
+                << likelihoods[3 * num_sites + site] << " -> ";
+      std::cout << std::fixed << std::setw(14) << x * mult[site] << std::endl;
+    }
+  }
+
+  return lnl;
+}
+
+double MfgBranchSiteModelAltHyp::combineSiteLikelihoods(void) {
   // Precompute the proportions to be used
   const double p0 = mProportions[0];
   const double p1 = mProportions[1];
@@ -1742,7 +2868,236 @@ double BranchSiteModel::maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
 
       if (mTrace) {
         std::cout << std::endl
-                  << "Function invocations:       " << mNumEvaluations
+                  << "Function invocations:	   " << mNumEvaluations
+                  << std::endl;
+        std::cout << "Final log-likelihood value: " << maxl << std::endl;
+        printVar(mVar);
+      }
+      return maxl;
+    } catch (FastCodeMLEarlyStopLRT &) {
+      if (mTrace)
+        std::cout << "Optimization stopped because LRT not satisfied"
+                  << std::endl;
+      return DBL_MAX;
+    } catch (std::exception &e) {
+      std::ostringstream o;
+      o << "Exception in Ming2 computation: " << e.what() << std::endl;
+      throw FastCodeMLFatal(o);
+    }
+  }
+
+  // Select the maximizer algorithm (the listed ones works and are reasonably
+  // fast for FastCodeML)
+  std::auto_ptr<nlopt::opt> opt;
+  switch (mOptAlgo) {
+  case OPTIM_LD_LBFGS:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::LD_LBFGS, mNumTimes + mNumVariables));
+
+    opt->set_vector_storage(20);
+    break;
+
+  case OPTIM_LD_VAR1:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::LD_VAR1, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::LD_VAR1, mNumTimes + mNumVariables));
+
+    opt->set_vector_storage(20);
+    break;
+
+  case OPTIM_LD_VAR2:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::LD_VAR2, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::LD_VAR2, mNumTimes + mNumVariables));
+
+    opt->set_vector_storage(20);
+    break;
+
+  case OPTIM_LD_SLSQP:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::LD_SLSQP, mNumTimes + mNumVariables));
+
+    opt->set_vector_storage(20);
+    break;
+
+  case OPTIM_LN_BOBYQA:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::LN_BOBYQA, mNumTimes + mNumVariables));
+    break;
+
+  case OPTIM_MLSL_LDS:
+    if (mFixedBranchLength)
+      opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumVariables));
+    else
+      opt.reset(new nlopt::opt(nlopt::G_MLSL_LDS, mNumTimes + mNumVariables));
+
+    {
+      // For global optimization put a timeout of one day
+      opt->set_maxtime(24 * 60 * 60);
+
+      // This algorithm requires a local optimizer, add it
+      if (mFixedBranchLength) {
+        nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes + mNumVariables);
+        opt->set_local_optimizer(local_opt);
+      }
+
+      else {
+        nlopt::opt local_opt(nlopt::LN_BOBYQA, mNumTimes + mNumVariables);
+        opt->set_local_optimizer(local_opt);
+      }
+    }
+    break;
+
+  default:
+    throw FastCodeMLFatal(
+        "Invalid optimization algorithm identifier on the command line.");
+  }
+
+  // Initialize bounds and termination criteria
+  opt->set_lower_bounds(mLowerBound);
+  opt->set_upper_bounds(mUpperBound);
+  opt->set_ftol_rel(mRelativeError);
+  nlopt::srand(static_cast<unsigned long>(mSeed));
+
+  // Optimize the function
+  double maxl = 0;
+  try {
+    MaximizerFunction compute(this, mTrace, mUpperBound, mDeltaForGradient,
+                              mNumVariables, aStopIfBigger, aThreshold);
+
+    opt->set_max_objective(MaximizerFunction::wrapFunction, &compute);
+
+    // If the user has set a maximum number of iterations set it
+    if (mMaxIterations != MAX_ITERATIONS)
+      opt->set_maxeval(mMaxIterations);
+
+    nlopt::result result = opt->optimize(mVar, maxl);
+
+    // Print the final optimum value
+    if (mTrace) {
+      std::cout << std::endl
+                << "Function invocations:	   " << mNumEvaluations
+                << std::endl;
+      switch (result) {
+      case nlopt::SUCCESS:
+        break;
+
+      case nlopt::STOPVAL_REACHED:
+        std::cout << "Optimization stopped because stopval was reached."
+                  << std::endl;
+        break;
+
+      case nlopt::FTOL_REACHED:
+        std::cout
+            << "Optimization stopped because ftol_rel or ftol_abs was reached."
+            << std::endl;
+        break;
+
+      case nlopt::XTOL_REACHED:
+        std::cout
+            << "Optimization stopped because xtol_rel or xtol_abs was reached."
+            << std::endl;
+        break;
+
+      case nlopt::MAXEVAL_REACHED:
+        std::cout << "Optimization stopped because maxeval was reached."
+                  << std::endl;
+        break;
+
+      case nlopt::MAXTIME_REACHED:
+        std::cout << "Optimization stopped because maxtime was reached."
+                  << std::endl;
+        break;
+
+      default:
+        std::cout << "Other reason: " << static_cast<unsigned int>(result)
+                  << std::endl;
+        break;
+      }
+      std::cout << "Final log-likelihood value: " << maxl << std::endl;
+      printVar(mVar);
+    }
+  } catch (const nlopt::forced_stop &) {
+    if (mTrace)
+      std::cout << "Optimization stopped because LRT not satisfied"
+                << std::endl;
+    return DBL_MAX;
+  } catch (const nlopt::roundoff_limited &) {
+    throw FastCodeMLFatal("Exception in computation: Halted because roundoff "
+                          "errors limited progress, equivalent to "
+                          "NLOPT_ROUNDOFF_LIMITED.");
+  } catch (const std::runtime_error &) {
+    throw FastCodeMLFatal("Exception in computation: Generic failure, "
+                          "equivalent to NLOPT_FAILURE.");
+  } catch (const std::invalid_argument &) {
+    throw FastCodeMLFatal("Exception in computation: Invalid arguments (e.g. "
+                          "lower bounds are bigger than upper bounds, an "
+                          "unknown algorithm was specified, etcetera), "
+                          "equivalent to NLOPT_INVALID_ARGS.");
+  } catch (const std::bad_alloc &) {
+    throw FastCodeMLFatal("Exception in computation: Ran out of memory (a "
+                          "memory allocation failed), equivalent to "
+                          "NLOPT_OUT_OF_MEMORY.");
+  } catch (const std::exception &e) {
+    std::ostringstream o;
+    o << "Exception in computation: " << e.what();
+    throw FastCodeMLFatal(o);
+  }
+
+  return maxl;
+}
+
+double BranchSiteModel::maximizeLikelihood(std::set<int> aFgBranchSet,
+                                           bool aStopIfBigger,
+                                           double aThreshold) {
+  // Print starting values
+  if (mTrace) {
+    std::cout << std::endl;
+    std::cout << "*****************************************" << std::endl;
+    std::cout << "*** Foreground branch set: ";
+    for (std::set<int>::iterator it = aFgBranchSet.begin();
+         it != aFgBranchSet.end(); ++it)
+      std::cout << " " << *it << ",";
+    std::cout << std::endl;
+    printVar(mVar);
+    std::cout << "*** Upper" << std::endl;
+    printVar(mUpperBound);
+    std::cout << "*** Lower" << std::endl;
+    printVar(mLowerBound);
+    std::cout << std::endl;
+  }
+
+  // Initialize the maximum value found and the function evaluations counter
+  mMaxLnL = VERY_LOW_LIKELIHOOD;
+  mNumEvaluations = 0;
+
+  // If only the initial step is requested, do it and return
+  if (mOnlyInitialStep)
+    return computeLikelihood(mVar, mTrace);
+
+  // Special case for the CodeML optimizer
+  if (mOptAlgo == OPTIM_LD_MING2) {
+    try {
+      // Create the optimizer (instead of mRelativeError is used the fixed value
+      // from CodeML)
+      Ming2 optim(this, mTrace, mVerbose, mLowerBound, mUpperBound,
+                  mDeltaForGradient, 1e-8, aStopIfBigger, aThreshold,
+                  mMaxIterations);
+
+      // Do the maximization
+      double maxl = optim.minimizeFunction(mVar);
+
+      if (mTrace) {
+        std::cout << std::endl
+                  << "Function invocations:	   " << mNumEvaluations
                   << std::endl;
         std::cout << "Final log-likelihood value: " << maxl << std::endl;
         printVar(mVar);
