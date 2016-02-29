@@ -33,8 +33,8 @@ void Forest::loadTreeAndGenes(
     CodonFrequencies::CodonFrequencyModel aCodonFrequencyModel) {
   // Collect global data that refers to the tree and that should not be
   // duplicated on each tree of the forest
-  aTree.collectGlobalTreeData(mNodeNames, mBranchLengths,
-                              &mMarkedInternalBranch);
+  aTree.collectGlobalTreeData(mNodeNames, mBranchLengths, mInternalBranches,
+                              &mMarkedInternalBranch, mMarkedBranches);
 
   // Number of branches of one tree
   mNumBranches = aTree.getNumBranches();
@@ -133,8 +133,9 @@ void Forest::loadTreeAndGenes(
       map_internal_to_branchID.begin());
   const std::map<unsigned int, unsigned int>::const_iterator end(
       map_internal_to_branchID.end());
-  for (; im != end; ++im)
+  for (; im != end; ++im) {
     mTableInternalToBranchID[im->first] = im->second;
+  }
 
   // Save the new to original site number map
   mSitesMappingToOriginal = aGenes.getSitesMappingToOriginal();
@@ -271,69 +272,85 @@ void Forest::postLoad(void) {
 #endif
 
 bool Forest::getBranchRange(const CmdLine &aCmdLine, size_t &aBranchStart,
-                            size_t &aBranchEnd) const {
-  const size_t num_branches = getNumInternalBranches();
-  const size_t marked_branch = getMarkedInternalBranch();
+                            size_t &aBranchEnd, std::set<int> &aFgSet,
+                            std::set<int> &aIbSet) const {
+  const size_t num_branches = getNumBranches(); /* getNumInternalBranches(); */
+  // const size_t num_internal_branches  = getNumInternalBranches();
+
+  aFgSet = getMarkedBranches();
+  aIbSet = getInternalBranches();
 
   // Check if the request make sense
   if (num_branches == 0) {
-    throw FastCodeMLFatal("No internal branches present. Quitting.");
+    throw FastCodeMLFatal("No branches present. Quitting.");
   }
 
   // By default do all branches
   bool do_all = true;
 
   // Adjust the number of branches to compute
-  if (aCmdLine.mBranchFromFile) {
-    // Branch from file, verify if valid
-    if (marked_branch >= num_branches) {
-      if (aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-        std::cout << std::endl
-                  << "Invalid branch marked in tree file. Ignoring"
-                  << std::endl;
-      aBranchStart = 0;
-      aBranchEnd = num_branches - 1;
-    } else {
-      aBranchStart = marked_branch;
-      aBranchEnd = marked_branch;
-      do_all = false;
-    }
-  } else if (aCmdLine.mBranchStart < UINT_MAX &&
-             aCmdLine.mBranchStart >= num_branches) {
-    // Invalid start value, ignoring, do all branches
-    if (aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-      std::cout << std::endl
-                << "Invalid branch requested. Ignoring" << std::endl;
-    aBranchStart = 0;
-    aBranchEnd = num_branches - 1;
-  } else if (aCmdLine.mBranchStart < UINT_MAX &&
-             aCmdLine.mBranchEnd == UINT_MAX) {
-    // Only start branch set. Do from it to the end.
-    aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
-    aBranchEnd = num_branches - 1;
-    if (aBranchStart > 0)
-      do_all = false;
-  } else if (aCmdLine.mBranchStart < UINT_MAX &&
-             aCmdLine.mBranchEnd < UINT_MAX) {
-    // Both start and end branch (already tested start <= end)
-    aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
-    if (aCmdLine.mBranchEnd >= num_branches) {
-      if (aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-        std::cout << std::endl
-                  << "Invalid end branch requested. Ignoring" << std::endl;
-      aBranchEnd = num_branches - 1;
-      if (aBranchStart > 0)
-        do_all = false;
-    } else {
-      aBranchEnd = static_cast<size_t>(aCmdLine.mBranchEnd);
-      if (aBranchStart > 0 && aBranchEnd < num_branches - 1)
-        do_all = false;
-    }
-  } else {
-    // No limit set, do all branches
-    aBranchStart = 0;
-    aBranchEnd = num_branches - 1;
-  }
+  /*if(aCmdLine.mBranchFromFile)
+   {
+   // Branch from file, verify if valid
+   if(marked_branch >= num_branches)
+   {
+   if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl <<
+   "Invalid branch marked in tree file. Ignoring" << std::endl;
+   aBranchStart = 0;
+   aBranchEnd	 = num_branches-1;
+   }
+   else
+   {
+   aBranchStart = marked_branch;
+   aBranchEnd	 = marked_branch;
+   do_all = false;
+   }
+   }*/
+  /*else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchStart >=
+   num_branches)
+   {
+   // Invalid start value, ignoring, do all branches
+   if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl <<
+   "Invalid branch requested. Ignoring" << std::endl;
+   aBranchStart = 0;
+   aBranchEnd	 = num_branches-1;
+   }
+   else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd == UINT_MAX)
+   {
+   // Only start branch set. Do from it to the end.
+   aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
+   aBranchEnd	 = num_branches-1;
+   if(aBranchStart > 0) do_all = false;
+   }
+   else if(aCmdLine.mBranchStart < UINT_MAX && aCmdLine.mBranchEnd < UINT_MAX)
+   {
+   // Both start and end branch (already tested start <= end)
+   aBranchStart = static_cast<size_t>(aCmdLine.mBranchStart);
+   if(aCmdLine.mBranchEnd >= num_branches)
+   {
+   if(aCmdLine.mVerboseLevel >= VERBOSE_INFO_OUTPUT) std::cout << std::endl <<
+   "Invalid end branch requested. Ignoring" << std::endl;
+   aBranchEnd = num_branches-1;
+   if(aBranchStart > 0) do_all = false;
+   }
+   else
+   {
+   aBranchEnd = static_cast<size_t>(aCmdLine.mBranchEnd);
+   if(aBranchStart > 0 && aBranchEnd < num_branches-1) do_all = false;
+   }
+   }*/
+  // if (aCmdLine.mBranchAll)
+  //{
+  // No limit set, do all branches
+  aBranchStart = 0;
+  aBranchEnd = num_branches - 1;
+  //}
+  // else
+  //{
+  // default, do all internal branches
+  //	aBranchStart = 0;
+  //	aBranchEnd	 = num_internal_branches-1;
+  //}
 
   return do_all;
 }
@@ -414,13 +431,13 @@ void Forest::cleanReductionWorkingData(ForestNode *aNode) {
 std::ostream &operator<<(std::ostream &aOut, const Forest &aForest) {
   // General forest statistics
   aOut << std::endl;
-  aOut << "Num branches:       " << std::setw(7) << aForest.mNumBranches
+  aOut << "Num branches:		 " << std::setw(7)
+       << aForest.mNumBranches << std::endl;
+  aOut << "Internal branches:	 " << std::setw(7)
+       << aForest.mNumInternalBranches << std::endl;
+  aOut << "Unique sites:		 " << std::setw(7) << aForest.mNumSites
        << std::endl;
-  aOut << "Internal branches:  " << std::setw(7) << aForest.mNumInternalBranches
-       << std::endl;
-  aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites
-       << std::endl;
-  aOut << "Total branches:     " << std::setw(7)
+  aOut << "Total branches:	 " << std::setw(7)
        << aForest.mNumBranches * aForest.mNumSites << std::endl;
 
   // Count total branches on the reduced forest
@@ -602,6 +619,12 @@ void Forest::mapInternalToBranchIdWalker(
 
     mapInternalToBranchIdWalker(m, aMapInternalToBranchID);
   }
+
+  // for(std::map<unsigned int, unsigned int >::const_iterator it =
+  // aMapInternalToBranchID.begin(); it != aMapInternalToBranchID.end(); ++it)
+  //{
+  //    std::cout << "MAP " << it->first << " " << it->second << "\n";
+  //}
 }
 
 #ifndef NEW_LIKELIHOOD
@@ -867,8 +890,184 @@ void Forest::computeLikelihoods(const ProbabilityMatrixSet &aSet,
   }
 }
 
+void Forest::computeLikelihoods(const mfgProbabilityMatrixSet &aSet,
+                                CacheAlignedDoubleVector &aLikelihoods,
+                                const ListDependencies &aDependencies) {
+  // To speedup the inner OpenMP parallel loop, this is precomputed
+  // so in the call to computeLikelihoodsWalkerTC &mRoots[site] becomes
+  // tmp_roots+site
+  const ForestNode *tmp_roots = &mRoots[0];
+  double *likelihoods = &aLikelihoods[0];
+
+  ListDependencies::const_iterator ivs(aDependencies.begin());
+  const ListDependencies::const_iterator end(aDependencies.end());
+  for (; ivs != end; ++ivs) {
+    // Things that do not change in the parallel loop
+    const int len = static_cast<int>(ivs->size());
+    const unsigned int *tmp_ivs = &(*ivs)[0];
+
+#ifdef _MSC_VER
+#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots,   \
+                                              likelihoods) schedule(static)
+#else
+#pragma omp parallel for default(shared)
+#endif
+    for (int i = 0; i < len; ++i) {
+#ifndef _MSC_VER
+#pragma omp task untied
+#endif
+      {
+        // Compute likelihood array at the root of one tree (the access order is
+        // the fastest)
+        const unsigned int tmp = tmp_ivs[i];
+        const unsigned int site = TreeAndSetsDependencies::getSiteNum(tmp);
+        const unsigned int set_idx = TreeAndSetsDependencies::getSetNum(tmp);
+
+        const double *g =
+            computeLikelihoodsWalkerTC(tmp_roots + site, aSet, set_idx);
+
+#ifdef USE_CPV_SCALING
+        likelihoods[set_idx * mNumSites + site] = dot(mCodonFreq, g) * g[N];
+#else
+        likelihoods[set_idx * mNumSites + site] = dot(mCodonFreq, g);
+#endif
+      }
+    }
+  }
+}
+
 double *Forest::computeLikelihoodsWalkerTC(const ForestNode *aNode,
                                            const ProbabilityMatrixSet &aSet,
+                                           unsigned int aSetIdx) {
+  double *anode_prob = aNode->mProb[aSetIdx];
+  const unsigned int nc = aNode->mChildrenCount;
+
+  // Shortcut (on the leaves return immediately the probability vector)
+  if (nc == 0)
+    return anode_prob;
+
+  bool first = true;
+  for (unsigned int idx = 0; idx < nc; ++idx) {
+    // Copy to local var to avoid aliasing
+    double *anode_other_tree_prob = aNode->mOtherTreeProb[idx];
+
+    // If the node is in the same tree recurse and eventually save the value,
+    // else use the value
+    if (aNode->isSameTree(idx)) {
+      const ForestNode *m = aNode->mChildrenList[idx];
+      const unsigned int branch_id = m->mBranchId;
+      const int leaf_codon = m->mLeafCodon;
+
+      if (leaf_codon >= 0) {
+        if (first) {
+          aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, anode_prob);
+#ifdef USE_CPV_SCALING
+          anode_prob[N] = normalizeVector(anode_prob);
+          if (anode_other_tree_prob)
+            memcpy(anode_other_tree_prob + VECTOR_SLOT * aSetIdx, anode_prob,
+                   (N + 1) * sizeof(double));
+#else
+          if (anode_other_tree_prob)
+            memcpy(anode_other_tree_prob + VECTOR_SLOT * aSetIdx, anode_prob,
+                   N * sizeof(double));
+#endif
+          first = false;
+        } else {
+#ifdef USE_CPV_SCALING
+          double ALIGN64 temp[N + 1];
+#else
+          double ALIGN64 temp[N];
+#endif
+          double *x = anode_other_tree_prob
+                          ? anode_other_tree_prob + VECTOR_SLOT * aSetIdx
+                          : temp;
+          aSet.doTransitionAtLeaf(aSetIdx, branch_id, leaf_codon, x);
+#ifdef USE_CPV_SCALING
+          x[N] = normalizeVector(x);
+          anode_prob[N] *= x[N];
+#endif
+          elementWiseMult(anode_prob, x);
+        }
+      } else {
+        if (first) {
+          double *g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+          aSet.doTransition(aSetIdx, branch_id, g, anode_prob);
+#ifdef USE_CPV_SCALING
+          anode_prob[N] = normalizeVector(anode_prob) * g[N];
+          if (anode_other_tree_prob)
+            memcpy(anode_other_tree_prob + VECTOR_SLOT * aSetIdx, anode_prob,
+                   (N + 1) * sizeof(double));
+#else
+          if (anode_other_tree_prob)
+            memcpy(anode_other_tree_prob + VECTOR_SLOT * aSetIdx, anode_prob,
+                   N * sizeof(double));
+#endif
+          first = false;
+        } else {
+#ifdef USE_CPV_SCALING
+          double ALIGN64 temp[N + 1];
+#else
+          double ALIGN64 temp[N];
+#endif
+          double *x = anode_other_tree_prob
+                          ? anode_other_tree_prob + VECTOR_SLOT * aSetIdx
+                          : temp;
+          double *g = computeLikelihoodsWalkerTC(m, aSet, aSetIdx);
+          aSet.doTransition(aSetIdx, branch_id, g, x);
+#ifdef USE_CPV_SCALING
+          x[N] = normalizeVector(x) * g[N];
+          anode_prob[N] *= x[N];
+#endif
+          elementWiseMult(anode_prob, x);
+        }
+      }
+    } else {
+      if (first) {
+#ifdef USE_CPV_SCALING
+        memcpy(anode_prob, anode_other_tree_prob + VECTOR_SLOT * aSetIdx,
+               (N + 1) * sizeof(double));
+#else
+        memcpy(anode_prob, anode_other_tree_prob + VECTOR_SLOT * aSetIdx,
+               N * sizeof(double));
+#endif
+        first = false;
+      } else {
+#ifdef USE_CPV_SCALING
+        anode_prob[N] *= anode_other_tree_prob[VECTOR_SLOT * aSetIdx + N];
+#endif
+        elementWiseMult(anode_prob,
+                        anode_other_tree_prob + VECTOR_SLOT * aSetIdx);
+      }
+    }
+  }
+#ifdef USE_LAPACK
+  switch (nc) {
+  case 1:
+    elementWiseMult(anode_prob, mInvCodonFreq);
+    break;
+  case 2:
+    elementWiseMult(anode_prob, mInv2CodonFreq);
+    break;
+  case 3:
+    elementWiseMult(anode_prob, mInv2CodonFreq);
+    elementWiseMult(anode_prob, mInvCodonFreq);
+    break;
+  case 4:
+    elementWiseMult(anode_prob, mInv2CodonFreq);
+    elementWiseMult(anode_prob, mInv2CodonFreq);
+    break;
+  default:
+    for (unsigned int idx = 0; idx < nc; ++idx)
+      elementWiseMult(anode_prob, mInvCodonFreq);
+    break;
+  }
+#endif
+
+  return anode_prob;
+}
+
+double *Forest::computeLikelihoodsWalkerTC(const ForestNode *aNode,
+                                           const mfgProbabilityMatrixSet &aSet,
                                            unsigned int aSetIdx) {
   double *anode_prob = aNode->mProb[aSetIdx];
   const unsigned int nc = aNode->mChildrenCount;

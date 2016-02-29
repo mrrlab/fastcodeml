@@ -1,42 +1,57 @@
-REQUIREMENTS to generate the executable:
+
+REQUIREMENTS:
+
+* Computer system:
+    Linux preferred, but sources are portable to other platforms
 * C++ compiler, e.g. GCC 4
 * CMake 2.8.0 (including ccmake) or later recommended, although compilation possible without
-* Boost::Spirit 1.42.0 or later recommended, see http://boost-spirit.com/home/
-* Reasonably new BLAS implementation (e.g. OpenBLAS, Goto2, ACML, MKL)
+* Boost::Spirit library 1.42.0 or later recommended, see http://boost-spirit.com/home/
+* Reasonably new BLAS library (e.g. OpenBLAS, Goto2, ACML, MKL)
 	packages from various Linux distributions can be used, but this deteriorates performance
 	recommended: OpenBLAS (http://xianyi.github.io/OpenBLAS/) or Intel MKL
 * Reasonably new LAPACK library (e.g. original LAPACK or ACML, MKL)
 	packages from various Linux distributions can be used, but this deteriorates performance
+* Nlopt library (see http://ab-initio.mit.edu/wiki/index.php/NLopt)
+* MPI library (see http://www.mpich.org/static/downloads/)	
 
+INSTALLATION: 
 
-INSTALLATION: How to generate the FastCodeML executable:
-0)
+1-Prepring libraries:
+
 * Generate BLAS, if necessary
 	Download OpenBLAS from https://github.com/xianyi/OpenBLAS/
-		make USE_THREAD=0 USE_OPENMP=1
+		make USE_OPENMP=1
 		make PREFIX=path/to/installation/blas install
+
 * Generate LAPACK, if necessary
 	Download LAPACK from http://www.netlib.org/lapack/
 	Take the gfortran version of the makefile:
 		cp INSTALL/make.inc.gfortran ./make.inc
 	In the make.inc file set BLASLIB to the full path to the generated BLAS
 		e.g. BLASLIB = path/to/installation/blas/lib/libopenblas.a
-	Two libraries will be created: lapack.a and tmglib.a. We put them in a folder and merge them:
+	Run $make
+	Two libraries will be created: lapack.a and tmglib.a. 
+	Put them inside a folder and merge them:
 		unpack in a new directory
-			ar x liblapack.a and ar x tmglib.a
-		merge into a new LAPACK library
+			ar x liblapack.a
+			ar x tmglib.a
+		merge all produced object files into a new LAPACK library
 			ar rcs liblapack.a *.o
+		copy the liblapack.a into the library folder	
+		
 * Generate NLopt library, if necessary
 	Download NLopt from http://ab-initio.mit.edu/wiki/index.php/NLopt
 	Install it
 		./configure --prefix=path/to/installation/nlopt
-		make USE_THREAD=0
+		make 
 		make install
+		
 * Generate BOOST library (>= 1.42.0), if necessary
 	Download BOOST from http://sourceforge.net/projects/boost/files/latest/download?source=files
 	Install it
 		./bootstrap.sh --prefix=path/to/installation/boost
 		./b2 install
+		
 * Generate MPI library, if necessary
 	Download MPI from http://www.mpich.org/static/downloads/
 	Install it
@@ -44,24 +59,40 @@ INSTALLATION: How to generate the FastCodeML executable:
 		make
 		make install
 
-1)
+2-Generating executable:
+
 * Open FastCodeML tarball
 	tar xvfz FastCodeML-X.Y.Z.tar.gz
 	cd FastCodeML-X.Y.Z/
+	
 * Edit CMakeLists.txt to enable/disable (ON/OFF) optimization libraries (in "Get the configuration switches" section)
-  switch USE_MPI and USE_OPENMP ON/OFF (other default settings should be ok)
-* Set paths for libraries (change and execute SETPATHS) (use only what you require)
+  default:
+                                                                                                                                                                                                                                                                                                                                                    
+  USE_CPV_SCALING                  ON                                                                                                                                                                                                 
+  USE_IDENTITY_MATRIX              OFF                                                                                                                                                                                                
+  USE_LAPACK                       ON                                                                                                                                                                                                
+  USE_LIKELIHOOD_METHOD            Original                                                                                                                                                                                           
+  USE_MKL_VML                      OFF                                                                                                                                                                                                
+  USE_MPI                          OFF                                                                                                                                                                                                
+  USE_OPENMP                       ON                                                                                                                                                                                                 
+  USE_ORIGINAL_PROPORTIONS         ON        
+
+* Set paths for required libraries (using export)
     BLAS_LIB_DIR       = path/to/installation/blas/lib
-    LAPACK_LIB_DIR     = path/to/installation/blas/include
+    LAPACK_LIB_DIR     = path/to/installation/lapack/lib
     MKL_INCLUDE_DIR    = path/to/installation/mkl/include
     NLOPT_INCLUDE_DIR  = path/to/installation/nlopt/include
     NLOPT_LIB_DIR      = path/to/installation/nlopt/lib
     MATH_LIB_NAMES     = "openblas;lapack;gfortranbegin;gfortran"
+
 * Build executable
-    ccmake .
+    ccmake . 
     make
+     
 * An executable "fast" is created
 
-Computer system:
-* Linux preferred, but sources are portable to other platforms
+
+
+
+
 

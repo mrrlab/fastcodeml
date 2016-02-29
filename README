@@ -1,21 +1,36 @@
+
 This is the FastCodeML evaluation package including sources and a precompiled executable. This package is currently for evaluation purposes only. 
 
-Usage, e.g.:
-./fast -m 22 -bf -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
-Above execution estimates the log likelihood for hypothesis 0 and the foreground specified in the Newick file. The output could be like the following:
-===
-Doing branch 0
-Check ming2 convergence
-
-LnL0: -2393.120011398410952 Function calls: 1235   
-
-  0.2724265  0.1727072  0.2111106  0.0443093  0.0160066  0.0102474  0.0050577  0.0084463
-  0.0254361  0.1328335  0.0754612
-
-p0:  0.4817192  p1:  0.5182808  p2a:  0.0000000  p2b:  0.0000000
-w0:  0.0000010  k:   5.1561778
-===
-
-Please always use optimisation method "-m 22" on the command line, as the other optimisers are still under investigation and not discussed in the paper.
-
 Read INSTALL for installation instructions!
+
+Usage, e.g.:
+
+./fast -m 22 -bl -nt 1 -hy 0  ENSGT00390000016702.Primates.01.002.nwk  ENSGT00390000016702.Primates.01.phy
+
+Above execution estimates the log likelihood for hypothesis 0 and the foreground specified in the Newick file using only one thread. The output could be like the following:
+
+===
+
+Doing foreground branch(es) from tree file 
+-------------------------------------------
+Doing foreground branch(es)  0 
+
+LnL0: -2393.300017592994664 Function calls: 365	  
+
+  0.2544410  0.1691760  0.1998330  0.0446050  0.0153330  0.0101750  0.0050080  0.0084390
+  0.0253000  0.1309500  0.0743030
+
+p0:  0.4858354  p1:  0.5141646  p2a:  0.0000000  p2b:  0.0000000
+w0:  0.0000010  k:   5.1252258
+
+H1 Final Annotated Newick Tree (*N marks the branch N)
+((a001:0.169176*1,a002:0.199833*2)#1:0.254441*0,(((a003:0.005008*6,a004:0.008439*7):0.010175*5,a005:0.025300*8):0.015333*4,a006:0.130950*9):0.044605*3,a007:0.074303*10):0.000000;
+
+Time used: 0:4
+Cores used: 1
+
+===
+
+
+
+

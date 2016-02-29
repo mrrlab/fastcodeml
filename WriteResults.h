@@ -44,8 +44,22 @@ public:
   ///
   void saveLnL(size_t aFgBranch, double aLnL, unsigned int aHypothesis);
 
+  /// Save the likelihood for later printing (multiple fg).
+  ///
+  /// @param[in] aFgBranchSet The foreground branches to which the
+  /// log-likelihood refers
+  /// @param[in] aLnL The log-likelihood
+  /// @param[in] aHypothesis The hypothesis (0 for H0 and 1 for H1) for which
+  /// the log-likelihood has been computed
+  ///
+
+  ///
+  void savePositiveSelSites(size_t aFgBranch,
+                            const std::vector<unsigned int> &aPositiveSelSites,
+                            const std::vector<double> &aPositiveSelSitesProb);
+
   /// Save the positive selection sites and corresponding probabilities for
-  /// later printing.
+  /// later printing. (multiple fg)
   ///
   /// @param[in] aFgBranch The foreground branch to which the sites refers
   /// @param[in] aPositiveSelSites The site in which the positive selection
@@ -53,13 +67,7 @@ public:
   /// @param[in] aPositiveSelSitesProb The corresponding probability as computed
   /// by the BEB test
   ///
-  void savePositiveSelSites(size_t aFgBranch,
-                            const std::vector<unsigned int> &aPositiveSelSites,
-                            const std::vector<double> &aPositiveSelSitesProb);
 
-  /// Check if anything will be output at the end.
-  ///
-  /// @return True if the output to file is enabled.
   ///
   bool isWriteResultsEnabled(void) const { return mFilename != NULL; }
 

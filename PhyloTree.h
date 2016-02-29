@@ -4,7 +4,9 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <fstream>
+#include <algorithm>
 #include "TreeNode.h"
 #include "ForestNode.h"
 #include "Types.h"
@@ -51,18 +53,20 @@ public:
                                     TreeNode *aNode = NULL) const = 0;
 
   /// Print the phylogenetic tree completed with all the info loaded in the same
-  /// format as read in and annotated with the internal branch number.
+  /// format as read in and annotated with the branch number.
   ///
   /// @param[in] aOut Output stream
   /// @param[in] aNode The node from which to start. If null starts from the
   /// root.
   /// @param[in] aInternalBranch Internal branch identifier to annotate the
   /// current branch.
+  /// @param[in] whether branch leaves should be considered or not
   ///
   /// @return The new internal branch id
   ///
   virtual int printTreeAnnotated(std::ostream &aOut, TreeNode *aNode = NULL,
-                                 int aInternalBranch = 0) const = 0;
+                                 int aInternalBranch = 0,
+                                 bool wLeaves = false) const = 0;
 
   /// Return the list of species.
   ///
@@ -76,7 +80,7 @@ public:
   /// @return The number of tree branches
   ///
   size_t getNumBranches(void) const {
-    return mInternalNodes.size() + mLeavesSpecies.size();
+    return mInternalNodes.size() /* +mLeavesSpecies.size() */;
   }
 
   /// Return the index of the first marked branch.
@@ -84,6 +88,12 @@ public:
   /// @return The index of the marked internal branch or UINT_MAX if none marked
   ///
   size_t getMarkedInternalBranch(void) const;
+
+  /// Return the index of the all marked branches.
+  ///
+  /// @return The index of the marked branches or UINT_MAX if none marked
+  ///
+  // std::set<std::size_t> getMarkedBranches(void) const;
 
   /// Clone the tree using ForestNode.
   /// Called without aTreeNode starts from the tree root.
@@ -113,17 +123,22 @@ public:
   /// @param[out] aNodeNames Ordered list of the node labels
   /// @param[out] aBranchLengths Ordered list of branch lists as read from the
   /// file
+  /// @param[out] aInternalBranches list of internal branches as read from the
+  /// file
   /// @param[out] aMarkedIntBranch Pointer to location where the marked internal
   /// branch number is stored
+  /// @param[out] aMarkedBranches Ordered list of marked branches from the file
   /// @param[in] aTreeNode The node from which to start the cloning in the tree.
   /// If not present starts from the root
   /// @param[in] aNodeId The node running id. For the root it is UINT_MAX.
   ///
   /// @return The node id to the next node
-  ///
+
   unsigned int collectGlobalTreeData(std::vector<std::string> &aNodeNames,
                                      std::vector<double> &aBranchLengths,
+                                     std::set<int> &aInternalBranches,
                                      size_t *aMarkedIntBranch,
+                                     std::set<int> &aMarkedBranches,
                                      const TreeNode *aTreeNode = NULL,
                                      unsigned int aNodeId = 0) const;
 
@@ -146,7 +161,15 @@ public:
   /// @exception FastCodeMLFatal Root has only one branch or points only to
   /// leaves.
   ///
-  void checkRootBranches(void) const;
+  void checkRootBranches(void); // const;
+
+  /// checks whether a branch is leaf or not.
+  ///
+  /// @param[in] branchLabel The branch label
+  ///
+  /// @return whether a branch is leaf or not
+  /// bool isLeaf(int branchLabel){return std::find(mLeavesSpecies.begin(),
+  /// mLeavesSpecies.end(), branchLabel) != mLeavesSpecies.end();};
 
 protected:
   /// Fill the list of Species (the leaves of the tree).
@@ -164,10 +187,11 @@ protected:
   void fillInternalBranches(TreeNode *aNode);
 
 protected:
-  TreeNode mTreeRoot;         ///< The root of the phylogenetic tree in memory
+  mutable TreeNode mTreeRoot; ///< The root of the phylogenetic tree in memory
   unsigned int mVerboseLevel; ///< The verbosity level
-  std::vector<TreeNode *> mLeavesSpecies; ///< The list of the tree leaves
-  std::vector<TreeNode *>
+  mutable std::vector<TreeNode *>
+      mLeavesSpecies; ///< The list of the tree leaves
+  mutable std::vector<TreeNode *>
       mInternalNodes; ///< The list of the tree internal nodes
   mutable std::vector<std::string> mSpeciesList; ///< Temporary to securely
   /// return the list of species

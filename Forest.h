@@ -87,13 +87,16 @@ public:
   /// program
   /// @param[out] aBranchStart The first branch to be marked as foreground
   /// @param[out] aBranchEnd The last branch to be marked as foreground
+  /// @param[out] aFgSet list of id of foreground branches
+  /// @param[out] aIbSet list of id of internal branches
   ///
   /// @return True if all branches are selected
   ///
   /// @exception FastCodeMLFatal Invalid range from command line
   ///
   bool getBranchRange(const CmdLine &aCmdLine, size_t &aBranchStart,
-                      size_t &aBranchEnd) const;
+                      size_t &aBranchEnd, std::set<int> &aFgSet,
+                      std::set<int> &aIbSet) const;
 
   /// Reduce common subtrees on the whole forest.
   ///
@@ -126,6 +129,10 @@ public:
   /// @param[in] aDependencies The dependency list between sets of trees
   ///
   void computeLikelihoods(const ProbabilityMatrixSet &aSet,
+                          CacheAlignedDoubleVector &aLikelihoods,
+                          const ListDependencies &aDependencies);
+
+  void computeLikelihoods(const mfgProbabilityMatrixSet &aSet,
                           CacheAlignedDoubleVector &aLikelihoods,
                           const ListDependencies &aDependencies);
 #endif
@@ -193,6 +200,20 @@ public:
   /// UINT_MAX otherwise.
   ///
   size_t getMarkedInternalBranch(void) const { return mMarkedInternalBranch; }
+
+  /// Get all marked branches
+  ///
+  /// @return The internal branch index of the branches marked in the tree file.
+  /// UINT_MAX otherwise.
+  ///
+  std::set<int> getMarkedBranches(void) const { return mMarkedBranches; }
+
+  /// Get all internal branches
+  ///
+  /// @return The internal branch index of the internal branches in the tree
+  /// file. UINT_MAX otherwise.
+  ///
+  std::set<int> getInternalBranches(void) const { return mInternalBranches; }
 
   /// Get site multiplicity values.
   ///
@@ -334,6 +355,10 @@ private:
   double *computeLikelihoodsWalkerTC(const ForestNode *aNode,
                                      const ProbabilityMatrixSet &aSet,
                                      unsigned int aSetIdx);
+
+  double *computeLikelihoodsWalkerTC(const ForestNode *aNode,
+                                     const mfgProbabilityMatrixSet &aSet,
+                                     unsigned int aSetIdx);
 #endif
 
 #ifdef NON_RECURSIVE_VISIT
@@ -378,22 +403,25 @@ private:
   const double *mInv2CodonFreq; ///< Squared inverse of the codon frequencies
   size_t mNumBranches; ///< Total number of branches of the original tree
   std::vector<ForestNode> mRoots; ///< The roots of the forest's trees. Its
-  /// length is the number of valid sites
+                                  ///length is the number of valid sites
   std::vector<double> mSiteMultiplicity; ///< Multiplicity of the valid sites
   size_t
       mNumInternalBranches; ///< Total number of branches of the original tree
   std::vector<unsigned int> mTableInternalToBranchID; ///< Map from internal
-  /// branch number to branch
-  /// number
+                                                      ///branch number to branch
+                                                      ///number
 
   /// Here are global data that will be removed from the various (site) trees
   std::vector<std::string> mNodeNames; ///< List of node names. Zero is the
-  /// root, then its first child and so on
-  std::vector<double> mBranchLengths; ///< List of branch lengths (read from
-  /// file or stored here to be exported in
-  /// the tree file)
-  size_t mMarkedInternalBranch; ///< Number of the internal branch as marked in
-/// the tree file
+                                       ///root, then its first child and so on
+  std::vector<double> mBranchLengths;  ///< List of branch lengths (read from
+                                       ///file or stored here to be exported in
+                                       ///the tree file)
+  size_t mMarkedInternalBranch;  ///< Number of the internal branch as marked in
+                                 ///the tree file
+  std::set<int> mMarkedBranches; ///< id of the marked branches in the tree file
+  std::set<int>
+      mInternalBranches; ///< id of the internal branches in the tree file
 
 #ifdef NEW_LIKELIHOOD
 

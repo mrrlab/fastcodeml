@@ -54,18 +54,39 @@ public:
                                     TreeNode *aNode = NULL) const;
 
   /// Print the phylogenetic tree completed with all the info loaded in the same
-  /// format as read in and annotated with the internal branch number.
+  /// format as read in and annotated with the branch numbers.
   ///
   /// @param[in] aOut Output stream
   /// @param[in] aNode The node from which to start. If null starts from the
   /// root.
   /// @param[in] aInternalBranch Internal branch identifier to annotate the
   /// current branch.
+  /// @param[in] whether leaves should be labeled or not.
   ///
-  /// @return The new internal branch id
+  /// @return The new branch id
   ///
   virtual int printTreeAnnotated(std::ostream &aOut, TreeNode *aNode = NULL,
-                                 int aInternalBranch = 0) const;
+                                 int aInternalBranch = 0,
+                                 bool wLeaves = false) const;
+
+  /// Print the phylogenetic tree completed with all the info loaded in the same
+  /// format as read in and annotated with the branch numbers.
+  ///
+  /// @param[in] aOut Output stream
+  /// @param[in] aNode The node from which to start. If null starts from the
+  /// root.
+  /// @param[in] aInternalBranch Internal branch identifier to annotate the
+  /// current branch.
+  /// @param[in] whether leaves should be labeled or not.
+  /// @param[in] array of branch lengths after estimation to be labeled in the
+  /// tree.
+  ///
+  /// @return The new branch id
+  ///
+  virtual int
+  printTreeAnnotatedWithEstLens(std::ostream &aOut, TreeNode *aNode = NULL,
+                                int aInternalBranch = 0, bool wLeaves = false,
+                                std::vector<double> *mVar = NULL) const;
 
 private:
   /// Load a phylo tree definition from a Newick formatted string.
