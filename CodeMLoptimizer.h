@@ -1,4 +1,3 @@
-
 #ifndef CODEMLOPTIMIZER_H
 #define CODEMLOPTIMIZER_H
 
@@ -12,8 +11,7 @@
 ///		@date 2012-01-11 (initial version)
 ///		@version 1.1
 ///
-class Ming2
-{
+class Ming2 {
 public:
 	/// Constructor
 	///
@@ -28,21 +26,18 @@ public:
 	/// @param[in] aThreshold			The threshold at which the maximization should be stopped
 	/// @param[in] aMaxIterations		Maximum number of iterations for the maximization
 	///
-	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose, const std::vector<double>& aLowerBound,
-		  const std::vector<double>& aUpperBound, double aDeltaForGradient, double aRelativeError, bool aStopIfBigger, double aThreshold, int aMaxIterations) :
-			mModel(aModel),
-			mTrace(aTrace),
-			mTraceFun(false),
-			mLowerBound(aLowerBound),
-			mUpperBound(aUpperBound),
-			mDeltaForGradient(aDeltaForGradient),
-			mRelativeError(aRelativeError),
-			mVerbose(aVerbose),
-			mStopIfBigger(aStopIfBigger),
-			mThreshold(-aThreshold),
-			mMaxIterations(aMaxIterations),
-			mAlwaysCenter(false),
-			mNoisy((aTrace && aVerbose > 0) ? 9 : 0) {}
+	Ming2(BranchSiteModel* aModel, bool aTrace, unsigned int aVerbose,
+			const std::vector<double>& aLowerBound,
+			const std::vector<double>& aUpperBound, double aDeltaForGradient,
+			double aRelativeError, bool aStopIfBigger, double aThreshold,
+			int aMaxIterations) :
+			mModel(aModel), mTrace(aTrace), mTraceFun(false), mLowerBound(
+					aLowerBound), mUpperBound(aUpperBound), mDeltaForGradient(
+					aDeltaForGradient), mRelativeError(aRelativeError), mVerbose(
+					aVerbose), mStopIfBigger(aStopIfBigger), mThreshold(
+					-aThreshold), mMaxIterations(aMaxIterations), mAlwaysCenter(
+					false), mNoisy((aTrace && aVerbose > 0) ? 9 : 0) {
+	}
 
 	/// Do the minimization of: aModel->computeLikelihood(x, n, mTraceFun);
 	///
@@ -70,7 +65,9 @@ private:
 	///
 	///	@exception FastCodeMLEarlyStopLRT If the optimization has been stopped in advance because LRT is not satisfied
 	///
-	int ming2(FILE *fout, double *f, double x[], const double xl[], const double xu[], double space[], int ispace[], double rel_error, int n);
+	int ming2(FILE *fout, double *f, double x[], const double xl[],
+			const double xu[], double space[], int ispace[], double rel_error,
+			int n);
 
 	/// Compute the gradient at point x
 	///
@@ -82,7 +79,8 @@ private:
 	/// @param[in] xmark 0: central; 1: upper; -1: down
 	/// @param[in] sizep SIZEp original variable
 	///
-	void gradientB(int n, const double x[], double f0, double g[], double space[], const int xmark[], double sizep) const;
+	void gradientB(int n, const double x[], double f0, double g[],
+			double space[], const int xmark[], double sizep) const;
 
 	/// Himmelblau termination rule.
 	///
@@ -96,7 +94,8 @@ private:
 	///
 	/// @return True for stop, false otherwise.
 	///
-	bool H_end(const double x0[], const double x1[], double f0, double f1, double e1, double e2, int n) const;
+	bool H_end(const double x0[], const double x1[], double f0, double f1,
+			double e1, double e2, int n) const;
 
 	/// Compute the function moving along p starting from x0 by a percentage t.
 	///
@@ -108,7 +107,8 @@ private:
 	///
 	/// @return The function value computed at point x
 	///
-	double fun_LineSearch(double t, const double x0[], const double p[], double x[], int n);
+	double fun_LineSearch(double t, const double x0[], const double p[],
+			double x[], int n);
 
 	/// Linear search using quadratic interpolation from x0[] in the direction of p[].
 	/// The formula used is:
@@ -129,7 +129,9 @@ private:
 	///
 	/// @return The value of a as in: x = x0 + a*p	a ~(0,limit)
 	///
-	double LineSearch2(double *f, const double x0[], const double p[], double step, double limit, double e, double space[], int iround, int n);
+	double LineSearch2(double *f, const double x0[], const double p[],
+			double step, double limit, double e, double space[], int iround,
+			int n);
 
 	/// Disabled assignment operator to avoid warnings on Windows
 	///
@@ -141,24 +143,23 @@ private:
 	///
 	Ming2& operator=(const Ming2& /*aObj*/);
 
-
 private:
-	BranchSiteModel*			mModel;				///< The model for which the optimization should be computed
-	bool						mTrace;				///< If a trace has been selected
-	bool						mTraceFun;			///< If a trace has been selected for the inner function computeLikelihood()
-	const std::vector<double>&	mLowerBound;		///< Lower limit of the variables to constrain the interval on which the optimum should be computed
-	const std::vector<double>&	mUpperBound;		///< Upper limit of the variables to constrain the interval on which the optimum should be computed
-	double						mDeltaForGradient;	///< This is the original Small_Diff value
-	double						mRelativeError;		///< The relative error at which the computation stops
-	unsigned int				mVerbose;			///< The verbose flag from the BranchSiteModel class
-	bool						mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
-	double						mThreshold;			///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
-	int							mMaxIterations;		///< Maximum number of iterations for the maximization
+	BranchSiteModel* mModel;///< The model for which the optimization should be computed
+	bool mTrace;				///< If a trace has been selected
+	bool mTraceFun;	///< If a trace has been selected for the inner function computeLikelihood()
+	const std::vector<double>& mLowerBound;	///< Lower limit of the variables to constrain the interval on which the optimum should be computed
+	const std::vector<double>& mUpperBound;	///< Upper limit of the variables to constrain the interval on which the optimum should be computed
+	double mDeltaForGradient;	///< This is the original Small_Diff value
+	double mRelativeError;///< The relative error at which the computation stops
+	unsigned int mVerbose;	///< The verbose flag from the BranchSiteModel class
+	bool mStopIfBigger;		///< When true stop if lnL is bigger than mThreshold
+	double mThreshold;///< Threshold for the early stop of optimization if LRT non satisfied (the value is stored with sign changed)
+	int mMaxIterations;	///< Maximum number of iterations for the maximization
 
 private:
 	/// The following variables are from the original code
-	bool						mAlwaysCenter;		///< From the original code
-	int							mNoisy;				///< How much rubbish on the screen. Valid values: 0,1,2,3,9
+	bool mAlwaysCenter;		///< From the original code
+	int mNoisy;		///< How much rubbish on the screen. Valid values: 0,1,2,3,9
 };
 
 #endif

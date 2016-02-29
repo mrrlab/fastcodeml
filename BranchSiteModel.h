@@ -1,4 +1,3 @@
-
 #ifndef BRANCHSITEMODEL_H
 #define BRANCHSITEMODEL_H
 
@@ -11,7 +10,6 @@
 #include "CmdLine.h"
 #include "TreeAndSetsDependencies.h"
 
-
 //// Value used for the LRT test. It is chisq(.95, df=1)/2
 static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 
@@ -21,8 +19,7 @@ static const double THRESHOLD_FOR_LRT = 1.92072941034706202;
 ///		@date 2010-12-23 (initial version)
 ///		@version 1.1
 ///
-class BranchSiteModel
-{
+class BranchSiteModel {
 protected:
 	/// Constructor.
 	///
@@ -41,66 +38,50 @@ protected:
 	/// @param[in] aExtraDebug Extra parameter for testing during development
 	/// @param[in] aMaxIterations Maximum number of iterations for the maximization
 	///
-	BranchSiteModel(Forest&		 aForest,
-					size_t		 aNumBranches,
-					size_t		 aNumSites,
-					unsigned int aSeed,
-					unsigned int aNumVariables,
-					bool		 aOnlyInitialStep,
-					bool		 aTrace,
-					unsigned int aOptAlgo,
-					double		 aDeltaValueForGradient,
-					double		 aRelativeError,
-					bool		 aNoParallel,
-					unsigned int aVerbose,
-					unsigned int aExtraDebug,
-					unsigned int aMaxIterations,
-					bool aFixedBranchLength)
-		: mForest(aForest),
-		  mVar(aFixedBranchLength ? aNumVariables : aNumBranches+aNumVariables), //mVar(aNumBranches+aNumVariables),
-		  mFgScale(0.0),
-		  mBgScale(0.0),
-		  mMaxLnL(-DBL_MAX),
-		  mDeltaForGradient((aDeltaValueForGradient > 0.0) ? aDeltaValueForGradient : sqrt(DBL_EPSILON)),
-		  mLikelihoods(Nt*aNumSites),
-		  mOnlyInitialStep(aOnlyInitialStep),
-		  mTrace(aTrace),
-		  mOptAlgo(aOptAlgo),
-		  mInitStatus(INIT_NONE),
-		  mNumTimes(static_cast<unsigned int>(aNumBranches)),
-		  mNumVariables(aNumVariables),
-		  mExtraDebug(aExtraDebug),
-		  mVerbose(aVerbose),
-		  mNumEvaluations(0),
-		  mMaxIterations(aMaxIterations),
-		  mDependencies(aForest, aVerbose),
-		  mNoParallel(aNoParallel),
+	BranchSiteModel(Forest& aForest, size_t aNumBranches, size_t aNumSites,
+			unsigned int aSeed, unsigned int aNumVariables,
+			bool aOnlyInitialStep, bool aTrace, unsigned int aOptAlgo,
+			double aDeltaValueForGradient, double aRelativeError,
+			bool aNoParallel, unsigned int aVerbose, unsigned int aExtraDebug,
+			unsigned int aMaxIterations, bool aFixedBranchLength) :
+			mForest(aForest), mVar(
+					aFixedBranchLength ?
+							aNumVariables : aNumBranches + aNumVariables), //mVar(aNumBranches+aNumVariables),
+			mFgScale(0.0), mBgScale(0.0), mMaxLnL(-DBL_MAX), mDeltaForGradient(
+					(aDeltaValueForGradient > 0.0) ?
+							aDeltaValueForGradient : sqrt(DBL_EPSILON)), mLikelihoods(
+					Nt * aNumSites), mOnlyInitialStep(aOnlyInitialStep), mTrace(
+					aTrace), mOptAlgo(aOptAlgo), mInitStatus(INIT_NONE), mNumTimes(
+					static_cast<unsigned int>(aNumBranches)), mNumVariables(
+					aNumVariables), mExtraDebug(aExtraDebug), mVerbose(
+					aVerbose), mNumEvaluations(0), mMaxIterations(
+					aMaxIterations), mDependencies(aForest, aVerbose), mNoParallel(
+					aNoParallel),
 //		  mSeed(aSeed),
 //		  mRelativeError(aRelativeError),
-		  mFixedBranchLength(aFixedBranchLength),
-		  mBranches(aNumBranches),
-				  mSeed(aSeed),
-				  mRelativeError(aRelativeError)
-	{
-		setLimits(aNumBranches, static_cast<size_t>(aNumVariables), aFixedBranchLength);
+			mFixedBranchLength(aFixedBranchLength), mBranches(aNumBranches), mSeed(
+					aSeed), mRelativeError(aRelativeError) {
+		setLimits(aNumBranches, static_cast<size_t>(aNumVariables),
+				aFixedBranchLength);
 	}
 
 	/// Destructor.
 	///
-	virtual ~BranchSiteModel() {}
+	virtual ~BranchSiteModel() {
+	}
 
 public:
 	/// Set the times on the tree from the variables
 	///
-	void saveComputedTimes(void) {//const {
+	void saveComputedTimes(void) {	//const {
 		// omid
 		/*std::cout << "mVar : "<<std::endl;
-		for (std::vector<double>::iterator it=mVar.begin(); it!=mVar.end(); ++it)
-			std::cout << " " << *it << ",";
-		std::cout << std::endl;*/
+		 for (std::vector<double>::iterator it=mVar.begin(); it!=mVar.end(); ++it)
+		 std::cout << " " << *it << ",";
+		 std::cout << std::endl;*/
 		// end omid
-
-		mForest.setLengthsFromTimes(mVar);}
+		mForest.setLengthsFromTimes(mVar);
+	}
 
 	/// Formatted print of the maximizer variables array
 	///
@@ -108,13 +89,14 @@ public:
 	/// @param[in] aLnl The likelihood value to be printed
 	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	void printVar(const std::vector<double>& aVars, double aLnl=DBL_MAX, std::ostream& aOut=std::cout) const;
+	void printVar(const std::vector<double>& aVars, double aLnl = DBL_MAX,
+			std::ostream& aOut = std::cout) const;
 
 	/// Formatted print of the maximized variables
 	///
 	/// @param[in] aOut The stream on which the variables should be printed
 	///
-	std::string printFinalVars(std::ostream& aOut=std::cout) const;
+	std::string printFinalVars(std::ostream& aOut = std::cout) const;
 
 	/// Compute the maximum likelihood for the given forest (single foreground)
 	///
@@ -128,7 +110,8 @@ public:
 	/// @exception FastCodeMLFatal Invalid optimization algorithm identifier on the command line
 	/// @exception FastCodeMLFatal Exception in computation
 	///
-	double maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger, double aThreshold);
+	double maximizeLikelihood(size_t aFgBranch, bool aStopIfBigger,
+			double aThreshold);
 
 	/// Compute the maximum likelihood for the given forest (multiple foregrounds)
 	///
@@ -142,7 +125,8 @@ public:
 	/// @exception FastCodeMLFatal Invalid optimization algorithm identifier on the command line
 	/// @exception FastCodeMLFatal Exception in computation
 	///
-	double maximizeLikelihood(std::set<int> aFgBranchSet, bool aStopIfBigger, double aThreshold);
+	double maximizeLikelihood(std::set<int> aFgBranchSet, bool aStopIfBigger,
+			double aThreshold);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -153,7 +137,8 @@ public:
 	/// @return The maximum Likelihood value
 	///
 
-	virtual double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar) =0;
+	virtual double computeLikelihoodForGradient(const std::vector<double>& aVar,
+			bool aTrace, size_t aGradientVar) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
@@ -162,7 +147,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	virtual double computeLikelihood(const std::vector<double>& aVar, bool aTrace) =0;
+	virtual double computeLikelihood(const std::vector<double>& aVar,
+			bool aTrace) =0;
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	/// This version is for use inside Ming2 minimizer
@@ -173,9 +159,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihood(double* aVar, int aVarLen, bool aTrace)
-	{
-		std::vector<double> x(aVar, aVar+aVarLen);
+	double computeLikelihood(double* aVar, int aVarLen, bool aTrace) {
+		std::vector<double> x(aVar, aVar + aVarLen);
 		return computeLikelihood(x, aTrace);
 	}
 
@@ -183,7 +168,9 @@ public:
 	///
 	/// @param[out] aVariables Vector that will be filled with the variables
 	///
-	void getVariables(std::vector<double>& aVariables) const {aVariables = mVar;}
+	void getVariables(std::vector<double>& aVariables) const {
+		aVariables = mVar;
+	}
 
 	/// Get variable values
 	///
@@ -195,13 +182,17 @@ public:
 	///
 	/// @return The optimized variables
 	///
-	const std::vector<double>& getVariables(void) const {return mVar;} // should return refference ?
+	const std::vector<double>& getVariables(void) const {
+		return mVar;
+	} // should return refference ?
 
 	/// Get the number of function evaluation.
 	///
 	/// @return The number of likelihood function calls
 	///
-	unsigned int getNumEvaluations(void) const {return mNumEvaluations;}
+	unsigned int getNumEvaluations(void) const {
+		return mNumEvaluations;
+	}
 
 	/// Perform the Likelihood Ratio Test.
 	/// LRT test: -2*(lnl0-lnl1) > chisq(.95, df=1)
@@ -211,29 +202,41 @@ public:
 	///
 	///	@return True if the test is passed
 	///
-	static bool performLRT(double aLnL0, double aLnL1) {return (aLnL1 - aLnL0) > THRESHOLD_FOR_LRT;}
+	static bool performLRT(double aLnL0, double aLnL1) {
+		return (aLnL1 - aLnL0) > THRESHOLD_FOR_LRT;
+	}
 
 	/// Get site multiplicity values.
 	///
 	/// @return Reference to the array of site multiplicities
 	///
-	const std::vector<double>& getSiteMultiplicity(void) const {return mForest.getSiteMultiplicity();}
+	const std::vector<double>& getSiteMultiplicity(void) const {
+		return mForest.getSiteMultiplicity();
+	}
 
 	/// Get the corresponding forest.
 	///
 	/// @return Reference to the forest
 	///
-	Forest& getForest(void) {return mForest;}
+	Forest& getForest(void) {
+		return mForest;
+	}
 
 	/// Get the latest scale values suitable for BEB computation.
 	///
 	/// @param[out] aScales The array will get the fg scale in [1] and the bg scale in [0]
 	///
-	void getScales(std::vector<double>& aScales) const {aScales.resize(2); aScales[0] = mBgScale; aScales[1] = mFgScale;}
+	void getScales(std::vector<double>& aScales) const {
+		aScales.resize(2);
+		aScales[0] = mBgScale;
+		aScales[1] = mFgScale;
+	}
 
 	/// Get the array of branch lengths.
 	///
-	std::vector<double> getBranchLengths(void) const {return mBranches;}
+	std::vector<double> getBranchLengths(void) const {
+		return mBranches;
+	}
 
 	/// Verify if the code entered on command line is valid.
 	///
@@ -256,38 +259,36 @@ protected:
 	/// @param[in] aV1 The second optimization variable
 	/// @param[out] aProportions The four proportions (p0, p1, p2a, p2b) computed from aV0 and aV1
 	///
-	void getProportions(double aV0, double aV1, double* aProportions) const
-	{
+	void getProportions(double aV0, double aV1, double* aProportions) const {
 #ifdef USE_ORIGINAL_PROPORTIONS
 
 		/*   // codeml code //
-	 	 int f_and_x(double x[], double f[], int n, int fromf, int LastItem)
-		{
+		 int f_and_x(double x[], double f[], int n, int fromf, int LastItem)
+		 {
 		 This transforms between x and f.  x and f can be identical.
-		   If (fromf), f->x
-		   else        x->f.
-		   The iterative variable x[] and frequency f[0,1,n-2] are related as:
-		      freq[k] = exp(x[k])/(1+SUM(exp(x[k]))), k=0,1,...,n-2,
-		   x[] and freq[] may be the same vector.
-		   The last element (f[n-1] or x[n-1]=1) is updated only if(LastItem).
+		 If (fromf), f->x
+		 else        x->f.
+		 The iterative variable x[] and frequency f[0,1,n-2] are related as:
+		 freq[k] = exp(x[k])/(1+SUM(exp(x[k]))), k=0,1,...,n-2,
+		 x[] and freq[] may be the same vector.
+		 The last element (f[n-1] or x[n-1]=1) is updated only if(LastItem).
 
-		   int i;
-		   double tot;
+		 int i;
+		 double tot;
 
-		   if (fromf) {   f => x
-		      if((tot=1-sum(f,n-1))<1e-80) error2("f[n-1]==1, not dealt with.");
-		      tot = 1/tot;
-		      for(i=0; i<n-1; i++)  x[i] = log(f[i]*tot);
-		      if(LastItem) x[n-1] = 0;
-		   }
-		   else {         x => f
-		      for(i=0,tot=1; i<n-1; i++)  tot  += (f[i]=exp(x[i]));
-		      for(i=0; i<n-1; i++)        f[i] /= tot;
-		      if(LastItem) f[n-1] = 1/tot;
-		   }
-		   return(0);
-		}*/
-
+		 if (fromf) {   f => x
+		 if((tot=1-sum(f,n-1))<1e-80) error2("f[n-1]==1, not dealt with.");
+		 tot = 1/tot;
+		 for(i=0; i<n-1; i++)  x[i] = log(f[i]*tot);
+		 if(LastItem) x[n-1] = 0;
+		 }
+		 else {         x => f
+		 for(i=0,tot=1; i<n-1; i++)  tot  += (f[i]=exp(x[i]));
+		 for(i=0; i<n-1; i++)        f[i] /= tot;
+		 if(LastItem) f[n-1] = 1/tot;
+		 }
+		 return(0);
+		 }*/
 
 		aProportions[0] = exp(aV0);
 		aProportions[1] = exp(aV1);
@@ -302,10 +303,10 @@ protected:
 		aProportions[2] = (1. - tot)*aProportions[0]/tot;
 		aProportions[3] = (1. - tot)*aProportions[1]/tot;
 #else
-		aProportions[0] = aV0*aV1;
-		aProportions[1] = aV0*(1.-aV1);
-		aProportions[2] = (1.-aV0)*aV1;
-		aProportions[3] = (1.-aV0)*(1.-aV1);
+		aProportions[0] = aV0 * aV1;
+		aProportions[1] = aV0 * (1. - aV1);
+		aProportions[2] = (1. - aV0) * aV1;
+		aProportions[3] = (1. - aV0) * (1. - aV1);
 #endif
 	}
 
@@ -326,40 +327,41 @@ private:
 	/// @param[in] aNumVariables Number of other variables (4 for H0, 5 for H1)
 	/// @param[in] aFixedBranch
 	///
-	void setLimits(size_t aNumTimes, size_t aNumVariables, bool aFixedBranchLength);
+	void setLimits(size_t aNumTimes, size_t aNumVariables,
+			bool aFixedBranchLength);
 
 	/// Generate a double random number between 0 and 1
 	///
 	/// @return The random number
 	///
-	static inline double randFrom0to1(void) {return static_cast<double>(rand())/static_cast<double>(RAND_MAX);}
+	static inline double randFrom0to1(void) {
+		return static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+	}
 
 	/// Valid values (on the command line) for the optimization algorithm
 	///
-	enum OptimAlgoIdentifier
-	{
-		OPTIM_LD_LBFGS		= 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
-		OPTIM_LD_VAR1		= 1,	///< Shifted limited-memory variable-metric rank-1 method
-		OPTIM_LD_VAR2		= 2,	///< Shifted limited-memory variable-metric rank-2 method
-		OPTIM_LD_SLSQP		= 3,	///< Sequential quadratic programming (SQP) algorithm
+	enum OptimAlgoIdentifier {
+		OPTIM_LD_LBFGS = 0,	///< Low-storage BFGS (same optimizer method as the one used by CodeML)
+		OPTIM_LD_VAR1 = 1,///< Shifted limited-memory variable-metric rank-1 method
+		OPTIM_LD_VAR2 = 2,///< Shifted limited-memory variable-metric rank-2 method
+		OPTIM_LD_SLSQP = 3,	///< Sequential quadratic programming (SQP) algorithm
 
-		OPTIM_LN_BOBYQA		= 11,	///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
+		OPTIM_LN_BOBYQA = 11,///< Derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function
 
-		OPTIM_LD_MING2		= 22,	///< The optimizer extracted from CodeML
+		OPTIM_LD_MING2 = 22,	///< The optimizer extracted from CodeML
 
-		OPTIM_MLSL_LDS		= 99	///< A global optimizer
+		OPTIM_MLSL_LDS = 99	///< A global optimizer
 	};
 
 	/// Valid values for the mInitStatus variable depicting from where the variables have been initialized.
 	///
-	enum InitVarStatus
-	{
-		INIT_NONE=0,			///< No variable has been initialized
-		INIT_TIMES=1,			///< Branch lenghts have been initialized
-		INIT_PARAMS_H1=2,		///< v0, v1 (or x0, x1), w0, k have been initialized (usually from H1 results)
-		INIT_PARAM_W2=4,		///< w2 has been initialized
-		INIT_PARAMS=6,			///< w0, w2, k, v0, v1 (or x0, x1) have been initialized (it is INIT_PARAMS_H1 | INIT_PARAM_W2)
-		INIT_TIMES_FROM_FILE=8	///< The times come from the tree file
+	enum InitVarStatus {
+		INIT_NONE = 0,			///< No variable has been initialized
+		INIT_TIMES = 1,			///< Branch lenghts have been initialized
+		INIT_PARAMS_H1 = 2,	///< v0, v1 (or x0, x1), w0, k have been initialized (usually from H1 results)
+		INIT_PARAM_W2 = 4,		///< w2 has been initialized
+		INIT_PARAMS = 6,///< w0, w2, k, v0, v1 (or x0, x1) have been initialized (it is INIT_PARAMS_H1 | INIT_PARAM_W2)
+		INIT_TIMES_FROM_FILE = 8	///< The times come from the tree file
 	};
 
 public:
@@ -379,8 +381,8 @@ public:
 	/// @param[in] aPreviousResult A previous result from another model (normally obtained by getVariables())
 	/// @param[in] aValidLen If set gives how many values to take from aPreviousResult
 	///
-	void initFromResult(const std::vector<double>& aPreviousResult, unsigned int aValidLen=0u);
-
+	void initFromResult(const std::vector<double>& aPreviousResult,
+			unsigned int aValidLen = 0u);
 
 private:
 	/// Disabled assignment operator to avoid warnings on Windows
@@ -393,39 +395,36 @@ private:
 	///
 	BranchSiteModel& operator=(const BranchSiteModel& /*aObj*/);
 
-
 protected:
-	Forest&						mForest;			///< The forest to be used
-	std::vector<double>			mVar;				///< Variable to optimize (first the branch lengths then the remaining variables)
-	std::vector<double>			mLowerBound;		///< Lower limits for the variables to be optimized
-	std::vector<double>			mUpperBound;		///< Upper limits for the variables to be optimized
-	double						mProportions[4];	///< The four proportions
-	double						mFgScale;			///< The computed foreground branch scale
-	double						mBgScale;			///< The computed background branches scale
-	double						mMaxLnL;			///< Maximum value of LnL found during optimization
-	double						mDeltaForGradient;	///< Value used to change the variables to compute gradient
-	CacheAlignedDoubleVector	mLikelihoods;		///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
-	bool						mOnlyInitialStep;	///< Only the initial step is executed, no optimization
-	bool						mTrace;				///< Enable maximization tracing
-	unsigned int				mOptAlgo;			///< Optimization algorithm to use
-	unsigned int				mInitStatus;		///< Which variables have been initialized
-	unsigned int				mNumTimes;			///< Number of branch lengths values
-	unsigned int				mNumVariables;		///< The number of extra variables (4 for H0 and 5 for H1)
-	unsigned int				mExtraDebug;		///< Parameter for extra development testing
-	unsigned int				mVerbose;			///< Parameter for extra development testing
-	unsigned int				mNumEvaluations;	///< Counter of the likelihood function evaluations
-	unsigned int				mMaxIterations;		///< Maximum number of iterations for the maximization
-	TreeAndSetsDependencies		mDependencies;		///< The dependency list between trees to use in this run
-	bool						mNoParallel;		///< True if no preparation for multithreading should be done
-	bool					    mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
-	std::vector<double>		    mBranches;			///< Variable with the branch lengths
+	Forest& mForest;			///< The forest to be used
+	std::vector<double> mVar;///< Variable to optimize (first the branch lengths then the remaining variables)
+	std::vector<double> mLowerBound;///< Lower limits for the variables to be optimized
+	std::vector<double> mUpperBound;///< Upper limits for the variables to be optimized
+	double mProportions[4];	///< The four proportions
+	double mFgScale;			///< The computed foreground branch scale
+	double mBgScale;			///< The computed background branches scale
+	double mMaxLnL;			///< Maximum value of LnL found during optimization
+	double mDeltaForGradient;///< Value used to change the variables to compute gradient
+	CacheAlignedDoubleVector mLikelihoods;///< Computed likelihoods at the root of all trees. Defined here to make it aligned.
+	bool mOnlyInitialStep;///< Only the initial step is executed, no optimization
+	bool mTrace;				///< Enable maximization tracing
+	unsigned int mOptAlgo;			///< Optimization algorithm to use
+	unsigned int mInitStatus;		///< Which variables have been initialized
+	unsigned int mNumTimes;			///< Number of branch lengths values
+	unsigned int mNumVariables;	///< The number of extra variables (4 for H0 and 5 for H1)
+	unsigned int mExtraDebug;		///< Parameter for extra development testing
+	unsigned int mVerbose;			///< Parameter for extra development testing
+	unsigned int mNumEvaluations;///< Counter of the likelihood function evaluations
+	unsigned int mMaxIterations;///< Maximum number of iterations for the maximization
+	TreeAndSetsDependencies mDependencies;///< The dependency list between trees to use in this run
+	bool mNoParallel;///< True if no preparation for multithreading should be done
+	bool mFixedBranchLength; ///< True if branch lengths are kept fixed (not optimised)
+	std::vector<double> mBranches;		///< Variable with the branch lengths
 
 private:
-	unsigned int				mSeed;				///< Random number generator seed to be used also by the optimizer
-	double						mRelativeError;		///< Relative error to stop maximization
+	unsigned int mSeed;	///< Random number generator seed to be used also by the optimizer
+	double mRelativeError;		///< Relative error to stop maximization
 };
-
-
 
 /// Null Hypothesis test.
 ///
@@ -434,23 +433,25 @@ private:
 ///		@version 1.1
 ///
 ///
-class BranchSiteModelNullHyp : public BranchSiteModel
-{
+class BranchSiteModelNullHyp: public BranchSiteModel {
 public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
-						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
-	{
+	BranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine) :
+			BranchSiteModel(aForest, aForest.getNumBranches(),
+					aForest.getNumSites(), aCmdLine.mSeed, 4,
+					aCmdLine.mNoMaximization, aCmdLine.mTrace,
+					aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+					aCmdLine.mRelativeError,
+					aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+					aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug,
+					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mSet(
+					aForest.getNumBranches()), mSetForGradient(
+					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
+					DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(3, mNoParallel);
 		mDependencies.print("TEST FOR H0 (before optimization)");
@@ -466,7 +467,8 @@ public:
 	///
 	/// @return The log likelihood under the null hypothesis
 	///
-	double operator()(size_t aFgBranch, bool aStopIfBigger=false, double aThreshold=0.);
+	double operator()(size_t aFgBranch, bool aStopIfBigger = false,
+			double aThreshold = 0.);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -476,7 +478,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+	double computeLikelihoodForGradient(const std::vector<double>& aVar,
+			bool aTrace, size_t aGradientVar);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
@@ -486,7 +489,6 @@ public:
 	/// @return The maximum Likelihood value
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
-
 
 private:
 	/// Disabled assignment operator to avoid warnings on Windows
@@ -506,16 +508,15 @@ private:
 	double combineSiteLikelihoods(void);
 
 private:
-	TransitionMatrix		mQw0;				///< Q matrix for the omega0 case
-	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSetH0	mSet;				///< Set of matrices used for the tree visits
-	ProbabilityMatrixSetH0	mSetForGradient;	///< Set of matrices used for the tree visits
-	double					mPrevK;				///< Previous k value used to compute matrices
-	double					mPrevOmega0;		///< Previous w0 value used to compute matrices
-	double					mScaleQw0;			///< Scale value for Qw0
-	double					mScaleQ1;			///< Scale value for Q1
+	TransitionMatrix mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix mQ1;				///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSetH0 mSet;///< Set of matrices used for the tree visits
+	ProbabilityMatrixSetH0 mSetForGradient;	///< Set of matrices used for the tree visits
+	double mPrevK;				///< Previous k value used to compute matrices
+	double mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double mScaleQw0;			///< Scale value for Qw0
+	double mScaleQ1;			///< Scale value for Q1
 };
-
 
 /// Null Hypothesis test (multiple foreground branches).
 ///
@@ -524,23 +525,25 @@ private:
 ///		@version 1.1
 ///
 ///
-class MfgBranchSiteModelNullHyp : public BranchSiteModel
-{
+class MfgBranchSiteModelNullHyp: public BranchSiteModel {
 public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	MfgBranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
-						  aCmdLine.mSeed, 4, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX)
-	{
+	MfgBranchSiteModelNullHyp(Forest& aForest, const CmdLine& aCmdLine) :
+			BranchSiteModel(aForest, aForest.getNumBranches(),
+					aForest.getNumSites(), aCmdLine.mSeed, 4,
+					aCmdLine.mNoMaximization, aCmdLine.mTrace,
+					aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+					aCmdLine.mRelativeError,
+					aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+					aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug,
+					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mfgmSet(
+					aForest.getNumBranches()), mfgmSetForGradient(
+					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
+					DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(3, mNoParallel);
 		mDependencies.print("TEST FOR H0 (before optimization)");
@@ -556,7 +559,8 @@ public:
 	///
 	/// @return The log likelihood under the null hypothesis
 	///
-	double operator()(std::set<int> aFgBranchSet, bool aStopIfBigger=false, double aThreshold=0.);
+	double operator()(std::set<int> aFgBranchSet, bool aStopIfBigger = false,
+			double aThreshold = 0.);
 
 	/// Compute the likelihood for the given forest and the given set of parameters when computing gradient.
 	///
@@ -566,7 +570,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+	double computeLikelihoodForGradient(const std::vector<double>& aVar,
+			bool aTrace, size_t aGradientVar);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
@@ -577,7 +582,6 @@ public:
 	///
 	double computeLikelihood(const std::vector<double>& aVar, bool aTrace);
 
-
 private:
 	/// Disabled assignment operator to avoid warnings on Windows
 	///
@@ -587,7 +591,8 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	MfgBranchSiteModelNullHyp& operator=(const MfgBranchSiteModelNullHyp& /*aObj*/);
+	MfgBranchSiteModelNullHyp& operator=(
+			const MfgBranchSiteModelNullHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///
@@ -596,17 +601,15 @@ private:
 	double combineSiteLikelihoods(void);
 
 private:
-	TransitionMatrix		mQw0;				///< Q matrix for the omega0 case
-	TransitionMatrix		mQ1;				///< Q matrix for the omega1 == 1 case
-	mfgProbabilityMatrixSetH0	mfgmSet;			///< Set of matrices used for the tree visits (multiple foregrounds)
-	mfgProbabilityMatrixSetH0	mfgmSetForGradient;	///< Set of matrices used for the tree visits (multiple foregrounds)
-	double					mPrevK;				///< Previous k value used to compute matrices
-	double					mPrevOmega0;		///< Previous w0 value used to compute matrices
-	double					mScaleQw0;			///< Scale value for Qw0
-	double					mScaleQ1;			///< Scale value for Q1
+	TransitionMatrix mQw0;				///< Q matrix for the omega0 case
+	TransitionMatrix mQ1;				///< Q matrix for the omega1 == 1 case
+	mfgProbabilityMatrixSetH0 mfgmSet;///< Set of matrices used for the tree visits (multiple foregrounds)
+	mfgProbabilityMatrixSetH0 mfgmSetForGradient;///< Set of matrices used for the tree visits (multiple foregrounds)
+	double mPrevK;				///< Previous k value used to compute matrices
+	double mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double mScaleQw0;			///< Scale value for Qw0
+	double mScaleQ1;			///< Scale value for Q1
 };
-
-
 
 /// Alternate Hypothesis test.
 ///
@@ -615,23 +618,25 @@ private:
 ///		@version 1.1
 ///
 ///
-class BranchSiteModelAltHyp : public BranchSiteModel
-{
+class BranchSiteModelAltHyp: public BranchSiteModel {
 public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
-						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mSet(aForest.getNumBranches()), mSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
-	{
+	BranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine) :
+			BranchSiteModel(aForest, aForest.getNumBranches(),
+					aForest.getNumSites(), aCmdLine.mSeed, 5,
+					aCmdLine.mNoMaximization, aCmdLine.mTrace,
+					aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+					aCmdLine.mRelativeError,
+					aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+					aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug,
+					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mSet(
+					aForest.getNumBranches()), mSetForGradient(
+					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
+					DBL_MAX), mPrevOmega2(DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(4, mNoParallel);
 		mDependencies.print("TEST FOR H1 (before optimization)");
@@ -655,7 +660,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+	double computeLikelihoodForGradient(const std::vector<double>& aVar,
+			bool aTrace, size_t aGradientVar);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
@@ -683,21 +689,19 @@ private:
 	///
 	double combineSiteLikelihoods(void);
 
-
 private:
-	CheckpointableTransitionMatrix	mQw0;				///< Q matrix for the omega0 case
-	TransitionMatrix				mQw2;				///< Q matrix for the omega2 case
-	CheckpointableTransitionMatrix	mQ1;				///< Q matrix for the omega1 == 1 case
-	ProbabilityMatrixSetH1			mSet;				///< Set of matrices used for the tree visits
-	ProbabilityMatrixSetH1			mSetForGradient;	///< Set of matrices used for the tree visits
-	double							mPrevK;				///< Previous k value used to compute matrices
-	double							mPrevOmega0;		///< Previous w0 value used to compute matrices
-	double							mPrevOmega2;		///< Previous w2 value used to compute matrices
-	double							mScaleQw0;			///< Scale value for Qw0
-	double							mScaleQw2;			///< Scale value for Qw2
-	double							mScaleQ1;			///< Scale value for Q1
+	CheckpointableTransitionMatrix mQw0;	///< Q matrix for the omega0 case
+	TransitionMatrix mQw2;				///< Q matrix for the omega2 case
+	CheckpointableTransitionMatrix mQ1;	///< Q matrix for the omega1 == 1 case
+	ProbabilityMatrixSetH1 mSet;///< Set of matrices used for the tree visits
+	ProbabilityMatrixSetH1 mSetForGradient;	///< Set of matrices used for the tree visits
+	double mPrevK;				///< Previous k value used to compute matrices
+	double mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double mPrevOmega2;		///< Previous w2 value used to compute matrices
+	double mScaleQw0;			///< Scale value for Qw0
+	double mScaleQw2;			///< Scale value for Qw2
+	double mScaleQ1;			///< Scale value for Q1
 };
-
 
 /// Alternate Hypothesis test (multiple fg grounds).
 ///
@@ -706,23 +710,25 @@ private:
 ///		@version 1.1
 ///
 ///
-class MfgBranchSiteModelAltHyp : public BranchSiteModel
-{
+class MfgBranchSiteModelAltHyp: public BranchSiteModel {
 public:
 	/// Constructor.
 	///
 	/// @param[in] aForest The forest for which the maximum likelihood should be computed
 	/// @param[in] aCmdLine The command line parameters
 	///
-	MfgBranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine)
-		: BranchSiteModel(aForest, aForest.getNumBranches(), aForest.getNumSites(),
-						  aCmdLine.mSeed, 5, aCmdLine.mNoMaximization, aCmdLine.mTrace,
-						  aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
-						  aCmdLine.mRelativeError, aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
-						  aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug, aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength),
-						  mfgmSet(aForest.getNumBranches()), mfgmSetForGradient(aForest.getNumBranches()),
-						  mPrevK(DBL_MAX), mPrevOmega0(DBL_MAX), mPrevOmega2(DBL_MAX)
-	{
+	MfgBranchSiteModelAltHyp(Forest& aForest, const CmdLine& aCmdLine) :
+			BranchSiteModel(aForest, aForest.getNumBranches(),
+					aForest.getNumSites(), aCmdLine.mSeed, 5,
+					aCmdLine.mNoMaximization, aCmdLine.mTrace,
+					aCmdLine.mOptimizationAlgo, aCmdLine.mDeltaValueForGradient,
+					aCmdLine.mRelativeError,
+					aCmdLine.mForceSerial || aCmdLine.mDoNotReduceForest,
+					aCmdLine.mVerboseLevel, aCmdLine.mExtraDebug,
+					aCmdLine.mMaxIterations, aCmdLine.mFixedBranchLength), mfgmSet(
+					aForest.getNumBranches()), mfgmSetForGradient(
+					aForest.getNumBranches()), mPrevK(DBL_MAX), mPrevOmega0(
+					DBL_MAX), mPrevOmega2(DBL_MAX) {
 		// Initialize the dependency set
 		mDependencies.computeDependencies(4, mNoParallel);
 		mDependencies.print("TEST FOR H1 (before optimization)");
@@ -746,7 +752,8 @@ public:
 	///
 	/// @return The maximum Likelihood value
 	///
-	double computeLikelihoodForGradient(const std::vector<double>& aVar, bool aTrace, size_t aGradientVar);
+	double computeLikelihoodForGradient(const std::vector<double>& aVar,
+			bool aTrace, size_t aGradientVar);
 
 	/// Compute the likelihood for the given forest and the given set of parameters.
 	///
@@ -766,7 +773,8 @@ private:
 	///
 	/// @return The object receiving the assignment
 	///
-	MfgBranchSiteModelAltHyp& operator=(const MfgBranchSiteModelAltHyp& /*aObj*/);
+	MfgBranchSiteModelAltHyp& operator=(
+			const MfgBranchSiteModelAltHyp& /*aObj*/);
 
 	/// Combine the sites' various codon classes likelihoods into one log-likelihood value
 	///
@@ -774,20 +782,18 @@ private:
 	///
 	double combineSiteLikelihoods(void);
 
-
 private:
-	CheckpointableTransitionMatrix	mQw0;				///< Q matrix for the omega0 case
-	TransitionMatrix				mQw2;				///< Q matrix for the omega2 case
-	CheckpointableTransitionMatrix	mQ1;				///< Q matrix for the omega1 == 1 case
-	mfgProbabilityMatrixSetH1		mfgmSet;			///< Set of matrices used for the tree visits (multiple foregrounds)
-	mfgProbabilityMatrixSetH1		mfgmSetForGradient;	///< Set of matrices used for the tree visits (multiple foregrounds)
-	double							mPrevK;				///< Previous k value used to compute matrices
-	double							mPrevOmega0;		///< Previous w0 value used to compute matrices
-	double							mPrevOmega2;		///< Previous w2 value used to compute matrices
-	double							mScaleQw0;			///< Scale value for Qw0
-	double							mScaleQw2;			///< Scale value for Qw2
-	double							mScaleQ1;			///< Scale value for Q1
+	CheckpointableTransitionMatrix mQw0;	///< Q matrix for the omega0 case
+	TransitionMatrix mQw2;				///< Q matrix for the omega2 case
+	CheckpointableTransitionMatrix mQ1;	///< Q matrix for the omega1 == 1 case
+	mfgProbabilityMatrixSetH1 mfgmSet;///< Set of matrices used for the tree visits (multiple foregrounds)
+	mfgProbabilityMatrixSetH1 mfgmSetForGradient;///< Set of matrices used for the tree visits (multiple foregrounds)
+	double mPrevK;				///< Previous k value used to compute matrices
+	double mPrevOmega0;		///< Previous w0 value used to compute matrices
+	double mPrevOmega2;		///< Previous w2 value used to compute matrices
+	double mScaleQw0;			///< Scale value for Qw0
+	double mScaleQw2;			///< Scale value for Qw2
+	double mScaleQ1;			///< Scale value for Q1
 };
-
 
 #endif

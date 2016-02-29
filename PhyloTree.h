@@ -1,4 +1,3 @@
-
 #ifndef PHYLOTREE_H
 #define PHYLOTREE_H
 
@@ -17,8 +16,7 @@
 ///	  @date 2010-08-30 (initial version)
 ///	  @version 1.1
 ///
-class PhyloTree
-{
+class PhyloTree {
 protected:
 	/// Constructor.
 	///
@@ -26,7 +24,9 @@ protected:
 	/// - 0: No messages
 	/// - 3: Print the tree structure
 	///
-	explicit PhyloTree(unsigned int aVerboseLevel=0) : mVerboseLevel(aVerboseLevel) {}
+	explicit PhyloTree(unsigned int aVerboseLevel = 0) :
+			mVerboseLevel(aVerboseLevel) {
+	}
 
 	/// Destructor.
 	///
@@ -47,7 +47,8 @@ public:
 	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	///
-	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const =0;
+	virtual void printTreeUnformatted(std::ostream& aOut,
+			TreeNode *aNode = NULL) const =0;
 
 	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the branch number.
 	///
@@ -58,7 +59,8 @@ public:
 	///
 	/// @return The new internal branch id
 	///
-	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0, bool wLeaves=false) const =0;
+	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode = NULL,
+			int aInternalBranch = 0, bool wLeaves = false) const =0;
 
 	/// Return the list of species.
 	///
@@ -70,7 +72,9 @@ public:
 	///
 	/// @return The number of tree branches
 	///
-	size_t getNumBranches(void) const {return mInternalNodes.size()/* omid +mLeavesSpecies.size() end omid */;}
+	size_t getNumBranches(void) const {
+		return mInternalNodes.size()/* omid +mLeavesSpecies.size() end omid */;
+	}
 
 	/// Return the index of the first marked branch.
 	///
@@ -96,7 +100,9 @@ public:
 	///
 	/// @return The node id to the next node
 	///
-	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
+	unsigned int cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
+			size_t aNumSites, CacheAlignedDoubleVector& aProbVectors,
+			const TreeNode* aTreeNode = NULL, unsigned int aNodeId = 0) const;
 
 	/// Extract global data (data that do not depend on the site) from the phylo tree.
 	///
@@ -110,7 +116,11 @@ public:
 	///
 	/// @return The node id to the next node
 
-	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, std::set<int>& aInternalBranches, size_t* aMarkedIntBranch, std::set<int>& aMarkedBranches, const TreeNode* aTreeNode=NULL, unsigned int aNodeId=0) const;
+	unsigned int collectGlobalTreeData(std::vector<std::string>& aNodeNames,
+			std::vector<double>& aBranchLengths,
+			std::set<int>& aInternalBranches, size_t* aMarkedIntBranch,
+			std::set<int>& aMarkedBranches, const TreeNode* aTreeNode = NULL,
+			unsigned int aNodeId = 0) const;
 
 	///	Check if any leaf has an associated branch length equal to zero.
 	///
@@ -118,14 +128,15 @@ public:
 	/// @param[in,out] aOnIntCnt The count of internal branches with length zero (should be zeroed before first call)
 	/// @param[in] aTreeNode The node from which to start checking the tree. If not present starts from the root.
 	///
-	void countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const TreeNode* aTreeNode=NULL) const;
+	void countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt,
+			const TreeNode* aTreeNode = NULL) const;
 
 	/// Verify if the root of the tree is well formed for the analysis.
 	/// Currently it prints the number of branches emanating from the tree root and how many of them are leaves.
 	///
 	/// @exception FastCodeMLFatal Root has only one branch or points only to leaves.
 	///
-	void checkRootBranches(void) ; //const;
+	void checkRootBranches(void); //const;
 
 	/// checks whether a branch is leaf or not (omid).
 	///
@@ -133,8 +144,6 @@ public:
 	///
 	/// @return whether a branch is leaf or not
 	///bool isLeaf(int branchLabel){return std::find(mLeavesSpecies.begin(), mLeavesSpecies.end(), branchLabel) != mLeavesSpecies.end();};
-
-
 
 protected:
 
@@ -150,13 +159,12 @@ protected:
 	///
 	void fillInternalBranches(TreeNode *aNode);
 
-
 protected:
-	mutable TreeNode		mTreeRoot;				///< The root of the phylogenetic tree in memory
-	unsigned int			mVerboseLevel;			///< The verbosity level
-	mutable std::vector<TreeNode *>	mLeavesSpecies;			///< The list of the tree leaves
-	mutable std::vector<TreeNode *> mInternalNodes;			///< The list of the tree internal nodes
-	mutable std::vector<std::string> mSpeciesList;	///< Temporary to securely return the list of species from getSpecies()
+	mutable TreeNode mTreeRoot;	///< The root of the phylogenetic tree in memory
+	unsigned int mVerboseLevel;			///< The verbosity level
+	mutable std::vector<TreeNode *> mLeavesSpecies;	///< The list of the tree leaves
+	mutable std::vector<TreeNode *> mInternalNodes;	///< The list of the tree internal nodes
+	mutable std::vector<std::string> mSpeciesList;///< Temporary to securely return the list of species from getSpecies()
 };
 
 #endif

@@ -1,4 +1,3 @@
-
 #ifndef LAPACK_H
 #define LAPACK_H
 
@@ -131,29 +130,11 @@
 ///			 < 0:  if INFO = -i, the i-th argument had an illegal value
 ///			 > 0:  Internal error
 ///
-extern "C" void dsyevr_(const char *jobz,
-						const char *range,
-						const char *uplo,
-						const int *n,
-						double *a,
-						const int *lda,
-						const double *vl,
-						const double *vu,
-						const int *il,
-						const int *iu,
-						const double *abstol,
-						int *m,
-						double *w,
-						double *z,
-						const int *ldz,
-						int *isuppz,
-						double *work,
-						const int *lwork,
-						int *iwork,
-						const int *liwork,
-						int *info);
-
-
+extern "C" void dsyevr_(const char *jobz, const char *range, const char *uplo,
+		const int *n, double *a, const int *lda, const double *vl,
+		const double *vu, const int *il, const int *iu, const double *abstol,
+		int *m, double *w, double *z, const int *ldz, int *isuppz, double *work,
+		const int *lwork, int *iwork, const int *liwork, int *info);
 
 ///	  DSYEVD computes all eigenvalues and, optionally, eigenvectors of a
 ///	  real symmetric matrix A. If eigenvectors are desired, it uses a
@@ -240,17 +221,9 @@ extern "C" void dsyevr_(const char *jobz,
 ///					lying in rows and columns INFO/(N+1) through
 ///					mod(INFO,N+1).
 ///
-extern "C" void dsyevd_(const char *jobz,
-						const char *uplo,
-						const int *n,
-						double *a,
-						const int *lda,
-						double *w,
-						double *work,
-						const int *lwork,
-						int *iwork,
-						const int *liwork,
-						int *info);
+extern "C" void dsyevd_(const char *jobz, const char *uplo, const int *n,
+		double *a, const int *lda, double *w, double *work, const int *lwork,
+		int *iwork, const int *liwork, int *info);
 
 #endif
 

@@ -1,4 +1,3 @@
-
 #ifndef DAGSCHEDULER_H
 #define DAGSCHEDULER_H
 
@@ -13,16 +12,17 @@
 ///	  @date 2012-05-14 (initial version)
 ///	  @version 1.1
 ///
-class DAGScheduler
-{
+class DAGScheduler {
 public:
 	/// Constructor.
 	///
-	DAGScheduler() {}
+	DAGScheduler() {
+	}
 
 	/// Destructor.
 	///
-	~DAGScheduler() {}
+	~DAGScheduler() {
+	}
 
 	/// Clean everything
 	///
@@ -34,13 +34,14 @@ public:
 	/// @param[in] aDependsOn The object on which aDependant depends
 	/// @param[in] aDependant The object to be computed only when aDependsOn is ready
 	///
-	void loadDependency(unsigned int aCopyId, const void* aDependsOn, const void* aDependant);
+	void loadDependency(unsigned int aCopyId, const void* aDependsOn,
+			const void* aDependant);
 
 	/// Signals dependencies load has finished.
 	///
 	/// @param[in] aNumCodonSets Number of DAG copies (one for each codon classes)
 	///
-	void endLoadDependencies(unsigned int aNumCodonSets=1);
+	void endLoadDependencies(unsigned int aNumCodonSets = 1);
 
 	/// Get next item to process.
 	///
@@ -62,12 +63,11 @@ public:
 	///
 	void dumpDAG(std::ostream& aOut) const;
 
-
 private:
-	std::set<const void*> mNodes;								///< Load the distinct node addresses
-	std::vector<std::pair<const void*, const void*> > mEdges;	///< Load the edges
-	std::map<const void*, int> mRefCounter;						///< Reference counter
-	std::map<const void*, int> mRefCounterSave;					///< Save the reference counter map
+	std::set<const void*> mNodes;		///< Load the distinct node addresses
+	std::vector<std::pair<const void*, const void*> > mEdges;///< Load the edges
+	std::map<const void*, int> mRefCounter;				///< Reference counter
+	std::map<const void*, int> mRefCounterSave;	///< Save the reference counter map
 };
 
 #endif

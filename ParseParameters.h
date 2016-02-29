@@ -1,4 +1,3 @@
-
 #ifndef PARSEPARAMETERS_H
 #define PARSEPARAMETERS_H
 
@@ -13,8 +12,7 @@
 ///	  @date 2012-02-21 (initial version)
 ///	  @version 1.1
 ///
-class ParseParameters
-{
+class ParseParameters {
 public:
 	/// Return a pointer to the singleton instance
 	///
@@ -46,17 +44,17 @@ public:
 	///
 	/// @return The output stream
 	///
-	friend std::ostream& operator<< (std::ostream& aOut, const ParseParameters* aParamsList);
+	friend std::ostream& operator<<(std::ostream& aOut,
+			const ParseParameters* aParamsList);
 
 protected:
 	/// Protected constructor
 	///
 	ParseParameters();
 
-
 private:
-	static ParseParameters*			mInstance;					///< Pointer to the singleton instance
-	std::map<std::string, double>	mDictionary;				///< Dictionary holding the pairs (parameter name, value)
+	static ParseParameters* mInstance;	///< Pointer to the singleton instance
+	std::map<std::string, double> mDictionary;///< Dictionary holding the pairs (parameter name, value)
 };
 
 #endif

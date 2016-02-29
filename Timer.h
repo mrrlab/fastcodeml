@@ -1,4 +1,3 @@
-
 #ifndef TIMER_H
 #define TIMER_H
 
@@ -72,12 +71,12 @@ public:
 
 private:
 #ifndef USE_WIN_MSEC_TIMER
-	time_t			mStartTime;	///< The start time
+	time_t mStartTime;	///< The start time
 #else
-	LARGE_INTEGER	mFreq;		///< The timer frequency
-	LARGE_INTEGER	mStartTime;	///< The start time
+	LARGE_INTEGER mFreq;		///< The timer frequency
+	LARGE_INTEGER mStartTime;///< The start time
 #endif
-	time_t			mDelta;		///< The elapsed time in milliseconds
+	time_t mDelta;		///< The elapsed time in milliseconds
 };
 
 #else
@@ -90,17 +89,18 @@ private:
 ///		@date 2010-08-31 (initial version)
 ///		@version 1.1
 ///
-class Timer
-{
+class Timer {
 public:
 	/// Constructor
 	///
-	Timer() : mDelta(0) {start();}
+	Timer() :
+			mDelta(0) {
+		start();
+	}
 
 	/// Start the timer
 	///
-	void start(void)
-	{
+	void start(void) {
 		gettimeofday(&mStartTime, NULL);
 	}
 
@@ -108,13 +108,12 @@ public:
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	time_t stop(void)
-	{
+	time_t stop(void) {
 		struct timeval end_time;
 		gettimeofday(&end_time, NULL);
 
-		mDelta	= end_time.tv_sec*1000000L+end_time.tv_usec;
-		mDelta -= mStartTime.tv_sec*1000000L+mStartTime.tv_usec;
+		mDelta = end_time.tv_sec * 1000000L + end_time.tv_usec;
+		mDelta -= mStartTime.tv_sec * 1000000L + mStartTime.tv_usec;
 		mDelta /= 1000L;
 
 		return mDelta;
@@ -124,14 +123,13 @@ public:
 	///
 	/// @return The elapsed time in milliseconds
 	///
-	time_t get(void) const
-	{
+	time_t get(void) const {
 		return mDelta;
 	}
 
 private:
-	struct timeval	mStartTime;	///< The start time
-	time_t			mDelta;		///< The elapsed time in milliseconds
+	struct timeval mStartTime;	///< The start time
+	time_t mDelta;		///< The elapsed time in milliseconds
 };
 
 #endif

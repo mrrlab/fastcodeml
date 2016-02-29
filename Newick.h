@@ -1,4 +1,3 @@
-
 #ifndef NEWICK_H
 #define NEWICK_H
 
@@ -24,8 +23,7 @@
 ///		@date 2012-02-15 (initial version)
 ///		@version 1.1
 ///
-class Newick : public PhyloTree
-{
+class Newick: public PhyloTree {
 public:
 	/// Constructor.
 	///
@@ -33,7 +31,9 @@ public:
 	/// - 0: No messages
 	/// - 3: Print the tree structure
 	///
-	explicit Newick(unsigned int aVerboseLevel=0) : PhyloTree(aVerboseLevel) {}
+	explicit Newick(unsigned int aVerboseLevel = 0) :
+			PhyloTree(aVerboseLevel) {
+	}
 
 	/// Load a phylo tree definition from a Newick formatted file.
 	///
@@ -48,7 +48,8 @@ public:
 	/// @param[in] aOut Output stream
 	/// @param[in] aNode The node from which to start. If null starts from the root.
 	///
-	virtual void printTreeUnformatted(std::ostream& aOut, TreeNode *aNode=NULL) const;
+	virtual void printTreeUnformatted(std::ostream& aOut,
+			TreeNode *aNode = NULL) const;
 
 	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the branch numbers.
 	///
@@ -59,7 +60,8 @@ public:
 	///
 	/// @return The new branch id
 	///
-	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0, bool wLeaves=false) const;
+	virtual int printTreeAnnotated(std::ostream& aOut, TreeNode *aNode = NULL,
+			int aInternalBranch = 0, bool wLeaves = false) const;
 
 	/// Print the phylogenetic tree completed with all the info loaded in the same format as read in and annotated with the branch numbers.
 	///
@@ -71,7 +73,9 @@ public:
 	///
 	/// @return The new branch id
 	///
-	virtual int printTreeAnnotatedWithEstLens(std::ostream& aOut, TreeNode *aNode=NULL, int aInternalBranch=0, bool wLeaves=false, std::vector<double>* mVar=NULL) const;
+	virtual int printTreeAnnotatedWithEstLens(std::ostream& aOut,
+			TreeNode *aNode = NULL, int aInternalBranch = 0, bool wLeaves =
+					false, std::vector<double>* mVar = NULL) const;
 
 private:
 	/// Load a phylo tree definition from a Newick formatted string.
@@ -93,7 +97,8 @@ private:
 	///
 	/// @exception FastCodeMLFatal For parsing errors
 	///
-	void evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator, TreeNode *aNode);
+	void evaluateTreeNode(ParseTreeIteratorType const& aTreeIterator,
+			TreeNode *aNode);
 
 	/// Print an indented form of the parse tree.
 	///
@@ -101,13 +106,12 @@ private:
 	/// @param[in] aIndent Indent level (each level increases by aIndentIncrement)
 	/// @param[in] aIndentIncrement Indent level increment at each level
 	///
-	void printTree(ParseTreeIteratorType const& aTreeIterator, unsigned int aIndent=0, unsigned int aIndentIncrement=2);
-
+	void printTree(ParseTreeIteratorType const& aTreeIterator,
+			unsigned int aIndent = 0, unsigned int aIndentIncrement = 2);
 
 private:
-	std::string	mParsedPortion;	///< In case of error part of the string successfully parsed else it is empty.
+	std::string mParsedPortion;	///< In case of error part of the string successfully parsed else it is empty.
 };
 
 #endif
-
 

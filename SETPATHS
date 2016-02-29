@@ -3,12 +3,12 @@
 #Please set these paths according to your system!
 
 # 1) Local linux
-export BLAS_LIB_DIR="/home/userid/lib" #Path to BLAS library
-export LAPACK_LIB_DIR="/home/userid/lib" #Path to LAPACK library
-export NLOPT_LIB_DIR="/home/userid/lib/nlopt/lib" #Path to NLopt
-export NLOPT_INCLUDE_DIR="/home/userid/lib/nlopt/include"
-export MATH_LIB_NAMES="blas;lapack;lapack;blas;gfortranbegin;gfortran" #Change if your BLAS library is not libblas.a or if your LAPACK library is not liblapack.a. gfortranbegin/gfortran needed for GCC gfortran.
-export CXX="/usr/bin/mpicxx.mpich2" #Set this if using MPI
+  export BLAS_LIB_DIR="/home/userid/lib" #Path to BLAS library
+  export LAPACK_LIB_DIR="/home/userid/lib" #Path to LAPACK library
+  export NLOPT_LIB_DIR="/home/userid/lib/nlopt/lib" #Path to NLopt
+  export NLOPT_INCLUDE_DIR="/home/userid/lib/nlopt/include"
+  export MATH_LIB_NAMES="blas;lapack;lapack;blas;gfortranbegin;gfortran" #Change if your BLAS library is not libblas.a or if your LAPACK library is not liblapack.a. gfortranbegin/gfortran needed for GCC gfortran.
+  export CXX="/usr/bin/mpicxx.mpich2" #Set this if using MPI
 
 # 2) BG /Q
   export BLAS_LIB_DIR="/bgsys/local/lib64;/opt/ibmcmp/xlf/bg/14.1/lib64"
@@ -24,9 +24,9 @@ export CXX="/usr/bin/mpicxx.mpich2" #Set this if using MPI
 
 # 3) Vital-IT
   export BLAS_LIB_DIR="/software/Utility/OpenBLAS/0.2.5/lib"
-  export LAPACK_LIB_DIR="/software/Utility/OpenBLAS/0.2.5/include"
-  export NLOPT_LIB_DIR="/software/Utility/nlopt/2.3/lib"
-  export NLOPT_INCLUDE_DIR="/software/Utility/nlopt/2.3/include"
+  export LAPACK_LIB_DIR="/software/Utility/OpenBLAS/0.2.5/lib"
+  export NLOPT_INCLUDE_DIR="/software/Development/Libraries/nlopt/2.4.2/include"
+  export NLOPT_LIB_DIR="/software/Development/Libraries/nlopt/2.4.2/lib64"
   export MATH_LIB_NAMES="openblas;lapack;gfortranbegin;gfortran"
   export BOOST_ROOT="/software/lib64/"
   export CXX="/home/kali/lib/mpi/bin/mpicxx"

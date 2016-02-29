@@ -1,4 +1,3 @@
-
 #ifndef FORESTEXPORT_H
 #define FORESTEXPORT_H
 
@@ -13,21 +12,22 @@ class Forest;
 ///	 @date 2012-02-13 (initial version)
 ///	 @version 1.1
 ///
-class ForestExport
-{
+class ForestExport {
 public:
 	/// Constructor
 	///
 	/// @param[in] aForest The forest to be exported
 	///
-	explicit ForestExport(const Forest& aForest) : mForest(aForest) {}
+	explicit ForestExport(const Forest& aForest) :
+			mForest(aForest) {
+	}
 
 	/// Export the forest in GML format
 	///
 	/// @param[in] aFilename The filename to be written
 	/// @param[in] aCounter Value to substitute \%d or \@d in filename (it is a printf format)
 	///
-	void exportForest(const char* aFilename, size_t aCounter=0) const;
+	void exportForest(const char* aFilename, size_t aCounter = 0) const;
 
 private:
 	/// Walker for the exporter
@@ -39,10 +39,10 @@ private:
 	/// @param[out] aLength Resulting branch lengths to label branches in exported tree
 	///
 	void exportForestWalker(const ForestNode* aNode,
-							const std::vector<double>& aBranchLengths,
-							std::vector< std::pair<int, int> >& aNodeFrom,
-							std::vector< std::pair<int, int> >& aNodeTo,
-							std::vector<double>& aLength) const;
+			const std::vector<double>& aBranchLengths,
+			std::vector<std::pair<int, int> >& aNodeFrom,
+			std::vector<std::pair<int, int> >& aNodeTo,
+			std::vector<double>& aLength) const;
 
 	/// Disabled assignment operator to avoid warnings on Windows.
 	///
@@ -53,7 +53,6 @@ private:
 	/// @return The object receiving the assignment
 	///
 	ForestExport& operator=(const ForestExport& /*aObj*/);
-
 
 private:
 	const Forest& mForest;	///< The Forest to be exported

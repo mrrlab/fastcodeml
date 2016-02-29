@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <iomanip>
 #include <set>
@@ -24,42 +23,39 @@
 #endif
 #endif
 
-void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aNoParallel)
-{
-	size_t	j;
+void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets,
+		bool aNoParallel) {
+	size_t j;
 
 	// Save for the optimization phase
 	mNoParallel = aNoParallel;
 
 	// Take values from forest
 	size_t num_sites = mForest.getNumSites();
-	std::vector< std::vector<unsigned int> > tree_dependencies = mForest.getTreeDependencies();
+	std::vector<std::vector<unsigned int> > tree_dependencies =
+			mForest.getTreeDependencies();
 
 	// Collect the class dependencies
-	std::vector< std::vector<unsigned int> > tree_groups_dependencies;
+	std::vector<std::vector<unsigned int> > tree_groups_dependencies;
 
 	// If no dependencies
-	if(aNoParallel)
-	{
+	if (aNoParallel) {
 		std::vector<unsigned int> v(num_sites);
 
-		for(size_t k=0; k < num_sites; ++k) v[k] = static_cast<unsigned int>(num_sites-k-1); // Remember: prior (could) point to subsequent
+		for (size_t k = 0; k < num_sites; ++k)
+			v[k] = static_cast<unsigned int>(num_sites - k - 1); // Remember: prior (could) point to subsequent
 
 		tree_groups_dependencies.push_back(v);
-	}
-	else
-	{
+	} else {
 		// Prepare the search of dependencies
-		boost::dynamic_bitset<> done(num_sites);	// The sites that has dependencies satisfied in the previous level
-		boost::dynamic_bitset<> prev;				// Dependencies till the previous level
+		boost::dynamic_bitset<> done(num_sites);// The sites that has dependencies satisfied in the previous level
+		boost::dynamic_bitset<> prev;	// Dependencies till the previous level
 		std::vector<unsigned int> v;				// Temporary list of sites
 
 		// Mark trees without dependencies
 		// tree_dependencies[tj] can be done after: t1 t2 t3
-		for(size_t site=0; site < num_sites; ++site)
-		{
-			if(tree_dependencies[site].empty())
-			{
+		for (size_t site = 0; site < num_sites; ++site) {
+			if (tree_dependencies[site].empty()) {
 				done.set(site);
 				v.push_back(static_cast<unsigned int>(site));
 			}
@@ -70,26 +66,29 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 		prev = done;
 
 		// Start to find trees with one, two, ... dependencies
-		for(unsigned int numdep=1;; ++numdep)
-		{
+		for (unsigned int numdep = 1;; ++numdep) {
 			v.clear();
 			bool all_done = true;
-			for(size_t site=0; site < num_sites; ++site)
-			{
+			for (size_t site = 0; site < num_sites; ++site) {
 				// If tree i has been already processed skip it
-				if(prev[site]) continue;
+				if (prev[site])
+					continue;
 				all_done = false;
 
 				size_t nc = tree_dependencies[site].size();
 				bool all = true;
-				for(j=0; j < nc; ++j) if(!prev[tree_dependencies[site][j]]) {all = false; break;}
-				if(all)
-				{
+				for (j = 0; j < nc; ++j)
+					if (!prev[tree_dependencies[site][j]]) {
+						all = false;
+						break;
+					}
+				if (all) {
 					v.push_back(static_cast<unsigned int>(site));
 					done.set(site);
 				}
 			}
-			if(all_done) break;
+			if (all_done)
+				break;
 			tree_groups_dependencies.push_back(v);
 			prev = done;
 		}
@@ -103,27 +102,23 @@ void TreeAndSetsDependencies::computeDependencies(unsigned int aNumSets, bool aN
 
 	// Transform the list multiplying the entries by the number of codon classes
 	mDependenciesClassesAndTrees.clear();
-	for(size_t dep_class=0; dep_class < nc; ++dep_class)
-	{
+	for (size_t dep_class = 0; dep_class < nc; ++dep_class) {
 		// Prepare the dependency classe
 		one_class.clear();
 
 		// Number of trees in the class
 		const size_t nt = tree_groups_dependencies[dep_class].size();
-		for(unsigned int set=0; set < aNumSets; ++set)
-		{
-			for(j=0; j < nt; ++j)
-			{
-				one_class.push_back(makePair(tree_groups_dependencies[dep_class][j], set));
+		for (unsigned int set = 0; set < aNumSets; ++set) {
+			for (j = 0; j < nt; ++j) {
+				one_class.push_back(
+						makePair(tree_groups_dependencies[dep_class][j], set));
 			}
 		}
 		mDependenciesClassesAndTrees.push_back(one_class);
 	}
 }
 
-
-unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
-{
+unsigned int TreeAndSetsDependencies::measureRelativeEffort(void) {
 #ifdef USE_LAPACK
 	// Number of measurement iterations
 	static const int NR = 10000;
@@ -164,9 +159,7 @@ unsigned int TreeAndSetsDependencies::measureRelativeEffort(void)
 	return effort_ratio;
 }
 
-
-void TreeAndSetsDependencies::optimizeDependencies(void)
-{
+void TreeAndSetsDependencies::optimizeDependencies(void) {
 #if 0
 	unsigned int relative_effort = measureRelativeEffort();
 
@@ -179,20 +172,22 @@ void TreeAndSetsDependencies::optimizeDependencies(void)
 	balanceDependenciesClassesAndTrees(true);
 }
 
-void TreeAndSetsDependencies::print(const char* aTitle) const
-{
+void TreeAndSetsDependencies::print(const char* aTitle) const {
 	// Do nothing if the debug level is insufficient
-	if(mVerbose < VERBOSE_MORE_DEBUG) return;
+	if (mVerbose < VERBOSE_MORE_DEBUG)
+		return;
 
 	// If present print the title
 	std::cout << std::endl;
-	if(aTitle) std::cout << aTitle << std::endl;
+	if (aTitle)
+		std::cout << aTitle << std::endl;
 
 	// Print the number of executions for each class
 	const size_t num_classes = mDependenciesClassesAndTrees.size();
-	for(size_t tree_class=0; tree_class < num_classes; ++tree_class)
-	{
-		std::cout << "Trees in class " << std::setw(3) << tree_class << ": " << std::setw(5) << mDependenciesClassesAndTrees[tree_class].size() << std::endl;
+	for (size_t tree_class = 0; tree_class < num_classes; ++tree_class) {
+		std::cout << "Trees in class " << std::setw(3) << tree_class << ": "
+				<< std::setw(5)
+				<< mDependenciesClassesAndTrees[tree_class].size() << std::endl;
 	}
 #if 0
 	// Compute the max effort of each class
@@ -213,8 +208,7 @@ void TreeAndSetsDependencies::print(const char* aTitle) const
 #endif
 }
 
-bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy)
-{
+bool TreeAndSetsDependencies::balanceDependenciesClassesAndTrees(bool aGreedy) {
 	// Do nothing if no dependencies or no parallel execution
 #ifndef _OPENMP
 	return false;

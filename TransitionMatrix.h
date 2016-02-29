@@ -1,4 +1,3 @@
-
 #ifndef TRANSITION_MATRIX_H
 #define TRANSITION_MATRIX_H
 
@@ -24,18 +23,16 @@
 ///		@date 2011-02-23 (initial version)
 ///		@version 1.1
 ///
-class TransitionMatrix
-{
+class TransitionMatrix {
 public:
 	/// Constructor.
 	///
-	TransitionMatrix()
-	{
+	TransitionMatrix() {
 		// Initialize Q matrix to all zeroes (so only non-zero values are written)
 #ifdef USE_LAPACK
 		memset(mS, 0, N*N*sizeof(double));
 #else
-		memset(mQ, 0, N*N*sizeof(double));
+		memset(mQ, 0, N * N * sizeof(double));
 #endif
 		// Initialize the codons' frequencies
 		CodonFrequencies* cf = CodonFrequencies::getInstance();
@@ -79,8 +76,7 @@ public:
 	/// @param[out] aOut The matrix where the result should be stored (size: N*N) under USE_LAPACK it is stored transposed
 	/// @param[in] aT The time to use in the computation (it is always > 0)
 	///
-	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const
-	{
+	void computeFullTransitionMatrix(double* RESTRICT aOut, double aT) const {
 #ifdef FORCE_IDENTITY_MATRIX
 		// if time is zero or almost zero, the transition matrix become an identity matrix
 		if(aT < 1e-100)
@@ -147,36 +143,30 @@ public:
 #else
 		// The first iteration of the loop (k == 0) is split out to initialize aOut
 		double *p = aOut;
-		double expt = exp(aT * mD[N-1]); // Remember, the eigenvalues are stored in reverse order
-		for(int i=0; i < N; ++i)
-		{
-			const double uexpt = mU[i*N] * expt;
+		double expt = exp(aT * mD[N - 1]); // Remember, the eigenvalues are stored in reverse order
+		for (int i = 0; i < N; ++i) {
+			const double uexpt = mU[i * N] * expt;
 
-			for(int j=0; j < N; ++j)
-			{
+			for (int j = 0; j < N; ++j) {
 				*p++ = uexpt * mV[j];
 			}
 		}
 
 		// The subsequent iterations are computed normally
-		for(int k = 1; k < N; ++k)
-		{
+		for (int k = 1; k < N; ++k) {
 			p = aOut;
-			expt = exp(aT * mD[N-1-k]); // Remember, the eigenvalues are stored in reverse order
+			expt = exp(aT * mD[N - 1 - k]); // Remember, the eigenvalues are stored in reverse order
 
-			for(int i=0; i < N; ++i)
-			{
-				const double uexpt = mU[i*N + k] * expt;
+			for (int i = 0; i < N; ++i) {
+				const double uexpt = mU[i * N + k] * expt;
 
-				for(int j=0; j < N; ++j)
-				{
-					*p++ += uexpt * mV[k*N + j];
+				for (int j = 0; j < N; ++j) {
+					*p++ += uexpt * mV[k * N + j];
 				}
 			}
 		}
 #endif
 	}
-
 
 private:
 	/// Compute the eigendecomposition
@@ -190,38 +180,37 @@ private:
 	/// @exception FastCodeMLMemoryError Error sizing workareas
 	/// @exception std::range_error No convergence in dsyevr
 	///
-	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR, double* RESTRICT aWork);
-
+	void eigenRealSymm(double* RESTRICT aU, int aDim, double* RESTRICT aR,
+			double* RESTRICT aWork);
 
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable: 4324) // Padding added due to alignment request
+#pragma warning(push)
+#pragma warning(disable: 4324) // Padding added due to alignment request
 #endif
 
 protected:
 	// Order suggested by icc to improve locality
 	// 'mV, mU, mSqrtCodonFreq, mNumGoodFreq, mQ, mD, mCodonFreq, mGoodFreq'
-	double ALIGN64	mV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
-	double ALIGN64	mU[N*N];		///< The left adjusted eigenvectors matrix
+	double ALIGN64 mV[N * N];///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
+	double ALIGN64 mU[N * N];		///< The left adjusted eigenvectors matrix
 #ifdef FORCE_IDENTITY_MATRIX
-	double ALIGN64	mIdentity[N*N];	///< Pre-filled identify matix
+	double ALIGN64 mIdentity[N*N];	///< Pre-filled identify matix
 #endif
-	const double*	mSqrtCodonFreq;	///< Square root of experimental codon frequencies
-	int				mNumGoodFreq;	///< Number of codons whose frequency is not zero (must be int)
+	const double* mSqrtCodonFreq;///< Square root of experimental codon frequencies
+	int mNumGoodFreq;///< Number of codons whose frequency is not zero (must be int)
 #ifndef USE_LAPACK
-	double ALIGN64	mQ[N*N];		///< The Q matrix
+	double ALIGN64 mQ[N * N];		///< The Q matrix
 #else
-	double ALIGN64	mS[N*N];		///< The S matrix (remember Q = S*pi)
+	double ALIGN64 mS[N*N];		///< The S matrix (remember Q = S*pi)
 #endif
-	double ALIGN64	mD[N];			///< The matrix eigenvalues stored in reverse order
-	const double*	mCodonFreq;		///< Experimental codon frequencies
-	std::bitset<N>	mGoodFreq;		///< True if the corresponding codon frequency is not small
+	double ALIGN64 mD[N];	///< The matrix eigenvalues stored in reverse order
+	const double* mCodonFreq;		///< Experimental codon frequencies
+	std::bitset<N> mGoodFreq;///< True if the corresponding codon frequency is not small
 
 #ifdef _MSC_VER
-	#pragma warning(pop)
+#pragma warning(pop)
 #endif
 };
-
 
 /// The transition matrix that can be saved ad restored afterwards.
 ///
@@ -229,12 +218,13 @@ protected:
 ///		@date 2012-09-07 (initial version)
 ///		@version 1.1
 ///
-class CheckpointableTransitionMatrix : public TransitionMatrix
-{
+class CheckpointableTransitionMatrix: public TransitionMatrix {
 public:
 	/// Constructor.
 	///
-	CheckpointableTransitionMatrix() : TransitionMatrix(), mSavedScale(1.) {}
+	CheckpointableTransitionMatrix() :
+			TransitionMatrix(), mSavedScale(1.) {
+	}
 
 	/// Save a checkpoint of the matrices
 	///
@@ -250,26 +240,25 @@ public:
 	double restoreCheckpoint(void);
 
 #ifdef _MSC_VER
-	#pragma warning(push)
-	#pragma warning(disable: 4324) // Padding added due to alignment request
+#pragma warning(push)
+#pragma warning(disable: 4324) // Padding added due to alignment request
 #endif
 
 private:
-	double			mSavedScale;		///< Saved matrix scale value
-	double ALIGN64	mSavedV[N*N];		///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
-	double ALIGN64	mSavedU[N*N];		///< The left adjusted eigenvectors matrix
+	double mSavedScale;		///< Saved matrix scale value
+	double ALIGN64 mSavedV[N * N];///< The right adjusted eigenvectors matrix (with the new method instead contains pi^1/2*R where R are the eigenvectors)
+	double ALIGN64 mSavedU[N * N];	///< The left adjusted eigenvectors matrix
 #ifndef USE_LAPACK
-	double ALIGN64	mSavedQ[N*N];		///< The Q matrix
+	double ALIGN64 mSavedQ[N * N];		///< The Q matrix
 #else
-	double ALIGN64	mSavedS[N*N];		///< The S matrix (remember Q = S*pi)
+	double ALIGN64 mSavedS[N*N];		///< The S matrix (remember Q = S*pi)
 #endif
-	double ALIGN64	mSavedD[N];			///< The matrix eigenvalues stored in reverse order
+	double ALIGN64 mSavedD[N];///< The matrix eigenvalues stored in reverse order
 
 #ifdef _MSC_VER
-	#pragma warning(pop)
+#pragma warning(pop)
 #endif
 };
-
 
 #endif
 

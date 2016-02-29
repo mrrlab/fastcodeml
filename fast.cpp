@@ -56,10 +56,9 @@ const char* version = "1.2.0";
 
 int main(int aRgc, char **aRgv) {
 
-	Timer timer_omid;
+	Timer timer_app;
 
-	timer_omid.start();
-
+	timer_app.start();
 
 	try {
 
@@ -115,7 +114,7 @@ int main(int aRgc, char **aRgv) {
 		if(!hlc.isMaster()) cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
-//	  std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
+		//	  std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML V"<<version<<std::endl<<"------------------"<<std::endl;
 		// Write out command line parameters (if not quiet i.e. if verbose level > 0)
 		if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {
 
@@ -438,12 +437,10 @@ int main(int aRgc, char **aRgv) {
 		//	std :: cout << std::endl << " internal : ";
 		//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
 		//	std :: cout << std::endl;
-//		std :: cout << std::endl << " leaves : ";
-//		tree.printTreeAnnotated(std::cout, NULL, 0, true);
-//		std :: cout << std::endl;
-
+		//		std :: cout << std::endl << " leaves : ";
+		//		tree.printTreeAnnotated(std::cout, NULL, 0, true);
+		//		std :: cout << std::endl;
 		// end omid
-
 		// Start timing parallel part
 		if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
 			timer.start();
@@ -592,8 +589,10 @@ int main(int aRgc, char **aRgv) {
 			// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
 			if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX
 					&& BranchSiteModel::performLRT(lnl0, lnl1)) {
-				if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;
-
+				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+					std::cout << std::endl
+							<< "LRT is significant. Computing sites under positive selection ... "
+							<< std::endl;
 
 				// Get the scale values from the latest optimized h1.
 				std::vector<double> scales(2);
@@ -610,30 +609,30 @@ int main(int aRgc, char **aRgv) {
 				// Get the sites under positive selection for printing in the results file (if defined)
 
 				/*if(output_results.isWriteResultsEnabled())
-				{
-				std::vector<unsigned int> positive_sel_sites;
-				std::vector<double> positive_sel_sites_prob;
-				beb.extractPositiveSelSites(positive_sel_sites,
-						positive_sel_sites_prob);
+				 {
+				 std::vector<unsigned int> positive_sel_sites;
+				 std::vector<double> positive_sel_sites_prob;
+				 beb.extractPositiveSelSites(positive_sel_sites,
+				 positive_sel_sites_prob);
 
-				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
-					std::cout << std::endl
-							<< "Positively selected sites and their probabilities : ";
-					std::cout << std::endl;
-					for (std::vector<unsigned int>::iterator it =
-							positive_sel_sites.begin();
-							it != positive_sel_sites.end(); ++it)
-						std::cout << " " << *it << ",";
-					std::cout << std::endl;
-					for (std::vector<double>::iterator it =
-							positive_sel_sites_prob.begin();
-							it != positive_sel_sites_prob.end(); ++it)
-						std::cout << " " << *it << ",";
-					std::cout << std::endl;
-				}
+				 if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+				 std::cout << std::endl
+				 << "Positively selected sites and their probabilities : ";
+				 std::cout << std::endl;
+				 for (std::vector<unsigned int>::iterator it =
+				 positive_sel_sites.begin();
+				 it != positive_sel_sites.end(); ++it)
+				 std::cout << " " << *it << ",";
+				 std::cout << std::endl;
+				 for (std::vector<double>::iterator it =
+				 positive_sel_sites_prob.begin();
+				 it != positive_sel_sites_prob.end(); ++it)
+				 std::cout << " " << *it << ",";
+				 std::cout << std::endl;
+				 }
 
-				output_results.savePositiveSelSites(fg_set, positive_sel_sites, positive_sel_sites_prob);
-				}*/
+				 output_results.savePositiveSelSites(fg_set, positive_sel_sites, positive_sel_sites_prob);
+				 }*/
 			}
 
 			// omid
@@ -684,12 +683,13 @@ int main(int aRgc, char **aRgv) {
 			 lnl1 = h1(fg_set);
 			 std::cout << "lnl1 (multiple fg) = " << lnl1 << std::endl;*/
 
-			timer_omid.stop();
-			std::cout << "Time used: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+			timer_app.stop();
+			std::cout << std::endl << "Time used: " << timer_app.get() / 60000 << ":"
+					<< (timer_app.get() / 1000) % 60 << std::endl;
 			std::cout << "Cores used: " << num_threads << std::endl;
 			//std::cout << std::endl << "Total time for ncore: "
-				//				<< std::setw(2) << num_threads << " time: " << timer_omid.get()
-					//			<< std::endl;}
+			//				<< std::setw(2) << num_threads << " time: " << timer_omid.get()
+			//			<< std::endl;}
 
 			return 0;
 		}
@@ -710,13 +710,13 @@ int main(int aRgc, char **aRgv) {
 
 		// omid
 
-//	std :: cout << std::endl << " internal : ";
-//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
-//	std :: cout << std::endl;
-//
-//	std :: cout << std::endl << " leaves : ";
-//	tree.printTreeAnnotated(std::cout, NULL, 0, true);
-//	std :: cout << std::endl;
+		//	std :: cout << std::endl << " internal : ";
+		//	tree.printTreeAnnotated(std::cout, NULL, 0, false);
+		//	std :: cout << std::endl;
+		//
+		//	std :: cout << std::endl << " leaves : ";
+		//	tree.printTreeAnnotated(std::cout, NULL, 0, true);
+		//	std :: cout << std::endl;
 
 		// branch_start=branch_end=20;
 		//std :: cout<< "all" << tree.mInternalNodes.size() << std::endl;
@@ -861,7 +861,10 @@ int main(int aRgc, char **aRgv) {
 				// If the two hypothesis are computed, H0 has not been stopped and the run passes the LRT, then compute the BEB
 				if (cmd.mComputeHypothesis > 1 && lnl0 < DBL_MAX
 						&& BranchSiteModel::performLRT(lnl0, lnl1)) {
-					if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout << std::endl << "LRT is significant. Computing sites under positive selection ... " << std::endl ;
+					if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
+						std::cout << std::endl
+								<< "LRT is significant. Computing sites under positive selection ... "
+								<< std::endl;
 
 					// Get the scale values from the latest optimized h1.
 					std::vector<double> scales(2);
@@ -877,7 +880,7 @@ int main(int aRgc, char **aRgv) {
 					// Get the sites under positive selection for printing in the results file (if defined)
 					if (output_results.isWriteResultsEnabled()) {
 						std::vector<unsigned int> positive_sel_sites;
-					   	std::vector<double> positive_sel_sites_prob;
+						std::vector<double> positive_sel_sites_prob;
 						beb.extractPositiveSelSites(positive_sel_sites,
 								positive_sel_sites_prob);
 						output_results.savePositiveSelSites(fg_branch,
@@ -917,8 +920,9 @@ int main(int aRgc, char **aRgv) {
 					<< std::endl;
 		}
 
-		timer_omid.stop();
-		std::cout << "Time used: " << timer_omid.get()/60000<< ":" << (timer_omid.get()/1000) % 60 << std::endl;
+		timer_app.stop();
+		std::cout << std::endl << "Time used: " << timer_app.get() / 60000 << ":"
+				<< (timer_app.get() / 1000) % 60 << std::endl;
 		std::cout << "Cores used: " << num_threads << std::endl;
 
 		// Output the results
@@ -944,10 +948,6 @@ int main(int aRgc, char **aRgv) {
 				<< std::endl;
 		return 1;
 	}
-
-
-
-
 
 	return 0;
 }

@@ -1,4 +1,3 @@
-
 #ifndef PHYLIP_H
 #define PHYLIP_H
 
@@ -13,14 +12,15 @@
 ///		@version 1.1
 ///
 ///
-class Phylip : public Genes
-{
+class Phylip: public Genes {
 public:
 	/// Constructor
 	///
 	/// @param[in] aVerboseLevel The verbosity level
 	///
-	explicit Phylip(unsigned int aVerboseLevel=0) : Genes(aVerboseLevel) {}
+	explicit Phylip(unsigned int aVerboseLevel = 0) :
+			Genes(aVerboseLevel) {
+	}
 
 private:
 	/// Load the gene file in Phylip format.
@@ -31,7 +31,9 @@ private:
 	///
 	/// @exception FastCodeMLFatal On various error conditions
 	///
-	virtual void loadData(const char* aFilename, std::vector<std::string>& aSpecies, std::vector<std::string>& aSequences);
+	virtual void loadData(const char* aFilename,
+			std::vector<std::string>& aSpecies,
+			std::vector<std::string>& aSequences);
 };
 
 #endif

@@ -1,20 +1,19 @@
-
 #include <iostream>
 #include <cstring>
 #include <iomanip>
 #include "TreeNode.h"
 
-
-void TreeNode::printFormatted(int aIndent) const
-{
+void TreeNode::printFormatted(int aIndent) const {
 	// Indent the current entry
-	for(int k=0; k < aIndent; ++k) std::cout << ' ';
+	for (int k = 0; k < aIndent; ++k)
+		std::cout << ' ';
 
 	// Print the node info
-	if(mNodeMark.empty())
+	if (mNodeMark.empty())
 		std::cout << '<' << mNodeName << "> " << mBranchLength;
 	else
-		std::cout << '<' << mNodeName << ">#" << mNodeMark << ' ' << mBranchLength;
+		std::cout << '<' << mNodeName << ">#" << mNodeMark << ' '
+				<< mBranchLength;
 
 	// End line
 	std::cout << std::endl;
@@ -22,41 +21,39 @@ void TreeNode::printFormatted(int aIndent) const
 	// Print the children (indented by 3 spaces)
 	std::vector<TreeNode *>::const_iterator in(mChildrenList.begin());
 	const std::vector<TreeNode *>::const_iterator end(mChildrenList.end());
-	for(; in != end; ++in) (*in)->printFormatted(aIndent+3);
+	for (; in != end; ++in)
+		(*in)->printFormatted(aIndent + 3);
 }
 
-
-void TreeNode::printNode(void) const
-{
+void TreeNode::printNode(void) const {
 	// Print the node info
 	std::cout << mNodeName;
-	if(!mNodeMark.empty()) std::cout << '#' << mNodeMark;
-	std::cout  << std::setprecision(6) << ":" << mBranchLength;
+	if (!mNodeMark.empty())
+		std::cout << '#' << mNodeMark;
+	std::cout << std::setprecision(6) << ":" << mBranchLength;
 }
 
-void TreeNode::printNodeWoutLen(void) const
-{
+void TreeNode::printNodeWoutLen(void) const {
 	// Print the node info
 	std::cout << mNodeName;
-	if(!mNodeMark.empty()) std::cout << '#' << mNodeMark;
+	if (!mNodeMark.empty())
+		std::cout << '#' << mNodeMark;
 	//std::cout  << std::setprecision(6) << ":" << mBranchLength;
 }
 
-
-void TreeNode::clearNode(void)
-{
+void TreeNode::clearNode(void) {
 	// Recursively remove the nodes
-	if(!mChildrenList.empty())
-	{
+	if (!mChildrenList.empty()) {
 		std::vector<TreeNode *>::iterator in(mChildrenList.begin());
 		const std::vector<TreeNode *>::iterator end(mChildrenList.end());
-		for(; in != end; ++in) (*in)->clearNode();
-		for(in=mChildrenList.begin(); in != end; ++in) delete (*in);
+		for (; in != end; ++in)
+			(*in)->clearNode();
+		for (in = mChildrenList.begin(); in != end; ++in)
+			delete (*in);
 	}
 
 	// Special case for the root node
-	if(!mParent)
-	{
+	if (!mParent) {
 		mChildrenList.clear();
 	}
 }

@@ -23,8 +23,7 @@ static int posix_memalign(void **memptr, size_t alignment, size_t size)
 #endif
 
 // Alignment must be power of 2 (1,2,4,8,16...)
-void* alignedMalloc(size_t aSize, size_t aAlignment)
-{
+void* alignedMalloc(size_t aSize, size_t aAlignment) {
 #ifdef _MSC_VER
 #if 0
 	--aAlignment;
@@ -38,14 +37,15 @@ void* alignedMalloc(size_t aSize, size_t aAlignment)
 	return _aligned_malloc(aSize, aAlignment);
 #else
 	void* ptr = NULL;
-	if(posix_memalign(&ptr, aAlignment, aSize)) return NULL;
+	if (posix_memalign(&ptr, aAlignment, aSize))
+		return NULL;
 	return ptr;
 #endif
 }
 
-void alignedFree(void* aPtr)
-{
-	if(!aPtr) return;
+void alignedFree(void* aPtr) {
+	if (!aPtr)
+		return;
 #ifdef _MSC_VER
 #if 0
 	free(reinterpret_cast<void*>(reinterpret_cast<uintptr_t*>(aPtr)[-1]));
@@ -55,7 +55,6 @@ void alignedFree(void* aPtr)
 	free(aPtr);
 #endif
 }
-
 
 #if 0
 

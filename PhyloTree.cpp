@@ -5,36 +5,28 @@
 #include "Exceptions.h"
 #include "VerbosityLevels.h"
 
-PhyloTree::~PhyloTree()
-{
+PhyloTree::~PhyloTree() {
 	mTreeRoot.clearNode();
 	mLeavesSpecies.clear();
 	mInternalNodes.clear();
 }
 
-
-
-void PhyloTree::fillSpecies(TreeNode *aNode)
-{
-	if(aNode->isLeaf())
-	{
+void PhyloTree::fillSpecies(TreeNode *aNode) {
+	if (aNode->isLeaf()) {
 		mLeavesSpecies.push_back(aNode);
-	}
-	else
-	{
+	} else {
 		TreeNode *m;
-		for(unsigned int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillSpecies(m);
+		for (unsigned int idx = 0; (m = aNode->getChild(idx)) != NULL; ++idx)
+			fillSpecies(m);
 	}
 }
 
-const std::vector<std::string>& PhyloTree::getSpecies(void) const
-{
+const std::vector<std::string>& PhyloTree::getSpecies(void) const {
 	mSpeciesList.clear();
 
 	std::vector<TreeNode *>::const_iterator is(mLeavesSpecies.begin());
 	const std::vector<TreeNode *>::const_iterator end(mLeavesSpecies.end());
-	for(; is != end; ++is)
-	{
+	for (; is != end; ++is) {
 		std::string label = (*is)->getLabel();
 		mSpeciesList.push_back(label);
 	}
@@ -42,20 +34,17 @@ const std::vector<std::string>& PhyloTree::getSpecies(void) const
 	return mSpeciesList;
 }
 
-void PhyloTree::fillInternalBranches(TreeNode *aNode)
-{
-	if(/* omid !aNode->isLeaf() && end omid */ aNode != &mTreeRoot)
-	{
+void PhyloTree::fillInternalBranches(TreeNode *aNode) {
+	if (/* omid !aNode->isLeaf() && end omid */aNode != &mTreeRoot) {
 		mInternalNodes.push_back(aNode);
 	}
 
 	TreeNode *m;
-	for(unsigned int idx=0; (m = aNode->getChild(idx)) != NULL; ++idx) fillInternalBranches(m);
+	for (unsigned int idx = 0; (m = aNode->getChild(idx)) != NULL; ++idx)
+		fillInternalBranches(m);
 }
 
-
-size_t PhyloTree::getMarkedInternalBranch(void) const
-{
+size_t PhyloTree::getMarkedInternalBranch(void) const {
 	const size_t nin = mInternalNodes.size();
 	// omid
 	//std::cout << "NIN " << nin << std::endl;
@@ -63,50 +52,47 @@ size_t PhyloTree::getMarkedInternalBranch(void) const
 	// end omid
 
 	size_t marked_branch = 0;
-	for(; marked_branch < nin; ++marked_branch)
-	{
-		if(!mInternalNodes[marked_branch]->getType().empty()) break;
+	for (; marked_branch < nin; ++marked_branch) {
+		if (!mInternalNodes[marked_branch]->getType().empty())
+			break;
 	}
 
-	if(marked_branch >= nin) return UINT_MAX;
+	if (marked_branch >= nin)
+		return UINT_MAX;
 	return marked_branch;
 }
 
 /*std::set<size_t> PhyloTree::getMarkedBranches(void) const
-{
-	const size_t nin = mInternalNodes.size();
-	// omid
-	std::cout << "NIN " << nin << std::endl;
+ {
+ const size_t nin = mInternalNodes.size();
+ // omid
+ std::cout << "NIN " << nin << std::endl;
 
-	// end omid
+ // end omid
 
-	std::set<size_t> marked_branches;
-	size_t current_branch = 0;
-	for(; current_branch < nin; ++current_branch)
-	{
-		if(!mInternalNodes[current_branch]->getType().empty()) marked_branches.insert(current_branch);
-	}
+ std::set<size_t> marked_branches;
+ size_t current_branch = 0;
+ for(; current_branch < nin; ++current_branch)
+ {
+ if(!mInternalNodes[current_branch]->getType().empty()) marked_branches.insert(current_branch);
+ }
 
-	return marked_branches;
-}*/
+ return marked_branches;
+ }*/
 
-
-
-unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId, size_t aNumSites, CacheAlignedDoubleVector& aProbVectors, const TreeNode* aTreeNode, unsigned int aNodeId) const
-{
+unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
+		size_t aNumSites, CacheAlignedDoubleVector& aProbVectors,
+		const TreeNode* aTreeNode, unsigned int aNodeId) const {
 	unsigned int id;
 
 	// Start with the tree root
-	if(aTreeNode == NULL)
-	{
+	if (aTreeNode == NULL) {
 		aTreeNode = &mTreeRoot;
-		aNodeId	  = UINT_MAX;
+		aNodeId = UINT_MAX;
 		aForestNode->mParent = NULL;
 		id = 0;
-	}
-	else
-	{
-		id = aNodeId+1;
+	} else {
+		id = aNodeId + 1;
 	}
 
 	// Set the root values
@@ -116,23 +102,25 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	// Set the internal branch identifier
 	const size_t nn = mInternalNodes.size();
 	size_t int_id = 0;
-	for(; int_id < nn; ++int_id) if(aTreeNode == mInternalNodes[int_id]) break;
-	aForestNode->mInternalNodeId = (int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
+	for (; int_id < nn; ++int_id)
+		if (aTreeNode == mInternalNodes[int_id])
+			break;
+	aForestNode->mInternalNodeId =
+			(int_id < nn) ? static_cast<unsigned int>(int_id) : UINT_MAX;
 
 #ifndef NEW_LIKELIHOOD
 	// Set the pointers.		The sequence is: Branch -> Set -> Site -> 1:N
 	// Set the pointers (best). The sequence is: Branch -> Site -> Set -> 1:N
-	for(int i=0; i < Nt; ++i)
-	{
+	for (int i = 0; i < Nt; ++i) {
 		//aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aNumSites*i+aTreeId)];
-		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT*(aNumSites*Nt*id+aTreeId*Nt+i)];
+		aForestNode->mProb[i] = &aProbVectors[VECTOR_SLOT
+				* (aNumSites * Nt * id + aTreeId * Nt + i)];
 	}
 #endif
 
 	// Recurse
 	TreeNode *m = NULL;
-	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
-	{
+	for (unsigned int idx = 0; (m = aTreeNode->getChild(idx)) != NULL; ++idx) {
 		ForestNode* rn = new ForestNode;
 		aForestNode->mChildrenList.push_back(rn);
 		aForestNode->mChildrenCount++;
@@ -146,66 +134,60 @@ unsigned int PhyloTree::cloneTree(ForestNode* aForestNode, unsigned int aTreeId,
 	return id;
 }
 
-unsigned int PhyloTree::collectGlobalTreeData(std::vector<std::string>& aNodeNames, std::vector<double>& aBranchLengths, std::set<int>& aInternalBranches, size_t* aMarkedIntBranch,std::set<int>& aMarkedBranches, const TreeNode* aTreeNode, unsigned int aNodeId) const
-{
+unsigned int PhyloTree::collectGlobalTreeData(
+		std::vector<std::string>& aNodeNames,
+		std::vector<double>& aBranchLengths, std::set<int>& aInternalBranches,
+		size_t* aMarkedIntBranch, std::set<int>& aMarkedBranches,
+		const TreeNode* aTreeNode, unsigned int aNodeId) const {
 	unsigned int id;
 
 	// Start with the tree root
-	if(aTreeNode == NULL)
-	{
+	if (aTreeNode == NULL) {
 		aTreeNode = &mTreeRoot;
 		aNodeId = UINT_MAX;
 		id = 0;
 		*aMarkedIntBranch = getMarkedInternalBranch();
 		//aMarkedBranches.insert(*aMarkedIntBranch); // Get all marked branches
-	}
-	else
-	{
-		id = aNodeId+1;
+	} else {
+		id = aNodeId + 1;
 	}
 
 	// Save the node values
-	if (!aTreeNode->getType().empty()) aMarkedBranches.insert(aNodeId);// Get all marked branches
+	if (!aTreeNode->getType().empty())
+		aMarkedBranches.insert(aNodeId);	// Get all marked branches
 	aNodeNames.push_back(aTreeNode->getLabel());
 	aBranchLengths.push_back(aTreeNode->getLen());
-	if (!aTreeNode->isLeaf()) aInternalBranches.insert(aNodeId);
+	if (!aTreeNode->isLeaf())
+		aInternalBranches.insert(aNodeId);
 
 	// Recurse
 	TreeNode *m;
-	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
-	{
-		id = collectGlobalTreeData(aNodeNames, aBranchLengths, aInternalBranches, aMarkedIntBranch, aMarkedBranches, m, id);
+	for (unsigned int idx = 0; (m = aTreeNode->getChild(idx)) != NULL; ++idx) {
+		id = collectGlobalTreeData(aNodeNames, aBranchLengths,
+				aInternalBranches, aMarkedIntBranch, aMarkedBranches, m, id);
 	}
-
-
-
-
 
 	return id;
 }
 
-
-void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt, const TreeNode* aTreeNode) const
-{
+void PhyloTree::countNullBranchLengths(int& aOnLeafCnt, int& aOnIntCnt,
+		const TreeNode* aTreeNode) const {
 	// Start with the tree root (don't check its branch length that is invalid)
-	if(aTreeNode == NULL)
-	{
+	if (aTreeNode == NULL) {
 		aTreeNode = &mTreeRoot;
-	}
-	else
-	{
+	} else {
 		// Check branch length. It should not be null for leaves
-		if(aTreeNode->getLen() < 1e-14)
-		{
-			if(aTreeNode->isLeaf()) ++aOnLeafCnt;
-			else					++aOnIntCnt;
+		if (aTreeNode->getLen() < 1e-14) {
+			if (aTreeNode->isLeaf())
+				++aOnLeafCnt;
+			else
+				++aOnIntCnt;
 		}
 	}
 
 	// Recurse
 	TreeNode *m;
-	for(unsigned int idx=0; (m = aTreeNode->getChild(idx)) != NULL; ++idx)
-	{
+	for (unsigned int idx = 0; (m = aTreeNode->getChild(idx)) != NULL; ++idx) {
 		countNullBranchLengths(aOnLeafCnt, aOnIntCnt, m);
 	}
 }

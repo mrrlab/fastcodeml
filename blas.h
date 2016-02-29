@@ -1,4 +1,3 @@
-
 #ifndef BLAS_H
 #define BLAS_H
 
@@ -35,7 +34,6 @@
 #define dsyrk_ dsyrk
 #define dsymv_ dsymv
 #endif
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,16 +98,9 @@ extern "C" {
 /// @param[in] ldc On entry, LDC specifies the first dimension of C as declared
 /// in the calling (sub) program. LDC must be at least max(1, n).
 ///
-void dsyrk_(const char *uplo,
-				const char *trans,
-				const int *n,
-				const int *k,
-				const double *alpha,
-				const double *a,
-				const int *lda,
-				const double *beta,
-				double *c,
-				const int *ldc);
+void dsyrk_(const char *uplo, const char *trans, const int *n, const int *k,
+		const double *alpha, const double *a, const int *lda,
+		const double *beta, double *c, const int *ldc);
 
 ///	 DSYMV	performs the matrix-vector operation: y := alpha*A*x + beta*y
 ///	 where alpha and beta are scalars, x and y are n element vectors and
@@ -162,17 +153,9 @@ void dsyrk_(const char *uplo,
 ///	 @param[in] incy On entry, INCY specifies the increment for the elements of
 ///			  Y. INCY must not be zero.
 ///
-void dsymv_(const char *uplo,
-				const int *n,
-				const double *alpha,
-				const double *a,
-				const int *lda,
-				const double *x,
-				const int *incx,
-				const double *beta,
-				double *y,
-				const int *incy);
-
+void dsymv_(const char *uplo, const int *n, const double *alpha,
+		const double *a, const int *lda, const double *x, const int *incx,
+		const double *beta, double *y, const int *incy);
 
 /// DSYMM  performs one of the matrix-matrix operations
 ///
@@ -265,19 +248,9 @@ void dsymv_(const char *uplo,
 ///			  in  the  calling	(sub)  program.	  LDC  must	 be	 at	 least
 ///			  max( 1, m ).
 ///
-void dsymm_(const char *side,
-				const char *uplo,
-				const int *m,
-				const int *n,
-				const double *alpha,
-				const double *a,
-				const int *lda,
-				const double *b,
-				const int *ldb,
-				const double *beta,
-				double *c,
-				const int *ldc);
-
+void dsymm_(const char *side, const char *uplo, const int *m, const int *n,
+		const double *alpha, const double *a, const int *lda, const double *b,
+		const int *ldb, const double *beta, double *c, const int *ldc);
 
 /// Forms the dot product of two vectors.
 ///
@@ -289,12 +262,8 @@ void dsymm_(const char *side,
 ///
 /// @return The dot product of dx and dy
 ///
-double ddot_(const int *n,
-				const double *dx,
-				const int *incx,
-				const double *dy,
-				const int *incy);
-
+double ddot_(const int *n, const double *dx, const int *incx, const double *dy,
+		const int *incy);
 
 /// Computes the Euclidean norm of a vector.
 ///
@@ -306,10 +275,7 @@ double ddot_(const int *n,
 ///
 /// @return Resulting Euclidean norm.
 ///
-double dnrm2_(const int *n,
-				const double *dx,
-				const int *incx);
-
+double dnrm2_(const int *n, const double *dx, const int *incx);
 
 /// Scales a double precision vector.
 /// DSCAL scales a double precision vector with a double precision scalar.
@@ -326,20 +292,17 @@ double dnrm2_(const int *n,
 ///
 /// @param[in]	incx Increment between elements of x. If incx = 0, the results will be unpredictable.
 ///
-void dscal_(const int *n,
-			const double *alpha,
-			double *x,
-			const int *incx);
+void dscal_(const int *n, const double *alpha, double *x, const int *incx);
 
 #ifdef __cplusplus
 }
 #endif
 
 // Constants used by blas and lapack routines
-static const int	I0 = 0;		///< Integer zero.
-static const int	I1 = 1;		///< Integer one.
-static const double	D0 = 0.;	///< Float double zero.
-static const double	D1 = 1.;	///< Float double one.
+static const int I0 = 0;		///< Integer zero.
+static const int I1 = 1;		///< Integer one.
+static const double D0 = 0.;	///< Float double zero.
+static const double D1 = 1.;	///< Float double one.
 
 #endif
 

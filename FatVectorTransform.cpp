@@ -1,4 +1,3 @@
-
 #ifdef NEW_LIKELIHOOD
 
 #include <iostream>
@@ -62,7 +61,6 @@ void FatVectorTransform::setBranchDependencies(const std::vector< std::vector<Fo
 	}
 }
 
-
 void FatVectorTransform::printCountGoodElements(void) const
 {
 	std::cout << std::endl;
@@ -96,7 +94,6 @@ void FatVectorTransform::printCountGoodElements(void) const
 	}
 }
 
-
 void FatVectorTransform::printBranchVisitSequence(void) const
 {
 	std::cout << std::endl << "Branch at level" << std::endl;
@@ -120,8 +117,6 @@ void FatVectorTransform::printBranchVisitSequence(void) const
 	}
 }
 
-
-
 void FatVectorTransform::printNodeStatus(void) const
 {
 	std::cout << std::endl;
@@ -132,14 +127,13 @@ void FatVectorTransform::printNodeStatus(void) const
 		for(unsigned int k = 0; k < mNumSites; ++k)
 		{
 			int x = mNodeStatus[b*mNumSites+k];
-			if(x == FatVectorTransform::SITE_NOT_EXISTS)  {std::cout << '-'; is_num = false;}
+			if(x == FatVectorTransform::SITE_NOT_EXISTS) {std::cout << '-'; is_num = false;}
 			else if(x == FatVectorTransform::SITE_EXISTS) {std::cout << 'x'; is_num = false;}
-			else										  {if(is_num) std::cout << ' '; std::cout << x; is_num = true;}
+			else {if(is_num) std::cout << ' '; std::cout << x; is_num = true;}
 		}
 		std::cout << std::endl << std::endl;
 	}
 }
-
 
 void FatVectorTransform::compactMatrix(void)
 {
@@ -209,7 +203,7 @@ void FatVectorTransform::compactMatrix(void)
 	// Remove the node status array no more needed
 	//mNodeStatus.clear();
 	std::vector<int> x;
-	mNodeStatus.swap(x); // To really release memory
+	mNodeStatus.swap(x);// To really release memory
 
 	// Try to combine contiguous ranges
 	for(b=0; b < mNumBranches; ++b)
@@ -232,7 +226,7 @@ void FatVectorTransform::compactMatrix(void)
 				// Update the command list
 				// Example: (100, 10, 1) (101, 9, 1) --> (100, 9, 2) (101, 9, 0)
 				mCopyCmds[b][i].cnt = static_cast<unsigned int>(j-i+1);
-				mCopyCmds[b][i].to	= mCopyCmds[b][j].to;
+				mCopyCmds[b][i].to = mCopyCmds[b][j].to;
 				for(size_t k=i+1; k <= j; ++k) mCopyCmds[b][k].cnt = 0;
 
 				i = j+1;
@@ -256,9 +250,9 @@ void FatVectorTransform::printCommands(void) const
 		for(; icc != endc; ++icc)
 		{
 			if(icc->cnt == 1)
-				std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
+			std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << std::endl;
 			else if(icc->cnt > 1)
-				std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
+			std::cout << "C " << std::setw(4) << icc->from << " - " << std::setw(4) << icc->to << " (" << icc->cnt << ")" << std::endl;
 		}
 
 		VectorOfRangesNoCnt::const_iterator icr=mReuseCmds[b].begin();
@@ -271,7 +265,6 @@ void FatVectorTransform::printCommands(void) const
 		std::cout << "L	  from: " << mLimits[b].first << " cnt: " << mLimits[b].second << std::endl;
 	}
 }
-
 
 void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 {
@@ -293,16 +286,16 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 	// For all leaves and all sets
 	const int len = static_cast<int>(leaves.size()*Nt);
 #ifdef _MSC_VER
-	#pragma omp parallel for default(none) shared(len, leaves, aProbs) schedule(guided)
+#pragma omp parallel for default(none) shared(len, leaves, aProbs) schedule(guided)
 #else
-	#pragma omp parallel for default(shared) schedule(guided)
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
 	for(int i=0; i < len; ++i)
 	{
 		const unsigned int node_idx = i / Nt;
-		const unsigned int node		= leaves[node_idx];
-		const unsigned int set_idx	= i-node_idx*Nt; // Was: i % Nt;
-		const size_t	   start	= VECTOR_SLOT*(mNumSites*Nt*node+set_idx*mNumSites);
+		const unsigned int node = leaves[node_idx];
+		const unsigned int set_idx = i-node_idx*Nt; // Was: i % Nt;
+		const size_t start = VECTOR_SLOT*(mNumSites*Nt*node+set_idx*mNumSites);
 
 		// Do all the copies as requested
 		VectorOfRanges::const_iterator icc=mCopyCmds[node-1].begin();
@@ -321,7 +314,6 @@ void FatVectorTransform::preCompactLeaves(CacheAlignedDoubleVector& aProbs)
 	}
 }
 
-
 void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, CacheAlignedDoubleVector& aProbs, unsigned int aLevel, unsigned int aNumSets)
 {
 	const int nsns = static_cast<int>(VECTOR_SLOT*mNumSites*aNumSets);
@@ -330,27 +322,27 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 		const size_t num_branch = mBranchByLevel[aLevel].size();
 		for(size_t b=0; b < num_branch; ++b)
 		{
-			const unsigned int	 my_branch = mBranchByLevel[aLevel][b];
+			const unsigned int my_branch = mBranchByLevel[aLevel][b];
 			const unsigned int parent_node = mParentNode[my_branch];
-			const unsigned int	   my_node = my_branch + 1;
+			const unsigned int my_node = my_branch + 1;
 
 			if(mFirstForLevel[my_branch])
 			{
 				memcpy(&aProbs[VECTOR_SLOT*mNumSites*Nt*parent_node],
-					   &aStepResults[VECTOR_SLOT*mNumSites*Nt*my_node],
-					   (VECTOR_SLOT*mNumSites*aNumSets-(VECTOR_SLOT-N))*sizeof(double));
+						&aStepResults[VECTOR_SLOT*mNumSites*Nt*my_node],
+						(VECTOR_SLOT*mNumSites*aNumSets-(VECTOR_SLOT-N))*sizeof(double));
 			}
 			else
 			{
 #ifdef USE_MKL_VML
 				const unsigned int start_parent = VECTOR_SLOT*mNumSites*Nt*parent_node;
-				const unsigned int start_child	= VECTOR_SLOT*mNumSites*Nt*my_node;
+				const unsigned int start_child = VECTOR_SLOT*mNumSites*Nt*my_node;
 				vdMul(nsns, &aProbs[start_parent], &aStepResults[start_child], &aProbs[start_parent]);
 #else
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults, nsns) schedule(guided)
+#pragma omp parallel for default(none) shared(parent_node, my_node, aNumSets, aProbs, aStepResults, nsns) schedule(guided)
 #else
-				#pragma omp parallel for default(shared) schedule(guided)
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
 				for(int i=0; i < nsns; ++i)
 				{
@@ -366,8 +358,8 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 		const size_t num_branch = mBranchByLevel[aLevel].size();
 		for(size_t b=0; b < num_branch; ++b)
 		{
-			const unsigned int branch	   = mBranchByLevel[aLevel][b];
-			const unsigned int node		   = branch + 1;
+			const unsigned int branch = mBranchByLevel[aLevel][b];
+			const unsigned int node = branch + 1;
 			const unsigned int parent_node = mParentNode[branch];
 
 			// Reverse all copies (copy back the values copied in the previous step to fill holes)
@@ -381,25 +373,25 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 				if(cnt == 1)
 				{
 					const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
-					const size_t to_idx	  = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
+					const size_t to_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
 
 					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 					{
 						memcpy(&aStepResults[from_idx+set_idx*mNumSites*VECTOR_SLOT],
-							   &aStepResults[to_idx+set_idx*mNumSites*VECTOR_SLOT],
-							   N*sizeof(double));
+								&aStepResults[to_idx+set_idx*mNumSites*VECTOR_SLOT],
+								N*sizeof(double));
 					}
 				}
 				else if(cnt > 1)
 				{
 					const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->from);
-					const size_t to_idx	  = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
+					const size_t to_idx = VECTOR_SLOT*(mNumSites*Nt*node+icc->to);
 
 					for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 					{
 						memcpy(&aStepResults[from_idx+set_idx*mNumSites*VECTOR_SLOT],
-							   &aStepResults[to_idx+set_idx*mNumSites*VECTOR_SLOT],
-							   (VECTOR_SLOT*cnt-(VECTOR_SLOT-N))*sizeof(double));
+								&aStepResults[to_idx+set_idx*mNumSites*VECTOR_SLOT],
+								(VECTOR_SLOT*cnt-(VECTOR_SLOT-N))*sizeof(double));
 					}
 				}
 			}
@@ -411,13 +403,13 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 			{
 				// Make local copies to increase locality
 				const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*node+icr->from);
-				const size_t to_idx	  = VECTOR_SLOT*(mNumSites*Nt*node+icr->to);
+				const size_t to_idx = VECTOR_SLOT*(mNumSites*Nt*node+icr->to);
 
 				for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 				{
 					memcpy(&aStepResults[to_idx+set_idx*mNumSites*VECTOR_SLOT],
-						   &aStepResults[from_idx+set_idx*mNumSites*VECTOR_SLOT],
-						   N*sizeof(double));
+							&aStepResults[from_idx+set_idx*mNumSites*VECTOR_SLOT],
+							N*sizeof(double));
 				}
 			}
 
@@ -429,13 +421,13 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 			{
 #ifdef USE_MKL_VML
 				const unsigned int start_parent = VECTOR_SLOT*mNumSites*Nt*parent_node;
-				const unsigned int start_child	= VECTOR_SLOT*mNumSites*Nt*node;
+				const unsigned int start_child = VECTOR_SLOT*mNumSites*Nt*node;
 				vdMul(nsns, &aProbs[start_parent], &aStepResults[start_child], &aProbs[start_parent]);
 #else
 #ifdef _MSC_VER
-				#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults, nsns) schedule(guided)
+#pragma omp parallel for default(none) shared(parent_node, node, aNumSets, aProbs, aStepResults, nsns) schedule(guided)
 #else
-				#pragma omp parallel for default(shared) schedule(guided)
+#pragma omp parallel for default(shared) schedule(guided)
 #endif
 				for(int i=0; i < nsns; ++i)
 				{
@@ -456,25 +448,25 @@ void FatVectorTransform::postCompact(CacheAlignedDoubleVector& aStepResults, Cac
 					if(cnt == 1)
 					{
 						const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
-						const size_t to_idx	  = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
+						const size_t to_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
 
 						for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 						{
 							memcpy(&aProbs[to_idx+set_idx*mNumSites*VECTOR_SLOT],
-								   &aProbs[from_idx+set_idx*mNumSites*VECTOR_SLOT],
-								   N*sizeof(double));
+									&aProbs[from_idx+set_idx*mNumSites*VECTOR_SLOT],
+									N*sizeof(double));
 						}
 					}
 					if(cnt > 1)
 					{
 						const size_t from_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->from);
-						const size_t to_idx	  = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
+						const size_t to_idx = VECTOR_SLOT*(mNumSites*Nt*parent_node+icc->to);
 
 						for(unsigned int set_idx=0; set_idx < aNumSets; ++set_idx)
 						{
 							memcpy(&aProbs[to_idx+set_idx*mNumSites*VECTOR_SLOT],
-								   &aProbs[from_idx+set_idx*mNumSites*VECTOR_SLOT],
-								   (VECTOR_SLOT*cnt-(VECTOR_SLOT-N))*sizeof(double));
+									&aProbs[from_idx+set_idx*mNumSites*VECTOR_SLOT],
+									(VECTOR_SLOT*cnt-(VECTOR_SLOT-N))*sizeof(double));
 						}
 					}
 				}

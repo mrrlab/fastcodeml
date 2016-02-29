@@ -1,7 +1,5 @@
-
 #ifndef COMPILERHINTS_H
 #define COMPILERHINTS_H
-
 
 #if defined(__INTEL_COMPILER) || defined(__ICL) || defined(__ICC) || defined(__ECC)
 //	Intel
@@ -47,7 +45,6 @@
 #define ALIGN64
 #define RESTRICT
 
-
 #else
 #warning "Unknown compiler detected"
 #define ALIGN64
@@ -55,7 +52,6 @@
 //#define PURE
 
 #endif
-
 
 #endif
 

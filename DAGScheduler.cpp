@@ -1,4 +1,3 @@
-
 #ifdef USE_DAG
 
 #include <iostream>
@@ -12,7 +11,6 @@ void DAGScheduler::clear(void)
 	mRefCounter.clear();
 	mRefCounterSave.clear();
 }
-
 
 void DAGScheduler::loadDependency(unsigned int aCopyId, const void* aDependsOn, const void* aDependant)
 {
@@ -32,7 +30,6 @@ void DAGScheduler::loadDependency(unsigned int aCopyId, const void* aDependsOn, 
 	if(ret.second == false) ++(ret.first->second);
 }
 
-
 void DAGScheduler::endLoadDependencies(unsigned int aNumCodonSets)
 {
 	// Save the reference counter list
@@ -42,24 +39,20 @@ void DAGScheduler::endLoadDependencies(unsigned int aNumCodonSets)
 	//dumpDAG(std::cout);
 }
 
-
 void* DAGScheduler::getNext(void)
 {
 	return 0;
 }
 
-
 void DAGScheduler::setDone(const void* aItem)
 {
 }
-
 
 void DAGScheduler::resetDependencies(void)
 {
 	// Reset reference counts
 	mRefCounter = mRefCounterSave;
 }
-
 
 void DAGScheduler::dumpDAG(std::ostream& aOut) const
 {

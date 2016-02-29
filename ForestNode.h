@@ -20,14 +20,14 @@ static const unsigned char ALL_CHILDREN_SAME_TREE = 0xFF;
 ///	  @date 2011-11-08 (initial version)
 ///	  @version 1.1
 ///
-struct ForestNodeSupport
-{
+struct ForestNodeSupport {
 	/// Constructor.
 	/// Do nothing.
 	///
-	ForestNodeSupport() {}
+	ForestNodeSupport() {
+	}
 
-	std::vector<long long>			mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
+	std::vector<long long> mSubtreeCodonsSignature;	///< List of codon idx for the subtree rooted at this node
 };
 
 /// One node of each tree in the forest.
@@ -36,39 +36,41 @@ struct ForestNodeSupport
 ///	  @date 2011-02-23 (initial version)
 ///	  @version 1.1
 ///
-struct ForestNode
-{
+struct ForestNode {
 	// Field order suggested by icc
 	//'mChildrenSameTreeFlags, mBranchId, mOwnTree, mChildrenCount, mParent, mProb, mInternalNodeId, mChildrenList, mOtherTreeProb'
-	unsigned char				mChildrenSameTreeFlags;		///< Bit i set if child i is in the same tree
-	unsigned char				mChildrenCount;				///< Number of children of this node
-	short						mLeafCodon;					///< On a leaf set to the corresponding codon number, otherwise -1
-	unsigned int				mBranchId;					///< A unique index to access the branch length array (starts from zero at the first non-root node)
-	unsigned int				mOwnTree;					///< Per tree identifier
-	ForestNode*					mParent;					///< Pointer to the node parent (null for the root)
+	unsigned char mChildrenSameTreeFlags;///< Bit i set if child i is in the same tree
+	unsigned char mChildrenCount;			///< Number of children of this node
+	short mLeafCodon;///< On a leaf set to the corresponding codon number, otherwise -1
+	unsigned int mBranchId;	///< A unique index to access the branch length array (starts from zero at the first non-root node)
+	unsigned int mOwnTree;					///< Per tree identifier
+	ForestNode* mParent;	///< Pointer to the node parent (null for the root)
 #ifndef NEW_LIKELIHOOD
-	double*						mProb[Nt];					///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
+	double* mProb[Nt];///< Codons probability array (called g in the pseudocode) (can be computed by concurrent tree traversals)
 #endif
-	unsigned int				mInternalNodeId;			///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
-	std::vector<ForestNode *>	mChildrenList;				///< List of the node children
-	ForestNodeSupport*			mPreprocessingSupport;		///< Data needed only during forest preprocessing phase
+	unsigned int mInternalNodeId;///< Internal node identifier to mark a branch as foreground. UINT_MAX means not an internal node
+	std::vector<ForestNode *> mChildrenList;	///< List of the node children
+	ForestNodeSupport* mPreprocessingSupport;///< Data needed only during forest preprocessing phase
 #ifndef NEW_LIKELIHOOD
-	std::vector<double *>		mOtherTreeProb;				///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
+	std::vector<double *> mOtherTreeProb;///< Pointers to other tree precomputed mProb, zero if not used, or local array if used from other tree
 #endif
 #ifdef NON_RECURSIVE_VISIT
-	bool						mFirstChild;
-	unsigned int				mChildIdx;					///< Mark the child position in the parent node
+	bool mFirstChild;
+	unsigned int mChildIdx;		///< Mark the child position in the parent node
 #endif
 
 	/// Constructor.
 	///
-	ForestNode() : mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(-1), mBranchId(0), mOwnTree(0), mParent(NULL), mInternalNodeId(0)
+	ForestNode() :
+			mChildrenSameTreeFlags(ALL_CHILDREN_SAME_TREE), mChildrenCount(0), mLeafCodon(
+					-1), mBranchId(0), mOwnTree(0), mParent(NULL), mInternalNodeId(
+					0)
 #ifdef NON_RECURSIVE_VISIT
-				   , mFirstChild(false), mChildIdx(0)
+	, mFirstChild(false), mChildIdx(0)
 #endif
 	{
 #ifndef NEW_LIKELIHOOD
-		memset(mProb, 0, Nt*sizeof(double*));
+		memset(mProb, 0, Nt * sizeof(double*));
 		mOtherTreeProb.reserve(2);
 #endif
 		mChildrenList.reserve(2);
@@ -77,14 +79,11 @@ struct ForestNode
 
 	/// Destructor.
 	///
-	~ForestNode()
-	{
+	~ForestNode() {
 		// Delete children if in the same tree. Delete partial Prob arrays if not pointer to other tree partial Prob array
 		const unsigned int nc = mChildrenCount;
-		for(unsigned int i=0; i < nc; ++i)
-		{
-			if(isSameTree(i))
-			{
+		for (unsigned int i = 0; i < nc; ++i) {
+			if (isSameTree(i)) {
 				delete mChildrenList[i];
 
 #ifndef NEW_LIKELIHOOD
@@ -106,22 +105,25 @@ struct ForestNode
 	///
 	/// @param[in] aNode Node that has to be assigned to the current node
 	///
-	ForestNode(const ForestNode& aNode)
-		: mChildrenSameTreeFlags(aNode.mChildrenSameTreeFlags),
-		  mChildrenCount(aNode.mChildrenCount), mLeafCodon(aNode.mLeafCodon), mBranchId(aNode.mBranchId), mOwnTree(aNode.mOwnTree),
-		  mParent(aNode.mParent), mInternalNodeId(aNode.mInternalNodeId), mChildrenList(aNode.mChildrenList)
+	ForestNode(const ForestNode& aNode) :
+			mChildrenSameTreeFlags(aNode.mChildrenSameTreeFlags), mChildrenCount(
+					aNode.mChildrenCount), mLeafCodon(aNode.mLeafCodon), mBranchId(
+					aNode.mBranchId), mOwnTree(aNode.mOwnTree), mParent(
+					aNode.mParent), mInternalNodeId(aNode.mInternalNodeId), mChildrenList(
+					aNode.mChildrenList)
 #ifdef NON_RECURSIVE_VISIT
-		  , mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
+					, mFirstChild(aNode.mFirstChild), mChildIdx(aNode.mChildIdx)
 #endif
 #ifndef NEW_LIKELIHOOD
-		, mOtherTreeProb(aNode.mOtherTreeProb)
+					, mOtherTreeProb(aNode.mOtherTreeProb)
 #endif
 	{
 #ifndef NEW_LIKELIHOOD
-		memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
+		memcpy(mProb, aNode.mProb, Nt * sizeof(double*));
 #endif
 		mPreprocessingSupport = new ForestNodeSupport;
-		mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
+		mPreprocessingSupport->mSubtreeCodonsSignature =
+				aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
 	}
 
 	/// Assignment operator.
@@ -130,31 +132,30 @@ struct ForestNode
 	///
 	/// @return The node itself
 	///
-	ForestNode& operator=(const ForestNode& aNode)
-	{
+	ForestNode& operator=(const ForestNode& aNode) {
 		// Make sure not same object
-		if(this != &aNode)
-		{
-			mChildrenList			= aNode.mChildrenList;
-			mParent					= aNode.mParent;
-			mLeafCodon				= aNode.mLeafCodon;
+		if (this != &aNode) {
+			mChildrenList = aNode.mChildrenList;
+			mParent = aNode.mParent;
+			mLeafCodon = aNode.mLeafCodon;
 #ifndef NEW_LIKELIHOOD
-			memcpy(mProb, aNode.mProb, Nt*sizeof(double*));
+			memcpy(mProb, aNode.mProb, Nt * sizeof(double*));
 #endif
-			mInternalNodeId			= aNode.mInternalNodeId;
-			mBranchId				= aNode.mBranchId;
-			mOwnTree				= aNode.mOwnTree;
+			mInternalNodeId = aNode.mInternalNodeId;
+			mBranchId = aNode.mBranchId;
+			mOwnTree = aNode.mOwnTree;
 #ifndef NEW_LIKELIHOOD
-			mOtherTreeProb			= aNode.mOtherTreeProb;
+			mOtherTreeProb = aNode.mOtherTreeProb;
 #endif
-			mChildrenSameTreeFlags	= aNode.mChildrenSameTreeFlags;
-			mChildrenCount			= aNode.mChildrenCount;
+			mChildrenSameTreeFlags = aNode.mChildrenSameTreeFlags;
+			mChildrenCount = aNode.mChildrenCount;
 
 			mPreprocessingSupport = new ForestNodeSupport;
-			mPreprocessingSupport->mSubtreeCodonsSignature = aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
+			mPreprocessingSupport->mSubtreeCodonsSignature =
+					aNode.mPreprocessingSupport->mSubtreeCodonsSignature;
 #ifdef NON_RECURSIVE_VISIT
-			mFirstChild				= aNode.mFirstChild;
-			mChildIdx				= aNode.mChildIdx;
+			mFirstChild = aNode.mFirstChild;
+			mChildIdx = aNode.mChildIdx;
 #endif
 		}
 
@@ -170,10 +171,10 @@ struct ForestNode
 	///
 	/// @exception FastCodeMLMemoryError If no memory available
 	///
-	void* operator new(size_t aSize)
-	{
+	void* operator new(size_t aSize) {
 		void *m = alignedMalloc(aSize, CACHE_LINE_ALIGN);
-		if(!m) throw FastCodeMLMemoryError("Error in ForestNode allocation");
+		if (!m)
+			throw FastCodeMLMemoryError("Error in ForestNode allocation");
 		return m;
 	}
 
@@ -181,8 +182,7 @@ struct ForestNode
 	///
 	/// @param[in] aPtr Pointer to the memory area to be released
 	///
-	void operator delete(void* aPtr)
-	{
+	void operator delete(void* aPtr) {
 		alignedFree(aPtr);
 	}
 
@@ -196,8 +196,7 @@ struct ForestNode
 	///
 	/// @return The placed memory
 	///
-	void* operator new(std::size_t /* aSize */, ForestNode* aHere)
-	{
+	void* operator new(std::size_t /* aSize */, ForestNode* aHere) {
 		return aHere;
 	}
 
@@ -208,8 +207,7 @@ struct ForestNode
 	/// @param[in] aPtr Pointer to the memory area to be released (ignored)
 	/// @param[in] aHere Where the placement new should go (ignored)
 	///
-	void operator delete(void* /* aPtr */, ForestNode* /* aHere */)
-	{
+	void operator delete(void* /* aPtr */, ForestNode* /* aHere */) {
 		// Do nothing
 	}
 #else
@@ -247,43 +245,50 @@ struct ForestNode
 	/// @param[in] aIndent Initial number of indent spaces
 	/// @param[in] aIncrement The indent amount is incremented by this value at each level
 	///
-	void print(const std::vector<std::string>& aNodeNames, std::ostream& aOut=std::cout, unsigned int aIndent=0, unsigned int aIncrement=3) const
-	{
+	void print(const std::vector<std::string>& aNodeNames, std::ostream& aOut =
+			std::cout, unsigned int aIndent = 0,
+			unsigned int aIncrement = 3) const {
 		unsigned int i;
 
 		// Indent
-		for(i=0; i < aIndent; ++i) aOut << ' ';
+		for (i = 0; i < aIndent; ++i)
+			aOut << ' ';
 
 		// Print the name
-		aOut << '<' << ((mBranchId	!= UINT_MAX) ? aNodeNames[mBranchId+1] : aNodeNames[0]) << "> ";
+		aOut << '<'
+				<< ((mBranchId != UINT_MAX) ?
+						aNodeNames[mBranchId + 1] : aNodeNames[0]) << "> ";
 
 		// Print the ID
-		if(mInternalNodeId != UINT_MAX) aOut << '(' << mInternalNodeId << '|' << mBranchId << '|' << mLeafCodon << ") ";
-		else							aOut << '('					   << '|' << mBranchId << '|' << mLeafCodon << ") ";
+		if (mInternalNodeId != UINT_MAX)
+			aOut << '(' << mInternalNodeId << '|' << mBranchId << '|'
+					<< mLeafCodon << ") ";
+		else
+			aOut << '(' << '|' << mBranchId << '|' << mLeafCodon << ") ";
 
 		// Print the indexes of the codons accumulated till this node
-		if(mPreprocessingSupport)
-		{
-			std::vector<long long>::const_iterator ig(mPreprocessingSupport->mSubtreeCodonsSignature.begin());
-			const std::vector<long long>::const_iterator end(mPreprocessingSupport->mSubtreeCodonsSignature.end());
-			for(; ig != end; ++ig) aOut << *ig << ' ';
+		if (mPreprocessingSupport) {
+			std::vector<long long>::const_iterator ig(
+					mPreprocessingSupport->mSubtreeCodonsSignature.begin());
+			const std::vector<long long>::const_iterator end(
+					mPreprocessingSupport->mSubtreeCodonsSignature.end());
+			for (; ig != end; ++ig)
+				aOut << *ig << ' ';
 			aOut << std::endl;
 		}
 
 		// Print the subtree
 		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
 		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
-		for(i=0; irn != end; ++irn, ++i)
-		{
+		for (i = 0; irn != end; ++irn, ++i) {
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
-			if(isSameTree(i))
-			{
-				(*irn)->print(aNodeNames, aOut, aIndent+aIncrement, aIncrement);
-			}
-			else
-			{
-				for(i=0; i < aIndent+aIncrement; ++i) aOut << ' ';
-				i = (*irn)->mBranchId+1;
+			if (isSameTree(i)) {
+				(*irn)->print(aNodeNames, aOut, aIndent + aIncrement,
+						aIncrement);
+			} else {
+				for (i = 0; i < aIndent + aIncrement; ++i)
+					aOut << ' ';
+				i = (*irn)->mBranchId + 1;
 				aOut << '[' << aNodeNames[i] << ']' << std::endl;
 			}
 		}
@@ -293,30 +298,29 @@ struct ForestNode
 	///
 	/// @param[out] aLeafsList Pointers to leaves are pushed to this vector
 	///
-	void pushLeaf(std::vector<ForestNode*>& aLeafsList)
-	{
-		if(mChildrenList.empty())
-		{
+	void pushLeaf(std::vector<ForestNode*>& aLeafsList) {
+		if (mChildrenList.empty()) {
 			aLeafsList.push_back(this);
-		}
-		else
-		{
+		} else {
 			std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
-			const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
-			for(; irn != end; ++irn) (*irn)->pushLeaf(aLeafsList);
+			const std::vector<ForestNode*>::const_iterator end(
+					mChildrenList.end());
+			for (; irn != end; ++irn)
+				(*irn)->pushLeaf(aLeafsList);
 		}
 	}
 
 	/// Fills the mPreprocessingSupport->mSubtreeCodonsSignature list with the ordered union of its children's lists.
 	///
-	void gatherCodons(void)
-	{
+	void gatherCodons(void) {
 		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
 		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
-		for(; irn != end; ++irn)
-		{
+		for (; irn != end; ++irn) {
 			(*irn)->gatherCodons();
-			mPreprocessingSupport->mSubtreeCodonsSignature.insert(mPreprocessingSupport->mSubtreeCodonsSignature.end(), (*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.begin(), (*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.end());
+			mPreprocessingSupport->mSubtreeCodonsSignature.insert(
+					mPreprocessingSupport->mSubtreeCodonsSignature.end(),
+					(*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.begin(),
+					(*irn)->mPreprocessingSupport->mSubtreeCodonsSignature.end());
 		}
 	}
 
@@ -326,23 +330,18 @@ struct ForestNode
 	///
 	/// @return The total number of branches of the forest
 	///
-	unsigned int countBranches(bool aAggressiveStrategy=false) const
-	{
+	unsigned int countBranches(bool aAggressiveStrategy = false) const {
 		unsigned int cnt = 0;
 		unsigned int i;
 
 		// Visit the subtrees
 		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
 		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
-		for(i=0; irn != end; ++irn, ++i)
-		{
+		for (i = 0; irn != end; ++irn, ++i) {
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
-			if(isSameTree(i))
-			{
-				cnt += (*irn)->countBranches(aAggressiveStrategy)+1;
-			}
-			else if(!aAggressiveStrategy)
-			{
+			if (isSameTree(i)) {
+				cnt += (*irn)->countBranches(aAggressiveStrategy) + 1;
+			} else if (!aAggressiveStrategy) {
 				cnt += 1;
 			}
 		}
@@ -358,31 +357,25 @@ struct ForestNode
 	///
 	/// @return The total cost of the tree starting from the given node
 	///
-	unsigned int getCost(unsigned int aCostAtLeaf, unsigned int aCostIntern, unsigned int aCostPtr) const
-	{
+	unsigned int getCost(unsigned int aCostAtLeaf, unsigned int aCostIntern,
+			unsigned int aCostPtr) const {
 		unsigned int cost = 0;
 		unsigned int i;
 
 		// Visit the subtrees
 		std::vector<ForestNode*>::const_iterator irn(mChildrenList.begin());
 		const std::vector<ForestNode*>::const_iterator end(mChildrenList.end());
-		for(i=0; irn != end; ++irn, ++i)
-		{
+		for (i = 0; irn != end; ++irn, ++i) {
 			// If the subtree is on the same tree, then print it, otherwise print only the subtree root node name.
-			if(isSameTree(i))
-			{
+			if (isSameTree(i)) {
 
-				if((*irn)->mLeafCodon >= 0)
-				{
+				if ((*irn)->mLeafCodon >= 0) {
 					cost += aCostAtLeaf;
+				} else {
+					cost += (*irn)->getCost(aCostAtLeaf, aCostIntern, aCostPtr)
+							+ aCostIntern;
 				}
-				else
-				{
-					cost += (*irn)->getCost(aCostAtLeaf, aCostIntern, aCostPtr)+aCostIntern;
-				}
-			}
-			else
-			{
+			} else {
 				cost += aCostPtr;
 			}
 		}
@@ -398,9 +391,9 @@ struct ForestNode
 	///
 	/// @param[in] aChildIndex The index of the flag to be set to false
 	///
-	void markNotSameTree(unsigned int aChildIndex)
-	{
-		mChildrenSameTreeFlags &= static_cast<unsigned char>(~mMaskTable[aChildIndex]);
+	void markNotSameTree(unsigned int aChildIndex) {
+		mChildrenSameTreeFlags &=
+				static_cast<unsigned char>(~mMaskTable[aChildIndex]);
 	}
 
 	/// Test if child aChildIndex is in the same tree.
@@ -409,15 +402,13 @@ struct ForestNode
 	///
 	/// @return The flag status
 	///
-	bool isSameTree(unsigned int aChildIndex) const
-	{
+	bool isSameTree(unsigned int aChildIndex) const {
 		return (mChildrenSameTreeFlags & mMaskTable[aChildIndex]) != 0;
 	}
 
 	/// Set all flags to true (i.e.\ all children of the node are in the same tree)
 	///
-	void setAllFlagsSameTree(void)
-	{
+	void setAllFlagsSameTree(void) {
 		mChildrenSameTreeFlags = ALL_CHILDREN_SAME_TREE;
 	}
 };

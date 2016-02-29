@@ -1,4 +1,3 @@
-
 #ifndef MATRIXSIZE_H
 #define MATRIXSIZE_H
 
@@ -17,7 +16,7 @@ static const int Nt = 4;
 
 /// Slot size for a matrix. It should be equal or larger than N*N. Filler based on measurement.
 ///
-static const int MATRIX_SLOT = N*N+3;
+static const int MATRIX_SLOT = N * N + 3;
 
 /// Slot size for a vector. It should be equal or larger than N+1. The slot size value has been identified by measurement.
 /// In the vectors used as CPV the location after the end will contain the CVP norm.
@@ -28,7 +27,7 @@ static const int MATRIX_SLOT = N*N+3;
 #endif
 static const int VECTOR_SLOT = N;
 #else
-static const int VECTOR_SLOT = N+1+4;
+static const int VECTOR_SLOT = N + 1 + 4;
 #endif
 
 /// Alignment to avoid cache line false sharing.

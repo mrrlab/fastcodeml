@@ -1,4 +1,3 @@
-
 #ifndef HIGHLEVELCOORDINATOR_H
 #define HIGHLEVELCOORDINATOR_H
 
@@ -18,8 +17,7 @@ static const int MASTER_JOB = 0;
 /// @version 1.1
 ///
 
-class HighLevelCoordinator
-{
+class HighLevelCoordinator {
 public:
 	/// Constructor.
 	///
@@ -48,19 +46,25 @@ public:
 	///
 	/// @return True if this is the master process
 	///
-	bool isMaster(void) const {return mRank == MASTER_JOB;}
+	bool isMaster(void) const {
+		return mRank == MASTER_JOB;
+	}
 
 	/// Return the number of MPI processes.
 	///
 	/// @return The number of MPI processes
 	///
-	int	 numJobs(void) const {return mSize;}
+	int numJobs(void) const {
+		return mSize;
+	}
 
 	/// Return the current process rank.
 	///
 	/// @return The current process rank.
 	///
-	int getRank(void) const {return mRank;}
+	int getRank(void) const {
+		return mRank;
+	}
 
 private:
 	/// The master coordination job
@@ -79,16 +83,14 @@ private:
 	///
 	void doWorker(Forest& aForest, const CmdLine& aCmdLine);
 
-
 private:
-	unsigned int		mVerbose;				///< The verbose level
-	int					mRank;					///< Rank of the current process (Master has rank == MASTER_JOB)
-	int					mSize;					///< Number of MPI processes
-	size_t				mNumInternalBranches;	///< Number of internal branches (i.e.\ the ones that can be foreground branch)
+	unsigned int mVerbose;				///< The verbose level
+	int mRank;	///< Rank of the current process (Master has rank == MASTER_JOB)
+	int mSize;					///< Number of MPI processes
+	size_t mNumInternalBranches;///< Number of internal branches (i.e.\ the ones that can be foreground branch)
 
 	struct WorkTable;
-	WorkTable*			mWorkTable;				///< Management of the work list
+	WorkTable* mWorkTable;				///< Management of the work list
 };
-
 
 #endif
