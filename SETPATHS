@@ -29,5 +29,6 @@
   export NLOPT_LIB_DIR="/software/Development/Libraries/nlopt/2.4.2/lib64"
   export MATH_LIB_NAMES="openblas;lapack;gfortranbegin;gfortran"
   export BOOST_ROOT="/software/lib64/"
-  export CXX="/home/kali/lib/mpi/bin/mpicxx"
+ export CXX=g++ # or to a cpp compiler with mpi support e.g. "/home/kali/lib/mpi/bin/mpicxx"
+
 
