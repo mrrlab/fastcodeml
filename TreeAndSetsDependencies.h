@@ -121,8 +121,7 @@ private:
   TreeAndSetsDependencies &operator=(const TreeAndSetsDependencies & /*aObj*/);
 
 private:
-  const Forest &
-      mForest; ///< The forest for which dependencies should be calculated
+  const Forest &mForest; ///< The forest for which dependencies should be calculated
   ListDependencies mDependenciesClassesAndTrees; ///< The groups of dependencies
   /// between trees
   bool mNoParallel; ///< Set if the execution is sequential, so no tree

@@ -71,8 +71,8 @@ double Ming2::minimizeFunction(std::vector<double> &aVars) {
   double lnL = 0;
   int sts = ming2(mTrace ? stdout : NULL, &lnL, &aVars[0], &mLowerBound[0],
                   &mUpperBound[0], &space[0], &ispace[0], mRelativeError, np);
-  if (sts < 0 && mVerbose > 0)
-    std::cout << "Check ming2 convergence" << std::endl;
+  //if (sts < 0 && mVerbose > 0)
+    //std::cout << "Check ming2 convergence" << std::endl;
   std::cout.sync_with_stdio(sy);
 
   return -lnL;
