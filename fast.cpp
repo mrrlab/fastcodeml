@@ -14,9 +14,9 @@
 /// or suggest new ideas.
 ///
 ///- Ing. <a href="mailto:mvalle@cscs.ch">Mario Valle</a> - Swiss National
-/// Supercomputing Centre (CSCS) - Switzerland
+///Supercomputing Centre (CSCS) - Switzerland
 ///- The HP2C <a href="mailto:selectome@hp2c.ch">Selectome</a> Project Group -
-/// Mainly based in University of Lausanne - Switzerland
+///Mainly based in University of Lausanne - Switzerland
 ///
 
 #include <iostream>
@@ -50,9 +50,10 @@
 
 /// Main program for FastCodeML.
 ///
-///     @author Mario Valle - Swiss National Supercomputing Centre (CSCS)
-///     @date 2010-12-22 (initial version)
-///     @version 1.1
+///		@author Mario Valle - Swiss National Supercomputing Centre
+///(CSCS)
+///		@date 2010-12-22 (initial version)
+///		@version 1.1
 ///
 ///	@param[in] aRgc Number of command line parameters
 /// @param[in] aRgv Command line parameters
@@ -93,9 +94,9 @@ int main(int aRgc, char **aRgv) {
 
     omp_set_num_threads(num_threads);
 /*if (num_threads < 2)
-    cmd.mForceSerial = true;
+ cmd.mForceSerial = true;
  else
-    cmd.mForceSerial = false;*/
+ cmd.mForceSerial = false;*/
 #else
     cmd.mNumThreads = 1;
     int num_threads = 1;
@@ -103,17 +104,17 @@ int main(int aRgc, char **aRgv) {
 #endif
 
 /*#ifdef _OPENMP
-        int num_threads = omp_get_max_threads();
-        if(num_threads < 2 || cmd.mForceSerial)
-        {
-                cmd.mForceSerial = true;
-                num_threads = 1;
-                omp_set_num_threads(1);
-        }
-#else
-        cmd.mForceSerial = true;
-        int num_threads = 1;
-#endif*/
+ int num_threads = omp_get_max_threads();
+ if(num_threads < 2 || cmd.mForceSerial)
+ {
+ cmd.mForceSerial = true;
+ num_threads = 1;
+ omp_set_num_threads(1);
+ }
+ #else
+ cmd.mForceSerial = true;
+ int num_threads = 1;
+ #endif*/
 
 #ifdef USE_MPI
     // Shutdown messages from all MPI processes except the master
@@ -121,8 +122,8 @@ int main(int aRgc, char **aRgv) {
       cmd.mVerboseLevel = VERBOSE_NONE;
 #endif
 
-    //    std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML
-    //    V"<<version<<std::endl<<"------------------"<<std::endl;
+    //	  std::cout <<std::endl<<"------------------"<< std::endl<<"FastCodeML
+    //V"<<version<<std::endl<<"------------------"<<std::endl;
     // Write out command line parameters (if not quiet i.e. if verbose level >
     // 0)
     if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT) {
@@ -131,12 +132,12 @@ int main(int aRgc, char **aRgv) {
       std::cout << "FastCodeML V" << version << std::endl;
       std::cout << "------------------------------------" << std::endl;
       std::cout << std::endl;
-      std::cout << "Tree file:      " << cmd.mTreeFile << std::endl;
-      std::cout << "Gene file:      " << cmd.mGeneFile << std::endl;
+      std::cout << "Tree file:	  " << cmd.mTreeFile << std::endl;
+      std::cout << "Gene file:	  " << cmd.mGeneFile << std::endl;
       std::cout << "Verbose level:  " << cmd.mVerboseLevel << " ("
                 << decodeVerboseLevel(cmd.mVerboseLevel) << ')' << std::endl;
       if (cmd.mSeed)
-        std::cout << "Seed:           " << cmd.mSeed << std::endl;
+        std::cout << "Seed:			  " << cmd.mSeed << std::endl;
       if (cmd.mBranchFromFile)
         std::cout << "Branch:		  From tree file" << std::endl;
       else if (cmd.mBranchAll)
@@ -154,9 +155,9 @@ int main(int aRgc, char **aRgv) {
       //<< "Branches:		  " << cmd.mBranchStart << '-' <<
       //cmd.mBranchEnd << std::endl;
       if (!cmd.mStopIfNotLRT)
-        std::cout << "H0 pre stop:    No" << std::endl;
+        std::cout << "H0 pre stop:	  No" << std::endl;
       if (cmd.mIgnoreFreq)
-        std::cout << "Codon freq.:    Ignore" << std::endl;
+        std::cout << "Codon freq.:	  Ignore" << std::endl;
       if (cmd.mDoNotReduceForest)
         std::cout << "Reduce forest:  Do not reduce" << std::endl;
       else
@@ -165,48 +166,49 @@ int main(int aRgc, char **aRgv) {
         std::cout << "Starting val.:  From H1" << std::endl;
       else if (cmd.mInitFromParams && cmd.mBranchLengthsFromFile)
         std::cout << "Starting val.:  Times from tree file and params from "
-                     "const (see below)" << std::endl;
+                     "const (see below)"
+                  << std::endl;
       else if (cmd.mInitFromParams)
         std::cout << "Starting val.:  Params from const (see below)"
                   << std::endl;
       else if (cmd.mBranchLengthsFromFile)
         std::cout << "Starting val.:  Times from tree file" << std::endl;
       if (cmd.mNoMaximization)
-        std::cout << "Maximization:   No" << std::endl;
+        std::cout << "Maximization:	  No" << std::endl;
       if (cmd.mTrace)
-        std::cout << "Trace:          On" << std::endl;
+        std::cout << "Trace:		  On" << std::endl;
       if (cmd.mCleanData)
-        std::cout << "Clean data:     On" << std::endl;
+        std::cout << "Clean data:	  On" << std::endl;
       else
-        std::cout << "Clean data:     Off" << std::endl;
+        std::cout << "Clean data:	  Off" << std::endl;
       if (cmd.mGraphFile)
-        std::cout << "Graph file:     " << cmd.mGraphFile << std::endl;
+        std::cout << "Graph file:	  " << cmd.mGraphFile << std::endl;
       if (cmd.mGraphFile && cmd.mExportComputedTimes != UINT_MAX)
-        std::cout << "Graph times:    From H" << cmd.mExportComputedTimes
+        std::cout << "Graph times:	  From H" << cmd.mExportComputedTimes
                   << std::endl;
       if (!cmd.mNoMaximization)
-        std::cout << "Optimizer:      " << cmd.mOptimizationAlgo << std::endl;
+        std::cout << "Optimizer:	  " << cmd.mOptimizationAlgo << std::endl;
       if (cmd.mMaxIterations != MAX_ITERATIONS)
         std::cout << "Max iterations: " << cmd.mMaxIterations << std::endl;
       if (cmd.mDeltaValueForGradient > 0.0)
-        std::cout << "Delta value:    " << cmd.mDeltaValueForGradient
+        std::cout << "Delta value:	  " << cmd.mDeltaValueForGradient
                   << std::endl;
       std::cout << "Relative error: " << cmd.mRelativeError << std::endl;
       if (cmd.mResultsFile)
-        std::cout << "Results file:   " << cmd.mResultsFile << std::endl;
+        std::cout << "Results file:	  " << cmd.mResultsFile << std::endl;
       if (cmd.mNumThreads)
         std::cout << "Number of threads: " << cmd.mNumThreads << std::endl;
       if (cmd.mFixedBranchLength)
         std::cout << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
       if (num_threads > 1) {
-        std::cout << "Num. threads:   " << num_threads << std::endl
-                  << "Num. cores:     " << omp_get_num_procs() << std::endl;
+        std::cout << "Num. threads:	  " << num_threads << std::endl
+                  << "Num. cores:	  " << omp_get_num_procs() << std::endl;
       } else
 #endif
       {
-        std::cout << "Num. threads:   1 serial" << std::endl
-                  << "Num. cores:     1" << std::endl;
+        std::cout << "Num. threads:	  1 serial" << std::endl
+                  << "Num. cores:	  1" << std::endl;
       }
 #ifdef USE_MPI
       if (hlc.numJobs() > 2)
@@ -244,8 +246,7 @@ int main(int aRgc, char **aRgv) {
 #ifdef USE_MKL_VML
       std::cout << "USE_MKL_VML";
 #endif
-      std::cout << std::endl
-                << std::endl;
+      std::cout << std::endl << std::endl;
       if (cmd.mInitFromParams) {
         std::cout << "Param initial values:" << std::endl
                   << std::endl
@@ -311,15 +312,14 @@ int main(int aRgc, char **aRgv) {
       }
     }
 
-      // Print the tree with the numbering of internal branches
-      if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
-        tree.printTreeAnnotated(std::cout);
+    // Print the tree with the numbering of internal branches
+    if (cmd.mVerboseLevel >= VERBOSE_INFO_OUTPUT)
+      tree.printTreeAnnotated(std::cout);
 
-      // Load the forest
-      forest.loadTreeAndGenes(
-          tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF
-                                     : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
-    }
+    // Load the forest
+    forest.loadTreeAndGenes(
+        tree, msa, cmd.mIgnoreFreq ? CodonFrequencies::CODON_FREQ_MODEL_UNIF
+                                   : CodonFrequencies::CODON_FREQ_MODEL_F3X4);
 
     // Reduce the forest merging common subtrees. Add also more reduction, then
     // clean the no more useful data.
@@ -496,8 +496,7 @@ int main(int aRgc, char **aRgv) {
           else
             std::cout << std::setprecision(15) << std::fixed << lnl1;
           std::cout << " Function calls: " << h1.getNumEvaluations();
-          std::cout << std::endl
-                    << std::endl;
+          std::cout << std::endl << std::endl;
           if (lnl1 != std::numeric_limits<double>::infinity()) {
             std::string s1 = h1.printFinalVars(std::cout);
             // std::cout<<"EDW1: "<< s1 <<std::endl;
@@ -512,8 +511,8 @@ int main(int aRgc, char **aRgv) {
           else if (lnl0 < DBL_MAX)
             std::cout << "LRT: " << std::setprecision(15) << std::fixed
                       << lnl1 - lnl0
-                      << "  (threshold: " << std::setprecision(15) << std::fixed
-                      << THRESHOLD_FOR_LRT << ')';
+                      << "	 (threshold: " << std::setprecision(15)
+                      << std::fixed << THRESHOLD_FOR_LRT << ')';
           else
             std::cout << "LRT: < " << std::setprecision(15) << std::fixed
                       << THRESHOLD_FOR_LRT;
@@ -862,19 +861,13 @@ int main(int aRgc, char **aRgv) {
   } catch (const FastCodeMLFatal &e) {
     // If a message associated (i.e. no empty string), display it
     if (e.what()[0])
-      std::cout << std::endl
-                << e.what() << std::endl
-                << std::endl;
+      std::cout << std::endl << e.what() << std::endl << std::endl;
     return 1;
   } catch (const FastCodeMLMemoryError &e) {
-    std::cout << std::endl
-              << e.what() << std::endl
-              << std::endl;
+    std::cout << std::endl << e.what() << std::endl << std::endl;
     return 1;
   } catch (const std::bad_alloc &e) {
-    std::cout << std::endl
-              << e.what() << std::endl
-              << std::endl;
+    std::cout << std::endl << e.what() << std::endl << std::endl;
     return 1;
   } catch (...) {
     std::cout << std::endl
@@ -949,11 +942,11 @@ int main(int aRgc, char **aRgv) {
 ///
 /// Before running the executable, define the following environment variables:
 ///
-///     export VT_BUFFER_SIZE=512M
-///     export VT_MAX_FLUSHES=0
-///     export VT_SYNCH_FLUSH=yes
-///     export VT_GPUTRACE=no
-///     export VT_UNIFY=no
+///		export VT_BUFFER_SIZE=512M
+///		export VT_MAX_FLUSHES=0
+///		export VT_SYNCH_FLUSH=yes
+///		export VT_GPUTRACE=no
+///		export VT_UNIFY=no
 ///
 /// Due to a VampirTrace bug, at the end of the execution, run the vtunify
 /// executable by itself.
