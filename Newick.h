@@ -62,6 +62,7 @@ public:
   /// @param[in] aInternalBranch Internal branch identifier to annotate the
   /// current branch.
   /// @param[in] whether leaves should be labeled or not.
+  /// @param[in] whether branch numbers should be shown or not.
   ///
   /// @return The new branch id
   ///
@@ -80,6 +81,7 @@ public:
   /// @param[in] whether leaves should be labeled or not.
   /// @param[in] array of branch lengths after estimation to be labeled in the
   /// tree.
+  /// @param[in] whether branch numbers should be shown or not.
   ///
   /// @return The new branch id
   ///

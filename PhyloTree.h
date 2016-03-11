@@ -61,12 +61,13 @@ public:
   /// @param[in] aInternalBranch Internal branch identifier to annotate the
   /// current branch.
   /// @param[in] whether branch leaves should be considered or not
+  /// @param[in] whether branch numbers should be printed or not
   ///
   /// @return The new internal branch id
   ///
   virtual int printTreeAnnotated(std::ostream &aOut, TreeNode *aNode = NULL,
                                  int aInternalBranch = 0,
-                                 bool wLeaves = false) const = 0;
+                                 bool wLeaves = false, bool bNumber = true) const = 0;
 
   /// Return the list of species.
   ///
