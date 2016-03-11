@@ -86,7 +86,7 @@ public:
   virtual int
   printTreeAnnotatedWithEstLens(std::ostream &aOut, TreeNode *aNode = NULL,
                                 int aInternalBranch = 0, bool wLeaves = false,
-                                std::vector<double> *mVar = NULL) const;
+                                std::vector<double> *mVar = NULL, bool bNumber=true) const;
 
 private:
   /// Load a phylo tree definition from a Newick formatted string.

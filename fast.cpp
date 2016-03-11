@@ -635,6 +635,8 @@ int main(int aRgc, char **aRgv) {
 						std::cout << std::endl << "H1 Final ";
 					tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
 							&mVar);
+					tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
+							&mVar, false);
 				}
 				// tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
 				// &h1.getVariables());
@@ -869,6 +871,8 @@ int main(int aRgc, char **aRgv) {
 							std::cout << std::endl << "H1 Final ";
 						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
 								true, &mVar);
+						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
+														true, &mVar, false);
 					}
 				}
 			}

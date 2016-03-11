@@ -182,7 +182,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
       // configuration parameters
 
       {OPT_SEED, "-s", SO_REQ_SEP,
-       "Random number generator seed (0 < seed < 1000000000)"},
+       "Random number generator seed (0 < seed < 1000000000, seed=0 -> random seed)"},
       {OPT_SEED, "--seed", SO_REQ_SEP, ""},
       {OPT_NUM_THREADS, "-nt", SO_REQ_SEP,
        "Number of threads (1 for non parallel execution)"},
@@ -242,10 +242,10 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
       // initialization parameters
 
       {OPT_TIMES_FROM_FILE, "-l", SO_NONE,
-       "Initial branch lengths from tree file"},
+       "Initial branch lengths from tree file (otherwise random initial branch lengths)"},
       {OPT_TIMES_FROM_FILE, "--blengths-from-file", SO_NONE, ""},
       {OPT_BRANCH_LENGTH, "-bl", SO_NONE,
-       "The length of the branches is fixed"},
+       "Initial branch lengths from tree file and fixed"},
       {OPT_BRANCH_LENGTH, "--branch-lengths-fixed", SO_NONE, ""},
       {OPT_BRANCH_ALL, "-ba", SO_NONE,
        "Do for all branches as foreground branch (including leaves)"},
@@ -255,7 +255,7 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
                                          "in the phylo tree"},
       {OPT_COMP_TIMES, "--export-comp-times", SO_REQ_SEP, ""},
       {OPT_INIT_PARAM, "-p", SO_REQ_SEP, "Pass initialization parameter in the "
-                                         "form: P=value (P: w0, k, p0, p1, w2) "
+                                         "form (otherwise random): P=value (P: w0, k, p0, p1, w2) "
                                          "-> e.g. -p w0=1.1 -p p0=2.1 ..."},
       {OPT_INIT_PARAM, "--init-param", SO_REQ_SEP, ""},
       {OPT_INIT_DEFAULT, "-ic", SO_NONE,
