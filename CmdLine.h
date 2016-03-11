@@ -38,7 +38,7 @@ public:
         mIgnoreFreq(false), mDoNotReduceForest(false),
         mBranchLengthsFromFile(false), mNoMaximization(false), mTrace(false),
 #ifdef _OPENMP
-        mNumThreads(omp_get_max_threads()),
+        mNumThreads(omp_get_max_threads()/2 + 1 ), // to prevent possible false sharing
 #else
         mNumThreads(1),
 #endif

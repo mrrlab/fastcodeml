@@ -85,17 +85,17 @@ int main(int aRgc, char **aRgv) {
 // Adjust and report the number of threads that will be used
 #ifdef _OPENMP
 		int num_threads = omp_get_max_threads();
-		std::cout<<"max num of thr: "<< num_threads <<std::endl;
+		//std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
 		if ((cmd.mNumThreads >= 1) &&
 				(cmd.mNumThreads <= (unsigned int)num_threads))
 		num_threads = cmd.mNumThreads;
-		else
-		num_threads = num_threads/2 + 1;// to prevent possible false sharing when it is set to maximum
+		//else
+		//num_threads = num_threads/2 + 1;// to prevent possible false sharing when it is set to maximum
 		// std::cout<<"num of thr: "<< num_threads <<std::endl;
 
 		omp_set_num_threads(num_threads);
-		std::cout<<"current num of thr: "<< num_threads <<", command line num of thr: "<<cmd.mNumThreads<<std::endl;
+		//std::cout<<"current num of thr: "<< num_threads <<", command line num of thr: "<<cmd.mNumThreads<<std::endl;
 		/*if (num_threads < 2)
 		 cmd.mForceSerial = true;
 		 else
