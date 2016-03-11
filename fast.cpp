@@ -629,7 +629,7 @@ int main(int aRgc, char **aRgv) {
 					if (cmd.mComputeHypothesis == 0)
 						std::cout << std::endl << "H0 Final ";
 					else
-						std::cout << std::endl << "H0 Final ";
+						std::cout << std::endl << "H1 Final ";
 					tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
 							&mVar);
 				}
@@ -864,7 +864,7 @@ int main(int aRgc, char **aRgv) {
 						if (cmd.mComputeHypothesis == 0)
 							std::cout << std::endl << "H0 Final ";
 						else
-							std::cout << std::endl << "H0 Final ";
+							std::cout << std::endl << "H1 Final ";
 						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
 								true, &mVar);
 					}
