@@ -95,7 +95,7 @@ int main(int aRgc, char **aRgv) {
 		// std::cout<<"num of thr: "<< num_threads <<std::endl;
 
 		omp_set_num_threads(num_threads);
-		std::cout<<"current num of thr: "<< num_threads <<std::endl;
+		std::cout<<"current num of thr: "<< num_threads <<", command line num of thr: "<<cmd.mNumThreads<<std::endl;
 		/*if (num_threads < 2)
 		 cmd.mForceSerial = true;
 		 else
