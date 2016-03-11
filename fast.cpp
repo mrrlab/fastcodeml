@@ -617,6 +617,7 @@ int main(int aRgc, char **aRgv) {
 				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 					std::cout << std::endl << "Final ";
 					tree.printTreeAnnotated(std::cout, NULL, 0, true);
+					tree.printTreeAnnotated(std::cout, NULL, 0, true, false);
 				}
 			}
 
@@ -853,6 +854,7 @@ int main(int aRgc, char **aRgv) {
 					if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 						std::cout << std::endl << "Final ";
 						tree.printTreeAnnotated(std::cout, NULL, 0, true);
+						tree.printTreeAnnotated(std::cout, NULL, 0, true, false);
 						std::cout << std::endl;
 					}
 				}
@@ -873,6 +875,7 @@ int main(int aRgc, char **aRgv) {
 								true, &mVar);
 						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
 														true, &mVar, false);
+						std::cout << std::endl;
 					}
 				}
 			}

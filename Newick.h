@@ -67,7 +67,7 @@ public:
   ///
   virtual int printTreeAnnotated(std::ostream &aOut, TreeNode *aNode = NULL,
                                  int aInternalBranch = 0,
-                                 bool wLeaves = false) const;
+                                 bool wLeaves = false, bool bNumber=true) const;
 
   /// Print the phylogenetic tree completed with all the info loaded in the same
   /// format as read in and annotated with the branch numbers.

@@ -258,7 +258,7 @@ void Newick::printTreeUnformatted(std::ostream &aOut, TreeNode *aNode) const {
 }
 
 int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
-                               bool wLeaves) const {
+                               bool wLeaves, bool bNumber) const {
   TreeNode *m;
   unsigned int idx;
   int branch_idx = aBranch;
@@ -266,10 +266,10 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
   // Special case for the root
   if (!aNode) {
     if (wLeaves)
-      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl;
+      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl << std::endl;
     else
       aOut << "Annotated Newick Tree (*N marks the internal branch N)"
-           << std::endl;
+           << std::endl << std::endl;
     aOut << '(';
     for (idx = 0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx) {
       if (idx > 0)
@@ -284,7 +284,7 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
     if (wLeaves)
       branch_idx = aBranch + 1;
     aNode->printNode();
-    if (wLeaves)
+    if (wLeaves and bNumber)
       aOut << '*' << aBranch;
   } else {
     branch_idx = aBranch + 1;
@@ -296,7 +296,7 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
     }
     aOut << ')';
     aNode->printNode();
-    aOut << '*' << aBranch;
+    if (bNumber) aOut << '*' << aBranch;
   }
 
   return branch_idx;
