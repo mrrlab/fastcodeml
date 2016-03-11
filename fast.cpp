@@ -90,6 +90,8 @@ int main(int aRgc, char **aRgv) {
 		if ((cmd.mNumThreads >= 1) &&
 				(cmd.mNumThreads <= (unsigned int)num_threads))
 		num_threads = cmd.mNumThreads;
+		else
+		num_threads = num_threads/2 + 1;// to prevent possible false sharing when it is set to maximum
 		// std::cout<<"num of thr: "<< num_threads <<std::endl;
 
 		omp_set_num_threads(num_threads);
@@ -653,9 +655,8 @@ int main(int aRgc, char **aRgv) {
 
 			timer_app.stop();
 			if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
-				std::cout << std::endl << "Time used: "
-						<< timer_app.get() / 60000 << ":"
-						<< (timer_app.get() / 1000) % 60 << std::endl;
+				std::cout << std::endl << "Time used: " << timer_app.get() / 60000
+									<< "m:" << (timer_app.get() / 1000) % 60 << "s" << std::endl;
 				std::cout << "Cores used: " << num_threads << std::endl;
 			}
 			return 0;
@@ -883,7 +884,7 @@ int main(int aRgc, char **aRgv) {
 		timer_app.stop();
 		if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 			std::cout << std::endl << "Time used: " << timer_app.get() / 60000
-					<< ":" << (timer_app.get() / 1000) % 60 << std::endl;
+					<< "m:" << (timer_app.get() / 1000) % 60 << "s" << std::endl;
 			std::cout << "Cores used: " << num_threads << std::endl;
 		}
 
