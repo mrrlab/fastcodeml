@@ -617,6 +617,7 @@ int main(int aRgc, char **aRgv) {
 				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 					std::cout << std::endl << "Final ";
 					tree.printTreeAnnotated(std::cout, NULL, 0, true);
+					std::cout << std::endl;
 					tree.printTreeAnnotated(std::cout, NULL, 0, true, false);
 				}
 			}
@@ -636,6 +637,7 @@ int main(int aRgc, char **aRgv) {
 						std::cout << std::endl << "H1 Final ";
 					tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
 							&mVar);
+					std::cout << std::endl;
 					tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0, true,
 							&mVar, false);
 				}
@@ -854,6 +856,7 @@ int main(int aRgc, char **aRgv) {
 					if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 						std::cout << std::endl << "Final ";
 						tree.printTreeAnnotated(std::cout, NULL, 0, true);
+						std::cout << std::endl;
 						tree.printTreeAnnotated(std::cout, NULL, 0, true, false);
 						std::cout << std::endl;
 					}
@@ -873,6 +876,7 @@ int main(int aRgc, char **aRgv) {
 							std::cout << std::endl << "H1 Final ";
 						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
 								true, &mVar);
+						std::cout << std::endl;
 						tree.printTreeAnnotatedWithEstLens(std::cout, NULL, 0,
 														true, &mVar, false);
 						std::cout << std::endl;
