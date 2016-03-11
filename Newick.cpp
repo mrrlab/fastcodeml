@@ -258,23 +258,25 @@ void Newick::printTreeUnformatted(std::ostream &aOut, TreeNode *aNode) const {
 }
 
 int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
-                               bool wLeaves) const {
+                               bool wLeaves, bool bNumber) const {
   TreeNode *m;
   unsigned int idx;
   int branch_idx = aBranch;
 
   // Special case for the root
   if (!aNode) {
-    if (wLeaves)
-      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl;
+    if (bNumber){
+	if (wLeaves)
+      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl << std::endl;
     else
       aOut << "Annotated Newick Tree (*N marks the internal branch N)"
-           << std::endl;
+           << std::endl << std::endl;
+    }
     aOut << '(';
     for (idx = 0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx) {
       if (idx > 0)
         aOut << ',';
-      branch_idx = printTreeAnnotated(aOut, m, branch_idx, wLeaves);
+      branch_idx = printTreeAnnotated(aOut, m, branch_idx, wLeaves, bNumber);
     }
     aOut << ')';
     mTreeRoot.printNode();
@@ -284,7 +286,7 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
     if (wLeaves)
       branch_idx = aBranch + 1;
     aNode->printNode();
-    if (wLeaves)
+    if (wLeaves && bNumber)
       aOut << '*' << aBranch;
   } else {
     branch_idx = aBranch + 1;
@@ -292,11 +294,11 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
     for (idx = 0; (m = aNode->getChild(idx)) != NULL; ++idx) {
       if (idx > 0)
         aOut << ',';
-      branch_idx = printTreeAnnotated(aOut, m, branch_idx, wLeaves);
+      branch_idx = printTreeAnnotated(aOut, m, branch_idx, wLeaves, bNumber);
     }
     aOut << ')';
     aNode->printNode();
-    aOut << '*' << aBranch;
+    if (bNumber) aOut << '*' << aBranch;
   }
 
   return branch_idx;
@@ -304,24 +306,26 @@ int Newick::printTreeAnnotated(std::ostream &aOut, TreeNode *aNode, int aBranch,
 
 int Newick::printTreeAnnotatedWithEstLens(std::ostream &aOut, TreeNode *aNode,
                                           int aBranch, bool wLeaves,
-                                          std::vector<double> *mVar) const {
+                                          std::vector<double> *mVar, bool bNumber) const {
   TreeNode *m;
   unsigned int idx;
   int branch_idx = aBranch;
 
   // Special case for the root
   if (!aNode) {
-    if (wLeaves)
-      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl;
+    if (bNumber){
+	if (wLeaves)
+      aOut << "Annotated Newick Tree (*N marks the branch N)" << std::endl << std::endl;
     else
       aOut << "Annotated Newick Tree (*N marks the internal branch N)"
-           << std::endl;
+           << std::endl << std::endl;
+    }
     aOut << '(';
     for (idx = 0; (m = mTreeRoot.getChild(idx)) != NULL; ++idx) {
       if (idx > 0)
         aOut << ',';
       branch_idx =
-          printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar);
+          printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar, bNumber);
     }
     aOut << ')';
     mTreeRoot.printNodeWoutLen();
@@ -333,7 +337,7 @@ int Newick::printTreeAnnotatedWithEstLens(std::ostream &aOut, TreeNode *aNode,
       branch_idx = aBranch + 1;
     aNode->printNodeWoutLen();
     std::cout << std::setprecision(6) << ":" << (*mVar)[aBranch];
-    if (wLeaves)
+    if (wLeaves && bNumber)
       aOut << '*' << aBranch;
   } else {
     branch_idx = aBranch + 1;
@@ -342,12 +346,12 @@ int Newick::printTreeAnnotatedWithEstLens(std::ostream &aOut, TreeNode *aNode,
       if (idx > 0)
         aOut << ',';
       branch_idx =
-          printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar);
+          printTreeAnnotatedWithEstLens(aOut, m, branch_idx, wLeaves, mVar, bNumber);
     }
     aOut << ')';
     aNode->printNodeWoutLen();
     std::cout << std::setprecision(6) << ":" << (*mVar)[aBranch];
-    aOut << '*' << aBranch;
+    if (bNumber) aOut << '*' << aBranch;
   }
 
   return branch_idx;

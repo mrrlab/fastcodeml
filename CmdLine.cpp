@@ -161,28 +161,28 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
                                       "only; 2: normal info; 3: MPI trace; 4: "
                                       "more debug) (default: 1)"},
       {OPT_VERBOSE, "--verbose", SO_REQ_SEP, ""},
-      {OPT_QUIET, "-q", SO_NONE, "No messages except results"},
-      {OPT_QUIET, "--quiet", SO_NONE, ""},
+      //{OPT_QUIET, "-q", SO_NONE, "No messages except results"},
+      //{OPT_QUIET, "--quiet", SO_NONE, ""},
       {OPT_EXPORT, "-e", SO_REQ_SEP, "Export forest in GML format (if %03d or "
                                      "@03d is present, one is created for each "
                                      "fg branch)"},
       {OPT_EXPORT, "--export", SO_REQ_SEP, ""},
       {OPT_TRACE, "-r", SO_NONE, "Trace the maximization run"},
       {OPT_TRACE, "--trace", SO_NONE, ""},
-      {OPT_EXTRA_DEBUG, "-x", SO_REQ_SEP,
-       "Extra debug parameter (zero disables it)"},
-      {OPT_EXTRA_DEBUG, "--extra-debug", SO_REQ_SEP, ""},
+      //{OPT_EXTRA_DEBUG, "-x", SO_REQ_SEP,
+       //"Extra debug parameter (zero disables it)"},
+      //{OPT_EXTRA_DEBUG, "--extra-debug", SO_REQ_SEP, ""},
       {OPT_OUT_RESULTS, "-ou", SO_REQ_SEP,
        "Write results formatted to this file"},
       {OPT_OUT_RESULTS, "--output", SO_REQ_SEP, ""},
       {OPT_CLEAN_DATA, "-cl", SO_NONE,
-       "Remove ambiguous or missing sites from the MSA (default: no)"},
+       "Skip ambiguous or missing sites from the MSA (default: no)"},
       {OPT_CLEAN_DATA, "--clean-data", SO_NONE, ""},
 
       // configuration parameters
 
       {OPT_SEED, "-s", SO_REQ_SEP,
-       "Random number generator seed (0 < seed < 1000000000)"},
+       "Random number generator seed (0 < seed < 1000000000, seed=0 -> random seed)"},
       {OPT_SEED, "--seed", SO_REQ_SEP, ""},
       {OPT_NUM_THREADS, "-nt", SO_REQ_SEP,
        "Number of threads (1 for non parallel execution)"},
@@ -242,25 +242,25 @@ void CmdLine::parseCmdLine(int aCnt, char **aVal) {
       // initialization parameters
 
       {OPT_TIMES_FROM_FILE, "-l", SO_NONE,
-       "Initial branch lengths from tree file"},
+       "Initial branch lengths from tree file (otherwise random initial branch lengths)"},
       {OPT_TIMES_FROM_FILE, "--blengths-from-file", SO_NONE, ""},
       {OPT_BRANCH_LENGTH, "-bl", SO_NONE,
-       "The length of the branches is fixed"},
+       "Initial branch lengths from tree file and fixed"},
       {OPT_BRANCH_LENGTH, "--branch-lengths-fixed", SO_NONE, ""},
       {OPT_BRANCH_ALL, "-ba", SO_NONE,
        "Do for all branches as foreground branch (including leaves)"},
       {OPT_BRANCH_ALL, "--branch-all", SO_NONE, ""},
-      {OPT_COMP_TIMES, "-c", SO_REQ_SEP, "Export the computed times from H0 if "
-                                         "0, H1 if 1, otherwise the one read "
-                                         "in the phylo tree"},
-      {OPT_COMP_TIMES, "--export-comp-times", SO_REQ_SEP, ""},
+      //{OPT_COMP_TIMES, "-c", SO_REQ_SEP, "Export the computed times from H0 if "
+      //                                   "0, H1 if 1, otherwise the one read "
+      //                                   "in the phylo tree"},
+      //{OPT_COMP_TIMES, "--export-comp-times", SO_REQ_SEP, ""},
       {OPT_INIT_PARAM, "-p", SO_REQ_SEP, "Pass initialization parameter in the "
-                                         "form: P=value (P: w0, k, p0, p1, w2) "
+                                         "form (otherwise random): P=value (P: w0, k, p0, p1, w2) "
                                          "-> e.g. -p w0=1.1 -p p0=2.1 ..."},
       {OPT_INIT_PARAM, "--init-param", SO_REQ_SEP, ""},
-      {OPT_INIT_DEFAULT, "-ic", SO_NONE,
-       "Start from default parameter values and times from tree file"},
-      {OPT_INIT_DEFAULT, "--init-default", SO_NONE, ""},
+      //{OPT_INIT_DEFAULT, "-ic", SO_NONE,
+       //"Start from default parameter values and times from tree file"},
+      //{OPT_INIT_DEFAULT, "--init-default", SO_NONE, ""},
 
       SO_END_OF_OPTIONS};
 
