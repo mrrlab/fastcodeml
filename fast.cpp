@@ -85,7 +85,7 @@ int main(int aRgc, char **aRgv) {
 // Adjust and report the number of threads that will be used
 #ifdef _OPENMP
 		int num_threads = omp_get_max_threads();
-		// std::cout<<"max num of thr: "<< num_threads <<std::endl;
+		std::cout<<"max num of thr: "<< num_threads <<std::endl;
 
 		if ((cmd.mNumThreads >= 1) &&
 				(cmd.mNumThreads <= (unsigned int)num_threads))
@@ -95,6 +95,7 @@ int main(int aRgc, char **aRgv) {
 		// std::cout<<"num of thr: "<< num_threads <<std::endl;
 
 		omp_set_num_threads(num_threads);
+		std::cout<<"current num of thr: "<< num_threads <<std::endl;
 		/*if (num_threads < 2)
 		 cmd.mForceSerial = true;
 		 else
@@ -210,8 +211,8 @@ int main(int aRgc, char **aRgv) {
 				std::cout << "Branch lengths are fixed" << std::endl;
 #ifdef _OPENMP
 			if (num_threads > 1) {
-				std::cout << "Num. threads:	  " << num_threads << std::endl
-				<< "Num. cores:	  " << omp_get_num_procs() << std::endl;
+				std::cout << "Current num. threads:	  " << num_threads << std::endl
+				<< "Total num. cores:	  " << omp_get_num_procs() << std::endl;
 			} else
 #endif
 			{
@@ -677,10 +678,10 @@ int main(int aRgc, char **aRgv) {
 
 		if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
 			if (cmd.mBranchAll)
-				std::cout << std::endl << "Doing all foreground branches"
+				std::cout << std::endl << "Doing for all branches (internal + leaf) as foreground"
 						<< std::endl;
 			else
-				std::cout << std::endl << "Doing internal foreground branches"
+				std::cout << std::endl << "Doing for all internal branches as foreground"
 						<< std::endl;
 			std::cout << "------------------------------------" << std::endl;
 		}
