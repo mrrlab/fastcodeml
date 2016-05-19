@@ -832,7 +832,7 @@ int main(int aRgc, char **aRgv) {
 					// if(cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) std::cout <<
 					// std::endl << "LRT is significant. Computing sites under positive
 					// selection ... " << std::endl ;
-					// beb.computeBEB(h1.getVariables(), fg_branch, scales);
+					beb.computeBEB(h1.getVariables(), fg_branch, scales);
 
 					// Output the sites under positive selection (if any)
 					if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
