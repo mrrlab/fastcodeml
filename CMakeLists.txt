@@ -194,3 +194,5 @@ endif(MPI_LIBRARY)
 
 
 
+
+add_subdirectory(bad_cases)

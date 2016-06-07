@@ -423,6 +423,9 @@ int main(int aRgc, char **aRgv) {
 
 		if (!fg_set.empty()) // in case of marked fg branches (one or multiple fg)
 		{
+			//initial the output results object
+			WriteResultsMfg output_results_mfg(cmd.mResultsFile);
+			
 			if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS)
 				std::cout << std::endl
 						<< "Doing foreground branch(es) from tree file "
@@ -457,7 +460,7 @@ int main(int aRgc, char **aRgv) {
 
 				// std::cout << "lnl1 = " << lnl1 << std::endl;
 				// Save the value for formatted output
-				// output_results.saveLnL(fg_set, lnl1, 1);
+				 output_results_mfg.saveLnL(fg_set, lnl1, 1);
 			}
 
 			// Compute the null model maximum loglikelihood
@@ -479,7 +482,7 @@ int main(int aRgc, char **aRgv) {
 				// std::cout << "lnl0 = " << lnl0 << std::endl;
 				// Save the value for formatted output (only if has not be forced to
 				// stop)
-				// if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+				 if(lnl0 < DBL_MAX) output_results_mfg.saveLnL(fg_set, lnl0, 0);
 			}
 
 			if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
@@ -499,7 +502,7 @@ int main(int aRgc, char **aRgv) {
 					if (lnl0 != std::numeric_limits<double>::infinity()) {
 						std::string s0 = h0.printFinalVars(std::cout);
 						// std::cout<<"EDW0: "<< s0 <<std::endl;
-						// output_results.saveParameters(fg_branch, s0, 0);
+						output_results_mfg.saveParameters(fg_set, s0, 0);
 					}
 					std::cout << std::endl;
 				}
@@ -515,7 +518,7 @@ int main(int aRgc, char **aRgv) {
 					if (lnl1 != std::numeric_limits<double>::infinity()) {
 						std::string s1 = h1.printFinalVars(std::cout);
 						// std::cout<<"EDW1: "<< s1 <<std::endl;
-						// output_results.saveParameters(fg_branch, s1, 1);
+					        output_results_mfg.saveParameters(fg_set, s1, 1);
 					}
 					std::cout << std::endl;
 				}
@@ -582,32 +585,32 @@ int main(int aRgc, char **aRgv) {
 				// Get the sites under positive selection for printing in the results
 				// file (if defined)
 
-				/*if(output_results.isWriteResultsEnabled())
+				if(output_results_mfg.isWriteResultsEnabled())
 				 {
 				 std::vector<unsigned int> positive_sel_sites;
 				 std::vector<double> positive_sel_sites_prob;
 				 beb.extractPositiveSelSites(positive_sel_sites,
 				 positive_sel_sites_prob);
 
-				 if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
-				 std::cout << std::endl
-				 << "Positively selected sites and their probabilities : ";
-				 std::cout << std::endl;
-				 for (std::vector<unsigned int>::iterator it =
-				 positive_sel_sites.begin();
-				 it != positive_sel_sites.end(); ++it)
-				 std::cout << " " << *it << ",";
-				 std::cout << std::endl;
-				 for (std::vector<double>::iterator it =
-				 positive_sel_sites_prob.begin();
-				 it != positive_sel_sites_prob.end(); ++it)
-				 std::cout << " " << *it << ",";
-				 std::cout << std::endl;
-				 }
+				 //if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
+				 //std::cout << std::endl
+				 //<< "Positively selected sites and their probabilities : ";
+				 //std::cout << std::endl;
+				 //for (std::vector<unsigned int>::iterator it =
+				 //positive_sel_sites.begin();
+				 //it != positive_sel_sites.end(); ++it)
+				 //std::cout << " " << *it << ",";
+				 //std::cout << std::endl;
+				 //for (std::vector<double>::iterator it =
+				 //positive_sel_sites_prob.begin();
+				 //it != positive_sel_sites_prob.end(); ++it)
+				 //std::cout << " " << *it << ",";
+				 //std::cout << std::endl;
+				 //}
 
-				 output_results.savePositiveSelSites(fg_set, positive_sel_sites,
+				 output_results_mfg.savePositiveSelSites(fg_set, positive_sel_sites,
 				 positive_sel_sites_prob);
-				 }*/
+				 }
 			}
 
 			// if branches are fixed
@@ -666,6 +669,11 @@ int main(int aRgc, char **aRgv) {
 									<< "m:" << (timer_app.get() / 1000) % 60 << "s" << std::endl;
 				std::cout << "Cores used: " << num_threads << std::endl;
 			}
+			
+			// Output the results
+		
+			 output_results_mfg.outputResults(fg_set);
+		
 			return 0;
 		}
 
@@ -674,6 +682,7 @@ int main(int aRgc, char **aRgv) {
 		// Initialize the output results file (if the argument is null, no file is
 		// created)
 		WriteResults output_results(cmd.mResultsFile);
+		
 
 		// Initialize the models
 		BranchSiteModelNullHyp h0(forest, cmd);
@@ -718,7 +727,7 @@ int main(int aRgc, char **aRgv) {
 					// h1.mBranches
 
 					// Save the value for formatted output
-					// output_results.saveLnL(fg_branch, lnl1, 1);
+					 output_results.saveLnL(fg_branch, lnl1, 1);
 				}
 
 				// Compute the null model maximum loglikelihood
@@ -739,7 +748,7 @@ int main(int aRgc, char **aRgv) {
 
 					// Save the value for formatted output (only if has not be forced to
 					// stop)
-					// if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
+					 if(lnl0 < DBL_MAX) output_results.saveLnL(fg_branch, lnl0, 0);
 				}
 
 				if (cmd.mVerboseLevel >= VERBOSE_ONLY_RESULTS) {
@@ -801,7 +810,7 @@ int main(int aRgc, char **aRgv) {
 					switch (cmd.mExportComputedTimes) {
 					case 0:
 						h0.saveComputedTimes();
-						break;
+						break; 
 
 					case 1:
 						h1.saveComputedTimes();
@@ -902,7 +911,7 @@ int main(int aRgc, char **aRgv) {
 		}
 
 		// Output the results
-		// output_results.outputResults();
+		output_results.outputResults(ib_set,cmd.mBranchAll);
 
 		// Catch all exceptions
 	} catch (const FastCodeMLSuccess &) {
