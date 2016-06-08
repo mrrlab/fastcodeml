@@ -205,9 +205,9 @@ int main(int aRgc, char **aRgv) {
 			if (cmd.mResultsFile)
 				std::cout << "Results file:       " << cmd.mResultsFile
 						<< std::endl;
-			if (cmd.mNumThreads)
-				std::cout << "Number of threads:  " << cmd.mNumThreads
-						<< std::endl;
+			//if (cmd.mNumThreads)
+			//	std::cout << "Number of threads:  " << cmd.mNumThreads
+			//			<< std::endl;
 			if (cmd.mFixedBranchLength)
 				std::cout << "Branch lengths:     fixed" << std::endl;
 #ifdef _OPENMP
