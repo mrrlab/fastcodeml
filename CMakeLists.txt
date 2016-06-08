@@ -42,15 +42,15 @@ endif(Boost_FOUND)
 
 # Get the configuration switches
 OPTION(USE_LAPACK         		"Use BLAS/LAPACK" OFF)
-OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF)
+OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF) # could be removed ?
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
-OPTION(USE_MPI            		"Use MPI for high level parallelization" ON)
+OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF) # could be removed ?
 if(NOT WIN32)
-	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF)
+	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF) # could be removed ?
 endif(NOT WIN32)
-OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF)
-OPTION(USE_ORIGINAL_PROPORTIONS	"Use the original CodeML proportion definition" OFF)
-SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
+OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF) # could be removed ?
+OPTION(USE_ORIGINAL_PROPORTIONS		"Use the original CodeML proportion definition" ON) # could be removed ?
+SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG") # could be removed ?
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
 OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" ON)
