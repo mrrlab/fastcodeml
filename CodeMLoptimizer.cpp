@@ -156,6 +156,11 @@ int Ming2::ming2(FILE *fout, double *f, double x[], const double xl[],
   }
 
   // double f0 = *f = (*fun) (x, n);	++mNumFunCall;
+  
+  //debug
+  for (int i=0;i < 100; i++)
+  printf("x[%d]=%f - ", i,x[i]);
+  
   double f0 = *f = -mModel->computeLikelihood(x, n, mTraceFun);
   xtoy(x, x0, n);
   double sizep = 99.;

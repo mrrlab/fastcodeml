@@ -71,7 +71,7 @@ if(USE_OPENMP)
 endif(USE_OPENMP)
 
 
-# Search for MPI
+# Search for MPI (could be removed ?)
 if(USE_MPI)
 	if(BUILD_SEARCH_MPI)
 		find_package(MPI)
@@ -84,7 +84,7 @@ endif(USE_MPI)
 # Load the needed paths
 set(LINK_DIR_BLAS     $ENV{BLAS_LIB_DIR}      CACHE PATH "BLAS lib dir")
 set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "LAPACK lib dir")
-set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir")
+set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir") # could be removed ?
 set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
 set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
 set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')")
@@ -112,11 +112,11 @@ if(USE_LAPACK)
 	add_definitions(-DUSE_LAPACK)
 endif(USE_LAPACK)
 
-if(MPI_FOUND)
+if(MPI_FOUND) # could be removed ?
 	add_definitions(-DUSE_MPI)
 endif(MPI_FOUND)
 
-if(USE_ORIGINAL_PROPORTIONS)
+if(USE_ORIGINAL_PROPORTIONS) # could be removed ?
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
 
