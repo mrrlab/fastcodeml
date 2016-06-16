@@ -431,13 +431,13 @@ void Forest::cleanReductionWorkingData(ForestNode *aNode) {
 std::ostream &operator<<(std::ostream &aOut, const Forest &aForest) {
   // General forest statistics
   aOut << std::endl;
-  aOut << "Num branches:		 " << std::setw(7)
+  aOut << "Num branches:       " << std::setw(7)
        << aForest.mNumBranches << std::endl;
-  aOut << "Internal branches:	 " << std::setw(7)
+  aOut << "Internal branches:  " << std::setw(7)
        << aForest.mNumInternalBranches << std::endl;
-  aOut << "Unique sites:		 " << std::setw(7) << aForest.mNumSites
+  aOut << "Unique sites:       " << std::setw(7) << aForest.mNumSites
        << std::endl;
-  aOut << "Total branches:	 " << std::setw(7)
+  aOut << "Total branches:     " << std::setw(7)
        << aForest.mNumBranches * aForest.mNumSites << std::endl;
 
   // Count total branches on the reduced forest
@@ -906,16 +906,16 @@ void Forest::computeLikelihoods(const mfgProbabilityMatrixSet &aSet,
     const int len = static_cast<int>(ivs->size());
     const unsigned int *tmp_ivs = &(*ivs)[0];
 
-#ifdef _MSC_VER
-#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots,   \
+//#ifdef _MSC_VER
+//#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots,   \
                                               likelihoods) schedule(static)
-#else
-#pragma omp parallel for default(shared)
-#endif
+//#else
+//#pragma omp parallel for default(shared)
+//#endif
     for (int i = 0; i < len; ++i) {
-#ifndef _MSC_VER
-#pragma omp task untied
-#endif
+//#ifndef _MSC_VER
+//#pragma omp task untied
+//#endif
       {
         // Compute likelihood array at the root of one tree (the access order is
         // the fastest)

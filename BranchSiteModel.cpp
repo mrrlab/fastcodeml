@@ -374,6 +374,9 @@ void BranchSiteModel::initFromResult(const std::vector<double> &aPreviousResult,
   // Adjust the length to be copied
   if (aValidLen == 0)
     aValidLen = static_cast<unsigned int>(aPreviousResult.size());
+  
+  //debug
+  //std::cout <<"aValidLen: " << aValidLen <<" mNumVariables "<<mNumVariables<<  std::endl;
 
   if (mFixedBranchLength) {
     // Too long, cut. Too short, ignore. Remember H0 has 4 variables.
@@ -385,11 +388,25 @@ void BranchSiteModel::initFromResult(const std::vector<double> &aPreviousResult,
     } else if (aValidLen < 4)
       aValidLen = 0;
 
+    //debug
+    //for (std::vector<double>::const_iterator i = aPreviousResult.begin(); i != aPreviousResult.end(); ++i)
+    //std::cout << *i << ' '; 
+    
     // Copy the requested values
     mVar.assign(aPreviousResult.begin(),
                 aPreviousResult.begin() + static_cast<size_t>(aValidLen));
+    
+    //debug
+    //for (std::vector<double>::const_iterator i = mVar.begin(); i != mVar.end(); ++i)
+    //std::cout << *i << ' '; 
+    
     mVar.resize(static_cast<size_t>(mNumVariables));
-  } else {
+    
+    //debug
+    //for (std::vector<double>::const_iterator i = mVar.begin(); i != mVar.end(); ++i)
+    //std::cout << *i << ' ';
+  } 
+  else {
     // Too long, cut. Too short, ignore. Remember H0 has 4 variables.
     if (aValidLen > mNumTimes + mNumVariables)
       aValidLen = mNumTimes + mNumVariables;

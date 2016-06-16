@@ -30,11 +30,11 @@ INSTALLATION:
 	In the make.inc file set BLASLIB to the full path to the generated BLAS
 		e.g. BLASLIB = path/to/installation/blas/lib/libopenblas.a
 	Run $make
-	Two libraries will be created: lapack.a and tmglib.a. 
+	Two libraries will be created: liblapack.a and libtmglib.a. 
 	Put them inside a folder and merge them:
 		unpack in a new directory
 			ar x liblapack.a
-			ar x tmglib.a
+			ar x libtmglib.a
 		merge all produced object files into a new LAPACK library
 			ar rcs liblapack.a *.o
 		copy the liblapack.a into the library folder	

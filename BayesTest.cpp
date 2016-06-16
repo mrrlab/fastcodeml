@@ -547,14 +547,14 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
     }
 
 // Fill the matrices and compute their eigendecomposition.
-#ifdef _MSC_VER
-#pragma omp parallel sections default(none) shared(                            \
+//#ifdef _MSC_VER
+//#pragma omp parallel sections default(none) shared(                            \
     omega_fg, omega_bg, kappa, q_fg, q_bg, omega_fg_is_one, omega_bg_is_one)
-#else
-#pragma omp parallel sections default(shared)
-#endif
+//#else
+//#pragma omp parallel sections default(shared)
+//#endif
     {
-#pragma omp section
+//#pragma omp section
       {
         if (omega_fg_is_one)
           q_fg.fillMatrix(kappa);
@@ -563,7 +563,7 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
 
         q_fg.eigenQREV();
       }
-#pragma omp section
+//#pragma omp section
       {
         if (omega_bg_is_one)
           q_bg.fillMatrix(kappa);
@@ -580,6 +580,7 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
 
     // Compute likelihoods
     CacheAlignedDoubleVector likelihoods(mNumSites);
+    //probably main issue for beb non-determinism
     mForest.computeLikelihoods(mBEBset, likelihoods,
                                mDependencies.getDependencies());
     for (size_t site = 0; site < mNumSites; ++site) {
@@ -587,6 +588,15 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
       mPriors[iw * mNumSites + site] =
           (p > 0) ? log(p) : -184.2068074395237; // If p < 0 then the value in
                                                  // codeml.c is: log(1e-80);
+                                                 
+    // debug
+    //if (site==982)
+      //std::cout<<"before normalization mPriors[site] for cat " << iw << " is "<<  mPriors[iw * mNumSites + site] << std::endl;
+    // debug
+   // if (site==982)
+     // std::cout<<"likeliohoods[site] for cat " << iw << " is " <<  likelihoods[site] << std::endl;
+      
+    
     }
   }
 
@@ -604,9 +614,16 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
     // remove the previous log.
     for (size_t k = 0; k < BEB_NUM_CAT; ++k) {
       mPriors[k * mNumSites + site] = exp(mPriors[k * mNumSites + site] - fh);
+      
+       // debug
+   // if (site==982)
+     // std::cout<<"mPriors[site] for cat " << k << " is "<<  mPriors[k * mNumSites + site] << std::endl;
+    
     }
     scale += fh * aSiteMultiplicity[site];
   }
+  
+  
 
   return scale;
 }
@@ -821,7 +838,9 @@ void MfgBayesTest::computeBEB(const std::vector<double> &aVars,
     std::cout << std::endl
               << "Calculating f(w|X), posterior probs of site classes."
               << std::endl;
-
+  //debug
+  //std::cout << "mNumSites: " << mNumSites << std::endl;   		
+	      
   for (unsigned int site = 0; site < mNumSites; ++site) {
     scale1 = -1e300;
 
@@ -857,6 +876,14 @@ void MfgBayesTest::computeBEB(const std::vector<double> &aVars,
     }
     for (unsigned int j = 0; j < BEB_DIMS; ++j)
       mSiteClassProb[j * mNumSites + site] *= exp(scale1 - fX);
+    
+    //debug
+   // if (site==982) 
+  //  {
+   //   std::cout << "scale (t=log(fhk[codon_class]) + lnfXs[igrid]): " << scale1 << "  fX: " << fX << " site multiplicity " << site_multiplicity[site] <<" prob: " << mSiteClassProb[2 * mNumSites + site] + mSiteClassProb[3 * mNumSites + site] << std::endl;       
+  //  }
+  
+    
   }
 }
 
@@ -903,6 +930,8 @@ void MfgBayesTest::printPositiveSelSites(std::set<int> aFgBranchSet) const {
         ordered_map.insert(std::pair<size_t, size_t>(it->second, current_idx));
         probs.push_back(prob);
         ++current_idx;
+	//debug
+	//std::cout<< "idx: " << current_idx-1 << " prob: " << prob << " site: " << site << std::endl;
       }
     }
   }
@@ -925,6 +954,11 @@ void MfgBayesTest::printPositiveSelSites(std::set<int> aFgBranchSet) const {
 
     std::cout << std::setw(6) << im->first + 1 << ' ' << std::fixed
               << std::setprecision(6) << prob << sig << std::endl;
+    //debug       
+   // if (im->first+1 == 1030)
+     // std::cout<<"reduced site num for 1030: "<<im->second<<std::endl;
+	      
+	      
   }
 }
 
