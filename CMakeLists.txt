@@ -40,17 +40,20 @@ else(Boost_FOUND)
 endif(Boost_FOUND)
 
 
-# Get the configuration switches
+# Get the *basic* configuration switches
 OPTION(USE_LAPACK         		"Use BLAS/LAPACK" OFF)
-OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF) # could be removed ?
 OPTION(USE_OPENMP         		"Compile with OpenMP support" ON)
-OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF) # could be removed ?
+
+
+# Get the *advanced* configuration switches (change default values with care, some options are not fully functional)
+OPTION(USE_MKL_VML        		"Use Intel MKL vectorized routines" OFF) 
+OPTION(USE_MPI            		"Use MPI for high level parallelization" OFF)
 if(NOT WIN32)
-	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF) # could be removed ?
+	OPTION(BUILD_NOT_SHARED   	"Build FastCodeML not shared" OFF) 
 endif(NOT WIN32)
-OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF) # could be removed ?
-OPTION(USE_ORIGINAL_PROPORTIONS		"Use the original CodeML proportion definition" ON) # could be removed ?
-SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG") # could be removed ?
+OPTION(BUILD_SEARCH_MPI   		"Search for MPI installation?" OFF) 
+OPTION(USE_ORIGINAL_PROPORTIONS		"Use the original CodeML proportion definition" ON)
+SET(USE_LIKELIHOOD_METHOD		"Original" CACHE STRING "Select the type of likelihood computation method: Original, NonRecursive, FatVector, DAG")
 SET_PROPERTY(CACHE USE_LIKELIHOOD_METHOD PROPERTY STRINGS Original NonRecursive FatVector DAG)
 OPTION(USE_IDENTITY_MATRIX		"Force identity matrix when time is zero" OFF)
 OPTION(USE_CPV_SCALING			"Scale conditional probability vectors to avoid under/overflow" ON)
@@ -71,7 +74,7 @@ if(USE_OPENMP)
 endif(USE_OPENMP)
 
 
-# Search for MPI (could be removed ?)
+# Search for MPI 
 if(USE_MPI)
 	if(BUILD_SEARCH_MPI)
 		find_package(MPI)
@@ -84,7 +87,7 @@ endif(USE_MPI)
 # Load the needed paths
 set(LINK_DIR_BLAS     $ENV{BLAS_LIB_DIR}      CACHE PATH "BLAS lib dir")
 set(LINK_DIR_LAPACK   $ENV{LAPACK_LIB_DIR}    CACHE PATH "LAPACK lib dir")
-set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir") # could be removed ?
+set(INCLUDE_DIR_MKL   $ENV{MKL_INCLUDE_DIR}   CACHE PATH "MKL include dir") 
 set(INCLUDE_DIR_NLOPT $ENV{NLOPT_INCLUDE_DIR} CACHE PATH "NLopt include dir")
 set(LINK_DIR_NLOPT    $ENV{NLOPT_LIB_DIR}     CACHE PATH "NLopt lib dir")
 set(MATH_LIB_NAMES    $ENV{MATH_LIB_NAMES}    CACHE STRING "Math libraries (Separated by ';')")
@@ -112,11 +115,11 @@ if(USE_LAPACK)
 	add_definitions(-DUSE_LAPACK)
 endif(USE_LAPACK)
 
-if(MPI_FOUND) # could be removed ?
+if(MPI_FOUND) 
 	add_definitions(-DUSE_MPI)
 endif(MPI_FOUND)
 
-if(USE_ORIGINAL_PROPORTIONS) # could be removed ?
+if(USE_ORIGINAL_PROPORTIONS) 
 	add_definitions(-DUSE_ORIGINAL_PROPORTIONS)
 endif(USE_ORIGINAL_PROPORTIONS)
 

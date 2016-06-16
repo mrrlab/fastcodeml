@@ -389,8 +389,8 @@ void BranchSiteModel::initFromResult(const std::vector<double> &aPreviousResult,
       aValidLen = 0;
 
     //debug
-    for (std::vector<double>::const_iterator i = aPreviousResult.begin(); i != aPreviousResult.end(); ++i)
-    std::cout << *i << ' '; 
+    //for (std::vector<double>::const_iterator i = aPreviousResult.begin(); i != aPreviousResult.end(); ++i)
+    //std::cout << *i << ' '; 
     
     // Copy the requested values
     mVar.assign(aPreviousResult.begin(),
