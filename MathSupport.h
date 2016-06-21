@@ -44,8 +44,8 @@ inline void SetSeedCodeml(int seed, int PrintSeed) {
       seed = 1234567891 * (int)time(NULL) + 1;
     }
 
-    seed = abs(seed);
-
+   //seed = abs(seed);
+   if (seed < 0) seed=-seed;
     // if(PrintSeed) {
     // fseed = fopen("SeedUsed", "w");
     // if(fseed == NULL) std::cout << "can't open file SeedUsed.";
@@ -73,7 +73,12 @@ inline double rndu2Codeml(void) {
   // 32-bit integer assumed.
   // From Ripley (1987) table 2.4 line 4.
 
-  w_rndu = abs(w_rndu * 16807) % 2147483647;
+  //w_rndu = abs(w_rndu * 16807) % 2147483647;
+  if (w_rndu >= 0)
+    w_rndu = (w_rndu * 16807) % 2147483647;
+  else
+    w_rndu = ((-w_rndu) * 16807) % 2147483647;
+    
   if (w_rndu == 0)
     w_rndu = 13;
   return w_rndu / 2147483647.0;

@@ -194,8 +194,3 @@ target_link_libraries(fast ${EXTRA_LIBS})
 if(MPI_LIBRARY)
 	target_link_libraries(fast ${MPI_LIBRARY})
 endif(MPI_LIBRARY)
-
-
-
-
-add_subdirectory(bad_cases)
