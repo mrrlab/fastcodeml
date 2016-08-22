@@ -13,10 +13,10 @@
 # 2) BG /Q
   export BLAS_LIB_DIR="/bgsys/local/lib64;/opt/ibmcmp/xlf/bg/14.1/lib64"
   export LAPACK_LIB_DIR="/bgsys/local/lib64;/opt/ibmcmp/xlf/bg/14.1/lib64"
-  export NLOPT_LIB_DIR="/home/kali/FastCodeML-1.2.0/FCM-10.06.2014/nlopt-release/lib"
-  export NLOPT_INCLUDE_DIR="/home/kali/FastCodeML-1.2.0/FCM-10.06.2014/nlopt-release/include"
+  export NLOPT_LIB_DIR="/home/shahmirz/lib"
+  export NLOPT_INCLUDE_DIR="/home/shahmirz/include"
   export MATH_LIB_NAMES="esslbg;lapack;m;xlf90_r;xl;xlfmath;esslbg;dl"
-  export BOOST_ROOT="/home/kali/FastCodeML-1.2.0/FCM-10.06.2014/boost-release"
+  export BOOST_ROOT="/bgsys/local/boost/1_59_0"
   export INCLUDE_DIR_MKL="/bgsys/ibm_essl/prod/opt/ibmmath/essl/5.1/include"
   export CXX="/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlcxx"
   export CXXFLAGS="-qstrict -qthreaded -qhalt=e -D_BGQ_COMPILER"

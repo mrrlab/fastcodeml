@@ -906,16 +906,16 @@ void Forest::computeLikelihoods(const mfgProbabilityMatrixSet &aSet,
     const int len = static_cast<int>(ivs->size());
     const unsigned int *tmp_ivs = &(*ivs)[0];
 
-//#ifdef _MSC_VER
-//#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots,   \
+#ifdef _MSC_VER
+#pragma omp parallel for default(none) shared(aSet, len, tmp_ivs, tmp_roots,   \
                                               likelihoods) schedule(static)
-//#else
-//#pragma omp parallel for default(shared)
-//#endif
+#else
+#pragma omp parallel for default(shared)
+#endif
     for (int i = 0; i < len; ++i) {
-//#ifndef _MSC_VER
-//#pragma omp task untied
-//#endif
+#ifndef _MSC_VER
+#pragma omp task untied
+#endif
       {
         // Compute likelihood array at the root of one tree (the access order is
         // the fastest)

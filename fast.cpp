@@ -274,6 +274,12 @@ int main(int aRgc, char **aRgv) {
 		if (cmd.mSeed == 0)
 			cmd.mSeed = static_cast<unsigned int>(time(NULL));
 #endif
+		if ((cmd.mFixedBranchLength) and (cmd.mInitH0fromH1))
+		{
+		  std::cout << " Either remove -bl option or remove -i1 option. Setting both at the same time is not supported !" << std::endl ;
+		  return 0;
+		}
+		
 		// srand(cmd.mSeed); // fastcodeml seed
 		SetSeedCodeml(cmd.mSeed, 0); // codeml seed is 1
 

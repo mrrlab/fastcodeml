@@ -547,14 +547,14 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
     }
 
 // Fill the matrices and compute their eigendecomposition.
-//#ifdef _MSC_VER
-//#pragma omp parallel sections default(none) shared(                            \
+#ifdef _MSC_VER
+#pragma omp parallel sections default(none) shared(                            \
     omega_fg, omega_bg, kappa, q_fg, q_bg, omega_fg_is_one, omega_bg_is_one)
-//#else
-//#pragma omp parallel sections default(shared)
-//#endif
+#else
+#pragma omp parallel sections default(shared)
+#endif
     {
-//#pragma omp section
+#pragma omp section
       {
         if (omega_fg_is_one)
           q_fg.fillMatrix(kappa);
@@ -563,7 +563,7 @@ double MfgBayesTest::getGridParams(const std::vector<double> &aVars,
 
         q_fg.eigenQREV();
       }
-//#pragma omp section
+#pragma omp section
       {
         if (omega_bg_is_one)
           q_bg.fillMatrix(kappa);
